@@ -8,8 +8,11 @@ You must have a rooted phone, the Xposed Framework (http://forum.xda-developers.
 ## Usage
 ### For movies:
 "Watch Aliens"
+
 "Watch movie Aliens"
+
 
 ### For TV Shows:
 "Watch Season 1 Episode 1 of Homeland"
+
 "Watch Orange Is The New Black Season 1 Episode 5"
