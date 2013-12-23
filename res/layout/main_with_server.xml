@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent" >
+
+    <Button
+        android:id="@+id/serverSelectButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginLeft="40dp"
+        android:layout_marginTop="56dp"
+        android:text="Button" />
+
+    <Button
+        android:id="@+id/clientSelectButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBaseline="@+id/serverSelectButton"
+        android:layout_alignBottom="@+id/serverSelectButton"
+        android:layout_alignParentRight="true"
+        android:layout_marginRight="52dp"
+        android:text="Button" />
+
+    <TextView
+        android:id="@+id/helpView1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/serverSelectButton"
+        android:layout_alignParentBottom="true"
+        android:layout_alignRight="@+id/clientSelectButton"
+        android:layout_below="@+id/serverSelectButton"
+        android:layout_marginTop="74dp"
+        android:text="TextView" />
+
+</RelativeLayout>
