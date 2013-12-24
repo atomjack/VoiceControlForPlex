@@ -5,23 +5,13 @@
     android:layout_height="match_parent" >
 
     <TextView
-        android:id="@+id/helpView1"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignLeft="@+id/serverSelectButton"
-        android:layout_alignParentBottom="true"
-        android:layout_alignRight="@+id/clientSelectButton"
-        android:text="TextView"
-        android:textColor="@color/white" />
-
-    <TextView
         android:id="@+id/textView1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignLeft="@+id/serverSelectButton"
         android:layout_alignParentTop="true"
         android:layout_marginTop="35dp"
-        android:text="Stream video from the server"
+        android:text="@string/stream_video_from_server"
         android:textColor="@color/white"
         android:textSize="20sp" />
 
@@ -42,7 +32,7 @@
         android:layout_alignLeft="@+id/serverSelectButton"
         android:layout_below="@+id/serverSelectButton"
         android:layout_marginTop="22dp"
-        android:text="to the Client"
+        android:text="@string/to_the_client"
         android:textColor="@color/white"
         android:textSize="20sp" />
 
@@ -50,10 +40,13 @@
         android:id="@+id/clientSelectButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignLeft="@+id/textView2"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/textView2"
+        android:layout_marginLeft="42dp"
+        android:layout_marginTop="24dp"
         android:layout_centerVertical="true"
         android:text="Button" />
-
+    
     <CheckBox
         android:id="@+id/resumeCheckbox"
         android:layout_width="wrap_content"
@@ -62,7 +55,8 @@
         android:layout_below="@+id/clientSelectButton"
         android:layout_marginTop="24dp"
         android:onClick="resumeChecked"
-        android:text="Resume if in progress"
+        android:text="@string/resume_if_in_progress"
         android:textColor="@color/white" />
 
+    
 </RelativeLayout>
