@@ -18,3 +18,5 @@ You must have a rooted phone, the Xposed Framework (http://forum.xda-developers.
 "Watch Orange Is The New Black Season 1 Episode 5"
 
 "Watch episode Once More With Feeling of Buffy The Vampire Slayer"
+
+"Watch the latest episode of The Walking Dead" - uses Plex's "on deck"

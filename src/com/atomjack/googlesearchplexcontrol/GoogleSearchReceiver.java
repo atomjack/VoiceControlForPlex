@@ -331,13 +331,52 @@ public class GoogleSearchReceiver extends BroadcastReceiver {
 		}
 	}
 	
-	private void doLatestEpisodeSearch(String queryTerm) {
-		// TODO Auto-generated method stub
-		
+	private void doLatestEpisodeSearch(final String queryTerm) {
+		showSectionsSearched = 0;
+		for(int i=0;i<server.getTvSections().size();i++) {
+			String section = server.getTvSections().get(i);
+			try {
+			    String url = "http://" + server.getIPAddress() + ":32400/library/sections/" + section + "/onDeck";
+			    AsyncHttpClient client = new AsyncHttpClient();
+			    client.get(url, new AsyncHttpResponseHandler() {
+			        @Override
+			        public void onSuccess(String response) {
+			            Log.v(MainActivity.TAG, "HTTP REQUEST: " + response);
+			            showSectionsSearched++;
+			            
+			            MediaContainer mc = new MediaContainer();
+			            try {
+			            	mc = serial.read(MediaContainer.class, response);
+			            } catch (NotFoundException e) {
+			                e.printStackTrace();
+			            } catch (Exception e) {
+			                e.printStackTrace();
+			            }
+			            for(int j=0;j<mc.videos.size();j++) {
+			            	PlexVideo video = mc.videos.get(j);
+			            	if(video.getGrandparentTitle().toLowerCase().equals(queryTerm)) {
+			            		videos.add(video);
+			            	}
+			            }
+			            
+			            if(server.getTvSections().size() == showSectionsSearched) {
+			            	onFinishedLatestEpisodeSearch(queryTerm);
+			        	}
+			        }
+			    });
+			} catch(Exception e) {
+				Log.e(MainActivity.TAG, "Exception doing latest episode search: " + e.toString());
+			}
+		}
 	}
-
-	private void onShowSearchFinished(String queryTerm) {
-		
+	
+	private void onFinishedLatestEpisodeSearch(String queryTerm) {
+		if(videos.size() == 0) {
+			GoogleSearchApi.speak(context, "Sorry, I couldn't find " + queryTerm);
+		} else {
+			// For now, just take the first one
+			playVideo(videos.get(0));
+		}
 	}
 
 	private void doMovieSearch(String mediaType, final String queryTerm) {
