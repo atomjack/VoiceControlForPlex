@@ -94,7 +94,6 @@ public class MainActivity extends Activity {
 	public void resumeChecked(View v) {
 		mPrefsEditor.putBoolean("resume", ((CheckBox)v).isChecked());
 		mPrefsEditor.commit();
-		Log.v(TAG, "clicked!");
 	}
 	
 	private void initMainWithServer() {
