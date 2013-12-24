@@ -14,16 +14,6 @@
         android:text="TextView"
         android:textColor="@color/white" />
 
-    <Button
-        android:id="@+id/clientSelectButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignLeft="@+id/serverSelectButton"
-        android:layout_below="@+id/serverSelectButton"
-        android:layout_marginTop="68dp"
-        android:text="Button"
-        android:textColor="@color/white" />
-
     <TextView
         android:id="@+id/textView1"
         android:layout_width="wrap_content"
@@ -43,7 +33,36 @@
         android:layout_below="@+id/textView1"
         android:layout_marginLeft="42dp"
         android:layout_marginTop="24dp"
-        android:text="Button"
+        android:text="Button" />
+
+    <TextView
+        android:id="@+id/textView2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/serverSelectButton"
+        android:layout_below="@+id/serverSelectButton"
+        android:layout_marginTop="22dp"
+        android:text="to the Client"
+        android:textColor="@color/white"
+        android:textSize="20sp" />
+
+    <Button
+        android:id="@+id/clientSelectButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/textView2"
+        android:layout_centerVertical="true"
+        android:text="Button" />
+
+    <CheckBox
+        android:id="@+id/resumeCheckbox"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/clientSelectButton"
+        android:layout_below="@+id/clientSelectButton"
+        android:layout_marginTop="24dp"
+        android:onClick="resumeChecked"
+        android:text="Resume if in progress"
         android:textColor="@color/white" />
 
 </RelativeLayout>

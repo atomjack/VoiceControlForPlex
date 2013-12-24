@@ -43,8 +43,12 @@ public class GoogleSearchReceiver extends BroadcastReceiver {
 	
 	private List<PlexDirectory> shows = new ArrayList<PlexDirectory>();
 	
+	private SharedPreferences mPrefs;
+	
 	@Override
 	public void onReceive(Context context, Intent intent) {
+		mPrefs = context.getSharedPreferences(MainActivity.PREFS, context.MODE_PRIVATE);
+		
 		String queryText = intent.getStringExtra(GoogleSearchApi.KEY_QUERY_TEXT).toLowerCase();
 		
 		this.context = context;
@@ -137,8 +141,9 @@ public class GoogleSearchReceiver extends BroadcastReceiver {
 			Log.v(MainActivity.TAG, "season: " + season);
 			Log.v(MainActivity.TAG, "episode: " + episode);
 			Log.v(MainActivity.TAG, "latest: " + latest);
+			Log.v(TAG, "episodeSpecified: " + episodeSpecified);
+			
 			if(!queryTerm.equals("") || (!episodeSpecified.equals("") && !showSpecified.equals(""))) {
-				SharedPreferences mPrefs = context.getSharedPreferences(MainActivity.PREFS, context.MODE_PRIVATE);
 				Gson gson = new Gson();
 				this.server = (PlexServer)gson.fromJson(mPrefs.getString("Server", ""), PlexServer.class);
 				this.client = (PlexClient)gson.fromJson(mPrefs.getString("Client", ""), PlexClient.class);
@@ -211,6 +216,7 @@ public class GoogleSearchReceiver extends BroadcastReceiver {
 	}
 	
 	private void doShowSearch(final String queryTerm, final String season, final String episode) {
+		Log.v(TAG, "doShowSearch: " + queryTerm + " " + season + " " + episode);
 		showSectionsSearched = 0;
 		for(int i=0;i<server.getTvSections().size();i++) {
 			String section = server.getTvSections().get(i);
@@ -399,6 +405,9 @@ public class GoogleSearchReceiver extends BroadcastReceiver {
 	private void playVideo(PlexVideo video) {
 		try {
 		    String url = "http://" + client.getHost() + ":" + client.getPort() + "/player/playback/playMedia?machineIdentifier=" + server.getMachineIdentifier() + "&key=" + video.getKey();
+		    if(mPrefs.getBoolean("resume", false)) {
+		    	url += "&viewOffset=" + video.getViewOffset();
+		    }
 		    Log.v(MainActivity.TAG, "Url: " + url);
 		    AsyncHttpClient client = new AsyncHttpClient();
 		    client.get(url, new AsyncHttpResponseHandler() {

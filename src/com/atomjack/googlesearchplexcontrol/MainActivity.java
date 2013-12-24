@@ -25,6 +25,7 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.AdapterView;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.ListView;
 
 import com.atomjack.googlesearchplexcontrol.model.MediaContainer;
@@ -53,13 +54,17 @@ public class MainActivity extends Activity {
 	
 	private Serializer serial = new Persister();
 	
+	private SharedPreferences mPrefs;
+	private SharedPreferences.Editor mPrefsEditor;
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		Log.v(TAG, "on create MainActivity");
 		super.onCreate(savedInstanceState);
 		
 		
-		SharedPreferences mPrefs = getSharedPreferences(PREFS, MODE_PRIVATE);
+		mPrefs = getSharedPreferences(PREFS, MODE_PRIVATE);
+		mPrefsEditor = mPrefs.edit();
 		Gson gson = new Gson();
 		String json = mPrefs.getString("Server", "");
 		PlexServer s = (PlexServer)gson.fromJson(json, PlexServer.class);
@@ -75,12 +80,21 @@ public class MainActivity extends Activity {
 					searchForPlexServers();
 				}
 			});
+			
+			
+			
 		} else {
 			this.server = s;
 			this.client = (PlexClient)gson.fromJson(mPrefs.getString("Client", ""), PlexClient.class);
 			Log.v(TAG, "Server: " + s.getMachineIdentifier());
 			initMainWithServer();
 		}
+	}
+	
+	public void resumeChecked(View v) {
+		mPrefsEditor.putBoolean("resume", ((CheckBox)v).isChecked());
+		mPrefsEditor.commit();
+		Log.v(TAG, "clicked!");
 	}
 	
 	private void initMainWithServer() {
@@ -106,6 +120,10 @@ public class MainActivity extends Activity {
 			}
 			
 		});
+		
+		CheckBox resumeCheckbox = (CheckBox)findViewById(R.id.resumeCheckbox);
+		Log.v(TAG, "checkbox: " + resumeCheckbox);
+		resumeCheckbox.setChecked(mPrefs.getBoolean("resume", false));
 	}
 	
 	private void searchForPlexServers() {
@@ -295,13 +313,12 @@ public class MainActivity extends Activity {
 	}
 	
 	private void saveSettings() {
-		SharedPreferences mPrefs = getSharedPreferences(PREFS, MODE_PRIVATE);
 		Gson gson = new Gson();
 //		String json = mPrefs.getString("Server", "");
-		SharedPreferences.Editor editor = mPrefs.edit();
-		editor.putString("Server", gson.toJson(this.server));
-		editor.putString("Client", gson.toJson(this.client));
-		editor.commit();
+		mPrefsEditor.putString("Server", gson.toJson(this.server));
+		mPrefsEditor.putString("Client", gson.toJson(this.client));
+		mPrefsEditor.putBoolean("resume", false);
+		mPrefsEditor.commit();
 	}
 	
 	public void onReceive(Context context, Intent intent) {
