@@ -8,5 +8,12 @@
     <string name="stream_video_from_server">Stream video from the server</string>
     <string name="to_the_client">to the Client</string>
     <string name="resume_if_in_progress">Resume if in progress</string>
+    <string name="help_text1">Here are some examples to trigger playback:</string>
+    <string name="help_text2">&quot;Watch V For Vendetta&quot;</string>
+    <string name="help_text3">Watch Season 1 Episode 1 of Homeland</string>
+    <string name="help_text4">Watch Orange Is The New Black Season 1 Episode 5</string>
+    <string name="help_text5">Watch episode Once More With Feeling of Buffy The Vampire Slayer</string>
+    <string name="help_text6">Watch the latest episode of The Walking Dead</string>
+    <string name="search">Search</string>
 
 </resources>
