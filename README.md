@@ -13,7 +13,7 @@ You must have a rooted phone, the Xposed Framework (http://forum.xda-developers.
 
 
 ### For TV Shows:
-"Watch Season 1 Episode 1 of Homeland"
+"**Watch** *Season 1 Episode 1* **of** *Homeland*"
 
 "Watch Orange Is The New Black Season 1 Episode 5"
 
