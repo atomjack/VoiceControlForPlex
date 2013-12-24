@@ -16,7 +16,7 @@ Below are examples of what to say to Google Search to trigger playback. Sentence
 
 
 ### For TV Shows:
-"**Watch** *Season 1 Episode 1* **of** *Homeland*"
+"**Watch Season** *1* **Episode** *1* **of** *Homeland*"
 
 "**Watch** *Orange Is The New Black* **Season** *1* **Episode** *5*"
 
