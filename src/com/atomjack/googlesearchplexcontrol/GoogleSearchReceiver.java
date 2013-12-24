@@ -19,6 +19,7 @@ import android.widget.Toast;
 import com.atomjack.googlesearchplexcontrol.model.MediaContainer;
 import com.atomjack.googlesearchplexcontrol.model.PlexClient;
 import com.atomjack.googlesearchplexcontrol.model.PlexDirectory;
+import com.atomjack.googlesearchplexcontrol.model.PlexResponse;
 import com.atomjack.googlesearchplexcontrol.model.PlexServer;
 import com.atomjack.googlesearchplexcontrol.model.PlexVideo;
 import com.google.gson.Gson;
@@ -174,12 +175,12 @@ public class GoogleSearchReceiver extends BroadcastReceiver {
 		for(int i=0;i<server.getTvSections().size();i++) {
 			String section = server.getTvSections().get(i);
 			try {
-			    String url = "http://" + server.getIPAddress() + ":32400/library/sections/" + section + "/search?type=4&query=" + episodeSpecified;
+			    String url = "http://" + server.getIPAddress() + ":" + server.getPort() + "/library/sections/" + section + "/search?type=4&query=" + episodeSpecified;
 			    AsyncHttpClient client = new AsyncHttpClient();
 			    client.get(url, new AsyncHttpResponseHandler() {
 			        @Override
 			        public void onSuccess(String response) {
-			            Log.v(MainActivity.TAG, "HTTP REQUEST: " + response);
+//			            Log.v(MainActivity.TAG, "HTTP REQUEST: " + response);
 			        	showSectionsSearched++;
 			        	MediaContainer mc = new MediaContainer();
 			            try {
@@ -221,12 +222,12 @@ public class GoogleSearchReceiver extends BroadcastReceiver {
 		for(int i=0;i<server.getTvSections().size();i++) {
 			String section = server.getTvSections().get(i);
 			try {
-			    String url = "http://" + server.getIPAddress() + ":32400/library/sections/" + section + "/search?type=2&query=" + queryTerm;
+			    String url = "http://" + server.getIPAddress() + ":" + server.getPort() + "/library/sections/" + section + "/search?type=2&query=" + queryTerm;
 			    AsyncHttpClient client = new AsyncHttpClient();
 			    client.get(url, new AsyncHttpResponseHandler() {
 			        @Override
 			        public void onSuccess(String response) {
-			            Log.v(MainActivity.TAG, "HTTP REQUEST: " + response);
+//			            Log.v(MainActivity.TAG, "HTTP REQUEST: " + response);
 			        	showSectionsSearched++;
 			        	MediaContainer mc = new MediaContainer();
 			            try {
@@ -241,7 +242,7 @@ public class GoogleSearchReceiver extends BroadcastReceiver {
 			            }
 			        	
 			        	if(server.getTvSections().size() == showSectionsSearched) {
-			        		doEpisodeSearch(season, episode);
+			        		doEpisodeSearch(queryTerm, season, episode);
 			        	}
 			        }
 			    });
@@ -252,19 +253,22 @@ public class GoogleSearchReceiver extends BroadcastReceiver {
 		}
 	}
 
-	private void doEpisodeSearch(final String season, final String episode) {
+	private void doEpisodeSearch(String queryTerm, final String season, final String episode) {
 		Log.v(MainActivity.TAG, "Found shows: " + shows.size());
 		
-		if(shows.size() == 1) {
+		if(shows.size() == 0) {
+			GoogleSearchApi.speak(context, "Sorry, I couldn't find " + queryTerm);
+			Log.e(TAG, "Sorry, I couldn't find " + queryTerm);
+		} else if(shows.size() == 1) {
 			PlexDirectory show = shows.get(0);
 			Log.v(TAG, "Show key: " + show.getKey());
 			try {
-			    String url = "http://" + server.getIPAddress() + ":32400" + show.getKey();
+			    String url = "http://" + server.getIPAddress() + ":" + server.getPort() + "" + show.getKey();
 			    AsyncHttpClient client = new AsyncHttpClient();
 			    client.get(url, new AsyncHttpResponseHandler() {
 			        @Override
 			        public void onSuccess(String response) {
-			            Log.v(MainActivity.TAG, "HTTP REQUEST: " + response);
+//			            Log.v(MainActivity.TAG, "HTTP REQUEST: " + response);
 			            MediaContainer mc = new MediaContainer();
 			            try {
 			            	mc = serial.read(MediaContainer.class, response);
@@ -288,7 +292,7 @@ public class GoogleSearchReceiver extends BroadcastReceiver {
 			            	doToast("Sorry, I couldn't find that season.");
 			            } else {
 			            	try {
-			    			    String url = "http://" + server.getIPAddress() + ":32400" + foundSeason.getKey();
+			    			    String url = "http://" + server.getIPAddress() + ":" + server.getPort() + "" + foundSeason.getKey();
 			    			    AsyncHttpClient client = new AsyncHttpClient();
 			    			    client.get(url, new AsyncHttpResponseHandler() {
 			    			        @Override
@@ -336,12 +340,12 @@ public class GoogleSearchReceiver extends BroadcastReceiver {
 		for(int i=0;i<server.getTvSections().size();i++) {
 			String section = server.getTvSections().get(i);
 			try {
-			    String url = "http://" + server.getIPAddress() + ":32400/library/sections/" + section + "/onDeck";
+			    String url = "http://" + server.getIPAddress() + ":" + server.getPort() + "/library/sections/" + section + "/onDeck";
 			    AsyncHttpClient client = new AsyncHttpClient();
 			    client.get(url, new AsyncHttpResponseHandler() {
 			        @Override
 			        public void onSuccess(String response) {
-			            Log.v(MainActivity.TAG, "HTTP REQUEST: " + response);
+//			            Log.v(MainActivity.TAG, "HTTP REQUEST: " + response);
 			            showSectionsSearched++;
 			            
 			            MediaContainer mc = new MediaContainer();
@@ -384,7 +388,7 @@ public class GoogleSearchReceiver extends BroadcastReceiver {
 		for(int i=0;i<server.getMovieSections().size();i++) {
 			String section = server.getMovieSections().get(i);
 			try {
-			    String url = "http://" + server.getIPAddress() + ":32400/library/sections/" + section + "/search?type=1&query=" + queryTerm;
+			    String url = "http://" + server.getIPAddress() + ":" + server.getPort() + "/library/sections/" + section + "/search?type=1&query=" + queryTerm;
 			    AsyncHttpClient client = new AsyncHttpClient();
 			    client.get(url, new AsyncHttpResponseHandler() {
 			        @Override
@@ -453,12 +457,18 @@ public class GoogleSearchReceiver extends BroadcastReceiver {
 		        @Override
 		        public void onSuccess(String response) {
 		            Log.v(MainActivity.TAG, "HTTP REQUEST: " + response);
-		           
+		            PlexResponse r = new PlexResponse();
+		            try {
+		            	r = serial.read(PlexResponse.class, response);
+		            } catch (Exception e) {
+		            	Log.e(MainActivity.TAG, "Exception parsing response: " + e.toString());
+		            }
+		            
 		        }
 		    });
 
 		} catch (Exception e) {
-			Log.e(MainActivity.TAG, "Exception getting clients: " + e.toString());
+			Log.e(MainActivity.TAG, "Exception trying to play video: " + e.toString());
 		}
 	}
 	

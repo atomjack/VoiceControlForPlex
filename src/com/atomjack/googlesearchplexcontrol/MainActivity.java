@@ -111,7 +111,8 @@ public class MainActivity extends Activity {
 			// foo
 		});
 		clientSelectButton = (Button)findViewById(R.id.clientSelectButton);
-		clientSelectButton.setText(client.getName());
+		if(client != null)
+			clientSelectButton.setText(client.getName());
 		clientSelectButton.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View view) {
@@ -186,7 +187,7 @@ public class MainActivity extends Activity {
 		this.server = server;
 		
 		try {
-		    String url = "http://" + server.getIPAddress() + ":32400/";
+		    String url = "http://" + server.getIPAddress() + ":" + server.getPort() + "/";
 		    AsyncHttpClient client = new AsyncHttpClient();
 		    client.get(url, new AsyncHttpResponseHandler() {
 		        @Override
@@ -229,7 +230,7 @@ public class MainActivity extends Activity {
 		
 		searchDialog.show();
 		try {
-		    String url = "http://" + server.getIPAddress() + ":32400/clients";
+		    String url = "http://" + server.getIPAddress() + ":" + server.getPort() + "/clients";
 		    AsyncHttpClient client = new AsyncHttpClient();
 		    client.get(url, new AsyncHttpResponseHandler() {
 		        @Override

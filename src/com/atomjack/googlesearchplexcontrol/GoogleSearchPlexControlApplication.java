@@ -25,7 +25,7 @@ public class GoogleSearchPlexControlApplication {
     public static void addPlexServer(final PlexServer server) {
     	if (!plexmediaServers.containsKey(server.getName())) {
     		try {
-    		    String url = "http://" + server.getIPAddress() + ":32400/library/sections/";
+    		    String url = "http://" + server.getIPAddress() + ":" + server.getPort() + "/library/sections/";
     		    AsyncHttpClient client = new AsyncHttpClient();
     		    client.get(url, new AsyncHttpResponseHandler() {
     		        @Override

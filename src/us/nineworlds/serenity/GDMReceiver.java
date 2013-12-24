@@ -26,7 +26,11 @@ public class GDMReceiver extends BroadcastReceiver {
 			namePos += 6;
 			int crPos = message.indexOf("\r", namePos);
 			String serverName = message.substring(namePos, crPos);
+			int portPos = message.indexOf("Port: ");
+			portPos += 6;
+			String serverPort = message.substring(portPos, message.indexOf("\r", portPos));
 			
+			server.setPort(serverPort);
 			server.setName(serverName);
 			server.setIPAddress(ipAddress);
 			GoogleSearchPlexControlApplication.addPlexServer(server);
