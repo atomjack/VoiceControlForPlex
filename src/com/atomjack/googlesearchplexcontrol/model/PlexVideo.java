@@ -13,7 +13,17 @@ public class PlexVideo {
 	private String viewOffset;
 	@Attribute(required=false)
 	private String index;
+	@Attribute(required=false)
+	private String grandparentTitle;
 	
+	public String getGrandparentTitle() {
+		return grandparentTitle;
+	}
+
+	public void setGrandparentTitle(String grandparentTitle) {
+		this.grandparentTitle = grandparentTitle;
+	}
+
 	public String getIndex() {
 		return index;
 	}

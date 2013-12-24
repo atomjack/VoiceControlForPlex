@@ -1,5 +1,6 @@
 package com.atomjack.googlesearchplexcontrol;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.simpleframework.xml.Serializer;
@@ -7,9 +8,11 @@ import org.simpleframework.xml.core.Persister;
 
 import us.nineworlds.serenity.GDMReceiver;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
@@ -223,9 +226,33 @@ public class MainActivity extends Activity {
 		            } catch (Exception e) {
 		                e.printStackTrace();
 		            }
-		            Log.v(TAG, "Clients: " + clientMC.clients.size());
-		            searchDialog.dismiss();
-		            showPlexClients(clientMC.clients);
+		    		// Exclude non-Plex Home Theater clients (pre 1.0.7)
+		    		List<PlexClient> clients = new ArrayList<PlexClient>();
+		    		for(int i=0;i<clientMC.clients.size();i++) {
+		    			float version = clientMC.clients.get(i).getNumericVersion();
+		    			Log.v(MainActivity.TAG, "Version: " + version);
+		    			if(version >= 1.07) {
+		    				clients.add(clientMC.clients.get(i));
+		    			}
+		    		}
+		    		
+		    		searchDialog.dismiss();
+		    		if(clients.size() == 0) {
+		    			AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+		    			builder.setTitle("No Plex Home Theater Clients Found");
+		    			builder.setCancelable(false)
+		    				.setNeutralButton(R.string.ok, new DialogInterface.OnClickListener() {
+		    			        public void onClick(DialogInterface dialog, int id) {
+		    			            dialog.cancel();
+		    			        }
+		    				});
+		    			AlertDialog d = builder.create();
+		    			d.show();
+		    		} else {
+			            Log.v(TAG, "Clients: " + clients.size());
+			            
+			            showPlexClients(clients);
+		    		}
 		        }
 		    });
 
@@ -244,8 +271,8 @@ public class MainActivity extends Activity {
 		
 		final ListView serverListView = (ListView)serverSelectDialog.findViewById(R.id.serverListView);
 		final ClientListAdapter adapter = new ClientListAdapter(this, clients);
-		PlexClient c = (PlexClient)adapter.getItem(0);
-		Log.v(TAG, "Client 0: " + c.getName());
+//		PlexClient c = (PlexClient)adapter.getItem(0);
+//		Log.v(TAG, "Client 0: " + c.getName());
 		serverListView.setAdapter(adapter);
 		serverListView.setOnItemClickListener(new ListView.OnItemClickListener() {
 

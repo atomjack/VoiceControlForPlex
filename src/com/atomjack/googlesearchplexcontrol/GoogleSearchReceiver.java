@@ -53,6 +53,12 @@ public class GoogleSearchReceiver extends BroadcastReceiver {
 //		"watch season x episode x of <show>"
 //		"watch movie x"
 //		"watch x" (movie)
+		// "watch episode foobar of homeland" - naming episode
+		
+		// Ideas:
+		// "navigate to homeland"
+		// "navigate to homeland season 2"
+		// (NOT POSSIBLE:( )
 		
 		
 		// Only respond to queries that begin with watch
@@ -63,6 +69,9 @@ public class GoogleSearchReceiver extends BroadcastReceiver {
 			String queryTerm = "";
 			String season = "";
 			String episode = "";
+			String episodeSpecified = "";
+			String showSpecified = "";
+			
 			Boolean latest = false;
 			
 			Pattern p = Pattern.compile( "watch movie (.*)", Pattern.DOTALL);
@@ -94,6 +103,15 @@ public class GoogleSearchReceiver extends BroadcastReceiver {
 				}
 			}
 			if(mediaType.equals("")) {
+				p = Pattern.compile("watch episode (.*) of (.*)");
+				matcher = p.matcher(queryText);
+				if(matcher.find()) {
+					mediaType = "show";
+					episodeSpecified = matcher.group(1);
+					showSpecified = matcher.group(2);
+				}
+			}
+			if(mediaType.equals("")) {
 				p = Pattern.compile("watch( the)? latest episode of (.*)");
 				matcher = p.matcher(queryText);
 				
@@ -119,7 +137,7 @@ public class GoogleSearchReceiver extends BroadcastReceiver {
 			Log.v(MainActivity.TAG, "season: " + season);
 			Log.v(MainActivity.TAG, "episode: " + episode);
 			Log.v(MainActivity.TAG, "latest: " + latest);
-			if(!queryTerm.equals("")) {
+			if(!queryTerm.equals("") || (!episodeSpecified.equals("") && !showSpecified.equals(""))) {
 				SharedPreferences mPrefs = context.getSharedPreferences(MainActivity.PREFS, context.MODE_PRIVATE);
 				Gson gson = new Gson();
 				this.server = (PlexServer)gson.fromJson(mPrefs.getString("Server", ""), PlexServer.class);
@@ -132,6 +150,8 @@ public class GoogleSearchReceiver extends BroadcastReceiver {
 					} else if(mediaType.equals("show")) {
 						if(latest == true) {
 							doLatestEpisodeSearch(queryTerm);
+						} else if(!episodeSpecified.equals("") && !showSpecified.equals("")) {
+							doShowSearch(episodeSpecified, showSpecified);
 						} else {
 							doShowSearch(queryTerm, season, episode);
 						}
@@ -144,8 +164,52 @@ public class GoogleSearchReceiver extends BroadcastReceiver {
 		}
 	}
 
-	//localhost:3005/player/playback/playMedia?machineIdentifier=f028db2bb68929aed338b8245a1707589da04633&key=/library/metadata/13712
+	private void doShowSearch(String episodeSpecified, final String showSpecified) {
+		showSectionsSearched = 0;
+		for(int i=0;i<server.getTvSections().size();i++) {
+			String section = server.getTvSections().get(i);
+			try {
+			    String url = "http://" + server.getIPAddress() + ":32400/library/sections/" + section + "/search?type=4&query=" + episodeSpecified;
+			    AsyncHttpClient client = new AsyncHttpClient();
+			    client.get(url, new AsyncHttpResponseHandler() {
+			        @Override
+			        public void onSuccess(String response) {
+			            Log.v(MainActivity.TAG, "HTTP REQUEST: " + response);
+			        	showSectionsSearched++;
+			        	MediaContainer mc = new MediaContainer();
+			            try {
+			            	mc = serial.read(MediaContainer.class, response);
+			            } catch (NotFoundException e) {
+			                e.printStackTrace();
+			            } catch (Exception e) {
+			                e.printStackTrace();
+			            }
+			            for(int j=0;j<mc.videos.size();j++) {
+			            	Log.v(TAG, "Show: " + mc.videos.get(j).getGrandparentTitle());
+			            	if(mc.videos.get(j).getGrandparentTitle().toLowerCase().equals(showSpecified.toLowerCase()))
+			            		videos.add(mc.videos.get(j));
+			            }
+			        	
+			        	if(server.getTvSections().size() == showSectionsSearched) {
+			        		playSpecificEpisode();
+			        	}
+			        }
+			    });
+			} catch (Exception e) {
+				Log.e(MainActivity.TAG, "Exception getting search results: " + e.toString());
+			}
+		}
+	}
 
+	private void playSpecificEpisode() {
+		if(videos.size() == 1) {
+			playVideo(videos.get(0));
+		} else {
+			doToast("Sorry, I found more than one match. Try to be more specific?");
+			GoogleSearchApi.speak(context, "Sorry, I found more than one match. Try to be more specific?");
+		}
+	}
+	
 	private void doShowSearch(final String queryTerm, final String season, final String episode) {
 		showSectionsSearched = 0;
 		for(int i=0;i<server.getTvSections().size();i++) {
@@ -272,7 +336,6 @@ public class GoogleSearchReceiver extends BroadcastReceiver {
 
 	private void doMovieSearch(String mediaType, final String queryTerm) {
 		movieSectionsSearched = 0;
-		// Needed: hostname, machine identifier, and key
 		for(int i=0;i<server.getMovieSections().size();i++) {
 			String section = server.getMovieSections().get(i);
 			try {
