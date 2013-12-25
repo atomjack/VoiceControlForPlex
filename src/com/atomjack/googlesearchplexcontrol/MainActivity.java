@@ -137,46 +137,20 @@ public class MainActivity extends Activity {
 		
 		listView1.setAdapter(adapter);
 		listView1.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-
 			@Override
 			public void onItemClick(AdapterView<?> adapter, View view, int position,
 					long arg3) {
-				Log.v(TAG, "Clicked!");
 				if(position == 0) {
 					searchForPlexServers();
 				} else if(position == 1) {
 					getClients();
 				}
 			}
-			
 		});
 		
 		CheckBox resumeCheckbox = (CheckBox)findViewById(R.id.resumeCheckbox);
 		Log.v(TAG, "checkbox: " + resumeCheckbox);
 		resumeCheckbox.setChecked(mPrefs.getBoolean("resume", false));
-		/*
-		serverSelectButton = (Button)findViewById(R.id.serverSelectButton);
-		serverSelectButton.setText(server.getName());
-		serverSelectButton.setOnClickListener(new OnClickListener() {
-			@Override
-			public void onClick(View view) {
-				searchForPlexServers();
-			}
-			// foo
-		});
-		clientSelectButton = (Button)findViewById(R.id.clientSelectButton);
-		if(client != null)
-			clientSelectButton.setText(client.getName());
-		clientSelectButton.setOnClickListener(new OnClickListener() {
-			@Override
-			public void onClick(View view) {
-				getClients();
-			}
-			
-		});
-		
-		
-		*/
 	}
 	
 	private void searchForPlexServers() {
@@ -380,7 +354,7 @@ public class MainActivity extends Activity {
 //		String json = mPrefs.getString("Server", "");
 		mPrefsEditor.putString("Server", gson.toJson(this.server));
 		mPrefsEditor.putString("Client", gson.toJson(this.client));
-		mPrefsEditor.putBoolean("resume", false);
+		mPrefsEditor.putBoolean("resume", mPrefs.getBoolean("resume", false));
 		mPrefsEditor.commit();
 	}
 	
