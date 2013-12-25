@@ -1,4 +1,4 @@
-package com.atomjack.googlesearchplexcontrol;
+package com.atomjack.vcfpht;
 
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -8,8 +8,8 @@ import org.simpleframework.xml.core.Persister;
 import android.content.res.Resources.NotFoundException;
 import android.util.Log;
 
-import com.atomjack.googlesearchplexcontrol.model.MediaContainer;
-import com.atomjack.googlesearchplexcontrol.model.PlexServer;
+import com.atomjack.vcfpht.model.MediaContainer;
+import com.atomjack.vcfpht.model.PlexServer;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
 

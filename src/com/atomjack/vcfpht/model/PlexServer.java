@@ -1,4 +1,4 @@
-package com.atomjack.googlesearchplexcontrol.model;
+package com.atomjack.vcfpht.model;
 
 import java.util.ArrayList;
 import java.util.List;

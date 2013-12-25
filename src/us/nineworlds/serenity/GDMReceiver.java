@@ -5,10 +5,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
 
-import com.atomjack.googlesearchplexcontrol.GDMService;
-import com.atomjack.googlesearchplexcontrol.GoogleSearchPlexControlApplication;
-import com.atomjack.googlesearchplexcontrol.MainActivity;
-import com.atomjack.googlesearchplexcontrol.model.PlexServer;
+import com.atomjack.vcfpht.GDMService;
+import com.atomjack.vcfpht.GoogleSearchPlexControlApplication;
+import com.atomjack.vcfpht.MainActivity;
+import com.atomjack.vcfpht.model.PlexServer;
 
 public class GDMReceiver extends BroadcastReceiver {
 	

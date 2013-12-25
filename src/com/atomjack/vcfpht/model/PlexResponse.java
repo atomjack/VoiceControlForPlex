@@ -1,4 +1,4 @@
-package com.atomjack.googlesearchplexcontrol.model;
+package com.atomjack.vcfpht.model;
 
 import org.simpleframework.xml.Attribute;
 import org.simpleframework.xml.Root;

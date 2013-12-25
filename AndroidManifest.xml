@@ -18,7 +18,7 @@
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
         <activity
-            android:name="com.atomjack.googlesearchplexcontrol.MainActivity"
+            android:name="com.atomjack.vcfpht.MainActivity"
             android:label="@string/app_name" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -28,11 +28,11 @@
         </activity>
         
         <service
-            android:name="com.atomjack.googlesearchplexcontrol.GDMService"
+            android:name="com.atomjack.vcfpht.GDMService"
             android:exported="false" />
         
         <receiver
-            android:name="com.atomjack.googlesearchplexcontrol.GoogleSearchReceiver"
+            android:name="com.atomjack.vcfpht.GoogleSearchReceiver"
             android:exported="true" >
             <intent-filter>
                 <action android:name="com.mohammadag.googlesearchapi.NEW_SEARCH" />

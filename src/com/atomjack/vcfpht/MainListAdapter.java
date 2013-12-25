@@ -1,4 +1,4 @@
-package com.atomjack.googlesearchplexcontrol;
+package com.atomjack.vcfpht;
 
 import android.app.Activity;
 import android.content.Context;
@@ -9,7 +9,8 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.TextView;
 
-import com.atomjack.googlesearchplexcontrol.model.MainSetting;
+import com.atomjack.googlesearchplexcontrol.R;
+import com.atomjack.vcfpht.model.MainSetting;
 
 public class MainListAdapter extends ArrayAdapter<MainSetting> {
 	Context context;

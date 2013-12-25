@@ -1,4 +1,4 @@
-package com.atomjack.googlesearchplexcontrol;
+package com.atomjack.vcfpht;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,10 +30,11 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.ListView;
 
-import com.atomjack.googlesearchplexcontrol.model.MainSetting;
-import com.atomjack.googlesearchplexcontrol.model.MediaContainer;
-import com.atomjack.googlesearchplexcontrol.model.PlexClient;
-import com.atomjack.googlesearchplexcontrol.model.PlexServer;
+import com.atomjack.googlesearchplexcontrol.R;
+import com.atomjack.vcfpht.model.MainSetting;
+import com.atomjack.vcfpht.model.MediaContainer;
+import com.atomjack.vcfpht.model.PlexClient;
+import com.atomjack.vcfpht.model.PlexServer;
 import com.google.gson.Gson;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;

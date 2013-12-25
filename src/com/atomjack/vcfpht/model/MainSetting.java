@@ -1,4 +1,4 @@
-package com.atomjack.googlesearchplexcontrol.model;
+package com.atomjack.vcfpht.model;
 
 public class MainSetting {
 	public String line1;

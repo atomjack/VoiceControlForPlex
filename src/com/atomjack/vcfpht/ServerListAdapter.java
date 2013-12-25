@@ -1,4 +1,4 @@
-package com.atomjack.googlesearchplexcontrol;
+package com.atomjack.vcfpht;
 
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -10,7 +10,8 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.TextView;
 
-import com.atomjack.googlesearchplexcontrol.model.PlexServer;
+import com.atomjack.googlesearchplexcontrol.R;
+import com.atomjack.vcfpht.model.PlexServer;
 
 public class ServerListAdapter extends BaseAdapter {
 	private final Context context;

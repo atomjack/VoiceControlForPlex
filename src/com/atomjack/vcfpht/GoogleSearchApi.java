@@ -1,4 +1,4 @@
-package com.atomjack.googlesearchplexcontrol;
+package com.atomjack.vcfpht;
 
 import android.content.Context;
 import android.content.Intent;

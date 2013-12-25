@@ -1,4 +1,4 @@
-package com.atomjack.googlesearchplexcontrol;
+package com.atomjack.vcfpht;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,7 +12,8 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.TextView;
 
-import com.atomjack.googlesearchplexcontrol.model.PlexClient;
+import com.atomjack.googlesearchplexcontrol.R;
+import com.atomjack.vcfpht.model.PlexClient;
 
 public class ClientListAdapter extends BaseAdapter {
 	private final Context context;
