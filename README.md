@@ -1,4 +1,4 @@
-#Google Search Plex Control
+#Voice Control for Plex Home Theater
 
 A Plug-in for Google Search API for Plex Home Theater
 
