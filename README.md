@@ -22,6 +22,8 @@ Below are examples of what to say to Google Now to trigger playback. Sentence fr
 ### For TV Shows:
 "**Watch Season** *1* **Episode** *1* **of** *Homeland*"
 
+"**Watch** *Homeland* **Season** *1* **Episode** *1*"
+
 "**Watch** *Orange Is The New Black* **Season** *1* **Episode** *5*"
 
 "**Watch episode** *Once More With Feeling* **of** *Buffy The Vampire Slayer*"
