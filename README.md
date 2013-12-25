@@ -7,7 +7,7 @@ You must have a rooted phone, the Xposed Framework (http://forum.xda-developers.
 
 ## Setup
 
-Running the application for the first time will immediately start scanning for Plex Media Servers running on your local WiFi network. Once you choose one, it will show the available Plex clients that media will play on. Then simply open Google Now and tell Plex to start playing some media. See the section below on Usage for examples. After selection of server and client, you can simply tap the button for the server or client to change it. 
+Running the application for the first time will immediately start scanning for Plex Media Servers running on your local WiFi network. Once you choose one, it will show the available Plex clients that media will play on. Then simply open Google Now and tell Plex to start playing some media. See the section below on Usage for examples. After selection of server and client, you can simply tap the line for the server or client to change it. 
 
 ## Usage
 
