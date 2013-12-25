@@ -326,8 +326,6 @@ public class MainActivity extends Activity {
 		
 		final ListView serverListView = (ListView)serverSelectDialog.findViewById(R.id.serverListView);
 		final ClientListAdapter adapter = new ClientListAdapter(this, clients);
-//		PlexClient c = (PlexClient)adapter.getItem(0);
-//		Log.v(TAG, "Client 0: " + c.getName());
 		serverListView.setAdapter(adapter);
 		serverListView.setOnItemClickListener(new ListView.OnItemClickListener() {
 
@@ -351,7 +349,6 @@ public class MainActivity extends Activity {
 	
 	private void saveSettings() {
 		Gson gson = new Gson();
-//		String json = mPrefs.getString("Server", "");
 		mPrefsEditor.putString("Server", gson.toJson(this.server));
 		mPrefsEditor.putString("Client", gson.toJson(this.client));
 		mPrefsEditor.putBoolean("resume", mPrefs.getBoolean("resume", false));
