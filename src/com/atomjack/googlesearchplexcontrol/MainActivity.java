@@ -17,10 +17,12 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.res.Resources.NotFoundException;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.AdapterView;
@@ -28,6 +30,7 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.ListView;
 
+import com.atomjack.googlesearchplexcontrol.model.MainSetting;
 import com.atomjack.googlesearchplexcontrol.model.MediaContainer;
 import com.atomjack.googlesearchplexcontrol.model.PlexClient;
 import com.atomjack.googlesearchplexcontrol.model.PlexServer;
@@ -76,7 +79,6 @@ public class MainActivity extends Activity {
 			serverSelectButton.setOnClickListener(new OnClickListener() {
 				@Override
 				public void onClick(View view) {
-					// TODO Auto-generated method stub
 					searchForPlexServers();
 				}
 			});
@@ -96,15 +98,68 @@ public class MainActivity extends Activity {
 		mPrefsEditor.commit();
 	}
 	
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		switch (item.getItemId()) {
+		case R.id.menu_about:
+			return showAbout();
+		case R.id.menu_donate:
+			Intent intent = new Intent(Intent.ACTION_VIEW, 
+					Uri.parse("https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=UJF9QY9QELERG"));
+			startActivity(intent);
+			return true;
+		}
+
+		return super.onOptionsItemSelected(item);
+	}
+
+	private boolean showAbout() {
+		AlertDialog.Builder alertDialog = new AlertDialog.Builder(MainActivity.this)
+		.setTitle(R.string.app_name)
+		.setMessage(R.string.about_text);
+
+		alertDialog.show();
+
+		return true;
+	}
+
 	private void initMainWithServer() {
 		setContentView(R.layout.main_with_server);
 		
+		MainSetting setting_data[] = new MainSetting[] {
+			new MainSetting("Stream from the server", this.server.getName()),
+			new MainSetting("To the client", this.client.getName())
+		};
+		
+		MainListAdapter adapter = new MainListAdapter(this, R.layout.main_setting_item_row, setting_data);
+		
+		ListView listView1 = (ListView)findViewById(R.id.listView1);
+		
+		listView1.setAdapter(adapter);
+		listView1.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+
+			@Override
+			public void onItemClick(AdapterView<?> adapter, View view, int position,
+					long arg3) {
+				Log.v(TAG, "Clicked!");
+				if(position == 0) {
+					searchForPlexServers();
+				} else if(position == 1) {
+					getClients();
+				}
+			}
+			
+		});
+		
+		CheckBox resumeCheckbox = (CheckBox)findViewById(R.id.resumeCheckbox);
+		Log.v(TAG, "checkbox: " + resumeCheckbox);
+		resumeCheckbox.setChecked(mPrefs.getBoolean("resume", false));
+		/*
 		serverSelectButton = (Button)findViewById(R.id.serverSelectButton);
 		serverSelectButton.setText(server.getName());
 		serverSelectButton.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View view) {
-				// TODO Auto-generated method stub
 				searchForPlexServers();
 			}
 			// foo
@@ -115,15 +170,13 @@ public class MainActivity extends Activity {
 		clientSelectButton.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View view) {
-				// TODO Auto-generated method stub
 				getClients();
 			}
 			
 		});
 		
-		CheckBox resumeCheckbox = (CheckBox)findViewById(R.id.resumeCheckbox);
-		Log.v(TAG, "checkbox: " + resumeCheckbox);
-		resumeCheckbox.setChecked(mPrefs.getBoolean("resume", false));
+		
+		*/
 	}
 	
 	private void searchForPlexServers() {
@@ -351,7 +404,7 @@ public class MainActivity extends Activity {
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		// Inflate the menu; this adds items to the action bar if it is present.
-		getMenuInflater().inflate(R.menu.main, menu);
+		getMenuInflater().inflate(R.menu.menu_main, menu);
 		return true;
 	}
 
