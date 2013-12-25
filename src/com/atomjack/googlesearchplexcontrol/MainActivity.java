@@ -148,7 +148,17 @@ public class MainActivity extends Activity {
 			if(GoogleSearchPlexControlApplication.getPlexMediaServers().size() > 0) {
 				showPlexServers();
 			} else {
-				// TODO: Show 0 servers dialog here
+				searchDialog.hide();
+				AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+    			builder.setTitle("No Plex Servers Found");
+    			builder.setCancelable(false)
+    				.setNeutralButton(R.string.ok, new DialogInterface.OnClickListener() {
+    			        public void onClick(DialogInterface dialog, int id) {
+    			            dialog.cancel();
+    			        }
+    				});
+    			AlertDialog d = builder.create();
+    			d.show();
 			}
 		}
 	}
