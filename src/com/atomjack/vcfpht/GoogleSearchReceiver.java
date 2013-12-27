@@ -211,8 +211,7 @@ public class GoogleSearchReceiver extends BroadcastReceiver {
 		if(videos.size() == 1) {
 			playVideo(videos.get(0));
 		} else {
-			doToast("Sorry, I found more than one match. Try to be more specific?");
-			GoogleSearchApi.speak(context, "Sorry, I found more than one match. Try to be more specific?");
+			feedback("Sorry, I found more than one match. Try to be more specific?");
 		}
 	}
 	
@@ -257,8 +256,7 @@ public class GoogleSearchReceiver extends BroadcastReceiver {
 		Log.v(MainActivity.TAG, "Found shows: " + shows.size());
 		
 		if(shows.size() == 0) {
-			GoogleSearchApi.speak(context, "Sorry, I couldn't find " + queryTerm);
-			Log.e(TAG, "Sorry, I couldn't find " + queryTerm);
+			feedback("Sorry, I couldn't find " + queryTerm);
 		} else if(shows.size() == 1) {
 			PlexDirectory show = shows.get(0);
 			Log.v(TAG, "Show key: " + show.getKey());
@@ -288,8 +286,7 @@ public class GoogleSearchReceiver extends BroadcastReceiver {
 			            
 			            if(foundSeason == null) {
 			            	Log.e(TAG, "Sorry, I couldn't find that season.");
-			            	GoogleSearchApi.speak(context, "Sorry, I couldn't find that season.");
-			            	doToast("Sorry, I couldn't find that season.");
+			            	feedback("Sorry, I couldn't find that season.");
 			            } else {
 			            	try {
 			    			    String url = "http://" + server.getIPAddress() + ":" + server.getPort() + "" + foundSeason.getKey();
@@ -318,8 +315,7 @@ public class GoogleSearchReceiver extends BroadcastReceiver {
 			    			            }
 			    			            Log.v(TAG, "foundEpisode = " + foundEpisode);
 			    			            if(foundEpisode == false) {
-			    			            	GoogleSearchApi.speak(context, "Sorry, I couldn't find that episode.");
-			    			            	doToast("Sorry, I couldn't find that episode.");
+			    			            	feedback("Sorry, I couldn't find that episode.");
 			    			            }
 			    			        }
 			    			    });
@@ -376,7 +372,7 @@ public class GoogleSearchReceiver extends BroadcastReceiver {
 	
 	private void onFinishedLatestEpisodeSearch(String queryTerm) {
 		if(videos.size() == 0) {
-			GoogleSearchApi.speak(context, "Sorry, I couldn't find " + queryTerm);
+			feedback("Sorry, I couldn't find " + queryTerm);
 		} else {
 			// For now, just take the first one
 			playVideo(videos.get(0));
@@ -432,19 +428,23 @@ public class GoogleSearchReceiver extends BroadcastReceiver {
 		
 		if(chosenVideo != null) {
 			Log.v(MainActivity.TAG, "Chosen video: " + chosenVideo.getTitle());
-			GoogleSearchApi.speak(context, "Now watching " + chosenVideo.getTitle() + " on " + client.getName());
+			feedback("Now watching " + chosenVideo.getTitle() + " on " + client.getName());
 			
 			playVideo(chosenVideo);
 		} else {
 			Log.v(MainActivity.TAG, "Didn't find a video");
-			GoogleSearchApi.speak(context, "Sorry, I couldn't find a video to play.");
-			doToast("Sorry, I couldn't find a video to play.");
+			feedback("Sorry, I couldn't find a video to play.");
 		}
 	}
 	
-	private void doToast(String text) {
-		Toast.makeText(context, text, Toast.LENGTH_SHORT).show();
+	private void feedback(String text) {
+		if(mPrefs.getInt("feedback", MainActivity.FEEDBACK_VOICE) == MainActivity.FEEDBACK_VOICE) {
+			GoogleSearchApi.speak(context, text);
+		} else {
+			Toast.makeText(context, text, Toast.LENGTH_SHORT).show();
+		}
 	}
+	
 	private void playVideo(PlexVideo video) {
 		try {
 		    String url = "http://" + client.getHost() + ":" + client.getPort() + "/player/playback/playMedia?machineIdentifier=" + server.getMachineIdentifier() + "&key=" + video.getKey();

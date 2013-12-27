@@ -44,6 +44,9 @@ public class MainActivity extends Activity {
 	public final static String TAG = "GoogleSearchPlexControl";
 	public final static String SEARCH_TYPE = "com.atomjack.googlesearchplexcontrol.SEARCH_TYPE";
 	
+	public final static int FEEDBACK_VOICE = 0;
+	public final static int FEEDBACK_TOAST = 1;
+	
 	Button serverSelectButton = null;
 	Button clientSelectButton = null;
 	
@@ -83,9 +86,6 @@ public class MainActivity extends Activity {
 					searchForPlexServers();
 				}
 			});
-			
-			
-			
 		} else {
 			this.server = s;
 			this.client = (PlexClient)gson.fromJson(mPrefs.getString("Client", ""), PlexClient.class);
@@ -129,7 +129,8 @@ public class MainActivity extends Activity {
 		
 		MainSetting setting_data[] = new MainSetting[] {
 			new MainSetting("Stream from the server", this.server.getName()),
-			new MainSetting("To the client", this.client.getName())
+			new MainSetting("To the client", this.client.getName()),
+			new MainSetting("Feedback", mPrefs.getInt("feedback", 0) == FEEDBACK_VOICE ? "Voice" : "Toast")
 		};
 		
 		MainListAdapter adapter = new MainListAdapter(this, R.layout.main_setting_item_row, setting_data);
@@ -145,6 +146,8 @@ public class MainActivity extends Activity {
 					searchForPlexServers();
 				} else if(position == 1) {
 					getClients();
+				} else if(position == 2) {
+					selectFeedback();
 				}
 			}
 		});
@@ -152,6 +155,29 @@ public class MainActivity extends Activity {
 		CheckBox resumeCheckbox = (CheckBox)findViewById(R.id.resumeCheckbox);
 		Log.v(TAG, "checkbox: " + resumeCheckbox);
 		resumeCheckbox.setChecked(mPrefs.getBoolean("resume", false));
+	}
+	
+	private void selectFeedback() {
+		AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+		builder.setTitle("Feedback");
+		builder.setCancelable(false)
+			.setPositiveButton(R.string.feedback_voice, new DialogInterface.OnClickListener() {
+		        public void onClick(DialogInterface dialog, int id) {
+		        	mPrefsEditor.putInt("feedback", FEEDBACK_VOICE);
+		        	mPrefsEditor.commit();
+		        	initMainWithServer();
+//		            dialog.cancel();
+		        }
+			}).setNegativeButton(R.string.feedback_toast, new DialogInterface.OnClickListener() {
+		        public void onClick(DialogInterface dialog, int id) {
+		        	mPrefsEditor.putInt("feedback", FEEDBACK_TOAST);
+		        	mPrefsEditor.commit();
+		        	initMainWithServer();
+//		            dialog.cancel();
+		        }
+			});
+		AlertDialog d = builder.create();
+		d.show();
 	}
 	
 	private void searchForPlexServers() {
