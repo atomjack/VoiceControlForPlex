@@ -1,18 +1,15 @@
 package com.atomjack.vcfpht;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import android.app.Dialog;
 import android.content.Context;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.TextView;
 
-import com.atomjack.googlesearchplexcontrol.R;
 import com.atomjack.vcfpht.model.PlexClient;
 
 public class ClientListAdapter extends BaseAdapter {

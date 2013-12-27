@@ -10,7 +10,6 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.TextView;
 
-import com.atomjack.googlesearchplexcontrol.R;
 import com.atomjack.vcfpht.model.PlexServer;
 
 public class ServerListAdapter extends BaseAdapter {

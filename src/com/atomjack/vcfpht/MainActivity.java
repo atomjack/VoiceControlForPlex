@@ -30,7 +30,6 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.ListView;
 
-import com.atomjack.googlesearchplexcontrol.R;
 import com.atomjack.vcfpht.model.MainSetting;
 import com.atomjack.vcfpht.model.MediaContainer;
 import com.atomjack.vcfpht.model.PlexClient;
