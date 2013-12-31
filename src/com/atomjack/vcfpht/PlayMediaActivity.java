@@ -409,7 +409,7 @@ public class PlayMediaActivity extends Activity {
 				            	if(video.getGrandparentTitle().toLowerCase().equals(showSpecified.toLowerCase())) {
 				            		video.setServer(server);
 				            		video.setThumb(video.getGrandparentThumb());
-				            		video.setShowTitle(mc.grandparentTitle);
+				            		video.setShowTitle(video.getGrandparentTitle());
 				            		videos.add(video);
 				            	}
 				            }
@@ -612,7 +612,7 @@ public class PlayMediaActivity extends Activity {
 				            	if(video.getGrandparentTitle().toLowerCase().equals(queryTerm)) {
 					            	video.setServer(server);
 					            	video.setThumb(video.getGrandparentThumb());
-					            	video.setShowTitle(mc.grandparentTitle);
+					            	video.setShowTitle(video.getGrandparentTitle());
 					            	videos.add(video);
 				            	}
 				            }
