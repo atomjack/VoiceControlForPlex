@@ -326,15 +326,6 @@ public class PlayMediaActivity extends Activity {
 			}
 		}
 		if(mediaType.equals("")) {
-			p = Pattern.compile("watch (.*) episode (.*)");
-			matcher = p.matcher(queryText);
-			if(matcher.find()) {
-				mediaType = "show";
-				episodeSpecified = matcher.group(2);
-				showSpecified = matcher.group(1);
-			}
-		}
-		if(mediaType.equals("")) {
 			p = Pattern.compile("watch( the)? latest episode of (.*)");
 			matcher = p.matcher(queryText);
 			
@@ -342,6 +333,15 @@ public class PlayMediaActivity extends Activity {
 				mediaType = "show";
 				latest = true;
 				queryTerm = matcher.group(2);
+			}
+		}
+		if(mediaType.equals("")) {
+			p = Pattern.compile("watch (.*) episode (.*)");
+			matcher = p.matcher(queryText);
+			if(matcher.find()) {
+				mediaType = "show";
+				episodeSpecified = matcher.group(2);
+				showSpecified = matcher.group(1);
 			}
 		}
 		// Lastly, try to find a movie matching whatever comes after "watch"
