@@ -79,4 +79,20 @@ public class PlexServer {
 			tvSections.add(key);
 		}
 	}
+	
+	public String getClientsURL() {
+		return "http://" + this.getIPAddress() + ":" + this.getPort() + "/clients";
+	}
+	
+	public String getBaseURL() {
+		return "http://" + this.getIPAddress() + ":" + this.getPort() + "/";
+	}
+	
+	@Override
+	public String toString() {
+		String output = "";
+		output += "Name: " + this.getName() + "\n";
+		output += "IP Address: " + this.getIPAddress() + "\n";
+		return output;
+	}
 }

@@ -2,6 +2,7 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:descendantFocusability="blocksDescendants" 
     android:orientation="vertical" >
 
     <!-- 
@@ -27,20 +28,35 @@
         android:id="@+id/mainSettingItem1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="20dp"
         android:layout_alignParentLeft="true"
         android:layout_alignParentTop="true"
-        android:textSize="20sp"
-        android:text="item1" />
+        android:layout_marginBottom="5dp"
+        android:layout_toLeftOf="@+id/settingRowHelpButton"
+        android:text=""
+        android:textSize="20sp" />
 
     <TextView
         android:id="@+id/mainSettingItem2"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="20dp"
+        android:layout_alignParentLeft="true"
+        android:layout_alignRight="@+id/mainSettingItem1"
+        android:layout_below="@+id/mainSettingItem1"
+        android:textSize="20sp" />
+
+    <ImageButton
+        android:id="@+id/settingRowHelpButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBottom="@+id/mainSettingItem2"
         android:layout_alignParentRight="true"
         android:layout_alignParentTop="true"
-        android:textSize="20sp"
-        android:text="item2" />
+        android:paddingRight="10dp"
+        android:paddingLeft="10dp"
+        android:layout_marginRight="10dp"
+        android:onClick="settingRowHelpButtonClicked"
+        android:background="?android:selectableItemBackground"
+        android:contentDescription="@string/help_button_desc"
+        android:src="@drawable/help_icon" />
 
 </RelativeLayout>

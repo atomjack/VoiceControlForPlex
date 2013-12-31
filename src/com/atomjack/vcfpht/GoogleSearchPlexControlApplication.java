@@ -23,11 +23,15 @@ public class GoogleSearchPlexControlApplication {
     private static Serializer serial = new Persister();
     
     public static void addPlexServer(final PlexServer server) {
+    	Log.v(MainActivity.TAG, "ADDING PLEX SERVER: " + server);
+    	if(server.getName().equals("") || server.getIPAddress().equals("")) {
+    		return;
+    	}
     	if (!plexmediaServers.containsKey(server.getName())) {
     		try {
     		    String url = "http://" + server.getIPAddress() + ":" + server.getPort() + "/library/sections/";
-    		    AsyncHttpClient client = new AsyncHttpClient();
-    		    client.get(url, new AsyncHttpResponseHandler() {
+    		    AsyncHttpClient httpClient = new AsyncHttpClient();
+    		    httpClient.get(url, new AsyncHttpResponseHandler() {
     		        @Override
     		        public void onSuccess(String response) {
     		            Log.v(MainActivity.TAG, "HTTP REQUEST: " + response);
@@ -40,7 +44,6 @@ public class GoogleSearchPlexControlApplication {
     		                e.printStackTrace();
     		            }
     		            for(int i=0;i<mc.directories.size();i++) {
-    		            	Log.v(MainActivity.TAG, "Directory type: " + mc.directories.get(i).getType());
     		            	if(mc.directories.get(i).getType().equals("movie")) {
     		            		server.addMovieSection(mc.directories.get(i).getKey());
     		            	}
@@ -53,8 +56,9 @@ public class GoogleSearchPlexControlApplication {
     		            	Log.v(MainActivity.TAG, "Directories: " + mc.directories.size());
     		            else
     		            	Log.v(MainActivity.TAG, "No directories found!");
-    		            plexmediaServers.putIfAbsent(server.getName(), server);
-//    		            getClients(mc);
+    		            if(!server.getName().equals("") && !server.getIPAddress().equals("")) {
+    		            	plexmediaServers.putIfAbsent(server.getName(), server);
+    		            }
     		        }
     		    });
 

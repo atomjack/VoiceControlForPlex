@@ -49,7 +49,7 @@ public class ServerListAdapter extends BaseAdapter {
                 .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         View rowView = inflater.inflate(R.layout.server_list_item, parent, false);
         TextView textView = (TextView) rowView.findViewById(R.id.serverListTextView);
-        textView.setText(server.getName());
+        textView.setText(server.getName().equals("") ? "Scan All" : server.getName());
         
         
         return rowView;

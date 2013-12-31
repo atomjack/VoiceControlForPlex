@@ -11,6 +11,8 @@ public class PlexDirectory {
 	private String title;
 	@Attribute(required=false)
 	private String type;
+	@Attribute(required=false)
+	private String thumb;
 	
 	public String getType() {
 		return type;
@@ -29,5 +31,11 @@ public class PlexDirectory {
 	}
 	public void setTitle(String title) {
 		this.title = title;
+	}
+	public String getThumb() {
+		return thumb;
+	}
+	public void setThumb(String thumb) {
+		this.thumb = thumb;
 	}
 }

@@ -18,6 +18,9 @@ public class MediaContainer {
 	@Attribute(required=false)
 	public String title1;
 	
+	@Attribute(required=false)
+	public String grandparentTitle;
+	
 	@ElementList(required=false, inline=true, name="Server")
 	public List<PlexClient> clients = new ArrayList<PlexClient>();
 	

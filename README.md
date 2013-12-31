@@ -11,7 +11,7 @@ Running the application for the first time will immediately start scanning for P
 
 ## Usage
 
-Below are examples of what to say to Google Now to trigger playback. Sentence fragments in bold are required **AS IS**, while fragments in italics depend on the show, season and episode you wish to watch.
+Below are examples of what to say to Google Now to trigger playback. Sentence fragments in bold are required **AS IS**, while fragments in italics depend on the show, season and episode you wish to watch. If "Resume if in progress" is not checked, you can resume playback by speaking "Resume watching" instead of "Watch" (e.g. "Resume watching Inception")
 
 ### For movies:
 "**Watch** *Aliens*"
@@ -24,9 +24,11 @@ Below are examples of what to say to Google Now to trigger playback. Sentence fr
 
 "**Watch** *Homeland* **Season** *1* **Episode** *1*"
 
-"**Watch** *Orange Is The New Black* **Season** *1* **Episode** *5*"
+"**Watch** *Breaking Bad* **Season** *5* **Episode** *8*"
 
 "**Watch episode** *Once More With Feeling* **of** *Buffy The Vampire Slayer*"
+
+"**Watch** *Game of Thrones* **episode** *The Rains of Castamere*"
 
 "**Watch the latest episode of** *The Walking Dead*" - uses Plex's "on deck"
 

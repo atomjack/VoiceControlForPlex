@@ -8,17 +8,23 @@
     <string name="stream_video_from_server">Stream video from the server</string>
     <string name="to_the_client">to the Client</string>
     <string name="resume_if_in_progress">Resume if in progress</string>
-    <string name="help_text1">Here are some examples to trigger playback:</string>
-    <string name="help_text2">&quot;Watch V For Vendetta&quot;</string>
-    <string name="help_text3">Watch Season 1 Episode 1 of Homeland</string>
-    <string name="help_text4">Watch Orange Is The New Black Season 1 Episode 5</string>
-    <string name="help_text5">Watch episode Once More With Feeling of Buffy The Vampire Slayer</string>
-    <string name="help_text6">Watch the latest episode of The Walking Dead</string>
     <string name="search">Search</string>
     <string name="menu_about">About</string>
     <string name="about_text">Voice Control for Plex  Home Theater\n© 2013 Chris Bellew\nLicensed under GPLv3\n\nPlex Home Theater is copyright Plex, Inc.</string>
     <string name="menu_donate">Donate</string>
     <string name="feedback_voice">Voice</string>
     <string name="feedback_toast">Toast</string>
+    <string name="now_playing_on">Now Playing On</string>
+    <string name="voice">Voice</string>
+    <string name="toast">Toast</string>
+    <string name="scan_all">Scan All</string>
+    <string name="not_set">Not Set</string>
+    <string name="feedback">Feedback</string>
+    <string name="help_server">Select a Plex Media Server to stream from. If you have more than one media server, select &quot;Scan All&quot; to search all available servers for media. If you only have one, you should select it here as scanning all servers each time will take longer to trigger playback.</string>
+    <string name="help_client">Select the default client to stream media to. You can easily stream to a different client by ending your search query with \&quot;on &lt;client name&gt;\&quot;, where &lt;client name&gt; is the name of the PHT Client.</string>
+    <string name="help_feedback">Select which type of feedback I should give you.</string>
+    <string name="help_button_desc">Help Button</string>
+    <string name="help_usage">Here are some examples to trigger playback:\n\nWatch V For Vendetta\nWatch Season 1 Episode 1 of Homeland\nWatch Breaking Bad Season 5 Episode 8\nWatch episode Once More With Feeling of Buffy The Vampire Slayer\nWatch the latest episode of The Walking Dead\n\nIf you don\'t have \&quot;Resume if in progress\&quot; checked, you can selectively resume by saying \&quot;Resume watching\&quot; instead of \&quot;Watch\&quot;\n\nYou can also specify a client by adding \&quot;on &lt;client name&gt;\&quot; to your spoken query.</string>
+    <string name="help_usage_button">Usage Examples</string>
 
 </resources>
