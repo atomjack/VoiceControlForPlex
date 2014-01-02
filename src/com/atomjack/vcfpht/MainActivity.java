@@ -40,9 +40,8 @@ import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
 
 public class MainActivity extends Activity {
-	public final static String PREFS = "GoogleSearchPlexControlPrefs";
-	public final static String TAG = "GoogleSearchPlexControl";
-	public final static String SEARCH_TYPE = "com.atomjack.googlesearchplexcontrol.SEARCH_TYPE";
+	public final static String PREFS = "VoiceControlForPlexHomeTheaterPrefs";
+	public final static String TAG = "VoiceControlForPlexHomeTheater";
 	
 	public final static int FEEDBACK_VOICE = 0;
 	public final static int FEEDBACK_TOAST = 1;

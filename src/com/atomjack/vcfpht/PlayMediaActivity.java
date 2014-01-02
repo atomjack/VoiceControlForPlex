@@ -71,35 +71,58 @@ public class PlayMediaActivity extends Activity {
 		super.onCreate(savedInstanceState);
 		
 		mPrefs = getSharedPreferences(PREFS, MODE_PRIVATE);
-//		mPrefsEditor = mPrefs.edit();
 
 		setContentView(R.layout.play_media);
-		
 		Intent intent = getIntent();
+		this.queryText = intent.getStringExtra("queryText");
+		startup();
+	}
+
+	@Override
+	public void onNewIntent(Intent intent) {
+		Log.v(TAG, "ON NEW INTENT IN PLAYMEDIACTIVITY");
 		String origin = intent.getStringExtra("ORIGIN");
+		String from = intent.getStringExtra("FROM");
 		Log.v(TAG, "origin: " + origin);
-		if(origin == null) {
-		} else if(origin.equals("GoogleSearchReceiver")) {
-			this.queryText = intent.getStringExtra("queryText");
-			if(searchDialog == null) {
-				searchDialog = new Dialog(this);
+		Log.v(TAG, "from: " + from);
+		if(from == null) {
+			if(origin.equals("GoogleSearchReceiver")) {
+				this.queryText = intent.getStringExtra("queryText");
+				startup();
 			}
-			searchDialog.setCancelable(false);
-			searchDialog.setContentView(R.layout.search_popup);
-			searchDialog.setTitle("Searching");
-			
-			searchDialog.show();
-			
+		} else if(from.equals("GDMReceiver")) {
+			videoPlayed = false;
+			Log.v(TAG, "Origin: " + intent.getStringExtra("ORIGIN"));
+			this.plexmediaServers = GoogleSearchPlexControlApplication.getPlexMediaServers();
+			setClient();
+		}
+	}
+	
+	private void startup() {
+		if(searchDialog == null) {
+			searchDialog = new Dialog(this);
+		}
+		searchDialog.setCancelable(false);
+		searchDialog.setContentView(R.layout.search_popup);
+		searchDialog.setTitle("Searching");
+		
+		searchDialog.show();
+		
+		Gson gson = new Gson();
+		PlexServer defaultServer = (PlexServer)gson.fromJson(mPrefs.getString("Server", ""), PlexServer.class);
+		if(defaultServer != null) {
+			this.plexmediaServers = new ConcurrentHashMap<String, PlexServer>();
+			this.plexmediaServers.put(defaultServer.getName(), defaultServer);
+			setClient();
+		} else {
 			if(mServiceIntent == null) {
 				mServiceIntent = new Intent(this, GDMService.class);
 			}
 			mServiceIntent.putExtra("ORIGIN", "PlayMediaActivity");
 			startService(mServiceIntent);
-			
-			
 		}
 	}
-
+	
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		switch (item.getItemId()) {
@@ -131,60 +154,7 @@ public class PlayMediaActivity extends Activity {
 
 		return true;
 	}
-	@Override
-	public void onNewIntent(Intent intent) {
-		Log.v(TAG, "ON NEW INTENT IN PLAYMEDIACTIVITY");
-		String origin = intent.getStringExtra("ORIGIN");
-		String from = intent.getStringExtra("FROM");
-//		this.queryText = intent.getStringExtra("queryText");
-		Log.v(TAG, "origin: " + origin);
-		Log.v(TAG, "from: " + from);
-		if(from == null) {
-			if(origin.equals("GoogleSearchReceiver")) {
-				Gson gson = new Gson();
-				PlexServer defaultServer = (PlexServer)gson.fromJson(mPrefs.getString("Client", ""), PlexServer.class);
-				if(defaultServer != null) {
-					this.plexmediaServers = new ConcurrentHashMap<String, PlexServer>();
-					this.plexmediaServers.put(defaultServer.getName(), defaultServer);
-					
-					setClient();
-				} else {
-					if(mServiceIntent == null) {
-						mServiceIntent = new Intent(this, GDMService.class);
-					}
-					mServiceIntent.putExtra("ORIGIN", "PlayMediaActivity");
-					startService(mServiceIntent);
-				}
-				
-			}
-		} else if(from.equals("GDMReceiver")) {
-			videoPlayed = false;
-//			LocalBroadcastManager.getInstance(this).unregisterReceiver(gdmReceiver);
-			Log.v(TAG, "Origin: " + intent.getStringExtra("ORIGIN"));
-			
-			this.plexmediaServers = GoogleSearchPlexControlApplication.getPlexMediaServers();
-			
-			setClient();
-			
-			
-		}
-		
-		
-		/*
-		String from = intent.getStringExtra("FROM");
-		Log.v(TAG, "From: " + from);
-		if(from == null) {
-			
-		} else if(from.equals("GDMReceiver")) {
-			Log.v(TAG, "Origin: " + intent.getStringExtra("ORIGIN"));
-			String origin = intent.getStringExtra("ORIGIN") == null ? "" : intent.getStringExtra("ORIGIN");
-			if(origin.equals("GoogleSearchReceiver")) {
-				Log.v(TAG, "Got intent from google search receiver: " + intent.getStringExtra("queryText"));
-				handleVoiceSearch(intent.getStringExtra("queryText"));
-			}
-		}
-		*/
-	}
+
 	
 	private void setClient() {
 		Pattern p = Pattern.compile( "on (.*)$", Pattern.DOTALL);
