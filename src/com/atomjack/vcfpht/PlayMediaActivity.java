@@ -28,6 +28,7 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.ImageView;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -37,6 +38,7 @@ import com.atomjack.vcfpht.model.PlexClient;
 import com.atomjack.vcfpht.model.PlexDirectory;
 import com.atomjack.vcfpht.model.PlexResponse;
 import com.atomjack.vcfpht.model.PlexServer;
+import com.atomjack.vcfpht.model.PlexTrack;
 import com.atomjack.vcfpht.model.PlexVideo;
 import com.google.gson.Gson;
 import com.loopj.android.http.AsyncHttpClient;
@@ -61,10 +63,12 @@ public class PlayMediaActivity extends Activity {
 	private int movieSectionsSearched = 0;
 	private int serversSearched = 0;
 	private int showSectionsSearched = 0;
+	private int musicSectionsSearched = 0;
 	private List<PlexVideo> videos = new ArrayList<PlexVideo>();
 	private Boolean videoPlayed = false;
 	private List<PlexDirectory> shows = new ArrayList<PlexDirectory>();
 	private Boolean resumePlayback = false;
+	private List<PlexTrack> tracks = new ArrayList<PlexTrack>();
 	
 	protected void onCreate(Bundle savedInstanceState) {
 		Log.v(TAG, "on create PlayMediaActivity");
@@ -99,6 +103,10 @@ public class PlayMediaActivity extends Activity {
 	}
 	
 	private void startup() {
+        tracks = new ArrayList<PlexTrack>();
+        videos = new ArrayList<PlexVideo>();
+        shows = new ArrayList<PlexDirectory>();
+
 		if(searchDialog == null) {
 			searchDialog = new Dialog(this);
 		}
@@ -207,7 +215,7 @@ public class PlayMediaActivity extends Activity {
 		Log.v(MainActivity.TAG, "GOT QUERY: " + queryText);
 		
 		resumePlayback = false;
-		String mediaType = ""; // movie or show
+		String mediaType = ""; // movie or show or music
 		String queryTerm = "";
 		String season = "";
 		String episode = "";
@@ -215,6 +223,10 @@ public class PlayMediaActivity extends Activity {
 		String showSpecified = "";
 		Boolean latest = false;
 		String specifiedClient = "";
+		
+		// Music
+		String artist = "";
+		String track = "";
 		
 		// If the query spoken ends with "on <something>", check to see if the <something> matches the name of a client to play the media on
 		Pattern p = Pattern.compile( "on ([^ ]+)$", Pattern.DOTALL);
@@ -324,6 +336,15 @@ public class PlayMediaActivity extends Activity {
 				queryTerm = matcher.group(1);
 			}
 		}
+		if(mediaType.equals("")) {
+			p = Pattern.compile("listen to (.*) by (.*)");
+			matcher = p.matcher(queryText);
+			if(matcher.find()) {
+				mediaType = "music";
+				track = matcher.group(1);
+				artist = matcher.group(2);
+			}
+		}
 		
 		Log.v(MainActivity.TAG, "media type: " + mediaType);
 		Log.v(MainActivity.TAG, "query term: !" + queryTerm + "!");
@@ -331,8 +352,9 @@ public class PlayMediaActivity extends Activity {
 		Log.v(MainActivity.TAG, "episode: " + episode);
 		Log.v(MainActivity.TAG, "latest: " + latest);
 		Log.v(TAG, "episodeSpecified: " + episodeSpecified);
+        Log.v(TAG, "showSpecified: " + showSpecified);
 		
-		if(!queryTerm.equals("") || (!episodeSpecified.equals("") && !showSpecified.equals(""))) {
+		if(!queryTerm.equals("") || (!episodeSpecified.equals("") && !showSpecified.equals("")) || (!artist.equals("") && !track.equals(""))) {
 //			if(this.server != null && this.client != null) {
 				if(mediaType.equals("movie")) {
 					doMovieSearch(mediaType, queryTerm);
@@ -344,17 +366,109 @@ public class PlayMediaActivity extends Activity {
 					} else {
 						doShowSearch(queryTerm, season, episode);
 					}
-				}
+				} else if(mediaType.equals("music")) {
+					Log.v(TAG, "Searching for " + track + " by " + artist);
+					searchForSong(artist, track);
+				} else {
+                    searchDialog.dismiss();
+                    feedback("Sorry, I couldn't find anything to play.");
+                    finish();
+                    return;
+                }
 //			} else {
 //				Log.v(MainActivity.TAG, "Server & Client are null!");
 //			}
+		} else {
+			searchDialog.dismiss();
+			feedback("Sorry, I couldn't find anything to play.");
+			finish();
+			return;
 		}
 	}
 	
+	private void searchForSong(final String artist, final String track) {
+		musicSectionsSearched = 0;
+		serversSearched = 0;
+		Log.v(TAG, "Servers: " + this.plexmediaServers.size());
+		for(final PlexServer server : this.plexmediaServers.values()) {
+			if(server.getMusicSections().size() == 0) {
+				serversSearched++;
+				if(serversSearched == plexmediaServers.size()) {
+					if(tracks.size() > 0) {
+						playTrack(tracks.get(0));
+					} else {
+						feedback("Sorry, I couldn't find a track to play.");
+						searchDialog.dismiss();
+						finish();
+						return;
+					}
+				}
+			}
+			for(int i=0;i<server.getMusicSections().size();i++) {
+				String section = server.getMusicSections().get(i);
+				try {
+				    String url = "http://" + server.getIPAddress() + ":" + server.getPort() + "/library/sections/" + section + "/search?type=10&query=" + track;
+				    Log.v(TAG, "URL: " + url);
+				    AsyncHttpClient httpClient = new AsyncHttpClient();
+				    httpClient.get(url, new AsyncHttpResponseHandler() {
+				        @Override
+				        public void onSuccess(String response) {
+//				            Log.v(MainActivity.TAG, "HTTP REQUEST: " + response);
+				        	musicSectionsSearched++;
+				        	MediaContainer mc = new MediaContainer();
+				            try {
+				            	mc = serial.read(MediaContainer.class, response);
+				            } catch (NotFoundException e) {
+				                e.printStackTrace();
+				            } catch (Exception e) {
+				                e.printStackTrace();
+				            }
+				            for(int j=0;j<mc.tracks.size();j++) {
+				            	PlexTrack thisTrack = mc.tracks.get(j);
+				            	thisTrack.setArtist(thisTrack.getGrandparentTitle());
+				            	thisTrack.setAlbum(thisTrack.getParentTitle());
+				            	Log.v(TAG, "Track: " + thisTrack.getTitle() + " by " + thisTrack.getArtist());
+				            	if(thisTrack.getArtist().toLowerCase().equals(artist.toLowerCase())) {
+				            		thisTrack.setServer(server);
+				            		tracks.add(thisTrack);
+				            	}
+				            }
+
+				        	if(server.getMusicSections().size() == musicSectionsSearched) {
+				        		serversSearched++;
+				            	if(serversSearched == plexmediaServers.size()) {
+//				            		playSpecificEpisode();
+				            		Log.v(TAG, "found music to play.");
+				            		if(tracks.size() > 0) {
+										playTrack(tracks.get(0));
+									} else {
+										feedback("Sorry, I couldn't find a track to play.");
+										searchDialog.dismiss();
+										finish();
+										return;
+									}
+				            	}
+				        	}
+				        }
+				    });
+				} catch (Exception e) {
+					Log.e(TAG, "Exception getting search results: " + e.toString());
+					e.printStackTrace();
+				}
+			}
+		}
+	}
+
 	private void doShowSearch(String episodeSpecified, final String showSpecified) {
 		showSectionsSearched = 0;
 		serversSearched = 0;
 		for(final PlexServer server : this.plexmediaServers.values()) {
+            if(server.getTvSections().size() == 0) {
+                serversSearched++;
+                if(serversSearched == plexmediaServers.size()) {
+                    playSpecificEpisode();
+                }
+            }
 			for(int i=0;i<server.getTvSections().size();i++) {
 				String section = server.getTvSections().get(i);
 				try {
@@ -380,12 +494,13 @@ public class PlayMediaActivity extends Activity {
 				            		video.setServer(server);
 				            		video.setThumb(video.getGrandparentThumb());
 				            		video.setShowTitle(video.getGrandparentTitle());
+                                    Log.v(TAG, "Adding " + video.getShowTitle() + " - " + video.getTitle());
 				            		videos.add(video);
 				            	}
 				            }
-				        	
+
 				        	if(server.getTvSections().size() == showSectionsSearched) {
-				        		serversSearched++;
+                                serversSearched++;
 				            	if(serversSearched == plexmediaServers.size()) {
 				            		playSpecificEpisode();
 				            	}
@@ -420,6 +535,14 @@ public class PlayMediaActivity extends Activity {
 		showSectionsSearched = 0;
 		serversSearched = 0;
 		for(final PlexServer server : this.plexmediaServers.values()) {
+            Log.v(TAG, "Searching server " + server.getName());
+            if(server.getTvSections().size() == 0) {
+                Log.v(TAG, server.getName() + " has no tv sections");
+                serversSearched++;
+                if(serversSearched == plexmediaServers.size()) {
+                    doEpisodeSearch(queryTerm, season, episode);
+                }
+            }
 			for(int i=0;i<server.getTvSections().size();i++) {
 				String section = server.getTvSections().get(i);
 				try {
@@ -460,8 +583,10 @@ public class PlayMediaActivity extends Activity {
 	
 	private void doEpisodeSearch(String queryTerm, final String season, final String episode) {
 		Log.v(MainActivity.TAG, "Found shows: " + shows.size());
+        serversSearched = 0;
 		for(final PlexServer server : this.plexmediaServers.values()) {
-			if(shows.size() == 0) {
+			if(shows.size() == 0 && serversSearched == this.plexmediaServers.size()) {
+                serversSearched++;
 				feedback("Sorry, I couldn't find " + queryTerm);
 				searchDialog.dismiss();
 				finish();
@@ -494,13 +619,13 @@ public class PlayMediaActivity extends Activity {
 				            	}
 				            }
 				            
-				            if(foundSeason == null) {
-				            	Log.e(TAG, "Sorry, I couldn't find that season.");
+				            if(foundSeason == null && serversSearched == plexmediaServers.size() && !videoPlayed) {
+                                serversSearched++;
 				            	feedback("Sorry, I couldn't find that season.");
 				            	searchDialog.dismiss();
 				    			finish();
 				    			return;
-				            } else {
+				            } else if(foundSeason != null) {
 				            	try {
 				    			    String url = "http://" + server.getIPAddress() + ":" + server.getPort() + "" + foundSeason.getKey();
 				    			    AsyncHttpClient httpClient = new AsyncHttpClient();
@@ -522,6 +647,7 @@ public class PlayMediaActivity extends Activity {
 				    			            for(int i=0;i<mc.videos.size();i++) {
 				    			            	Log.v(TAG, "Looking at episode " + mc.videos.get(i).getIndex());
 				    			            	if(mc.videos.get(i).getIndex().equals(episode) && !videoPlayed) {
+                                                    serversSearched++;
 				    			            		PlexVideo video = mc.videos.get(i);
 				    			            		video.setServer(server);
 				    			            		video.setThumb(show.getThumb());
@@ -533,7 +659,8 @@ public class PlayMediaActivity extends Activity {
 				    			            	}
 				    			            }
 				    			            Log.v(TAG, "foundEpisode = " + foundEpisode);
-				    			            if(foundEpisode == false) {
+				    			            if(foundEpisode == false && serversSearched == plexmediaServers.size() && !videoPlayed) {
+                                                serversSearched++;
 				    			            	feedback("Sorry, I couldn't find that episode.");
 				    			            	searchDialog.dismiss();
 				    			    			finish();
@@ -543,6 +670,7 @@ public class PlayMediaActivity extends Activity {
 				    			    });
 				            	} catch(Exception e) {
 				            		Log.e(MainActivity.TAG, "Exception getting episode list: " + e.toString());
+                                    e.printStackTrace();
 				            	}
 				            }
 				        }
@@ -553,11 +681,17 @@ public class PlayMediaActivity extends Activity {
 			}
 		}
 	}
-	
+
 	private void doLatestEpisodeSearch(final String queryTerm) {
 		showSectionsSearched = 0;
 		serversSearched = 0;
 		for(final PlexServer server : this.plexmediaServers.values()) {
+            if(server.getTvSections().size() == 0) {
+                serversSearched++;
+                if(serversSearched == plexmediaServers.size()) {
+                    onFinishedLatestEpisodeSearch(queryTerm);
+                }
+            }
 			for(int i=0;i<server.getTvSections().size();i++) {
 				String section = server.getTvSections().get(i);
 				try {
@@ -586,9 +720,9 @@ public class PlayMediaActivity extends Activity {
 					            	videos.add(video);
 				            	}
 				            }
-				            
+
 				            if(server.getTvSections().size() == showSectionsSearched) {
-				            	serversSearched++;
+                                serversSearched++;
 				            	if(serversSearched == plexmediaServers.size()) {
 				            		onFinishedLatestEpisodeSearch(queryTerm);
 				            	}
@@ -619,6 +753,12 @@ public class PlayMediaActivity extends Activity {
 		serversSearched = 0;
 		for(final PlexServer server : this.plexmediaServers.values()) {
 			Log.v(TAG, "Searching server: " + server.getMachineIdentifier());
+            if(server.getMovieSections().size() == 0) {
+                serversSearched++;
+                if(serversSearched == plexmediaServers.size()) {
+                    onMovieSearchFinished(queryTerm);
+                }
+            }
 			for(int i=0;i<server.getMovieSections().size();i++) {
 				String section = server.getMovieSections().get(i);
 				try {
@@ -696,15 +836,15 @@ public class PlayMediaActivity extends Activity {
 		Log.v(TAG, text);
 	}
 	
-	private void playVideo(final PlexVideo video) {
+	private void playTrack(final PlexTrack track) {
 		try {
 //			Log.v(TAG, "Host: " + client.getHost());
 //			Log.v(TAG, "Port: " + client.getPort());
 //			Log.v(TAG, "key: " + video.getKey());
 //			Log.v(TAG, "Machine ID: " + video.getServer().getMachineIdentifier());
-		    String url = "http://" + client.getHost() + ":" + client.getPort() + "/player/playback/playMedia?machineIdentifier=" + video.getServer().getMachineIdentifier() + "&key=" + video.getKey();
+		    String url = "http://" + client.getHost() + ":" + client.getPort() + "/player/playback/playMedia?machineIdentifier=" + track.getServer().getMachineIdentifier() + "&key=" + track.getKey();
 		    if(mPrefs.getBoolean("resume", false) || resumePlayback) {
-		    	url += "&viewOffset=" + video.getViewOffset();
+		    	url += "&viewOffset=" + track.getViewOffset();
 		    }
 		    Log.v(MainActivity.TAG, "Url: " + url);
 		    AsyncHttpClient httpClient = new AsyncHttpClient();
@@ -721,8 +861,96 @@ public class PlayMediaActivity extends Activity {
 		            } catch (Exception e) {
 		            	Log.e(MainActivity.TAG, "Exception parsing response: " + e.toString());
 		            }
+                    Boolean passed = true;
+                    if(r.getCode() != null) {
+                        if(!r.getCode().equals("200")) {
+                            passed = false;
+                        }
+                    }
+                    Log.v(TAG, "Playback response: " + r.getCode());
+                    if(passed) {
+		            	setContentView(R.layout.now_playing_music);
+		            	
+		            	TextView artist = (TextView)findViewById(R.id.nowPlayingArtist);
+		            	artist.setText(track.getArtist());
+	            		TextView album = (TextView)findViewById(R.id.nowPlayingAlbum);
+	            		album.setText(track.getAlbum());
+	            		TextView title = (TextView)findViewById(R.id.nowPlayingTitle);
+	            		title.setText(track.getTitle());
+	            		
+	            		TextView nowPlayingOnClient = (TextView)findViewById(R.id.nowPlayingOnClient);
+		            	nowPlayingOnClient.setText(getResources().getString(R.string.now_playing_on) + " " + client.getName());
+		            	
+	            		if(!track.getThumb().equals("")) {
+//	            			final RelativeLayout layout = (RelativeLayout)findViewById(R.id.background);
+		            		try {
+		            			final String url = "http://" + track.getServer().getIPAddress() + ":" + track.getServer().getPort() + track.getThumb();
+		            			Log.v(TAG, "url: " + url);
+		            		    AsyncHttpClient httpClient = new AsyncHttpClient();
+		            		    httpClient.get(url, new BinaryHttpResponseHandler() {
+		            		        @Override
+		            		        public void onSuccess(byte[] imageData) {
+//		            		        	Log.v(TAG, "Response length: " + response.getBytes().length);
+		            		        	InputStream is  = new ByteArrayInputStream(imageData);
+		            		        	try {
+											is.reset();
+										} catch (IOException e) {
+											e.printStackTrace();
+										}
+		            		        	Drawable d = Drawable.createFromStream(is, "thumb");
+		            		        	d.setAlpha(80);
+//		            		        	layout.setBackground(d);
+		            		        	ImageView nowPlayingImage = (ImageView)findViewById(R.id.nowPlayingImage);
+		            		        	nowPlayingImage.setImageDrawable(d);
+		            		        }
+		            		    });
+		            		} catch(Exception e) {
+		            			e.printStackTrace();
+		            		}
+	            		}
+		            }
+		        }
+		    });
+
+		} catch (Exception e) {
+			Log.e(MainActivity.TAG, "Exception trying to play video: " + e.toString());
+			e.printStackTrace();
+		}
+	}
+	
+	private void playVideo(final PlexVideo video) {
+		Log.v(TAG, "Playing video: " + video.getTitle());
+		try {
+//			Log.v(TAG, "Host: " + client.getHost());
+//			Log.v(TAG, "Port: " + client.getPort());
+//			Log.v(TAG, "key: " + video.getKey());
+//			Log.v(TAG, "Machine ID: " + video.getServer().getMachineIdentifier());
+		    String url = "http://" + client.getHost() + ":" + client.getPort() + "/player/playback/playMedia?machineIdentifier=" + video.getServer().getMachineIdentifier() + "&key=" + video.getKey();
+		    if(mPrefs.getBoolean("resume", false) || resumePlayback) {
+		    	url += "&viewOffset=" + video.getViewOffset();
+		    }
+		    Log.v(MainActivity.TAG, "Url: " + url);
+		    AsyncHttpClient httpClient = new AsyncHttpClient();
+		    httpClient.get(url, new AsyncHttpResponseHandler() {
+		        @Override
+		        public void onSuccess(String response) {
+//		            Log.v(MainActivity.TAG, "HTTP REQUEST: " + response);
+		            searchDialog.dismiss();
+		            
+		            PlexResponse r = new PlexResponse();
+		            try {
+		            	r = serial.read(PlexResponse.class, response);
+		            } catch (Exception e) {
+		            	Log.e(MainActivity.TAG, "Exception parsing response: " + e.toString());
+		            }
+		            Boolean passed = true;
+		            if(r.getCode() != null) {
+		            	if(!r.getCode().equals("200")) {
+		            		passed = false;
+		            	}
+		            }
 		            Log.v(TAG, "Playback response: " + r.getCode());
-		            if(r.getCode().equals("200")) {
+		            if(passed) {
 		            	videoPlayed = true;
 		            	if(video.getType().equals("movie")) {
 		            		setContentView(R.layout.now_playing_movie);

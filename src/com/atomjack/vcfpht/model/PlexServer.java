@@ -19,6 +19,7 @@ public class PlexServer {
 
 	private List<String> movieSections = new ArrayList<String>();
 	private List<String> tvSections = new ArrayList<String>();
+	private List<String> musicSections = new ArrayList<String>();
 	
 	public String getName() {
 		return this.name == null ? "" : this.name;
@@ -80,6 +81,12 @@ public class PlexServer {
 		}
 	}
 	
+	public void addMusicSection(String key) {
+		if(!musicSections.contains(key)) {
+			musicSections.add(key);
+		}
+	}
+	
 	public String getClientsURL() {
 		return "http://" + this.getIPAddress() + ":" + this.getPort() + "/clients";
 	}
@@ -94,5 +101,13 @@ public class PlexServer {
 		output += "Name: " + this.getName() + "\n";
 		output += "IP Address: " + this.getIPAddress() + "\n";
 		return output;
+	}
+
+	public List<String> getMusicSections() {
+		return musicSections;
+	}
+
+	public void setMusicSections(List<String> musicSections) {
+		this.musicSections = musicSections;
 	}
 }

@@ -12,7 +12,7 @@ public class GoogleSearchReceiver extends BroadcastReceiver {
 	public void onReceive(Context context, Intent intent) {
 		String queryText = intent.getStringExtra(GoogleSearchApi.KEY_QUERY_TEXT).toLowerCase();
 		
-		if(queryText.startsWith("watch") || queryText.startsWith("resume watching")) {
+		if(queryText.startsWith("watch") || queryText.startsWith("resume watching") || queryText.startsWith("listen to")) {
 			Intent i = new Intent(context, PlayMediaActivity.class);
 			i.putExtra("ORIGIN", "GoogleSearchReceiver");
 			i.putExtra("queryText", queryText);

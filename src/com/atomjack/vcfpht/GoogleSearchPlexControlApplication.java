@@ -50,6 +50,9 @@ public class GoogleSearchPlexControlApplication {
     		            	if(mc.directories.get(i).getType().equals("show")) {
     		            		server.addTvSection(mc.directories.get(i).getKey());
     		            	}
+    		            	if(mc.directories.get(i).getType().equals("artist")) {
+    		            		server.addMusicSection(mc.directories.get(i).getKey());
+    		            	}
     		            }
     		            Log.v(MainActivity.TAG, "title1: " + mc.title1);
     		            if(mc.directories != null)

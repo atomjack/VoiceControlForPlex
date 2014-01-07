@@ -32,3 +32,6 @@ Below are examples of what to say to Google Now to trigger playback. Sentence fr
 
 "**Watch the latest episode of** *The Walking Dead*" - uses Plex's "on deck"
 
+
+### For Music:
+"**Listen to** *Black Sands* **by** *Bonobo*" - Listen to <song> by <artist>
