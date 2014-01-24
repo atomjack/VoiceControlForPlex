@@ -30,7 +30,9 @@ Below are examples of what to say to Google Now to trigger playback. Sentence fr
 
 "**Watch** *Game of Thrones* **episode** *The Rains of Castamere*"
 
-"**Watch the latest episode of** *The Walking Dead*" - uses Plex's "on deck"
+"**Watch the next episode of** *The Walking Dead*" - uses Plex's "on deck"
+
+"**Watch the latest episode of** *The Daily Show with Jon Stewart*" - to play the most recent episode by air date.
 
 
 ### For Music:
