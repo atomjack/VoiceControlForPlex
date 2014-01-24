@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="dexedLibs">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/bin/dexedLibs/android-support-v4-46c95970bf8ff1b1121296d662287f29.jar!/" />
+      <root url="jar://$PROJECT_DIR$/bin/dexedLibs/gson-2.2.4-a008c9737ab005f6df71f65596f84901.jar!/" />
+      <root url="jar://$PROJECT_DIR$/bin/dexedLibs/android-async-http-1.4.4-7ff943b13866974cf780bdf92fdf3fe3.jar!/" />
+      <root url="jar://$PROJECT_DIR$/bin/dexedLibs/picasso-2.1.1-434b722b74bbb827d361178539020d91.jar!/" />
+      <root url="jar://$PROJECT_DIR$/bin/dexedLibs/simple-xml-2.7.1-fa7b9564acd17ce7c21efd69a32cfc56.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

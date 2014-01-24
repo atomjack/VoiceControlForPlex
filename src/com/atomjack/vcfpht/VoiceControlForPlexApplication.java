@@ -13,7 +13,8 @@ import com.atomjack.vcfpht.model.PlexServer;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
 
-public class GoogleSearchPlexControlApplication {
+public class VoiceControlForPlexApplication
+{
     private static ConcurrentHashMap<String, PlexServer> plexmediaServers = new ConcurrentHashMap<String, PlexServer>();
     
     public static ConcurrentHashMap<String, PlexServer> getPlexMediaServers() {

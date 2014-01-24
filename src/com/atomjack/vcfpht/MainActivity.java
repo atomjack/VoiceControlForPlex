@@ -26,7 +26,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
-import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.ListView;
 
@@ -38,6 +37,7 @@ import com.atomjack.vcfpht.model.PlexServer;
 import com.google.gson.Gson;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
+import com.bugsense.trace.BugSenseHandler;
 
 public class MainActivity extends Activity {
 	public final static String PREFS = "VoiceControlForPlexHomeTheaterPrefs";
@@ -45,10 +45,9 @@ public class MainActivity extends Activity {
 	
 	public final static int FEEDBACK_VOICE = 0;
 	public final static int FEEDBACK_TOAST = 1;
-	
-	Button serverSelectButton = null;
-	Button clientSelectButton = null;
-	
+
+  public final static String BUGSENSE_APIKEY = "879458d0";
+
 	private BroadcastReceiver gdmReceiver = new GDMReceiver();
 	private Activity mCurrentActivity = null;
     
@@ -69,8 +68,8 @@ public class MainActivity extends Activity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		
-		
+
+    BugSenseHandler.initAndStartSession(MainActivity.this, BUGSENSE_APIKEY);
 		
 		
 		mPrefs = getSharedPreferences(PREFS, MODE_PRIVATE);
@@ -230,8 +229,8 @@ public class MainActivity extends Activity {
 			Log.v(TAG, "Origin: " + intent.getStringExtra("ORIGIN"));
 			String origin = intent.getStringExtra("ORIGIN") == null ? "" : intent.getStringExtra("ORIGIN");
 			if(origin.equals("MainActivity")) {
-				Log.v(TAG, "Got " + GoogleSearchPlexControlApplication.getPlexMediaServers().size() + " servers");
-				if(GoogleSearchPlexControlApplication.getPlexMediaServers().size() > 0) {
+				Log.v(TAG, "Got " + VoiceControlForPlexApplication.getPlexMediaServers().size() + " servers");
+				if(VoiceControlForPlexApplication.getPlexMediaServers().size() > 0) {
 					showPlexServers();
 				} else {
 					searchDialog.hide();
@@ -254,7 +253,7 @@ public class MainActivity extends Activity {
 	}
 	
 	private void scanServersForClients() {
-		ConcurrentHashMap<String, PlexServer> servers = GoogleSearchPlexControlApplication.getPlexMediaServers();
+		ConcurrentHashMap<String, PlexServer> servers = VoiceControlForPlexApplication.getPlexMediaServers();
 		Log.v(TAG, "ScanServersForClients, number of servers = " + servers.size());
 		serversScanned = 0;
 		for(PlexServer thisServer : servers.values()) {
@@ -280,7 +279,7 @@ public class MainActivity extends Activity {
 			    		for(int i=0;i<clientMC.clients.size();i++) {
 			    			float version = clientMC.clients.get(i).getNumericVersion();
 			    			Log.v(MainActivity.TAG, "Version: " + version);
-			    			if(version >= 1.07) {
+			    			if(version >= 1.07 || !clientMC.clients.get(i).getProduct().equals("Plex Home Theater")) {
 			    				clients.add(clientMC.clients.get(i));
 			    			}
 			    		}
@@ -299,7 +298,7 @@ public class MainActivity extends Activity {
 			    			d.show();
 			    		} else {
 				            Log.v(TAG, "Clients: " + clients.size());
-				            if(serversScanned == GoogleSearchPlexControlApplication.getPlexMediaServers().size()) {
+				            if(serversScanned == VoiceControlForPlexApplication.getPlexMediaServers().size()) {
 				            	showPlexClients(clients);
 				            }
 			    		}
@@ -313,7 +312,7 @@ public class MainActivity extends Activity {
 	}
 
 	private void showPlexServers() {
-		Log.v(TAG, "servers: " + GoogleSearchPlexControlApplication.getPlexMediaServers().size());
+		Log.v(TAG, "servers: " + VoiceControlForPlexApplication.getPlexMediaServers().size());
 		searchDialog.dismiss();
 		if(serverSelectDialog == null) {
 			serverSelectDialog = new Dialog(this);
@@ -323,7 +322,7 @@ public class MainActivity extends Activity {
 		serverSelectDialog.show();
 		
 		final ListView serverListView = (ListView)serverSelectDialog.findViewById(R.id.serverListView);
-		ConcurrentHashMap<String, PlexServer> servers = new ConcurrentHashMap<String, PlexServer>(GoogleSearchPlexControlApplication.getPlexMediaServers());
+		ConcurrentHashMap<String, PlexServer> servers = new ConcurrentHashMap<String, PlexServer>(VoiceControlForPlexApplication.getPlexMediaServers());
 		servers.put("Scan All", new PlexServer());
 		final ServerListAdapter adapter = new ServerListAdapter(this, servers);
 		serverListView.setAdapter(adapter);

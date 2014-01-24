@@ -24,33 +24,33 @@ public class ClientListAdapter extends BaseAdapter {
 	}
    
 	@Override
-    public int getCount() {
-        return mData.size();
-    }
+  public int getCount() {
+    return mData.size();
+  }
 
-    @Override
-    public Object getItem(int position) {
-        return mData.get(position);
-    }
+  @Override
+  public Object getItem(int position) {
+    return mData.get(position);
+  }
 
-    @Override
-    public long getItemId(int arg0) {
-        return arg0;
-    }
-    
-    @Override
-    public View getView(int pos, View convertView, ViewGroup parent) {
+  @Override
+  public long getItemId(int arg0) {
+    return arg0;
+  }
+
+  @Override
+  public View getView(int pos, View convertView, ViewGroup parent) {
 //        String key = mKeys[pos];
-        PlexClient server = (PlexClient)getItem(pos);
-        LayoutInflater inflater = (LayoutInflater) context
-                .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        View rowView = inflater.inflate(R.layout.server_list_item, parent, false);
-        TextView textView = (TextView) rowView.findViewById(R.id.serverListTextView);
-        textView.setText(server.getName());
-        
-        
-        return rowView;
-    }
+    PlexClient server = (PlexClient)getItem(pos);
+    LayoutInflater inflater = (LayoutInflater) context
+            .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+    View rowView = inflater.inflate(R.layout.server_list_item, parent, false);
+    TextView textView = (TextView) rowView.findViewById(R.id.serverListTextView);
+    textView.setText(server.getName());
+
+
+    return rowView;
+  }
 
 	public Dialog getDialog() {
 		return dialog;

@@ -25,9 +25,9 @@ public class GDMService extends IntentService {
     protected void onHandleIntent(Intent intent) {
   	try
 		{
-  			String origin = intent.getStringExtra("ORIGIN") == null ? "" : intent.getStringExtra("ORIGIN");
-  			String queryText = intent.getStringExtra("queryText");
-			DatagramSocket socket = new DatagramSocket(32414);
+  	  String origin = intent.getStringExtra("ORIGIN") == null ? "" : intent.getStringExtra("ORIGIN");
+  	  String queryText = intent.getStringExtra("queryText");
+			DatagramSocket socket = new DatagramSocket(32420);
 			socket.setBroadcast(true);
 			String data = "M-SEARCH * HTTP/1.0";
 			DatagramPacket packet = new DatagramPacket(data.getBytes(), data.length(), getBroadcastAddress(), 32414);
@@ -73,6 +73,7 @@ public class GDMService extends IntentService {
 		catch (IOException e)
 		{
 			Log.e("GDMService", e.toString());
+      e.printStackTrace();
 		} 
     	
     }

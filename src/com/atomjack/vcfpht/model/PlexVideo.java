@@ -1,6 +1,8 @@
 package com.atomjack.vcfpht.model;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -41,7 +43,17 @@ public class PlexVideo {
 	public String duration;
 	@Attribute(required=false)
 	private String summary;
-	
+  @Attribute(required=false)
+  public String originallyAvailableAt;
+	public Date airDate() {
+    SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+    try {
+      return formatter.parse(originallyAvailableAt);
+    } catch (Exception ex) {
+      ex.printStackTrace();
+      return null;
+    }
+  }
 	private String showTitle;
 	
 	public String getGrandparentThumb() {

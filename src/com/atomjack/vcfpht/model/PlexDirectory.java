@@ -13,7 +13,11 @@ public class PlexDirectory {
 	private String type;
 	@Attribute(required=false)
 	private String thumb;
-	
+	@Attribute(required=false)
+  public String ratingKey;
+  @Attribute(required=false)
+  public PlexServer server;
+
 	public String getType() {
 		return type;
 	}

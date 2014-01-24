@@ -5,6 +5,8 @@ import org.simpleframework.xml.Root;
 
 import android.util.Log;
 
+import com.atomjack.vcfpht.MainActivity;
+
 @Root(name="Server", strict=false)
 public class PlexClient {
 	@Attribute
@@ -17,7 +19,9 @@ public class PlexClient {
 	private String port;
 	@Attribute
 	private String version;
-	
+  @Attribute(required=false)
+  private String product;
+
 	public String getVersion() {
 		return version;
 	}
@@ -55,10 +59,21 @@ public class PlexClient {
 		
 		String foo = this.version.substring(0, this.version.indexOf(".")) + "." + this.version.substring(this.version.indexOf(".")+1).replaceAll("\\.", "");
 		foo = foo.split("-")[0];
-		Log.v("GoogleSearchPlexControl", "foo: " + foo);
+    foo = foo.replaceAll("[^0-9.]", "");
+		Log.v(MainActivity.TAG, "Numeric Version: " + foo);
 		
 		float a = Float.parseFloat(foo);
 		return a;
 	}
+
+  public String getProduct()
+  {
+    return product;
+  }
+
+  public void setProduct(String product)
+  {
+    this.product = product;
+  }
 	
 }

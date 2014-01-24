@@ -16,6 +16,8 @@ public class PlexServer {
 	private String ipaddress;
 	@Attribute
 	private String machineIdentifier;
+  @Attribute(required=false)
+  private String product;
 
 	private List<String> movieSections = new ArrayList<String>();
 	private List<String> tvSections = new ArrayList<String>();
@@ -110,4 +112,14 @@ public class PlexServer {
 	public void setMusicSections(List<String> musicSections) {
 		this.musicSections = musicSections;
 	}
+
+  public String getProduct()
+  {
+    return product;
+  }
+
+  public void setProduct(String product)
+  {
+    this.product = product;
+  }
 }

@@ -9,7 +9,7 @@ import android.content.Intent;
 import android.util.Log;
 
 import com.atomjack.vcfpht.GDMService;
-import com.atomjack.vcfpht.GoogleSearchPlexControlApplication;
+import com.atomjack.vcfpht.VoiceControlForPlexApplication;
 import com.atomjack.vcfpht.MainActivity;
 import com.atomjack.vcfpht.PlayMediaActivity;
 import com.atomjack.vcfpht.model.PlexServer;
@@ -36,17 +36,19 @@ public class GDMReceiver extends BroadcastReceiver {
 			matcher.find();
 			String serverPort = matcher.group(1);
 			
-			p = Pattern.compile( "Resource-Identifier: ([0-9a-f]{40})", Pattern.DOTALL);
+			p = Pattern.compile( "Resource-Identifier: ([0-9a-f-]+)", Pattern.DOTALL);
 			matcher = p.matcher(message);
 			matcher.find();
-			String machineIdentifier = matcher.group(1);
+//      if(matcher.matches()) {
+        String machineIdentifier = matcher.group(1);
 
-			server.setPort(serverPort);
-			server.setName(serverName);
-			server.setIPAddress(ipAddress);
-			server.setMachineIdentifier(machineIdentifier);
-			
-			GoogleSearchPlexControlApplication.addPlexServer(server);
+        server.setPort(serverPort);
+        server.setName(serverName);
+        server.setIPAddress(ipAddress);
+        server.setMachineIdentifier(machineIdentifier);
+
+        VoiceControlForPlexApplication.addPlexServer(server);
+//      }
 		} else if (intent.getAction().equals(GDMService.SOCKET_CLOSED)) {
 			Log.i("GDMService", "Finished Searching");
 			Intent i;
