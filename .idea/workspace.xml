@@ -22,31 +22,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="6a35d439-1349-4bc9-8f57-04ca27742713" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/libs/bugsense-3.6.jar" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/.idea/.name" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/VoiceControlForPlexHomeTheater.iml" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/.idea/libraries/bugsense_3_6.xml" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/.idea/compiler.xml" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/.idea/libraries/dexedLibs.xml" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/.idea/encodings.xml" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/.idea/libraries/libs.xml" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/.idea/misc.xml" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/.idea/modules.xml" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/.idea/copyright/profiles_settings.xml" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/.idea/scopes/scope_settings.xml" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/.idea/vcs.xml" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/src/com/atomjack/vcfpht/GoogleSearchPlexControlApplication.java" afterPath="$PROJECT_DIR$/src/com/atomjack/vcfpht/VoiceControlForPlexApplication.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/AndroidManifest.xml" afterPath="$PROJECT_DIR$/AndroidManifest.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/atomjack/vcfpht/ClientListAdapter.java" afterPath="$PROJECT_DIR$/src/com/atomjack/vcfpht/ClientListAdapter.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/us/nineworlds/serenity/GDMReceiver.java" afterPath="$PROJECT_DIR$/src/us/nineworlds/serenity/GDMReceiver.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/atomjack/vcfpht/GDMService.java" afterPath="$PROJECT_DIR$/src/com/atomjack/vcfpht/GDMService.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/atomjack/vcfpht/MainActivity.java" afterPath="$PROJECT_DIR$/src/com/atomjack/vcfpht/MainActivity.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/atomjack/vcfpht/PlayMediaActivity.java" afterPath="$PROJECT_DIR$/src/com/atomjack/vcfpht/PlayMediaActivity.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/atomjack/vcfpht/model/PlexClient.java" afterPath="$PROJECT_DIR$/src/com/atomjack/vcfpht/model/PlexClient.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/atomjack/vcfpht/model/PlexDirectory.java" afterPath="$PROJECT_DIR$/src/com/atomjack/vcfpht/model/PlexDirectory.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/atomjack/vcfpht/model/PlexServer.java" afterPath="$PROJECT_DIR$/src/com/atomjack/vcfpht/model/PlexServer.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/atomjack/vcfpht/model/PlexVideo.java" afterPath="$PROJECT_DIR$/src/com/atomjack/vcfpht/model/PlexVideo.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/README.md" afterPath="$PROJECT_DIR$/README.md" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="VoiceControlForPlexHomeTheater.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -110,159 +87,15 @@
   </component>
   <component name="FileEditorManager">
     <leaf>
-      <file leaf-file-name="PlayMediaActivity.java" pinned="false" current="true" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/src/com/atomjack/vcfpht/PlayMediaActivity.java">
+      <file leaf-file-name="README.md" pinned="false" current="true" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/README.md">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="77" column="4" selection-start="2901" selection-end="2901" vertical-scroll-proportion="0.36549166" vertical-offset="958" max-vertical-offset="16740">
-              <folding>
-                <element signature="imports" expanded="true" />
-                <element signature="e#5490#5507#0" expanded="true" />
-                <element signature="e#5523#5542#0" expanded="true" />
-                <element signature="e#27982#28975#0" expanded="true" />
-                <element signature="e#28966#28967#0" expanded="true" />
-                <element signature="e#37009#37058#0" expanded="true" />
-                <element signature="e#41982#42031#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="AndroidManifest.xml" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/AndroidManifest.xml">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="4" column="28" selection-start="198" selection-end="198" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="825">
+            <state line="27" column="0" selection-start="1575" selection-end="1575" vertical-scroll-proportion="0.48329356" vertical-offset="0" max-vertical-offset="838">
               <folding />
             </state>
           </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="PlexVideo.java" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/com/atomjack/vcfpht/model/PlexVideo.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="106" column="20" selection-start="2362" selection-end="2362" vertical-scroll-proportion="-16.153847" vertical-offset="615" max-vertical-offset="2100">
-              <folding>
-                <element signature="e#2374#2375#0" expanded="true" />
-                <element signature="e#2394#2395#0" expanded="true" />
-                <element signature="e#3773#3774#0" expanded="true" />
-                <element signature="e#3796#3797#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="PlexDirectory.java" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/com/atomjack/vcfpht/model/PlexDirectory.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="17" column="28" selection-start="417" selection-end="417" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="510">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="MainActivity.java" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/com/atomjack/vcfpht/MainActivity.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="61" column="35" selection-start="2049" selection-end="2049" vertical-scroll-proportion="5.7954545" vertical-offset="1170" max-vertical-offset="7830">
-              <folding>
-                <element signature="imports" expanded="true" />
-                <element signature="e#3391#3408#0" expanded="true" />
-                <element signature="e#3424#3443#0" expanded="true" />
-                <element signature="e#3642#3701#0" expanded="true" />
-                <element signature="e#3749#3792#0" expanded="true" />
-                <element signature="e#3824#3872#0" expanded="true" />
-                <element signature="e#3920#3962#0" expanded="true" />
-                <element signature="e#3996#4039#0" expanded="true" />
-                <element signature="e#4090#4130#0" expanded="true" />
-                <element signature="e#4133#4173#0" expanded="true" />
-                <element signature="e#5393#5410#0" expanded="true" />
-                <element signature="e#5663#5683#0" expanded="true" />
-                <element signature="e#5761#5781#0" expanded="true" />
-                <element signature="e#5861#5883#0" expanded="true" />
-                <element signature="e#6110#6133#0" expanded="true" />
-                <element signature="e#6402#6425#0" expanded="true" />
-                <element signature="e#6918#6937#0" expanded="true" />
-                <element signature="e#8394#8405#0" expanded="true" />
-                <element signature="e#10599#10610#0" expanded="true" />
-                <element signature="e#15747#15758#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="ClientListAdapter.java" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/com/atomjack/vcfpht/ClientListAdapter.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="51" column="9" selection-start="939" selection-end="1312" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="825">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="GDMService.java" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/com/atomjack/vcfpht/GDMService.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="32" column="109" selection-start="1168" selection-end="1173" vertical-scroll-proportion="-10.115385" vertical-offset="37" max-vertical-offset="1335">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="GDMReceiver.java" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/us/nineworlds/serenity/GDMReceiver.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="38" column="60" selection-start="1255" selection-end="1255" vertical-scroll-proportion="-10.923077" vertical-offset="106" max-vertical-offset="975">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="PlexServer.java" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/com/atomjack/vcfpht/model/PlexServer.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="19" column="25" selection-start="386" selection-end="438" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="1575">
-              <folding>
-                <element signature="imports" expanded="false" />
-                <element signature="e#491#499#0" expanded="false" />
-                <element signature="e#551#559#0" expanded="false" />
-                <element signature="e#614#622#0" expanded="false" />
-                <element signature="e#739#740#0" expanded="false" />
-                <element signature="e#762#763#0" expanded="false" />
-                <element signature="e#877#878#0" expanded="false" />
-                <element signature="e#900#901#0" expanded="false" />
-                <element signature="e#1040#1041#0" expanded="false" />
-                <element signature="e#1073#1074#0" expanded="false" />
-                <element signature="e#1114#1115#0" expanded="false" />
-                <element signature="e#1145#1146#0" expanded="false" />
-                <element signature="e#1208#1209#0" expanded="false" />
-                <element signature="e#1257#1258#0" expanded="false" />
-                <element signature="e#1300#1301#0" expanded="false" />
-                <element signature="e#1327#1328#0" expanded="false" />
-                <element signature="e#1388#1389#0" expanded="false" />
-                <element signature="e#1429#1430#0" expanded="false" />
-                <element signature="e#1469#1470#0" expanded="false" />
-                <element signature="e#1493#1494#0" expanded="false" />
-                <element signature="e#1548#1549#0" expanded="false" />
-                <element signature="e#1583#1584#0" expanded="false" />
-                <element signature="e#2372#2373#0" expanded="false" />
-                <element signature="e#2399#2400#0" expanded="false" />
-                <element signature="e#2460#2461#0" expanded="false" />
-                <element signature="e#2501#2502#0" expanded="false" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="PlexClient.java" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/com/atomjack/vcfpht/model/PlexClient.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="76" column="3" selection-start="1615" selection-end="1615" vertical-scroll-proportion="0.0" vertical-offset="144" max-vertical-offset="900">
-              <folding>
-                <element signature="e#1512#1513#0" expanded="true" />
-                <element signature="e#1536#1537#0" expanded="true" />
-                <element signature="e#1582#1583#0" expanded="true" />
-                <element signature="e#1614#1615#0" expanded="true" />
-              </folding>
-            </state>
+          <provider editor-type-id="MarkdownPreviewEditor">
+            <state />
           </provider>
         </entry>
       </file>
@@ -284,7 +117,6 @@
   <component name="IdeDocumentHistory">
     <option name="changedFiles">
       <list>
-        <option value="$PROJECT_DIR$/README.md" />
         <option value="$PROJECT_DIR$/src/com/atomjack/vcfpht/model/PlexServer.java" />
         <option value="$PROJECT_DIR$/src/com/atomjack/vcfpht/model/PlexClient.java" />
         <option value="$PROJECT_DIR$/src/com/atomjack/vcfpht/GDMService.java" />
@@ -296,12 +128,13 @@
         <option value="$PROJECT_DIR$/src/com/atomjack/vcfpht/model/PlexDirectory.java" />
         <option value="$PROJECT_DIR$/src/com/atomjack/vcfpht/model/PlexVideo.java" />
         <option value="$PROJECT_DIR$/src/com/atomjack/vcfpht/PlayMediaActivity.java" />
+        <option value="$PROJECT_DIR$/README.md" />
       </list>
     </option>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="40" />
-    <option name="y" value="41" />
+    <option name="x" value="116" />
+    <option name="y" value="33" />
     <option name="width" value="1663" />
     <option name="height" value="1028" />
   </component>
@@ -331,8 +164,8 @@
       <sortByType />
     </navigator>
     <panes>
-      <pane id="Scope" />
       <pane id="PackagesPane" />
+      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <PATH>
@@ -457,7 +290,7 @@
     <property name="MemberChooser.showClasses" value="true" />
     <property name="MemberChooser.copyJavadoc" value="false" />
     <property name="recentsLimit" value="5" />
-    <property name="options.lastSelected" value="editor.preferences.import" />
+    <property name="options.lastSelected" value="Markdown" />
     <property name="options.splitter.main.proportions" value="0.3" />
     <property name="options.splitter.details.proportions" value="0.2" />
     <property name="options.searchVisible" value="true" />
@@ -465,6 +298,8 @@
     <property name="last_opened_file_path" value="$PROJECT_DIR$/../Plex" />
     <property name="AndroidTargetDevices" value="03050977d0216567" />
     <property name="show.migrate.to.gradle.popup" value="false" />
+    <property name="FullScreen" value="false" />
+    <property name="full.screen.before.presentation.mode" value="false" />
   </component>
   <component name="RunManager" selected="Android Application.VoiceControlForPlexHomeTheater">
     <configuration default="true" type="AndroidTestRunConfigurationType" factoryName="Android Tests">
@@ -495,19 +330,6 @@
       <option name="PORT" value="5005" />
       <method />
     </configuration>
-    <configuration default="true" type="Applet" factoryName="Applet">
-      <module name="" />
-      <option name="MAIN_CLASS_NAME" />
-      <option name="HTML_FILE_NAME" />
-      <option name="HTML_USED" value="false" />
-      <option name="WIDTH" value="400" />
-      <option name="HEIGHT" value="300" />
-      <option name="POLICY_FILE" value="$APPLICATION_HOME_DIR$/bin/appletviewer.policy" />
-      <option name="VM_PARAMETERS" />
-      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
-      <option name="ALTERNATIVE_JRE_PATH" />
-      <method />
-    </configuration>
     <configuration default="true" type="TestNG" factoryName="TestNG">
       <module name="" />
       <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
@@ -533,6 +355,19 @@
       <envs />
       <properties />
       <listeners />
+      <method />
+    </configuration>
+    <configuration default="true" type="Applet" factoryName="Applet">
+      <module name="" />
+      <option name="MAIN_CLASS_NAME" />
+      <option name="HTML_FILE_NAME" />
+      <option name="HTML_USED" value="false" />
+      <option name="WIDTH" value="400" />
+      <option name="HEIGHT" value="300" />
+      <option name="POLICY_FILE" value="$APPLICATION_HOME_DIR$/bin/appletviewer.policy" />
+      <option name="VM_PARAMETERS" />
+      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
+      <option name="ALTERNATIVE_JRE_PATH" />
       <method />
     </configuration>
     <configuration default="true" type="Application" factoryName="Application">
@@ -647,7 +482,7 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="40" y="41" width="1663" height="1028" extended-state="0" />
+    <frame x="116" y="33" width="1663" height="1028" extended-state="0" />
     <editor active="true" />
     <layout>
       <window_info id="Palette&#9;" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
@@ -660,8 +495,7 @@
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Build Variants" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
-      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3270925" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Android" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.36123347" sideWeight="0.49969932" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Android" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.36123347" sideWeight="0.49969932" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Maven Projects" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
@@ -674,8 +508,36 @@
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3270925" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
     </layout>
+    <layout-to-restore>
+      <window_info id="Palette&#9;" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32560387" sideWeight="0.50030065" order="8" side_tool="true" content_ui="tabs" />
+      <window_info id="Build Variants" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="3" side_tool="true" content_ui="tabs" />
+      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
+      <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
+      <window_info id="Application Servers" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="13" side_tool="false" content_ui="tabs" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.21026592" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3270925" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
+      <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
+      <window_info id="Designer" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
+      <window_info id="Palette" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
+      <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="4" side_tool="true" content_ui="tabs" />
+      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3270925" sideWeight="0.5" order="11" side_tool="false" content_ui="tabs" />
+      <window_info id="Android" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.36123347" sideWeight="0.49969932" order="12" side_tool="false" content_ui="tabs" />
+      <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Maven Projects" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
+      <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="SLIDING" type="SLIDING" visible="false" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
+      <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
+    </layout-to-restore>
   </component>
   <component name="Vcs.Log.UiProperties">
     <option name="RECENTLY_FILTERED_USERS">
@@ -694,6 +556,76 @@
     <breakpoint-manager />
   </component>
   <component name="editorHistoryManager">
+    <entry file="file://$PROJECT_DIR$/AndroidManifest.xml">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="4" column="28" selection-start="198" selection-end="198" vertical-scroll-proportion="0.0" vertical-offset="60" max-vertical-offset="825">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/README.md">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="8" column="0" selection-start="315" selection-end="315" vertical-scroll-proportion="0.0" vertical-offset="120" max-vertical-offset="675">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/com/atomjack/vcfpht/model/PlexVideo.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="106" column="20" selection-start="2362" selection-end="2362" vertical-scroll-proportion="0.0" vertical-offset="1590" max-vertical-offset="3015">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/com/atomjack/vcfpht/model/PlexDirectory.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="17" column="28" selection-start="417" selection-end="417" vertical-scroll-proportion="0.0" vertical-offset="255" max-vertical-offset="765">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/com/atomjack/vcfpht/MainActivity.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="61" column="35" selection-start="2049" selection-end="2049" vertical-scroll-proportion="0.0" vertical-offset="915" max-vertical-offset="8505">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/com/atomjack/vcfpht/ClientListAdapter.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="51" column="9" selection-start="939" selection-end="1312" vertical-scroll-proportion="0.0" vertical-offset="765" max-vertical-offset="1035">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/com/atomjack/vcfpht/GDMService.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="32" column="109" selection-start="1168" selection-end="1173" vertical-scroll-proportion="0.0" vertical-offset="480" max-vertical-offset="1515">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/us/nineworlds/serenity/GDMReceiver.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="38" column="60" selection-start="1255" selection-end="1255" vertical-scroll-proportion="0.0" vertical-offset="570" max-vertical-offset="1155">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/com/atomjack/vcfpht/model/PlexServer.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="19" column="25" selection-start="386" selection-end="438" vertical-scroll-proportion="0.0" vertical-offset="285" max-vertical-offset="1965">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/com/atomjack/vcfpht/model/PlexClient.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="76" column="3" selection-start="1615" selection-end="1615" vertical-scroll-proportion="0.0" vertical-offset="1140" max-vertical-offset="1275">
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/src/com/atomjack/vcfpht/PlayMediaActivity.java">
       <provider selected="true" editor-type-id="text-editor">
         <state line="982" column="70" selection-start="37952" selection-end="37952" vertical-scroll-proportion="0.0" vertical-offset="14520" max-vertical-offset="14565">
@@ -726,40 +658,14 @@
     <entry file="file://$PROJECT_DIR$/src/com/atomjack/vcfpht/MainActivity.java">
       <provider selected="true" editor-type-id="text-editor">
         <state line="43" column="66" selection-start="1506" selection-end="1536" vertical-scroll-proportion="0.0" vertical-offset="645" max-vertical-offset="8520">
-          <folding>
-            <element signature="imports" expanded="true" />
-            <element signature="e#3391#3408#0" expanded="true" />
-            <element signature="e#3424#3443#0" expanded="true" />
-            <element signature="e#3642#3701#0" expanded="true" />
-            <element signature="e#3749#3792#0" expanded="true" />
-            <element signature="e#3824#3872#0" expanded="true" />
-            <element signature="e#3920#3962#0" expanded="true" />
-            <element signature="e#3996#4039#0" expanded="true" />
-            <element signature="e#4090#4130#0" expanded="true" />
-            <element signature="e#4133#4173#0" expanded="true" />
-            <element signature="e#5393#5410#0" expanded="true" />
-            <element signature="e#5663#5683#0" expanded="true" />
-            <element signature="e#5761#5781#0" expanded="true" />
-            <element signature="e#5861#5883#0" expanded="true" />
-            <element signature="e#6110#6133#0" expanded="true" />
-            <element signature="e#6402#6425#0" expanded="true" />
-            <element signature="e#6918#6937#0" expanded="true" />
-            <element signature="e#8394#8405#0" expanded="true" />
-            <element signature="e#10599#10610#0" expanded="true" />
-            <element signature="e#15747#15758#0" expanded="true" />
-          </folding>
+          <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/com/atomjack/vcfpht/model/PlexClient.java">
       <provider selected="true" editor-type-id="text-editor">
         <state line="57" column="32" selection-start="1268" selection-end="1268" vertical-scroll-proportion="0.0" vertical-offset="855" max-vertical-offset="1065">
-          <folding>
-            <element signature="e#1512#1513#0" expanded="true" />
-            <element signature="e#1536#1537#0" expanded="true" />
-            <element signature="e#1582#1583#0" expanded="true" />
-            <element signature="e#1614#1615#0" expanded="true" />
-          </folding>
+          <folding />
         </state>
       </provider>
     </entry>
@@ -795,40 +701,14 @@
     <entry file="file://$PROJECT_DIR$/src/com/atomjack/vcfpht/MainActivity.java">
       <provider selected="true" editor-type-id="text-editor">
         <state line="43" column="66" selection-start="1506" selection-end="1536" vertical-scroll-proportion="0.0" vertical-offset="645" max-vertical-offset="8520">
-          <folding>
-            <element signature="imports" expanded="true" />
-            <element signature="e#3391#3408#0" expanded="true" />
-            <element signature="e#3424#3443#0" expanded="true" />
-            <element signature="e#3642#3701#0" expanded="true" />
-            <element signature="e#3749#3792#0" expanded="true" />
-            <element signature="e#3824#3872#0" expanded="true" />
-            <element signature="e#3920#3962#0" expanded="true" />
-            <element signature="e#3996#4039#0" expanded="true" />
-            <element signature="e#4090#4130#0" expanded="true" />
-            <element signature="e#4133#4173#0" expanded="true" />
-            <element signature="e#5393#5410#0" expanded="true" />
-            <element signature="e#5663#5683#0" expanded="true" />
-            <element signature="e#5761#5781#0" expanded="true" />
-            <element signature="e#5861#5883#0" expanded="true" />
-            <element signature="e#6110#6133#0" expanded="true" />
-            <element signature="e#6402#6425#0" expanded="true" />
-            <element signature="e#6918#6937#0" expanded="true" />
-            <element signature="e#8394#8405#0" expanded="true" />
-            <element signature="e#10599#10610#0" expanded="true" />
-            <element signature="e#15747#15758#0" expanded="true" />
-          </folding>
+          <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/com/atomjack/vcfpht/model/PlexClient.java">
       <provider selected="true" editor-type-id="text-editor">
         <state line="57" column="32" selection-start="1268" selection-end="1268" vertical-scroll-proportion="0.0" vertical-offset="720" max-vertical-offset="720">
-          <folding>
-            <element signature="e#1512#1513#0" expanded="true" />
-            <element signature="e#1536#1537#0" expanded="true" />
-            <element signature="e#1582#1583#0" expanded="true" />
-            <element signature="e#1614#1615#0" expanded="true" />
-          </folding>
+          <folding />
         </state>
       </provider>
     </entry>
@@ -864,28 +744,7 @@
     <entry file="file://$PROJECT_DIR$/src/com/atomjack/vcfpht/MainActivity.java">
       <provider selected="true" editor-type-id="text-editor">
         <state line="43" column="66" selection-start="1506" selection-end="1536" vertical-scroll-proportion="0.0" vertical-offset="645" max-vertical-offset="7770">
-          <folding>
-            <element signature="imports" expanded="true" />
-            <element signature="e#3391#3408#0" expanded="true" />
-            <element signature="e#3424#3443#0" expanded="true" />
-            <element signature="e#3642#3701#0" expanded="true" />
-            <element signature="e#3749#3792#0" expanded="true" />
-            <element signature="e#3824#3872#0" expanded="true" />
-            <element signature="e#3920#3962#0" expanded="true" />
-            <element signature="e#3996#4039#0" expanded="true" />
-            <element signature="e#4090#4130#0" expanded="true" />
-            <element signature="e#4133#4173#0" expanded="true" />
-            <element signature="e#5393#5410#0" expanded="true" />
-            <element signature="e#5663#5683#0" expanded="true" />
-            <element signature="e#5761#5781#0" expanded="true" />
-            <element signature="e#5861#5883#0" expanded="true" />
-            <element signature="e#6110#6133#0" expanded="true" />
-            <element signature="e#6402#6425#0" expanded="true" />
-            <element signature="e#6918#6937#0" expanded="true" />
-            <element signature="e#8394#8405#0" expanded="true" />
-            <element signature="e#10599#10610#0" expanded="true" />
-            <element signature="e#15747#15758#0" expanded="true" />
-          </folding>
+          <folding />
         </state>
       </provider>
     </entry>
@@ -921,28 +780,7 @@
     <entry file="file://$PROJECT_DIR$/src/com/atomjack/vcfpht/MainActivity.java">
       <provider selected="true" editor-type-id="text-editor">
         <state line="57" column="19" selection-start="1913" selection-end="1913" vertical-scroll-proportion="0.0" vertical-offset="855" max-vertical-offset="8520">
-          <folding>
-            <element signature="imports" expanded="true" />
-            <element signature="e#3391#3408#0" expanded="true" />
-            <element signature="e#3424#3443#0" expanded="true" />
-            <element signature="e#3642#3701#0" expanded="true" />
-            <element signature="e#3749#3792#0" expanded="true" />
-            <element signature="e#3824#3872#0" expanded="true" />
-            <element signature="e#3920#3962#0" expanded="true" />
-            <element signature="e#3996#4039#0" expanded="true" />
-            <element signature="e#4090#4130#0" expanded="true" />
-            <element signature="e#4133#4173#0" expanded="true" />
-            <element signature="e#5393#5410#0" expanded="true" />
-            <element signature="e#5663#5683#0" expanded="true" />
-            <element signature="e#5761#5781#0" expanded="true" />
-            <element signature="e#5861#5883#0" expanded="true" />
-            <element signature="e#6110#6133#0" expanded="true" />
-            <element signature="e#6402#6425#0" expanded="true" />
-            <element signature="e#6918#6937#0" expanded="true" />
-            <element signature="e#8394#8405#0" expanded="true" />
-            <element signature="e#10599#10610#0" expanded="true" />
-            <element signature="e#15747#15758#0" expanded="true" />
-          </folding>
+          <folding />
         </state>
       </provider>
     </entry>
@@ -953,74 +791,40 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/com/atomjack/vcfpht/model/PlexClient.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="76" column="3" selection-start="1615" selection-end="1615" vertical-scroll-proportion="0.0" vertical-offset="144" max-vertical-offset="900">
-          <folding>
-            <element signature="e#1512#1513#0" expanded="true" />
-            <element signature="e#1536#1537#0" expanded="true" />
-            <element signature="e#1582#1583#0" expanded="true" />
-            <element signature="e#1614#1615#0" expanded="true" />
-          </folding>
+        <state line="76" column="3" selection-start="1615" selection-end="1615" vertical-scroll-proportion="0.84659094" vertical-offset="395" max-vertical-offset="1275">
+          <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/com/atomjack/vcfpht/model/PlexServer.java">
       <provider selected="true" editor-type-id="text-editor">
         <state line="19" column="25" selection-start="386" selection-end="438" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="1575">
-          <folding>
-            <element signature="imports" expanded="false" />
-            <element signature="e#491#499#0" expanded="false" />
-            <element signature="e#551#559#0" expanded="false" />
-            <element signature="e#614#622#0" expanded="false" />
-            <element signature="e#739#740#0" expanded="false" />
-            <element signature="e#762#763#0" expanded="false" />
-            <element signature="e#877#878#0" expanded="false" />
-            <element signature="e#900#901#0" expanded="false" />
-            <element signature="e#1040#1041#0" expanded="false" />
-            <element signature="e#1073#1074#0" expanded="false" />
-            <element signature="e#1114#1115#0" expanded="false" />
-            <element signature="e#1145#1146#0" expanded="false" />
-            <element signature="e#1208#1209#0" expanded="false" />
-            <element signature="e#1257#1258#0" expanded="false" />
-            <element signature="e#1300#1301#0" expanded="false" />
-            <element signature="e#1327#1328#0" expanded="false" />
-            <element signature="e#1388#1389#0" expanded="false" />
-            <element signature="e#1429#1430#0" expanded="false" />
-            <element signature="e#1469#1470#0" expanded="false" />
-            <element signature="e#1493#1494#0" expanded="false" />
-            <element signature="e#1548#1549#0" expanded="false" />
-            <element signature="e#1583#1584#0" expanded="false" />
-            <element signature="e#2372#2373#0" expanded="false" />
-            <element signature="e#2399#2400#0" expanded="false" />
-            <element signature="e#2460#2461#0" expanded="false" />
-            <element signature="e#2501#2502#0" expanded="false" />
-          </folding>
+          <folding />
         </state>
       </provider>
     </entry>
     <entry file="jar://$APPLICATION_HOME_DIR$/sdk/platforms/android-17/android.jar!/java/net/DatagramSocket.class">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="76" column="0" selection-start="3312" selection-end="3312" vertical-scroll-proportion="0.86238533" vertical-offset="561" max-vertical-offset="1215">
-          <folding />
-        </state>
+        <state line="76" column="0" selection-start="3312" selection-end="3312" vertical-scroll-proportion="0.86238533" vertical-offset="561" max-vertical-offset="1215" />
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/com/atomjack/vcfpht/GDMService.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="32" column="109" selection-start="1168" selection-end="1173" vertical-scroll-proportion="-10.115385" vertical-offset="37" max-vertical-offset="1335">
+        <state line="32" column="109" selection-start="1168" selection-end="1173" vertical-scroll-proportion="0.0" vertical-offset="480" max-vertical-offset="1515">
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/us/nineworlds/serenity/GDMReceiver.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="38" column="60" selection-start="1255" selection-end="1255" vertical-scroll-proportion="-10.923077" vertical-offset="106" max-vertical-offset="975">
+        <state line="38" column="60" selection-start="1255" selection-end="1255" vertical-scroll-proportion="0.33522728" vertical-offset="275" max-vertical-offset="1155">
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/com/atomjack/vcfpht/ClientListAdapter.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="51" column="9" selection-start="939" selection-end="1312" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="825">
+        <state line="51" column="9" selection-start="939" selection-end="1312" vertical-scroll-proportion="0.6931818" vertical-offset="155" max-vertical-offset="1035">
           <folding />
         </state>
       </provider>
@@ -1032,57 +836,24 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/README.md">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="36" column="76" selection-start="1839" selection-end="1839" vertical-scroll-proportion="0.8249027" vertical-offset="116" max-vertical-offset="630">
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/com/atomjack/vcfpht/MainActivity.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="61" column="35" selection-start="2049" selection-end="2049" vertical-scroll-proportion="5.7954545" vertical-offset="1170" max-vertical-offset="7830">
-          <folding>
-            <element signature="imports" expanded="true" />
-            <element signature="e#3391#3408#0" expanded="true" />
-            <element signature="e#3424#3443#0" expanded="true" />
-            <element signature="e#3642#3701#0" expanded="true" />
-            <element signature="e#3749#3792#0" expanded="true" />
-            <element signature="e#3824#3872#0" expanded="true" />
-            <element signature="e#3920#3962#0" expanded="true" />
-            <element signature="e#3996#4039#0" expanded="true" />
-            <element signature="e#4090#4130#0" expanded="true" />
-            <element signature="e#4133#4173#0" expanded="true" />
-            <element signature="e#5393#5410#0" expanded="true" />
-            <element signature="e#5663#5683#0" expanded="true" />
-            <element signature="e#5761#5781#0" expanded="true" />
-            <element signature="e#5861#5883#0" expanded="true" />
-            <element signature="e#6110#6133#0" expanded="true" />
-            <element signature="e#6402#6425#0" expanded="true" />
-            <element signature="e#6918#6937#0" expanded="true" />
-            <element signature="e#8394#8405#0" expanded="true" />
-            <element signature="e#10599#10610#0" expanded="true" />
-            <element signature="e#15747#15758#0" expanded="true" />
-          </folding>
+        <state line="61" column="35" selection-start="2049" selection-end="2049" vertical-scroll-proportion="0.0" vertical-offset="915" max-vertical-offset="8505">
+          <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/com/atomjack/vcfpht/model/PlexDirectory.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="17" column="28" selection-start="417" selection-end="417" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="510">
+        <state line="17" column="28" selection-start="417" selection-end="417" vertical-scroll-proportion="0.28977272" vertical-offset="0" max-vertical-offset="880">
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/com/atomjack/vcfpht/model/PlexVideo.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="106" column="20" selection-start="2362" selection-end="2362" vertical-scroll-proportion="-16.153847" vertical-offset="615" max-vertical-offset="2100">
-          <folding>
-            <element signature="e#2374#2375#0" expanded="true" />
-            <element signature="e#2394#2395#0" expanded="true" />
-            <element signature="e#3773#3774#0" expanded="true" />
-            <element signature="e#3796#3797#0" expanded="true" />
-          </folding>
+        <state line="106" column="20" selection-start="2362" selection-end="2362" vertical-scroll-proportion="0.0" vertical-offset="1590" max-vertical-offset="3015">
+          <folding />
         </state>
       </provider>
     </entry>
@@ -1106,6 +877,16 @@
             <element signature="e#41982#42031#0" expanded="true" />
           </folding>
         </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/README.md">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="27" column="0" selection-start="1575" selection-end="1575" vertical-scroll-proportion="0.48329356" vertical-offset="0" max-vertical-offset="838">
+          <folding />
+        </state>
+      </provider>
+      <provider editor-type-id="MarkdownPreviewEditor">
+        <state />
       </provider>
     </entry>
   </component>

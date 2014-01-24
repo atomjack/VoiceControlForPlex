@@ -7,7 +7,7 @@ You must have a rooted phone, the Xposed Framework (http://forum.xda-developers.
 
 ## Setup
 
-Running the application for the first time will immediately start scanning for Plex Media Servers running on your local WiFi network. Once you choose one, it will show the available Plex clients that media will play on. Then simply open Google Now and tell Plex to start playing some media. See the section below on Usage for examples. After selection of server and client, you can simply tap the line for the server or client to change it. 
+Running the application will allow you to set a default Plex Media Server to play media from. If you do not set this, it will scan all available servers. If you only have one server, it is recommended to set it here as scanning for servers each time playback is triggered will cause a slight delay. You can also choose which client to stream to. However, you can always specify the client to stream to by appending "on &lt;client name&gt;" to the phrase you speak into Google Now (for example, if you have two clients, named "plex" and "laptop", you could say "Watch Aliens on plex", or "Watch The Dark Knight on laptop").
 
 ## Usage
 
@@ -34,4 +34,4 @@ Below are examples of what to say to Google Now to trigger playback. Sentence fr
 
 
 ### For Music:
-"**Listen to** *Black Sands* **by** *Bonobo*" - Listen to <song> by <artist>
+"**Listen to** *Black Sands* **by** *Bonobo*" - Listen to &lt;song&gt; by &lt;artist&gt;
