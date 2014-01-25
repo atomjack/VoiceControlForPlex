@@ -25,12 +25,12 @@ public class VoiceControlForPlexApplication
     
     public static void addPlexServer(final PlexServer server) {
     	Log.v(MainActivity.TAG, "ADDING PLEX SERVER: " + server);
-    	if(server.getName().equals("") || server.getIPAddress().equals("")) {
+    	if(server.getName().equals("") || server.getAddress().equals("")) {
     		return;
     	}
     	if (!plexmediaServers.containsKey(server.getName())) {
     		try {
-    		    String url = "http://" + server.getIPAddress() + ":" + server.getPort() + "/library/sections/";
+    		    String url = "http://" + server.getAddress() + ":" + server.getPort() + "/library/sections/";
     		    AsyncHttpClient httpClient = new AsyncHttpClient();
     		    httpClient.get(url, new AsyncHttpResponseHandler() {
     		        @Override
@@ -60,7 +60,7 @@ public class VoiceControlForPlexApplication
     		            	Log.v(MainActivity.TAG, "Directories: " + mc.directories.size());
     		            else
     		            	Log.v(MainActivity.TAG, "No directories found!");
-    		            if(!server.getName().equals("") && !server.getIPAddress().equals("")) {
+    		            if(!server.getName().equals("") && !server.getAddress().equals("")) {
     		            	plexmediaServers.putIfAbsent(server.getName(), server);
     		            }
     		        }

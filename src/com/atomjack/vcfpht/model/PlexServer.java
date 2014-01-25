@@ -7,46 +7,14 @@ import org.simpleframework.xml.Attribute;
 import org.simpleframework.xml.Root;
 
 @Root(strict=false)
-public class PlexServer {
-	@Attribute
-	private String name;
-	@Attribute
-	private String port;
-	@Attribute(name="address")
-	private String ipaddress;
+public class PlexServer extends PlexDevice {
 	@Attribute
 	private String machineIdentifier;
-  @Attribute(required=false)
-  private String product;
 
 	private List<String> movieSections = new ArrayList<String>();
 	private List<String> tvSections = new ArrayList<String>();
 	private List<String> musicSections = new ArrayList<String>();
 	
-	public String getName() {
-		return this.name == null ? "" : this.name;
-	}
-	
-	public void setName(String name) {
-		this.name = name;
-	}
-	
-	public String getPort() {
-		return this.port == null ? "" : this.port;
-	}
-	
-	public void setPort(String port) {
-		this.port = port;
-	}
-	
-	public String getIPAddress() {
-		return this.ipaddress == null ? "" : this.ipaddress;
-	}
-	
-	public void setIPAddress(String ipaddress) {
-		this.ipaddress = ipaddress;
-	}
-
 	public String getMachineIdentifier() {
 		return machineIdentifier;
 	}
@@ -90,18 +58,18 @@ public class PlexServer {
 	}
 	
 	public String getClientsURL() {
-		return "http://" + this.getIPAddress() + ":" + this.getPort() + "/clients";
+		return "http://" + super.getAddress() + ":" + super.getPort() + "/clients";
 	}
 	
 	public String getBaseURL() {
-		return "http://" + this.getIPAddress() + ":" + this.getPort() + "/";
+		return "http://" + super.getAddress() + ":" + super.getPort() + "/";
 	}
 	
 	@Override
 	public String toString() {
 		String output = "";
-		output += "Name: " + this.getName() + "\n";
-		output += "IP Address: " + this.getIPAddress() + "\n";
+		output += "Name: " + super.getName() + "\n";
+		output += "IP Address: " + super.getAddress() + "\n";
 		return output;
 	}
 
@@ -113,13 +81,4 @@ public class PlexServer {
 		this.musicSections = musicSections;
 	}
 
-  public String getProduct()
-  {
-    return product;
-  }
-
-  public void setProduct(String product)
-  {
-    this.product = product;
-  }
 }

@@ -324,7 +324,8 @@ public class MainActivity extends Activity {
 		final ListView serverListView = (ListView)serverSelectDialog.findViewById(R.id.serverListView);
 		ConcurrentHashMap<String, PlexServer> servers = new ConcurrentHashMap<String, PlexServer>(VoiceControlForPlexApplication.getPlexMediaServers());
 		servers.put("Scan All", new PlexServer());
-		final ServerListAdapter adapter = new ServerListAdapter(this, servers);
+		final PlexListAdapter adapter = new PlexListAdapter(this, PlexListAdapter.TYPE_SERVER);
+    adapter.setServers(servers);
 		serverListView.setAdapter(adapter);
 		serverListView.setOnItemClickListener(new ListView.OnItemClickListener() {
 
@@ -342,7 +343,7 @@ public class MainActivity extends Activity {
 	
 	private void setServer(PlexServer server) {
 		Log.v(TAG, "Setting Server " + server.getName());
-		if(server.getIPAddress().equals("")) {
+		if(server.getAddress().equals("")) {
 			this.server = null;
 			saveSettings();
 			initMainWithServer();
@@ -475,7 +476,8 @@ public class MainActivity extends Activity {
 		serverSelectDialog.show();
 		
 		final ListView serverListView = (ListView)serverSelectDialog.findViewById(R.id.serverListView);
-		final ClientListAdapter adapter = new ClientListAdapter(this, clients);
+		final PlexListAdapter adapter = new PlexListAdapter(this, PlexListAdapter.TYPE_CLIENT);
+    adapter.setClients(clients);
 		serverListView.setAdapter(adapter);
 		serverListView.setOnItemClickListener(new ListView.OnItemClickListener() {
 

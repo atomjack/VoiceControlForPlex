@@ -2,27 +2,10 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:layout_marginLeft="10dp"
+    android:padding="10dp"
     android:descendantFocusability="blocksDescendants" 
     android:orientation="vertical" >
-
-    <!-- 
-    <TextView
-        android:id="@+id/mainSettingItem1"
-        android:layout_width="50%"
-        android:layout_height="25dp"
-        android:text="item1"
-        android:textColor="@color/white"
-        android:textSize="20sp" />
-
-    <TextView
-        android:id="@+id/mainSettingItem2"
-        android:layout_width="50%"
-        android:layout_height="25dp"
-        android:layout_toRightOf="@+id/mainSettingItem1"
-        android:textColor="@color/white"
-        android:text="item2"
-        android:textSize="20sp" />
- -->
 
     <TextView
         android:id="@+id/mainSettingItem1"
@@ -30,7 +13,6 @@
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
         android:layout_alignParentTop="true"
-        android:layout_marginBottom="5dp"
         android:layout_toLeftOf="@+id/settingRowHelpButton"
         android:text=""
         android:textSize="20sp" />
@@ -42,7 +24,7 @@
         android:layout_alignParentLeft="true"
         android:layout_alignRight="@+id/mainSettingItem1"
         android:layout_below="@+id/mainSettingItem1"
-        android:textSize="20sp" />
+        android:textSize="15sp" />
 
     <ImageButton
         android:id="@+id/settingRowHelpButton"

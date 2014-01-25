@@ -44,7 +44,7 @@ public class GDMReceiver extends BroadcastReceiver {
 
         server.setPort(serverPort);
         server.setName(serverName);
-        server.setIPAddress(ipAddress);
+        server.setAddress(ipAddress);
         server.setMachineIdentifier(machineIdentifier);
 
         VoiceControlForPlexApplication.addPlexServer(server);

@@ -113,7 +113,7 @@ public class PlayMediaActivity extends Activity {
 		if(searchDialog == null) {
 			searchDialog = new Dialog(this);
 		}
-		searchDialog.setCancelable(false);
+		searchDialog.setCancelable(true);
 		searchDialog.setContentView(R.layout.search_popup);
 		searchDialog.setTitle("Searching");
 		
@@ -179,10 +179,10 @@ public class PlayMediaActivity extends Activity {
 			serversScanned = 0;
 			clients = new ArrayList<PlexClient>();
 			for(PlexServer server : plexmediaServers.values()) {
-				Log.v(TAG, "ip: " + server.getIPAddress());
+				Log.v(TAG, "ip: " + server.getAddress());
 				Log.v(TAG, "port: " + server.getPort());
 				try {
-				    String url = "http://" + server.getIPAddress() + ":" + server.getPort() + "/clients";
+				    String url = "http://" + server.getAddress() + ":" + server.getPort() + "/clients";
 				    AsyncHttpClient httpClient = new AsyncHttpClient();
 				    httpClient.get(url, new AsyncHttpResponseHandler() {
 				        @Override
@@ -424,7 +424,7 @@ public class PlayMediaActivity extends Activity {
 			for(int i=0;i<server.getMusicSections().size();i++) {
 				String section = server.getMusicSections().get(i);
 				try {
-				    String url = "http://" + server.getIPAddress() + ":" + server.getPort() + "/library/sections/" + section + "/search?type=10&query=" + track;
+				    String url = "http://" + server.getAddress() + ":" + server.getPort() + "/library/sections/" + section + "/search?type=10&query=" + track;
 				    Log.v(TAG, "URL: " + url);
 				    AsyncHttpClient httpClient = new AsyncHttpClient();
 				    httpClient.get(url, new AsyncHttpResponseHandler() {
@@ -489,7 +489,7 @@ public class PlayMediaActivity extends Activity {
 			for(int i=0;i<server.getTvSections().size();i++) {
 				String section = server.getTvSections().get(i);
 				try {
-				    String url = "http://" + server.getIPAddress() + ":" + server.getPort() + "/library/sections/" + section + "/search?type=4&query=" + episodeSpecified;
+				    String url = "http://" + server.getAddress() + ":" + server.getPort() + "/library/sections/" + section + "/search?type=4&query=" + episodeSpecified;
 				    AsyncHttpClient httpClient = new AsyncHttpClient();
 				    httpClient.get(url, new AsyncHttpResponseHandler() {
 				        @Override
@@ -563,7 +563,7 @@ public class PlayMediaActivity extends Activity {
 			for(int i=0;i<server.getTvSections().size();i++) {
 				String section = server.getTvSections().get(i);
 				try {
-				    String url = "http://" + server.getIPAddress() + ":" + server.getPort() + "/library/sections/" + section + "/search?type=2&query=" + queryTerm;
+				    String url = "http://" + server.getAddress() + ":" + server.getPort() + "/library/sections/" + section + "/search?type=2&query=" + queryTerm;
 				    AsyncHttpClient httpClient = new AsyncHttpClient();
 				    httpClient.get(url, new AsyncHttpResponseHandler() {
 				        @Override
@@ -612,7 +612,7 @@ public class PlayMediaActivity extends Activity {
 				final PlexDirectory show = shows.get(0);
 				Log.v(TAG, "Show key: " + show.getKey());
 				try {
-				    String url = "http://" + server.getIPAddress() + ":" + server.getPort() + "" + show.getKey();
+				    String url = "http://" + server.getAddress() + ":" + server.getPort() + "" + show.getKey();
 				    AsyncHttpClient httpClient = new AsyncHttpClient();
 				    httpClient.get(url, new AsyncHttpResponseHandler() {
 				        @Override
@@ -644,7 +644,7 @@ public class PlayMediaActivity extends Activity {
 				    			return;
 				            } else if(foundSeason != null) {
 				            	try {
-				    			    String url = "http://" + server.getIPAddress() + ":" + server.getPort() + "" + foundSeason.getKey();
+				    			    String url = "http://" + server.getAddress() + ":" + server.getPort() + "" + foundSeason.getKey();
 				    			    AsyncHttpClient httpClient = new AsyncHttpClient();
 				    			    httpClient.get(url, new AsyncHttpResponseHandler() {
 				    			        @Override
@@ -715,7 +715,7 @@ public class PlayMediaActivity extends Activity {
       for(int i=0;i<server.getTvSections().size();i++) {
         String section = server.getTvSections().get(i);
         try {
-          String url = "http://" + server.getIPAddress() + ":" + server.getPort() + "/library/sections/" + section + "/search?type=2&query=" + queryTerm;
+          String url = "http://" + server.getAddress() + ":" + server.getPort() + "/library/sections/" + section + "/search?type=2&query=" + queryTerm;
           AsyncHttpClient httpClient = new AsyncHttpClient();
           httpClient.get(url, new AsyncHttpResponseHandler() {
             @Override
@@ -755,7 +755,7 @@ public class PlayMediaActivity extends Activity {
     // For now, just grab the latest show by season/episode
     try {
       final PlexDirectory show = shows.get(0);
-      String url = "http://" + show.server.getIPAddress() + ":" + show.server.getPort() + "/library/metadata/" + show.ratingKey + "/allLeaves";
+      String url = "http://" + show.server.getAddress() + ":" + show.server.getPort() + "/library/metadata/" + show.ratingKey + "/allLeaves";
       AsyncHttpClient httpClient = new AsyncHttpClient();
       httpClient.get(url, new AsyncHttpResponseHandler() {
         @Override
@@ -803,7 +803,7 @@ public class PlayMediaActivity extends Activity {
 			for(int i=0;i<server.getTvSections().size();i++) {
 				String section = server.getTvSections().get(i);
 				try {
-				    String url = "http://" + server.getIPAddress() + ":" + server.getPort() + "/library/sections/" + section + "/onDeck";
+				    String url = "http://" + server.getAddress() + ":" + server.getPort() + "/library/sections/" + section + "/onDeck";
 				    AsyncHttpClient httpClient = new AsyncHttpClient();
 				    httpClient.get(url, new AsyncHttpResponseHandler() {
 				        @Override
@@ -870,7 +870,7 @@ public class PlayMediaActivity extends Activity {
 			for(int i=0;i<server.getMovieSections().size();i++) {
 				String section = server.getMovieSections().get(i);
 				try {
-				    String url = "http://" + server.getIPAddress() + ":" + server.getPort() + "/library/sections/" + section + "/search?type=1&query=" + queryTerm;
+				    String url = "http://" + server.getAddress() + ":" + server.getPort() + "/library/sections/" + section + "/search?type=1&query=" + queryTerm;
 				    AsyncHttpClient httpClient = new AsyncHttpClient();
 				    httpClient.get(url, new AsyncHttpResponseHandler() {
 				        @Override
@@ -992,7 +992,7 @@ public class PlayMediaActivity extends Activity {
 	            		if(!track.getThumb().equals("")) {
 //	            			final RelativeLayout layout = (RelativeLayout)findViewById(R.id.background);
 		            		try {
-		            			final String url = "http://" + track.getServer().getIPAddress() + ":" + track.getServer().getPort() + track.getThumb();
+		            			final String url = "http://" + track.getServer().getAddress() + ":" + track.getServer().getPort() + track.getThumb();
 		            			Log.v(TAG, "url: " + url);
 		            		    AsyncHttpClient httpClient = new AsyncHttpClient();
 		            		    httpClient.get(url, new BinaryHttpResponseHandler() {
@@ -1093,7 +1093,7 @@ public class PlayMediaActivity extends Activity {
 		            	if(!video.getThumb().equals("")) {
 		            		final ScrollView layout = (ScrollView)findViewById(R.id.background);
 		            		try {
-		            			final String url = "http://" + video.getServer().getIPAddress() + ":" + video.getServer().getPort() + video.getThumb();
+		            			final String url = "http://" + video.getServer().getAddress() + ":" + video.getServer().getPort() + video.getThumb();
 		            			Log.v(TAG, "url: " + url);
 		            		    AsyncHttpClient httpClient = new AsyncHttpClient();
 		            		    httpClient.get(url, new BinaryHttpResponseHandler() {
