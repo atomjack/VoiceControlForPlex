@@ -6,7 +6,6 @@ import org.simpleframework.xml.Serializer;
 import org.simpleframework.xml.core.Persister;
 
 import android.content.res.Resources.NotFoundException;
-import android.util.Log;
 
 import com.atomjack.vcfpht.model.MediaContainer;
 import com.atomjack.vcfpht.model.PlexServer;
@@ -24,7 +23,7 @@ public class VoiceControlForPlexApplication
     private static Serializer serial = new Persister();
     
     public static void addPlexServer(final PlexServer server) {
-    	Log.v(MainActivity.TAG, "ADDING PLEX SERVER: " + server);
+    	Logger.d("ADDING PLEX SERVER: %s", server.getName());
     	if(server.getName().equals("") || server.getAddress().equals("")) {
     		return;
     	}
@@ -35,7 +34,7 @@ public class VoiceControlForPlexApplication
     		    httpClient.get(url, new AsyncHttpResponseHandler() {
     		        @Override
     		        public void onSuccess(String response) {
-    		            Log.v(MainActivity.TAG, "HTTP REQUEST: " + response);
+//    		            Logger.d("HTTP REQUEST: %s", response);
     		            MediaContainer mc = new MediaContainer();
     		            try {
     		            	mc = serial.read(MediaContainer.class, response);
@@ -55,11 +54,11 @@ public class VoiceControlForPlexApplication
     		            		server.addMusicSection(mc.directories.get(i).getKey());
     		            	}
     		            }
-    		            Log.v(MainActivity.TAG, "title1: " + mc.title1);
+    		            Logger.d("title1: %s", mc.title1);
     		            if(mc.directories != null)
-    		            	Log.v(MainActivity.TAG, "Directories: " + mc.directories.size());
+    		            	Logger.d("Directories: %d", mc.directories.size());
     		            else
-    		            	Log.v(MainActivity.TAG, "No directories found!");
+    		            	Logger.d("No directories found!");
     		            if(!server.getName().equals("") && !server.getAddress().equals("")) {
     		            	plexmediaServers.putIfAbsent(server.getName(), server);
     		            }
@@ -67,12 +66,12 @@ public class VoiceControlForPlexApplication
     		    });
 
     		} catch (Exception e) {
-    			Log.e(MainActivity.TAG, "Exception getting clients: " + e.toString());
+    			Logger.e("Exception getting clients: %s", e.toString());
     		}
-    		
-			Log.d(MainActivity.TAG, "Adding " + server.getName());
+
+			Logger.d("Adding %s", server.getName());
 		} else {
-			Log.d(MainActivity.TAG, server.getName() + " already added.");
+			Logger.d("%s already added.", server.getName());
 		}
     }
     

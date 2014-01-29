@@ -6,9 +6,9 @@ import java.util.regex.Pattern;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.util.Log;
 
 import com.atomjack.vcfpht.GDMService;
+import com.atomjack.vcfpht.Logger;
 import com.atomjack.vcfpht.VoiceControlForPlexApplication;
 import com.atomjack.vcfpht.MainActivity;
 import com.atomjack.vcfpht.PlayMediaActivity;
@@ -22,7 +22,7 @@ public class GDMReceiver extends BroadcastReceiver {
 		if (intent.getAction().equals(GDMService.MSG_RECEIVED)) {
 			String message = intent.getStringExtra("data").trim();
 			String ipAddress = intent.getStringExtra("ipaddress").substring(1);
-			Log.v(MainActivity.TAG, "message: " + message);
+			Logger.d("message: %s", message);
 			
 			PlexServer server = new PlexServer();
 			
@@ -50,9 +50,9 @@ public class GDMReceiver extends BroadcastReceiver {
         VoiceControlForPlexApplication.addPlexServer(server);
 //      }
 		} else if (intent.getAction().equals(GDMService.SOCKET_CLOSED)) {
-			Log.i("GDMService", "Finished Searching");
+			Logger.i("Finished Searching");
 			Intent i;
-			Log.v(MainActivity.TAG, "ORIGIN: " + intent.getStringExtra("ORIGIN"));
+			Logger.d("ORIGIN: %s", intent.getStringExtra("ORIGIN"));
 			if(intent.getStringExtra("ORIGIN").equals("PlayMediaActivity")) {
 				i = new Intent(context, PlayMediaActivity.class);
 			} else {

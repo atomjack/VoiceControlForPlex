@@ -21,7 +21,6 @@ import android.content.res.Resources.NotFoundException;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -133,7 +132,7 @@ public class MainActivity extends Activity {
 			public void onItemClick(AdapterView<?> adapter, View view, int position,
 					long arg3) {
 				SettingHolder holder = (SettingHolder)view.getTag();
-				Log.v(TAG, "Clicked " + holder.tag);
+				Logger.d("Clicked %s", holder.tag);
 				if(holder.tag.equals("server")) {
 					searchForPlexServers();
 				} else if(holder.tag.equals("client")) {
@@ -145,7 +144,7 @@ public class MainActivity extends Activity {
 		});
 		
 		CheckBox resumeCheckbox = (CheckBox)findViewById(R.id.resumeCheckbox);
-		Log.v(TAG, "checkbox: " + resumeCheckbox);
+    Logger.d("Checkbox: %s", resumeCheckbox);
 		resumeCheckbox.setChecked(mPrefs.getBoolean("resume", false));
 	}
 	
@@ -221,15 +220,15 @@ public class MainActivity extends Activity {
 	
 	@Override
 	public void onNewIntent(Intent intent) {
-		Log.v(TAG, "ON NEW INTENT IN MAINACTIVITY");
+		Logger.d("ON NEW INTENT IN MAINACTIVITY");
 		String from = intent.getStringExtra("FROM");
-		Log.v(TAG, "From: " + from);
+		Logger.d("From: %s", from);
 		if(from == null) {
 		} else if(from.equals("GDMReceiver")) {
-			Log.v(TAG, "Origin: " + intent.getStringExtra("ORIGIN"));
+			Logger.d("Origin: " + intent.getStringExtra("ORIGIN"));
 			String origin = intent.getStringExtra("ORIGIN") == null ? "" : intent.getStringExtra("ORIGIN");
 			if(origin.equals("MainActivity")) {
-				Log.v(TAG, "Got " + VoiceControlForPlexApplication.getPlexMediaServers().size() + " servers");
+				Logger.d("Got " + VoiceControlForPlexApplication.getPlexMediaServers().size() + " servers");
 				if(VoiceControlForPlexApplication.getPlexMediaServers().size() > 0) {
 					showPlexServers();
 				} else {
@@ -254,17 +253,16 @@ public class MainActivity extends Activity {
 	
 	private void scanServersForClients() {
 		ConcurrentHashMap<String, PlexServer> servers = VoiceControlForPlexApplication.getPlexMediaServers();
-		Log.v(TAG, "ScanServersForClients, number of servers = " + servers.size());
+		Logger.d("ScanServersForClients, number of servers = " + servers.size());
 		serversScanned = 0;
 		for(PlexServer thisServer : servers.values()) {
-			Log.v(TAG, "ScanServersForClients server: " + thisServer);
+			Logger.d("ScanServersForClients server: %s", thisServer.getName());
 			try {
 			    AsyncHttpClient httpClient = new AsyncHttpClient();
 			    httpClient.get(thisServer.getClientsURL(), new AsyncHttpResponseHandler() {
 			        @Override
 			        public void onSuccess(String response) {
 			        	serversScanned++;
-//			            Log.v(TAG, "HTTP REQUEST: " + response);
 			    		MediaContainer clientMC = new MediaContainer();
 			    		
 			    		try {
@@ -278,7 +276,7 @@ public class MainActivity extends Activity {
 			    		List<PlexClient> clients = new ArrayList<PlexClient>();
 			    		for(int i=0;i<clientMC.clients.size();i++) {
 			    			float version = clientMC.clients.get(i).getNumericVersion();
-			    			Log.v(MainActivity.TAG, "Version: " + version);
+			    			Logger.d("Version: %f", version);
 			    			if(version >= 1.07 || !clientMC.clients.get(i).getProduct().equals("Plex Home Theater")) {
 			    				clients.add(clientMC.clients.get(i));
 			    			}
@@ -297,7 +295,7 @@ public class MainActivity extends Activity {
 			    			AlertDialog d = builder.create();
 			    			d.show();
 			    		} else {
-				            Log.v(TAG, "Clients: " + clients.size());
+				            Logger.d("Clients: " + clients.size());
 				            if(serversScanned == VoiceControlForPlexApplication.getPlexMediaServers().size()) {
 				            	showPlexClients(clients);
 				            }
@@ -306,13 +304,13 @@ public class MainActivity extends Activity {
 			    });
 
 			} catch (Exception e) {
-				Log.e(TAG, "Exception getting clients: " + e.toString());
+				Logger.e("Exception getting clients: " + e.toString());
 			}
 		}
 	}
 
 	private void showPlexServers() {
-		Log.v(TAG, "servers: " + VoiceControlForPlexApplication.getPlexMediaServers().size());
+		Logger.d("servers: " + VoiceControlForPlexApplication.getPlexMediaServers().size());
 		searchDialog.dismiss();
 		if(serverSelectDialog == null) {
 			serverSelectDialog = new Dialog(this);
@@ -332,7 +330,7 @@ public class MainActivity extends Activity {
 			@Override
 			public void onItemClick(AdapterView<?> parentAdapter, View view, int position,
 					long id) {
-				Log.v(TAG, "Clicked position " + position);
+				Logger.d("Clicked position %d", position);
 				PlexServer s = (PlexServer)parentAdapter.getItemAtPosition(position);
 				serverSelectDialog.dismiss();
 				setServer(s);
@@ -342,7 +340,7 @@ public class MainActivity extends Activity {
 	}
 	
 	private void setServer(PlexServer server) {
-		Log.v(TAG, "Setting Server " + server.getName());
+		Logger.d("Setting Server %s", server.getName());
 		if(server.getAddress().equals("")) {
 			this.server = null;
 			saveSettings();
@@ -357,7 +355,7 @@ public class MainActivity extends Activity {
 			    httpClient.get(server.getBaseURL(), new AsyncHttpResponseHandler() {
 			        @Override
 			        public void onSuccess(String response) {
-			            Log.v(TAG, "HTTP REQUEST: " + response);
+			            Logger.d("HTTP REQUEST: %s", response);
 			            MediaContainer mc = new MediaContainer();
 			            try {
 			            	mc = serial.read(MediaContainer.class, response);
@@ -366,13 +364,13 @@ public class MainActivity extends Activity {
 			            } catch (Exception e) {
 			                e.printStackTrace();
 			            }
-			            Log.v(TAG, "Machine id: " + mc.getMachineIdentifier());
+			            Logger.d("Machine id: " + mc.getMachineIdentifier());
 			            getClients(mc);
 			        }
 			    });
 	
 			} catch (Exception e) {
-				Log.e(TAG, "Exception getting clients: " + e.toString());
+				Logger.e("Exception getting clients: " + e.toString());
 			}
 		} else {
 			this.server = server;
@@ -422,7 +420,7 @@ public class MainActivity extends Activity {
 		    httpClient.get(server.getClientsURL(), new AsyncHttpResponseHandler() {
 		        @Override
 		        public void onSuccess(String response) {
-//		            Log.v(TAG, "HTTP REQUEST: " + response);
+//		            Logger.d("HTTP REQUEST: %s", response);
 		    		MediaContainer clientMC = new MediaContainer();
 		    		
 		    		try {
@@ -436,7 +434,7 @@ public class MainActivity extends Activity {
 		    		List<PlexClient> clients = new ArrayList<PlexClient>();
 		    		for(int i=0;i<clientMC.clients.size();i++) {
 		    			float version = clientMC.clients.get(i).getNumericVersion();
-		    			Log.v(MainActivity.TAG, "Version: " + version);
+		    			Logger.d("Version: %f", version);
 		    			if(version >= 1.07) {
 		    				clients.add(clientMC.clients.get(i));
 		    			}
@@ -455,7 +453,7 @@ public class MainActivity extends Activity {
 		    			AlertDialog d = builder.create();
 		    			d.show();
 		    		} else {
-			            Log.v(TAG, "Clients: " + clients.size());
+			            Logger.d("Clients: " + clients.size());
 			            
 			            showPlexClients(clients);
 		    		}
@@ -463,7 +461,7 @@ public class MainActivity extends Activity {
 		    });
 
 		} catch (Exception e) {
-			Log.e(TAG, "Exception getting clients: " + e.toString());
+			Logger.e("Exception getting clients: " + e.toString());
 		}
 	}
 
@@ -494,7 +492,7 @@ public class MainActivity extends Activity {
 
 	private void setClient(PlexClient client) {
 		this.client = client;
-		Log.v(TAG, "Selected client: " + client.getName());
+		Logger.d("Selected client: " + client.getName());
 		saveSettings();
 		initMainWithServer();
 	}
@@ -509,11 +507,11 @@ public class MainActivity extends Activity {
 	
 	public void onReceive(Context context, Intent intent) {
 		String message = "Broadcast intent detected " + intent.getAction();
-		Log.v(TAG, message);
+		Logger.d(message);
 	}
 	
 	public void onFinishedSearch() {
-		Log.v(TAG, "done with search");
+		Logger.d("done with search");
 	}
 
 	public Activity getCurrentActivity(){

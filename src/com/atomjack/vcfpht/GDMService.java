@@ -12,7 +12,6 @@ import android.content.Intent;
 import android.net.DhcpInfo;
 import android.net.wifi.WifiManager;
 import android.support.v4.content.LocalBroadcastManager;
-import android.util.Log;
 
 public class GDMService extends IntentService {
     public static final String MSG_RECEIVED = ".GDMService.MESSAGE_RECEIVED";
@@ -32,7 +31,7 @@ public class GDMService extends IntentService {
 			String data = "M-SEARCH * HTTP/1.0";
 			DatagramPacket packet = new DatagramPacket(data.getBytes(), data.length(), getBroadcastAddress(), 32414);
 			socket.send(packet);
-			Log.i("GDMService", "Search Packet Broadcasted");
+			Logger.i("Search Packet Broadcasted");
 			
 			byte[] buf = new byte[256];
 			packet = new DatagramPacket(buf, buf.length);
@@ -46,7 +45,7 @@ public class GDMService extends IntentService {
 					String packetData = new String(packet.getData());
 					if (packetData.contains("HTTP/1.0 200 OK"))
 					{
-						Log.i("GDMService", "PMS Packet Received");
+						Logger.i("PMS Packet Received");
 						//Broadcast Received Packet
 						Intent packetBroadcast = new Intent(GDMService.MSG_RECEIVED);
 						packetBroadcast.putExtra("data", packetData);
@@ -57,7 +56,7 @@ public class GDMService extends IntentService {
 				}
 				catch (SocketTimeoutException e)
 				{
-					Log.w("GDMService", "Socket Timeout");
+					Logger.w("Socket Timeout");
 					socket.close();
 					listening = false;
 					Intent socketBroadcast = new Intent(GDMService.SOCKET_CLOSED);
@@ -72,7 +71,7 @@ public class GDMService extends IntentService {
 		}
 		catch (IOException e)
 		{
-			Log.e("GDMService", e.toString());
+			Logger.e(e.toString());
       e.printStackTrace();
 		} 
     	

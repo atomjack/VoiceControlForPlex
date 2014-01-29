@@ -3,9 +3,7 @@ package com.atomjack.vcfpht.model;
 import org.simpleframework.xml.Attribute;
 import org.simpleframework.xml.Root;
 
-import android.util.Log;
-
-import com.atomjack.vcfpht.MainActivity;
+import com.atomjack.vcfpht.Logger;
 
 @Root(name="Server", strict=false)
 public class PlexClient extends PlexDevice {
@@ -22,15 +20,18 @@ public class PlexClient extends PlexDevice {
 	public float getNumericVersion() {
 		if(this.version == null)
 			return 0;
-		String[] v = super.version.split("\\.");
-		
-		String foo = super.version.substring(0, super.version.indexOf(".")) + "." + super.version.substring(super.version.indexOf(".")+1).replaceAll("\\.", "");
-		foo = foo.split("-")[0];
-    foo = foo.replaceAll("[^0-9.]", "");
-		Log.v(MainActivity.TAG, "Numeric Version: " + foo);
-		
-		float a = Float.parseFloat(foo);
-		return a;
+    try {
+      String v = version.substring(0, version.indexOf(".")) + "." + version.substring(version.indexOf(".")+1).replaceAll("\\.", "");
+      v = v.split("-")[0];
+      v = v.replaceAll("[^0-9.]", "");
+      Logger.d("Numeric Version: %s", v);
+
+      return Float.parseFloat(v);
+    } catch (Exception ex) {
+      ex.printStackTrace();
+      Logger.d("Exception getting version: %f", version);
+      return 0;
+    }
 	}
 
 

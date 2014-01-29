@@ -22,7 +22,6 @@ public class MainListAdapter extends ArrayAdapter<MainSetting> {
 		this.layoutResourceId = layoutResourceId;
         this.context = context;
         this.data = data;
-//        Log.v(MainActivity.TAG, "context: " + context);
 	}
 
 	@Override

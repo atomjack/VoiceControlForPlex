@@ -11,9 +11,8 @@ import org.simpleframework.xml.ElementList;
 import org.simpleframework.xml.Root;
 
 import android.text.TextUtils;
-import android.util.Log;
 
-import com.atomjack.vcfpht.MainActivity;
+import com.atomjack.vcfpht.Logger;
 
 @Root(strict=false)
 public class PlexVideo {
@@ -121,7 +120,7 @@ public class PlexVideo {
 	}
 
 	public String getThumbnail() {
-		Log.v(MainActivity.TAG, "grandparent thumb: " + grandparentThumb);
+		Logger.d("grandparent thumb: %s", grandparentThumb);
 		return grandparentThumb != null ? grandparentThumb : thumb;
 	}
 
