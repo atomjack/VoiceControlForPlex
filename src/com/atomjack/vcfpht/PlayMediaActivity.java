@@ -46,13 +46,10 @@ import com.loopj.android.http.AsyncHttpResponseHandler;
 import com.loopj.android.http.BinaryHttpResponseHandler;
 
 public class PlayMediaActivity extends Activity {
-	private static final String TAG = MainActivity.TAG;
 	public final static String PREFS = MainActivity.PREFS;
 	private SharedPreferences mPrefs;
-//	private SharedPreferences.Editor mPrefsEditor;
 	private String queryText;
 	private Dialog searchDialog = null;
-//	private Intent mServiceIntent;
 	private ConcurrentHashMap<String, PlexServer> plexmediaServers = new ConcurrentHashMap<String, PlexServer>();
 	private static Serializer serial = new Persister();
 	private int serversScanned = 0;
@@ -69,7 +66,8 @@ public class PlayMediaActivity extends Activity {
 	private List<PlexDirectory> shows = new ArrayList<PlexDirectory>();
 	private Boolean resumePlayback = false;
 	private List<PlexTrack> tracks = new ArrayList<PlexTrack>();
-	
+	private List<PlexDirectory> albums = new ArrayList<PlexDirectory>();
+
 	protected void onCreate(Bundle savedInstanceState) {
 		Logger.d("on create PlayMediaActivity");
 		super.onCreate(savedInstanceState);
@@ -105,9 +103,9 @@ public class PlayMediaActivity extends Activity {
 	}
 	
 	private void startup() {
-        tracks = new ArrayList<PlexTrack>();
-        videos = new ArrayList<PlexVideo>();
-        shows = new ArrayList<PlexDirectory>();
+    tracks = new ArrayList<PlexTrack>();
+    videos = new ArrayList<PlexVideo>();
+    shows = new ArrayList<PlexDirectory>();
 
 		if(searchDialog == null) {
 			searchDialog = new Dialog(this);
@@ -119,7 +117,7 @@ public class PlayMediaActivity extends Activity {
 		searchDialog.show();
 		
 		Gson gson = new Gson();
-		PlexServer defaultServer = (PlexServer)gson.fromJson(mPrefs.getString("Server", ""), PlexServer.class);
+		PlexServer defaultServer = gson.fromJson(mPrefs.getString("Server", ""), PlexServer.class);
 		if(defaultServer != null) {
 			this.plexmediaServers = new ConcurrentHashMap<String, PlexServer>();
 			this.plexmediaServers.put(defaultServer.getName(), defaultServer);
@@ -170,7 +168,6 @@ public class PlayMediaActivity extends Activity {
 		Pattern p = Pattern.compile( "on (.*)$", Pattern.DOTALL);
 		Matcher matcher = p.matcher(queryText);
 		if(!matcher.find()) {
-			
 			// Client not specified, so use default
 			handleVoiceSearch();
 		} else {
@@ -181,31 +178,30 @@ public class PlayMediaActivity extends Activity {
 				Logger.d("ip: %s", server.getAddress());
 				Logger.d("port: %s", server.getPort());
 				try {
-				    String url = "http://" + server.getAddress() + ":" + server.getPort() + "/clients";
-				    AsyncHttpClient httpClient = new AsyncHttpClient();
-				    httpClient.get(url, new AsyncHttpResponseHandler() {
-				        @Override
-				        public void onSuccess(String response) {
-				            Logger.d("HTTP REQUEST: %s", response);
-				            serversScanned++;
-				            MediaContainer mc = new MediaContainer();
-				            try {
-				            	mc = serial.read(MediaContainer.class, response);
-				            } catch (NotFoundException e) {
-				                e.printStackTrace();
-				            } catch (Exception e) {
-				                e.printStackTrace();
-				            }
-				            Logger.d("Clients: %d", mc.clients.size());
-				            for(int i=0;i<mc.clients.size();i++) {
-				            	clients.add(mc.clients.get(i));
-				            }
-				            if(serversScanned == plexmediaServers.size()) {
-				            	handleVoiceSearch();
-				            }
-				        }
-				    });
-
+          String url = "http://" + server.getAddress() + ":" + server.getPort() + "/clients";
+          AsyncHttpClient httpClient = new AsyncHttpClient();
+          httpClient.get(url, new AsyncHttpResponseHandler() {
+            @Override
+            public void onSuccess(String response) {
+              Logger.d("HTTP REQUEST: %s", response);
+              serversScanned++;
+              MediaContainer mc = new MediaContainer();
+              try {
+                mc = serial.read(MediaContainer.class, response);
+              } catch (NotFoundException e) {
+                  e.printStackTrace();
+              } catch (Exception e) {
+                  e.printStackTrace();
+              }
+              Logger.d("Clients: %d", mc.clients.size());
+              for(int i=0;i<mc.clients.size();i++) {
+                clients.add(mc.clients.get(i));
+              }
+              if(serversScanned == plexmediaServers.size()) {
+                handleVoiceSearch();
+              }
+            }
+          });
 				} catch (Exception e) {
 					Logger.e("Exception getting clients: %s", e.toString());
 				}
@@ -230,7 +226,8 @@ public class PlayMediaActivity extends Activity {
 		// Music
 		String artist = "";
 		String track = "";
-		
+		String album = "";
+
 		// If the query spoken ends with "on <something>", check to see if the <something> matches the name of a client to play the media on
 		Pattern p = Pattern.compile( "on ([^ ]+)$", Pattern.DOTALL);
 		Matcher matcher = p.matcher(queryText);
@@ -349,15 +346,32 @@ public class PlayMediaActivity extends Activity {
 				queryTerm = matcher.group(1);
 			}
 		}
-		if(mediaType.equals("")) {
-			p = Pattern.compile("listen to (.*) by (.*)");
-			matcher = p.matcher(queryText);
-			if(matcher.find()) {
-				mediaType = "music";
-				track = matcher.group(1);
-				artist = matcher.group(2);
-			}
-		}
+    if(mediaType.equals("")) {
+      p = Pattern.compile("listen to the album (.*) by (.*)");
+      matcher = p.matcher(queryText);
+      if(matcher.find()) {
+        mediaType = "music";
+        album = matcher.group(1);
+        artist = matcher.group(2);
+      }
+    }
+    if(mediaType.equals("")) {
+      p = Pattern.compile("listen to the album (.*)");
+      matcher = p.matcher(queryText);
+      if(matcher.find()) {
+        mediaType = "music";
+        album = matcher.group(1);
+      }
+    }
+    if(mediaType.equals("")) {
+      p = Pattern.compile("listen to (.*) by (.*)");
+      matcher = p.matcher(queryText);
+      if(matcher.find()) {
+        mediaType = "music";
+        track = matcher.group(1);
+        artist = matcher.group(2);
+      }
+    }
 		
 		Logger.d("media type: %s", mediaType);
 		Logger.d("query term: !%s!", queryTerm);
@@ -365,11 +379,11 @@ public class PlayMediaActivity extends Activity {
 		Logger.d("episode: %s", episode);
     Logger.d("latest: %s", latest);
     Logger.d("next: %s", next);
+    Logger.d("album: %s", album);
 		Logger.d("episodeSpecified: %s", episodeSpecified);
-        Logger.d("showSpecified: %s", showSpecified);
+    Logger.d("showSpecified: %s", showSpecified);
 		
-		if(!queryTerm.equals("") || (!episodeSpecified.equals("") && !showSpecified.equals("")) || (!artist.equals("") && !track.equals(""))) {
-//			if(this.server != null && this.client != null) {
+		if(!queryTerm.equals("") || (!episodeSpecified.equals("") && !showSpecified.equals("")) || (!artist.equals("") && (!track.equals("")) || !album.equals(""))) {
 				if(mediaType.equals("movie")) {
 					doMovieSearch(mediaType, queryTerm);
 				} else if(mediaType.equals("show")) {
@@ -383,17 +397,19 @@ public class PlayMediaActivity extends Activity {
 						doShowSearch(queryTerm, season, episode);
 					}
 				} else if(mediaType.equals("music")) {
-					Logger.d("Searching for %s by %s.", track, artist);
-					searchForSong(artist, track);
+          if(!album.equals("")) {
+            Logger.d("Searching for album %s by %s.", album, artist);
+            searchForAlbum(artist, album);
+          } else {
+            Logger.d("Searching for %s by %s.", track, artist);
+            searchForSong(artist, track);
+          }
 				} else {
-                    searchDialog.dismiss();
-                    feedback("Sorry, I couldn't find anything to play.");
-                    finish();
-                    return;
-                }
-//			} else {
-//				Logger.d("Server & Client are null!");
-//			}
+          searchDialog.dismiss();
+          feedback("Sorry, I couldn't find anything to play.");
+          finish();
+          return;
+        }
 		} else {
 			searchDialog.dismiss();
 			feedback("Sorry, I couldn't find anything to play.");
@@ -401,7 +417,77 @@ public class PlayMediaActivity extends Activity {
 			return;
 		}
 	}
-	
+
+  private void searchForAlbum(final String artist, final String album) {
+    musicSectionsSearched = 0;
+    serversSearched = 0;
+    Logger.d("Servers: %d", this.plexmediaServers.size());
+    for(final PlexServer server : this.plexmediaServers.values()) {
+      if(server.getMusicSections().size() == 0) {
+        serversSearched++;
+        if(serversSearched == plexmediaServers.size()) {
+          if(albums.size() == 1) {
+            playAlbum(albums.get(0));
+          } else {
+            feedback(albums.size() > 1 ? "I found more than one matching album. Please specify artist." : "Sorry, I couldn't find an album to play.");
+            searchDialog.dismiss();
+            finish();
+            return;
+          }
+        }
+      }
+      for(int i=0;i<server.getMusicSections().size();i++) {
+        String section = server.getMusicSections().get(i);
+        try {
+          String url = "http://" + server.getAddress() + ":" + server.getPort() + "/library/sections/" + section + "/search?type=9&query=" + album;
+          Logger.d("URL: %s", url);
+          AsyncHttpClient httpClient = new AsyncHttpClient();
+          httpClient.get(url, new AsyncHttpResponseHandler() {
+            @Override
+            public void onSuccess(String response) {
+              Logger.d("RESPONSE: %s", response);
+              musicSectionsSearched++;
+              MediaContainer mc = new MediaContainer();
+              try {
+                mc = serial.read(MediaContainer.class, response);
+              } catch (NotFoundException e) {
+                e.printStackTrace();
+              } catch (Exception e) {
+                e.printStackTrace();
+              }
+              for(int j=0;j<mc.directories.size();j++) {
+                PlexDirectory thisAlbum = mc.directories.get(j);
+                Logger.d("Album: %s by %s.", thisAlbum.title, thisAlbum.parentTitle);
+                if(thisAlbum.parentTitle.toLowerCase().equals(album.toLowerCase()) || artist.equals("")) {
+                  thisAlbum.server = server;
+                  albums.add(thisAlbum);
+                }
+              }
+
+              if(server.getMusicSections().size() == musicSectionsSearched) {
+                serversSearched++;
+                if(serversSearched == plexmediaServers.size()) {
+                  Logger.d("found music to play.");
+                  if(albums.size() == 1) {
+                    playAlbum(albums.get(0));
+                  } else {
+                    feedback(albums.size() > 1 ? "I found more than one matching album. Please specify artist." : "Sorry, I couldn't find an album to play.");
+                    searchDialog.dismiss();
+                    finish();
+                    return;
+                  }
+                }
+
+              }
+            }
+          });
+        } catch (Exception ex) {
+          ex.printStackTrace();
+        };
+      }
+    }
+  }
+
 	private void searchForSong(final String artist, final String track) {
 		musicSectionsSearched = 0;
 		serversSearched = 0;
@@ -411,6 +497,7 @@ public class PlayMediaActivity extends Activity {
 				serversSearched++;
 				if(serversSearched == plexmediaServers.size()) {
 					if(tracks.size() > 0) {
+            searchDialog.dismiss();
 						playTrack(tracks.get(0));
 					} else {
 						feedback("Sorry, I couldn't find a track to play.");
@@ -452,10 +539,10 @@ public class PlayMediaActivity extends Activity {
 
 				        	if(server.getMusicSections().size() == musicSectionsSearched) {
 				        		serversSearched++;
-				            	if(serversSearched == plexmediaServers.size()) {
+                    if(serversSearched == plexmediaServers.size()) {
 //				            		playSpecificEpisode();
-				            		Logger.d("found music to play.");
-				            		if(tracks.size() > 0) {
+                      Logger.d("found music to play.");
+                    if(tracks.size() > 0) {
 										playTrack(tracks.get(0));
 									} else {
 										feedback("Sorry, I couldn't find a track to play.");
@@ -661,7 +748,7 @@ public class PlayMediaActivity extends Activity {
 				    			            
 				    			            Boolean foundEpisode = false;
 				    			            for(int i=0;i<mc.videos.size();i++) {
-				    			            	Logger.d("Looking at episode %d", mc.videos.get(i).getIndex());
+				    			            	Logger.d("Looking at episode %s", mc.videos.get(i).getIndex());
 				    			            	if(mc.videos.get(i).getIndex().equals(episode) && !videoPlayed) {
                                                     serversSearched++;
 				    			            		PlexVideo video = mc.videos.get(i);
@@ -942,85 +1029,129 @@ public class PlayMediaActivity extends Activity {
 		}
 		Logger.d(text);
 	}
-	
-	private void playTrack(final PlexTrack track) {
+
+  private void playAlbum(final PlexDirectory album) {
+    String url = "http://" + album.server.getAddress() + ":" + album.server.getPort() + album.key;
+//    if(mPrefs.getBoolean("resume", false) || resumePlayback) {
+//      url += "&viewOffset=" + track.getViewOffset();
+//    }
+    Logger.d("Url: %s", url);
+    AsyncHttpClient httpClient = new AsyncHttpClient();
+    httpClient.get(url, new AsyncHttpResponseHandler() {
+      @Override
+      public void onSuccess(String response) {
+//        Logger.d("Children: %s", response);
+        MediaContainer mc = new MediaContainer();
+        try {
+          mc = serial.read(MediaContainer.class, response);
+        } catch (NotFoundException e) {
+          e.printStackTrace();
+        } catch (Exception e) {
+          e.printStackTrace();
+        }
+
+        if(mc.tracks.size() > 0) {
+          PlexTrack track = mc.tracks.get(0);
+          track.setServer(album.server);
+          track.setThumb(album.thumb);
+          track.setArtist(album.parentTitle);
+          track.setAlbum(album.title);
+          playTrack(track, album);
+        } else {
+          Logger.d("Didn't find a video");
+          feedback("Sorry, I couldn't find an album to play.");
+          searchDialog.dismiss();
+          finish();
+          return;
+        }
+      }
+    });
+  }
+
+  private void playTrack(final PlexTrack track) {
+    playTrack(track, null);
+  }
+
+	private void playTrack(final PlexTrack track, final PlexDirectory album) {
 		try {
 //			Logger.d("Host: %s", client.getHost());
 //			Logger.d("Port: %s", client.getPort());
 //			Logger.d("key: %s", video.getKey());
 //			Logger.d("Machine ID: %s", video.getServer().getMachineIdentifier());
-		    String url = "http://" + client.getHost() + ":" + client.getPort() + "/player/playback/playMedia?machineIdentifier=" + track.getServer().getMachineIdentifier() + "&key=" + track.getKey();
-		    if(mPrefs.getBoolean("resume", false) || resumePlayback) {
-		    	url += "&viewOffset=" + track.getViewOffset();
-		    }
-		    Logger.d("Url: %s", url);
-		    AsyncHttpClient httpClient = new AsyncHttpClient();
-		    httpClient.get(url, new AsyncHttpResponseHandler() {
-		        @Override
-		        public void onSuccess(String response) {
+      String url = "http://" + client.getHost() + ":" + client.getPort() + "/player/playback/playMedia?machineIdentifier=" + track.getServer().getMachineIdentifier() + "&key=" + track.getKey();
+      if(album != null)
+        url += "&containerKey=" + album.key;
+      if(mPrefs.getBoolean("resume", false) || resumePlayback) {
+        url += "&viewOffset=" + track.getViewOffset();
+      }
+      Logger.d("Url: %s", url);
+      AsyncHttpClient httpClient = new AsyncHttpClient();
+      httpClient.get(url, new AsyncHttpResponseHandler() {
+        @Override
+        public void onSuccess(String response) {
 //		            Logger.d("HTTP REQUEST: %s", response);
-		            
-		            searchDialog.dismiss();
-		            
-		            PlexResponse r = new PlexResponse();
-		            try {
-		            	r = serial.read(PlexResponse.class, response);
-		            } catch (Exception e) {
-		            	Logger.e("Exception parsing response: %s", e.toString());
-		            }
-                  Boolean passed = true;
-                  if(r.getCode() != null) {
-                      if(!r.getCode().equals("200")) {
-                          passed = false;
-                      }
-                  }
-                  Logger.d("Playback response: %s", r.getCode());
-                  if(passed) {
-		            	setContentView(R.layout.now_playing_music);
-		            	
-		            	TextView artist = (TextView)findViewById(R.id.nowPlayingArtist);
-		            	artist.setText(track.getArtist());
-	            		TextView album = (TextView)findViewById(R.id.nowPlayingAlbum);
-	            		album.setText(track.getAlbum());
-	            		TextView title = (TextView)findViewById(R.id.nowPlayingTitle);
-	            		title.setText(track.getTitle());
-	            		
-	            		TextView nowPlayingOnClient = (TextView)findViewById(R.id.nowPlayingOnClient);
-		            	nowPlayingOnClient.setText(getResources().getString(R.string.now_playing_on) + " " + client.getName());
-		            	
-	            		if(!track.getThumb().equals("")) {
+
+          searchDialog.dismiss();
+
+          PlexResponse r = new PlexResponse();
+          try {
+            r = serial.read(PlexResponse.class, response);
+          } catch (Exception e) {
+            Logger.e("Exception parsing response: %s", e.toString());
+          }
+          Boolean passed = true;
+          if(r.getCode() != null) {
+              if(!r.getCode().equals("200")) {
+                  passed = false;
+              }
+          }
+          Logger.d("Playback response: %s", r.getCode());
+          if(passed) {
+          setContentView(R.layout.now_playing_music);
+
+          TextView artist = (TextView)findViewById(R.id.nowPlayingArtist);
+          artist.setText(track.getArtist());
+          TextView album = (TextView)findViewById(R.id.nowPlayingAlbum);
+          album.setText(track.getAlbum());
+          TextView title = (TextView)findViewById(R.id.nowPlayingTitle);
+          title.setText(track.getTitle());
+
+          TextView nowPlayingOnClient = (TextView)findViewById(R.id.nowPlayingOnClient);
+          nowPlayingOnClient.setText(getResources().getString(R.string.now_playing_on) + " " + client.getName());
+
+          if(!track.getThumb().equals("")) {
 //	            			final RelativeLayout layout = (RelativeLayout)findViewById(R.id.background);
-		            		try {
-		            			final String url = "http://" + track.getServer().getAddress() + ":" + track.getServer().getPort() + track.getThumb();
-		            			Logger.d("url: %s", url);
-		            		    AsyncHttpClient httpClient = new AsyncHttpClient();
-		            		    httpClient.get(url, new BinaryHttpResponseHandler() {
-		            		        @Override
-		            		        public void onSuccess(byte[] imageData) {
+            try {
+              final String url = "http://" + track.getServer().getAddress() + ":" + track.getServer().getPort() + track.getThumb();
+              Logger.d("url: %s", url);
+                AsyncHttpClient httpClient = new AsyncHttpClient();
+                httpClient.get(url, new BinaryHttpResponseHandler() {
+                  @Override
+                  public void onSuccess(byte[] imageData) {
 //		            		        	Logger.d("Response length: %s", response.getBytes().length);
-		            		        	InputStream is  = new ByteArrayInputStream(imageData);
-		            		        	try {
-											is.reset();
-										} catch (IOException e) {
-											e.printStackTrace();
-										}
-		            		        	Drawable d = Drawable.createFromStream(is, "thumb");
-		            		        	d.setAlpha(80);
-//		            		        	layout.setBackground(d);
-		            		        	ImageView nowPlayingImage = (ImageView)findViewById(R.id.nowPlayingImage);
-		            		        	nowPlayingImage.setImageDrawable(d);
-		            		        }
-		            		    });
-		            		} catch(Exception e) {
-		            			e.printStackTrace();
-		            		}
-	            		}
-		            }
-		        }
-		    });
+                    InputStream is  = new ByteArrayInputStream(imageData);
+                    try {
+                      is.reset();
+                    } catch (IOException e) {
+                      e.printStackTrace();
+                    }
+                    Drawable d = Drawable.createFromStream(is, "thumb");
+                    d.setAlpha(80);
+    //		            		        	layout.setBackground(d);
+                    ImageView nowPlayingImage = (ImageView)findViewById(R.id.nowPlayingImage);
+                    nowPlayingImage.setImageDrawable(d);
+                  }
+                });
+              } catch(Exception e) {
+                e.printStackTrace();
+              }
+            }
+          }
+        }
+      });
 
 		} catch (Exception e) {
-			Logger.e("Exception trying to play video: %s", e.toString());
+			Logger.e("Exception trying to play track: %s", e.toString());
 			e.printStackTrace();
 		}
 	}

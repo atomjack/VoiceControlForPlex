@@ -6,15 +6,19 @@ import org.simpleframework.xml.Root;
 @Root(strict=false)
 public class PlexDirectory {
 	@Attribute
-	private String key;
+	public String key;
 	@Attribute
-	private String title;
+	public String title;
 	@Attribute(required=false)
-	private String type;
+	public String type;
 	@Attribute(required=false)
-	private String thumb;
+	public String thumb;
 	@Attribute(required=false)
   public String ratingKey;
+  @Attribute(required=false)
+  public String parentTitle;
+  @Attribute(required=false)
+  public String parentKey;
   @Attribute(required=false)
   public PlexServer server;
 

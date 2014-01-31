@@ -34,7 +34,7 @@ public class MediaContainer {
 	
 	@ElementList(required=false, inline=true, entry="Track")
 	public List<PlexTrack> tracks = new ArrayList<PlexTrack>();
-	
+
 	public String getFriendlyName() {
 		return friendlyName;
 	}

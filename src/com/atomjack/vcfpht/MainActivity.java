@@ -40,8 +40,7 @@ import com.bugsense.trace.BugSenseHandler;
 
 public class MainActivity extends Activity {
 	public final static String PREFS = "VoiceControlForPlexHomeTheaterPrefs";
-	public final static String TAG = "VoiceControlForPlexHomeTheater";
-	
+
 	public final static int FEEDBACK_VOICE = 0;
 	public final static int FEEDBACK_TOAST = 1;
 

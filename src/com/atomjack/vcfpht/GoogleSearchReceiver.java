@@ -6,8 +6,6 @@ import android.content.Intent;
 
 public class GoogleSearchReceiver extends BroadcastReceiver {
 
-	private static final String TAG = MainActivity.TAG;
-	
 	@Override
 	public void onReceive(Context context, Intent intent) {
 		String queryText = intent.getStringExtra(GoogleSearchApi.KEY_QUERY_TEXT).toLowerCase();

@@ -37,3 +37,7 @@ Below are examples of what to say to Google Now to trigger playback. Sentence fr
 
 ### For Music:
 "**Listen to** *Black Sands* **by** *Bonobo*" - Listen to &lt;song&gt; by &lt;artist&gt;
+
+"**Listen to the album** *Drink The Sea* **by** *The Glitch Mob*" - Listen to &lt;album&gt; by &lt;artist&gt;
+
+"**Listen to the album** *Music Has The Right To Children*" - Listen to &lt;album&gt; (artist is optional, specify if more than one match found)

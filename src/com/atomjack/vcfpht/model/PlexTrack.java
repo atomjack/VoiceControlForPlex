@@ -13,9 +13,9 @@ public class PlexTrack {
 	private String thumb;
 	@Attribute(required=false)
 	private String parentThumb;
-	@Attribute
+	@Attribute(required=false)
 	private String parentTitle;
-	@Attribute
+	@Attribute(required=false)
 	private String grandparentTitle;
 	@Attribute(required=false)
 	private String viewOffset;
