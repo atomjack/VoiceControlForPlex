@@ -29,7 +29,7 @@ public class PlexClient extends PlexDevice {
       return Float.parseFloat(v);
     } catch (Exception ex) {
       ex.printStackTrace();
-      Logger.d("Exception getting version: %f", version);
+      Logger.d("Exception getting version: %s", version);
       return 0;
     }
 	}
