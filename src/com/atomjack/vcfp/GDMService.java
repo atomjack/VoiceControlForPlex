@@ -1,4 +1,4 @@
-package com.atomjack.vcfpht;
+package com.atomjack.vcfp;
 
 import java.io.IOException;
 import java.net.DatagramPacket;

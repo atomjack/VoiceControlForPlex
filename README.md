@@ -1,6 +1,6 @@
-#Voice Control for Plex Home Theater
+#Voice Control for Plex
 
-A Plug-in for Google Search API for Plex Home Theater
+A Plug-in for Google Search API for Plex
 
 ## Requirements
 You must have a rooted phone, the Xposed Framework (http://forum.xda-developers.com/showthread.php?t=1574401), and the Google Search API (http://forum.xda-developers.com/showthread.php?t=2554173)

@@ -1,4 +1,4 @@
-package com.atomjack.vcfpht;
+package com.atomjack.vcfp;
 
 import android.app.Activity;
 import android.content.Context;
@@ -9,7 +9,7 @@ import android.widget.ArrayAdapter;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
-import com.atomjack.vcfpht.model.MainSetting;
+import com.atomjack.vcfp.model.MainSetting;
 
 public class MainListAdapter extends ArrayAdapter<MainSetting> {
 	Context context;

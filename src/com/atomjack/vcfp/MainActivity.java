@@ -1,4 +1,4 @@
-package com.atomjack.vcfpht;
+package com.atomjack.vcfp;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,18 +28,18 @@ import android.widget.AdapterView;
 import android.widget.CheckBox;
 import android.widget.ListView;
 
-import com.atomjack.vcfpht.MainListAdapter.SettingHolder;
-import com.atomjack.vcfpht.model.MainSetting;
-import com.atomjack.vcfpht.model.MediaContainer;
-import com.atomjack.vcfpht.model.PlexClient;
-import com.atomjack.vcfpht.model.PlexServer;
+import com.atomjack.vcfp.MainListAdapter.SettingHolder;
+import com.atomjack.vcfp.model.MainSetting;
+import com.atomjack.vcfp.model.MediaContainer;
+import com.atomjack.vcfp.model.PlexClient;
+import com.atomjack.vcfp.model.PlexServer;
 import com.google.gson.Gson;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
 import com.bugsense.trace.BugSenseHandler;
 
 public class MainActivity extends Activity {
-	public final static String PREFS = "VoiceControlForPlexHomeTheaterPrefs";
+	public final static String PREFS = "VoiceControlForPlexPrefs";
 
 	public final static int FEEDBACK_VOICE = 0;
 	public final static int FEEDBACK_TOAST = 1;
@@ -284,7 +284,7 @@ public class MainActivity extends Activity {
 			    		searchDialog.dismiss();
 			    		if(clients.size() == 0) {
 			    			AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-			    			builder.setTitle("No Plex Home Theater Clients Found");
+			    			builder.setTitle("No Plex Clients Found");
 			    			builder.setCancelable(false)
 			    				.setNeutralButton(R.string.ok, new DialogInterface.OnClickListener() {
 			    			        public void onClick(DialogInterface dialog, int id) {
@@ -442,7 +442,7 @@ public class MainActivity extends Activity {
 		    		searchDialog.dismiss();
 		    		if(clients.size() == 0) {
 		    			AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-		    			builder.setTitle("No Plex Home Theater Clients Found");
+		    			builder.setTitle("No Plex Clients Found");
 		    			builder.setCancelable(false)
 		    				.setNeutralButton(R.string.ok, new DialogInterface.OnClickListener() {
 		    			        public void onClick(DialogInterface dialog, int id) {

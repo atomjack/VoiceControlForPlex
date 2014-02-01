@@ -1,9 +1,9 @@
-package com.atomjack.vcfpht.model;
+package com.atomjack.vcfp.model;
 
 import org.simpleframework.xml.Attribute;
 import org.simpleframework.xml.Root;
 
-import com.atomjack.vcfpht.Logger;
+import com.atomjack.vcfp.Logger;
 
 @Root(name="Server", strict=false)
 public class PlexClient extends PlexDevice {

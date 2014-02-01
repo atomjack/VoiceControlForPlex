@@ -7,12 +7,12 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 
-import com.atomjack.vcfpht.GDMService;
-import com.atomjack.vcfpht.Logger;
-import com.atomjack.vcfpht.VoiceControlForPlexApplication;
-import com.atomjack.vcfpht.MainActivity;
-import com.atomjack.vcfpht.PlayMediaActivity;
-import com.atomjack.vcfpht.model.PlexServer;
+import com.atomjack.vcfp.GDMService;
+import com.atomjack.vcfp.Logger;
+import com.atomjack.vcfp.VoiceControlForPlexApplication;
+import com.atomjack.vcfp.MainActivity;
+import com.atomjack.vcfp.PlayMediaActivity;
+import com.atomjack.vcfp.model.PlexServer;
 
 public class GDMReceiver extends BroadcastReceiver {
 	

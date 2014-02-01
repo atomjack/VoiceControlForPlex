@@ -1,4 +1,4 @@
-package com.atomjack.vcfpht;
+package com.atomjack.vcfp;
 
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -7,8 +7,8 @@ import org.simpleframework.xml.core.Persister;
 
 import android.content.res.Resources.NotFoundException;
 
-import com.atomjack.vcfpht.model.MediaContainer;
-import com.atomjack.vcfpht.model.PlexServer;
+import com.atomjack.vcfp.model.MediaContainer;
+import com.atomjack.vcfp.model.PlexServer;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
 

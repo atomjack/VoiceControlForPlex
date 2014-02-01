@@ -1,4 +1,4 @@
-package com.atomjack.vcfpht;
+package com.atomjack.vcfp;
 
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -11,9 +11,8 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.TextView;
 
-import com.atomjack.vcfpht.model.PlexClient;
-import com.atomjack.vcfpht.model.PlexDevice;
-import com.atomjack.vcfpht.model.PlexServer;
+import com.atomjack.vcfp.model.PlexClient;
+import com.atomjack.vcfp.model.PlexServer;
 
 public class PlexListAdapter extends BaseAdapter {
   private final Context context;

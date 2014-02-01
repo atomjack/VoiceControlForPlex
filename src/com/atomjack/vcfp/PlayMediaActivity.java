@@ -1,4 +1,4 @@
-package com.atomjack.vcfpht;
+package com.atomjack.vcfp;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -32,13 +32,13 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.atomjack.vcfpht.model.MediaContainer;
-import com.atomjack.vcfpht.model.PlexClient;
-import com.atomjack.vcfpht.model.PlexDirectory;
-import com.atomjack.vcfpht.model.PlexResponse;
-import com.atomjack.vcfpht.model.PlexServer;
-import com.atomjack.vcfpht.model.PlexTrack;
-import com.atomjack.vcfpht.model.PlexVideo;
+import com.atomjack.vcfp.model.MediaContainer;
+import com.atomjack.vcfp.model.PlexClient;
+import com.atomjack.vcfp.model.PlexDirectory;
+import com.atomjack.vcfp.model.PlexResponse;
+import com.atomjack.vcfp.model.PlexServer;
+import com.atomjack.vcfp.model.PlexTrack;
+import com.atomjack.vcfp.model.PlexVideo;
 import com.bugsense.trace.BugSenseHandler;
 import com.google.gson.Gson;
 import com.loopj.android.http.AsyncHttpClient;

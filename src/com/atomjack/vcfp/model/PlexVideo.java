@@ -1,4 +1,4 @@
-package com.atomjack.vcfpht.model;
+package com.atomjack.vcfp.model;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -12,7 +12,7 @@ import org.simpleframework.xml.Root;
 
 import android.text.TextUtils;
 
-import com.atomjack.vcfpht.Logger;
+import com.atomjack.vcfp.Logger;
 
 @Root(strict=false)
 public class PlexVideo {

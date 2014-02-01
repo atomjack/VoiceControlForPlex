@@ -1,4 +1,4 @@
-package com.atomjack.vcfpht.model;
+package com.atomjack.vcfp.model;
 
 import java.util.ArrayList;
 import java.util.List;

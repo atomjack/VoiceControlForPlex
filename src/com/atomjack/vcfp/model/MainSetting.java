@@ -1,4 +1,4 @@
-package com.atomjack.vcfpht.model;
+package com.atomjack.vcfp.model;
 
 public class MainSetting {
 	public String tag;
