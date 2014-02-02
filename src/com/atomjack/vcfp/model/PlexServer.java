@@ -8,6 +8,12 @@ import org.simpleframework.xml.Root;
 
 @Root(strict=false)
 public class PlexServer extends PlexDevice {
+
+  public PlexServer() {}
+  public PlexServer(String name) {
+    this.name = name;
+  }
+
 	@Attribute
 	private String machineIdentifier;
 

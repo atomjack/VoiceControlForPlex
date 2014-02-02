@@ -1,8 +1,5 @@
 package com.atomjack.vcfp;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -20,8 +17,6 @@ import android.content.BroadcastReceiver;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
-import android.content.res.Resources.NotFoundException;
-import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
@@ -39,11 +34,11 @@ import com.atomjack.vcfp.model.PlexResponse;
 import com.atomjack.vcfp.model.PlexServer;
 import com.atomjack.vcfp.model.PlexTrack;
 import com.atomjack.vcfp.model.PlexVideo;
+import com.atomjack.vcfp.net.PlexHttpClient;
+import com.atomjack.vcfp.net.PlexHttpMediaContainerHandler;
+import com.atomjack.vcfp.net.PlexHttpResponseHandler;
 import com.bugsense.trace.BugSenseHandler;
 import com.google.gson.Gson;
-import com.loopj.android.http.AsyncHttpClient;
-import com.loopj.android.http.AsyncHttpResponseHandler;
-import com.loopj.android.http.BinaryHttpResponseHandler;
 
 public class PlayMediaActivity extends Activity {
 	public final static String PREFS = MainActivity.PREFS;
@@ -72,7 +67,7 @@ public class PlayMediaActivity extends Activity {
 		Logger.d("on create PlayMediaActivity");
 		super.onCreate(savedInstanceState);
 
-    BugSenseHandler.initAndStartSession(PlayMediaActivity.this, MainActivity.BUGSENSE_APIKEY);
+//    BugSenseHandler.initAndStartSession(PlayMediaActivity.this, MainActivity.BUGSENSE_APIKEY);
 
     mPrefs = getSharedPreferences(PREFS, MODE_PRIVATE);
 
@@ -177,34 +172,22 @@ public class PlayMediaActivity extends Activity {
 			for(PlexServer server : plexmediaServers.values()) {
 				Logger.d("ip: %s", server.getAddress());
 				Logger.d("port: %s", server.getPort());
-				try {
-          String url = "http://" + server.getAddress() + ":" + server.getPort() + "/clients";
-          AsyncHttpClient httpClient = new AsyncHttpClient();
-          httpClient.get(url, new AsyncHttpResponseHandler() {
-            @Override
-            public void onSuccess(String response) {
-              Logger.d("HTTP REQUEST: %s", response);
-              serversScanned++;
-              MediaContainer mc = new MediaContainer();
-              try {
-                mc = serial.read(MediaContainer.class, response);
-              } catch (NotFoundException e) {
-                  e.printStackTrace();
-              } catch (Exception e) {
-                  e.printStackTrace();
-              }
-              Logger.d("Clients: %d", mc.clients.size());
-              for(int i=0;i<mc.clients.size();i++) {
-                clients.add(mc.clients.get(i));
-              }
-              if(serversScanned == plexmediaServers.size()) {
-                handleVoiceSearch();
-              }
+        String url = "http://" + server.getAddress() + ":" + server.getPort() + "/clients";
+        PlexHttpClient.get(url, null, new PlexHttpMediaContainerHandler()
+        {
+          @Override
+          public void onSuccess(MediaContainer mc)
+          {
+            serversScanned++;
+            Logger.d("Clients: %d", mc.clients.size());
+            for(int i=0;i<mc.clients.size();i++) {
+              clients.add(mc.clients.get(i));
             }
-          });
-				} catch (Exception e) {
-					Logger.e("Exception getting clients: %s", e.toString());
-				}
+            if(serversScanned == plexmediaServers.size()) {
+              handleVoiceSearch();
+            }
+          }
+        });
 			}
 		}
 	}
@@ -247,7 +230,7 @@ public class PlayMediaActivity extends Activity {
 			}
 		}
 		if(this.client == null) {
-			this.client = (PlexClient)gson.fromJson(mPrefs.getString("Client", ""), PlexClient.class);
+			this.client = gson.fromJson(mPrefs.getString("Client", ""), PlexClient.class);
 		}
 		
 		if(this.client == null) {
@@ -385,7 +368,7 @@ public class PlayMediaActivity extends Activity {
 		
 		if(!queryTerm.equals("") || (!episodeSpecified.equals("") && !showSpecified.equals("")) || (!artist.equals("") && (!track.equals("")) || !album.equals(""))) {
 				if(mediaType.equals("movie")) {
-					doMovieSearch(mediaType, queryTerm);
+					doMovieSearch(queryTerm);
 				} else if(mediaType.equals("show")) {
 					if(next == true) {
 						doNextEpisodeSearch(queryTerm);
@@ -438,52 +421,39 @@ public class PlayMediaActivity extends Activity {
       }
       for(int i=0;i<server.getMusicSections().size();i++) {
         String section = server.getMusicSections().get(i);
-        try {
-          String url = "http://" + server.getAddress() + ":" + server.getPort() + "/library/sections/" + section + "/search?type=9&query=" + album;
-          Logger.d("URL: %s", url);
-          AsyncHttpClient httpClient = new AsyncHttpClient();
-          httpClient.get(url, new AsyncHttpResponseHandler() {
-            @Override
-            public void onSuccess(String response) {
-              Logger.d("RESPONSE: %s", response);
-              musicSectionsSearched++;
-              MediaContainer mc = new MediaContainer();
-              try {
-                mc = serial.read(MediaContainer.class, response);
-              } catch (NotFoundException e) {
-                e.printStackTrace();
-              } catch (Exception e) {
-                e.printStackTrace();
-              }
-              for(int j=0;j<mc.directories.size();j++) {
-                PlexDirectory thisAlbum = mc.directories.get(j);
-                Logger.d("Album: %s by %s.", thisAlbum.title, thisAlbum.parentTitle);
-                if(thisAlbum.parentTitle.toLowerCase().equals(album.toLowerCase()) || artist.equals("")) {
-                  thisAlbum.server = server;
-                  albums.add(thisAlbum);
-                }
-              }
-
-              if(server.getMusicSections().size() == musicSectionsSearched) {
-                serversSearched++;
-                if(serversSearched == plexmediaServers.size()) {
-                  Logger.d("found music to play.");
-                  if(albums.size() == 1) {
-                    playAlbum(albums.get(0));
-                  } else {
-                    feedback(albums.size() > 1 ? "I found more than one matching album. Please specify artist." : "Sorry, I couldn't find an album to play.");
-                    searchDialog.dismiss();
-                    finish();
-                    return;
-                  }
-                }
-
+        String url = "http://" + server.getAddress() + ":" + server.getPort() + "/library/sections/" + section + "/search?type=9&query=" + album;
+        PlexHttpClient.get(url, null, new PlexHttpMediaContainerHandler()
+        {
+          @Override
+          public void onSuccess(MediaContainer mc)
+          {
+            musicSectionsSearched++;
+            for(int j=0;j<mc.directories.size();j++) {
+              PlexDirectory thisAlbum = mc.directories.get(j);
+              Logger.d("Album: %s by %s.", thisAlbum.title, thisAlbum.parentTitle);
+              if(thisAlbum.parentTitle.toLowerCase().equals(album.toLowerCase()) || artist.equals("")) {
+                thisAlbum.server = server;
+                albums.add(thisAlbum);
               }
             }
-          });
-        } catch (Exception ex) {
-          ex.printStackTrace();
-        };
+
+            if(server.getMusicSections().size() == musicSectionsSearched) {
+              serversSearched++;
+              if(serversSearched == plexmediaServers.size()) {
+                Logger.d("found music to play.");
+                if(albums.size() == 1) {
+                  playAlbum(albums.get(0));
+                } else {
+                  feedback(albums.size() > 1 ? "I found more than one matching album. Please specify artist." : "Sorry, I couldn't find an album to play.");
+                  searchDialog.dismiss();
+                  finish();
+                  return;
+                }
+              }
+
+            }
+          }
+        });
       }
     }
   }
@@ -509,55 +479,40 @@ public class PlayMediaActivity extends Activity {
 			}
 			for(int i=0;i<server.getMusicSections().size();i++) {
 				String section = server.getMusicSections().get(i);
-				try {
-				    String url = "http://" + server.getAddress() + ":" + server.getPort() + "/library/sections/" + section + "/search?type=10&query=" + track;
-				    Logger.d("URL: %s", url);
-				    AsyncHttpClient httpClient = new AsyncHttpClient();
-				    httpClient.get(url, new AsyncHttpResponseHandler() {
-				        @Override
-				        public void onSuccess(String response) {
-//				            Logger.d("HTTP REQUEST: %s", response);
-				        	musicSectionsSearched++;
-				        	MediaContainer mc = new MediaContainer();
-				            try {
-				            	mc = serial.read(MediaContainer.class, response);
-				            } catch (NotFoundException e) {
-				                e.printStackTrace();
-				            } catch (Exception e) {
-				                e.printStackTrace();
-				            }
-				            for(int j=0;j<mc.tracks.size();j++) {
-				            	PlexTrack thisTrack = mc.tracks.get(j);
-				            	thisTrack.setArtist(thisTrack.getGrandparentTitle());
-				            	thisTrack.setAlbum(thisTrack.getParentTitle());
-				            	Logger.d("Track: %s by %s.", thisTrack.getTitle(), thisTrack.getArtist());
-				            	if(thisTrack.getArtist().toLowerCase().equals(artist.toLowerCase())) {
-				            		thisTrack.setServer(server);
-				            		tracks.add(thisTrack);
-				            	}
-				            }
+        String url = "http://" + server.getAddress() + ":" + server.getPort() + "/library/sections/" + section + "/search?type=10&query=" + track;
+        PlexHttpClient.get(url, null, new PlexHttpMediaContainerHandler()
+        {
+          @Override
+          public void onSuccess(MediaContainer mc)
+          {
+            musicSectionsSearched++;
+            for(int j=0;j<mc.tracks.size();j++) {
+              PlexTrack thisTrack = mc.tracks.get(j);
+              thisTrack.setArtist(thisTrack.getGrandparentTitle());
+              thisTrack.setAlbum(thisTrack.getParentTitle());
+              Logger.d("Track: %s by %s.", thisTrack.getTitle(), thisTrack.getArtist());
+              if(thisTrack.getArtist().toLowerCase().equals(artist.toLowerCase())) {
+                thisTrack.setServer(server);
+                tracks.add(thisTrack);
+              }
+            }
 
-				        	if(server.getMusicSections().size() == musicSectionsSearched) {
-				        		serversSearched++;
-                    if(serversSearched == plexmediaServers.size()) {
-//				            		playSpecificEpisode();
-                      Logger.d("found music to play.");
-                    if(tracks.size() > 0) {
-										playTrack(tracks.get(0));
-									} else {
-										feedback("Sorry, I couldn't find a track to play.");
-										searchDialog.dismiss();
-										finish();
-										return;
-									}
-				            	}
-				        	}
-				        }
-				    });
-				} catch (Exception e) {
-					Logger.e("Exception getting search results: %s", e.toString());
-					e.printStackTrace();
-				}
+            if(server.getMusicSections().size() == musicSectionsSearched) {
+              serversSearched++;
+              if(serversSearched == plexmediaServers.size()) {
+                Logger.d("found music to play.");
+                if(tracks.size() > 0) {
+                  playTrack(tracks.get(0));
+                } else {
+                  feedback("Sorry, I couldn't find a track to play.");
+                  searchDialog.dismiss();
+                  finish();
+                  return;
+                }
+              }
+            }
+          }
+        });
 			}
 		}
 	}
@@ -566,53 +521,41 @@ public class PlayMediaActivity extends Activity {
 		showSectionsSearched = 0;
 		serversSearched = 0;
 		for(final PlexServer server : this.plexmediaServers.values()) {
-            if(server.getTvSections().size() == 0) {
-                serversSearched++;
-                if(serversSearched == plexmediaServers.size()) {
-                    playSpecificEpisode();
-                }
-            }
+      if(server.getTvSections().size() == 0) {
+        serversSearched++;
+        if(serversSearched == plexmediaServers.size()) {
+          playSpecificEpisode();
+        }
+      }
 			for(int i=0;i<server.getTvSections().size();i++) {
 				String section = server.getTvSections().get(i);
-				try {
-				    String url = "http://" + server.getAddress() + ":" + server.getPort() + "/library/sections/" + section + "/search?type=4&query=" + episodeSpecified;
-				    AsyncHttpClient httpClient = new AsyncHttpClient();
-				    httpClient.get(url, new AsyncHttpResponseHandler() {
-				        @Override
-				        public void onSuccess(String response) {
-	//			            Logger.d("HTTP REQUEST: %s", response);
-				        	showSectionsSearched++;
-				        	MediaContainer mc = new MediaContainer();
-				            try {
-				            	mc = serial.read(MediaContainer.class, response);
-				            } catch (NotFoundException e) {
-				                e.printStackTrace();
-				            } catch (Exception e) {
-				                e.printStackTrace();
-				            }
-				            for(int j=0;j<mc.videos.size();j++) {
-				            	Logger.d("Show: %s", mc.videos.get(j).getGrandparentTitle());
-				            	PlexVideo video = mc.videos.get(j);
-				            	if(video.getGrandparentTitle().toLowerCase().equals(showSpecified.toLowerCase())) {
-				            		video.setServer(server);
-				            		video.setThumb(video.getGrandparentThumb());
-				            		video.setShowTitle(video.getGrandparentTitle());
-                        Logger.d("Adding %s - %s.", video.getShowTitle(), video.getTitle());
-				            		videos.add(video);
-				            	}
-				            }
+        String url = "http://" + server.getAddress() + ":" + server.getPort() + "/library/sections/" + section + "/search?type=4&query=" + episodeSpecified;
+        PlexHttpClient.get(url, null, new PlexHttpMediaContainerHandler()
+        {
+          @Override
+          public void onSuccess(MediaContainer mc)
+          {
+            showSectionsSearched++;
+            for(int j=0;j<mc.videos.size();j++) {
+              Logger.d("Show: %s", mc.videos.get(j).getGrandparentTitle());
+              PlexVideo video = mc.videos.get(j);
+              if(video.getGrandparentTitle().toLowerCase().equals(showSpecified.toLowerCase())) {
+                video.setServer(server);
+                video.setThumb(video.getGrandparentThumb());
+                video.setShowTitle(video.getGrandparentTitle());
+                Logger.d("Adding %s - %s.", video.getShowTitle(), video.getTitle());
+                videos.add(video);
+              }
+            }
 
-				        	if(server.getTvSections().size() == showSectionsSearched) {
-                                serversSearched++;
-				            	if(serversSearched == plexmediaServers.size()) {
-				            		playSpecificEpisode();
-				            	}
-				        	}
-				        }
-				    });
-				} catch (Exception e) {
-					Logger.e("Exception getting search results: %s", e.toString());
-				}
+            if(server.getTvSections().size() == showSectionsSearched) {
+              serversSearched++;
+              if(serversSearched == plexmediaServers.size()) {
+                playSpecificEpisode();
+              }
+            }
+          }
+        });
 			}
 		}
 	}
@@ -638,58 +581,45 @@ public class PlayMediaActivity extends Activity {
 		showSectionsSearched = 0;
 		serversSearched = 0;
 		for(final PlexServer server : this.plexmediaServers.values()) {
-            Logger.d("Searching server %s", server.getName());
-            if(server.getTvSections().size() == 0) {
-                Logger.d("%s has no tv sections", server.getName());
-                serversSearched++;
-                if(serversSearched == plexmediaServers.size()) {
-                    doEpisodeSearch(queryTerm, season, episode);
-                }
-            }
+      Logger.d("Searching server %s", server.getName());
+      if(server.getTvSections().size() == 0) {
+          Logger.d("%s has no tv sections", server.getName());
+          serversSearched++;
+          if(serversSearched == plexmediaServers.size()) {
+              doEpisodeSearch(queryTerm, season, episode);
+          }
+      }
 			for(int i=0;i<server.getTvSections().size();i++) {
 				String section = server.getTvSections().get(i);
-				try {
-				    String url = "http://" + server.getAddress() + ":" + server.getPort() + "/library/sections/" + section + "/search?type=2&query=" + queryTerm;
-				    AsyncHttpClient httpClient = new AsyncHttpClient();
-				    httpClient.get(url, new AsyncHttpResponseHandler() {
-				        @Override
-				        public void onSuccess(String response) {
-	//			            Logger.d("HTTP REQUEST: %s", response);
-				        	showSectionsSearched++;
-				        	MediaContainer mc = new MediaContainer();
-				            try {
-				            	mc = serial.read(MediaContainer.class, response);
-				            } catch (NotFoundException e) {
-				                e.printStackTrace();
-				            } catch (Exception e) {
-				                e.printStackTrace();
-				            }
-				            for(int j=0;j<mc.directories.size();j++) {
-				            	shows.add(mc.directories.get(j));
-				            }
-				        	
-				        	if(server.getTvSections().size() == showSectionsSearched) {
-				        		serversSearched++;
-				            	if(serversSearched == plexmediaServers.size()) {
-				            		doEpisodeSearch(queryTerm, season, episode);
-				            	}
-				        	}
-				        }
-				    });
-		
-				} catch (Exception e) {
-					Logger.e("Exception getting search results: %s", e.toString());
-				}
+        String url = "http://" + server.getAddress() + ":" + server.getPort() + "/library/sections/" + section + "/search?type=2&query=" + queryTerm;
+        PlexHttpClient.get(url, null, new PlexHttpMediaContainerHandler()
+        {
+          @Override
+          public void onSuccess(MediaContainer mc)
+          {
+            showSectionsSearched++;
+            for(int j=0;j<mc.directories.size();j++) {
+              shows.add(mc.directories.get(j));
+            }
+
+            if(server.getTvSections().size() == showSectionsSearched) {
+              serversSearched++;
+              if(serversSearched == plexmediaServers.size()) {
+                doEpisodeSearch(queryTerm, season, episode);
+              }
+            }
+          }
+        });
 			}
 		}
 	}
 	
 	private void doEpisodeSearch(String queryTerm, final String season, final String episode) {
 		Logger.d("Found shows: %d", shows.size());
-        serversSearched = 0;
+    serversSearched = 0;
 		for(final PlexServer server : this.plexmediaServers.values()) {
 			if(shows.size() == 0 && serversSearched == this.plexmediaServers.size()) {
-                serversSearched++;
+        serversSearched++;
 				feedback("Sorry, I couldn't find " + queryTerm);
 				searchDialog.dismiss();
 				finish();
@@ -697,90 +627,62 @@ public class PlayMediaActivity extends Activity {
 			} else if(shows.size() == 1) {
 				final PlexDirectory show = shows.get(0);
 				Logger.d("Show key: %s", show.getKey());
-				try {
-				    String url = "http://" + server.getAddress() + ":" + server.getPort() + "" + show.getKey();
-				    AsyncHttpClient httpClient = new AsyncHttpClient();
-				    httpClient.get(url, new AsyncHttpResponseHandler() {
-				        @Override
-				        public void onSuccess(String response) {
-	//			            Logger.d("HTTP REQUEST: %s", response);
-				            MediaContainer mc = new MediaContainer();
-				            try {
-				            	mc = serial.read(MediaContainer.class, response);
-				            } catch (NotFoundException e) {
-				                e.printStackTrace();
-				            } catch (Exception e) {
-				                e.printStackTrace();
-				            }
-				            PlexDirectory foundSeason = null;
-				            for(int i=0;i<mc.directories.size();i++) {
-				            	PlexDirectory directory = mc.directories.get(i);
-				            	if(directory.getTitle().equals("Season " + season)) {
-				            		Logger.d("Found season %s: %s.", season, directory.getKey());
-				            		foundSeason = directory;
-				            		break;
-				            	}
-				            }
-				            
-				            if(foundSeason == null && serversSearched == plexmediaServers.size() && !videoPlayed) {
-                                serversSearched++;
-				            	feedback("Sorry, I couldn't find that season.");
-				            	searchDialog.dismiss();
-				    			finish();
-				    			return;
-				            } else if(foundSeason != null) {
-				            	try {
-				    			    String url = "http://" + server.getAddress() + ":" + server.getPort() + "" + foundSeason.getKey();
-				    			    AsyncHttpClient httpClient = new AsyncHttpClient();
-				    			    httpClient.get(url, new AsyncHttpResponseHandler() {
-				    			        @Override
-				    			        public void onSuccess(String response) {
-	//			    			            Logger.d("HTTP REQUEST: %s", response);
-				    			            MediaContainer mc = new MediaContainer();
-				    			            try {
-				    			            	mc = serial.read(MediaContainer.class, response);
-				    			            } catch (NotFoundException e) {
-				    			                e.printStackTrace();
-				    			            } catch (Exception e) {
-				    			                e.printStackTrace();
-				    			            }
-				    			            
-				    			            
-				    			            Boolean foundEpisode = false;
-				    			            for(int i=0;i<mc.videos.size();i++) {
-				    			            	Logger.d("Looking at episode %s", mc.videos.get(i).getIndex());
-				    			            	if(mc.videos.get(i).getIndex().equals(episode) && !videoPlayed) {
-                                                    serversSearched++;
-				    			            		PlexVideo video = mc.videos.get(i);
-				    			            		video.setServer(server);
-				    			            		video.setThumb(show.getThumb());
-				    			            		video.setShowTitle(show.getTitle());
-//				    			            		video.setThumb(video.getGrandparentThumb());
-				    			            		playVideo(video);
-				    			            		foundEpisode = true;
-				    			            		break;
-				    			            	}
-				    			            }
-				    			            Logger.d("foundEpisode = %s", foundEpisode);
-				    			            if(foundEpisode == false && serversSearched == plexmediaServers.size() && !videoPlayed) {
-                                                serversSearched++;
-				    			            	feedback("Sorry, I couldn't find that episode.");
-				    			            	searchDialog.dismiss();
-				    			    			finish();
-				    			    			return;
-				    			            }
-				    			        }
-				    			    });
-				            	} catch(Exception e) {
-				            		Logger.e("Exception getting episode list: %s", e.toString());
-                        e.printStackTrace();
-				            	}
-				            }
-				        }
-				    });
-				} catch (Exception e) {
-					Logger.e("Exception getting search results: %s", e.toString());
-				}
+        String url = "http://" + server.getAddress() + ":" + server.getPort() + "" + show.getKey();
+        PlexHttpClient.get(url, null, new PlexHttpMediaContainerHandler()
+        {
+          @Override
+          public void onSuccess(MediaContainer mc)
+          {
+            PlexDirectory foundSeason = null;
+            for(int i=0;i<mc.directories.size();i++) {
+              PlexDirectory directory = mc.directories.get(i);
+              if(directory.getTitle().equals("Season " + season)) {
+                Logger.d("Found season %s: %s.", season, directory.getKey());
+                foundSeason = directory;
+                break;
+              }
+            }
+
+            if(foundSeason == null && serversSearched == plexmediaServers.size() && !videoPlayed) {
+              serversSearched++;
+              feedback("Sorry, I couldn't find that season.");
+              searchDialog.dismiss();
+              finish();
+              return;
+            } else if(foundSeason != null) {
+              String url = "http://" + server.getAddress() + ":" + server.getPort() + "" + foundSeason.getKey();
+              PlexHttpClient.get(url, null, new PlexHttpMediaContainerHandler()
+              {
+                @Override
+                public void onSuccess(MediaContainer mc)
+                {
+                  Boolean foundEpisode = false;
+                  for(int i=0;i<mc.videos.size();i++) {
+                    Logger.d("Looking at episode %s", mc.videos.get(i).getIndex());
+                    if(mc.videos.get(i).getIndex().equals(episode) && !videoPlayed) {
+                      serversSearched++;
+                      PlexVideo video = mc.videos.get(i);
+                      video.setServer(server);
+                      video.setThumb(show.getThumb());
+                      video.setShowTitle(show.getTitle());
+                      playVideo(video);
+                      foundEpisode = true;
+                      break;
+                    }
+                  }
+                  Logger.d("foundEpisode = %s", foundEpisode);
+                  if(foundEpisode == false && serversSearched == plexmediaServers.size() && !videoPlayed) {
+                    serversSearched++;
+                    feedback("Sorry, I couldn't find that episode.");
+                    searchDialog.dismiss();
+                    finish();
+                    return;
+                  }
+                }
+              });
+            }
+          }
+        });
 			}
 		}
 	}
@@ -800,132 +702,98 @@ public class PlayMediaActivity extends Activity {
       }
       for(int i=0;i<server.getTvSections().size();i++) {
         String section = server.getTvSections().get(i);
-        try {
-          String url = "http://" + server.getAddress() + ":" + server.getPort() + "/library/sections/" + section + "/search?type=2&query=" + queryTerm;
-          AsyncHttpClient httpClient = new AsyncHttpClient();
-          httpClient.get(url, new AsyncHttpResponseHandler() {
-            @Override
-            public void onSuccess(String response) {
-              showSectionsSearched++;
-              MediaContainer mc = new MediaContainer();
-              try {
-                mc = serial.read(MediaContainer.class, response);
-              } catch (NotFoundException e) {
-                e.printStackTrace();
-              } catch (Exception e) {
-                e.printStackTrace();
-              }
-              for(int j=0;j<mc.directories.size();j++) {
-                PlexDirectory show = mc.directories.get(j);
-                show.server = server;
-                shows.add(show);
-              }
+        String url = "http://" + server.getAddress() + ":" + server.getPort() + "/library/sections/" + section + "/search?type=2&query=" + queryTerm;
+        PlexHttpClient.get(url, null, new PlexHttpMediaContainerHandler()
+        {
+          @Override
+          public void onSuccess(MediaContainer mc)
+          {
+            showSectionsSearched++;
+            for(int j=0;j<mc.directories.size();j++) {
+              PlexDirectory show = mc.directories.get(j);
+              show.server = server;
+              shows.add(show);
+            }
 
-              if(server.getTvSections().size() == showSectionsSearched) {
-                serversSearched++;
-                if(serversSearched == plexmediaServers.size()) {
-                  doLatestEpisode();
-                }
+            if(server.getTvSections().size() == showSectionsSearched) {
+              serversSearched++;
+              if(serversSearched == plexmediaServers.size()) {
+                doLatestEpisode();
               }
             }
-          });
-
-        } catch (Exception e) {
-          Logger.e("Exception getting search results: %s", e.toString());
-        }
+          }
+        });
       }
     }
   }
 
   private void doLatestEpisode() {
-    // For now, just grab the latest show by season/episode
-    try {
-      final PlexDirectory show = shows.get(0);
-      String url = "http://" + show.server.getAddress() + ":" + show.server.getPort() + "/library/metadata/" + show.ratingKey + "/allLeaves";
-      AsyncHttpClient httpClient = new AsyncHttpClient();
-      httpClient.get(url, new AsyncHttpResponseHandler() {
-        @Override
-        public void onSuccess(String response) {
-          showSectionsSearched++;
-          MediaContainer mc = new MediaContainer();
-          try {
-            mc = serial.read(MediaContainer.class, response);
-          } catch (NotFoundException e) {
-            e.printStackTrace();
-          } catch (Exception e) {
-            e.printStackTrace();
-          }
-          PlexVideo latestVideo = null;
-          for(int j=0;j<mc.videos.size();j++) {
-            PlexVideo video = mc.videos.get(j);
-            if(latestVideo == null || latestVideo.airDate().before(video.airDate()))
-              latestVideo = video;
-          }
-          latestVideo.setServer(show.server);
-          Logger.d("Found video: %s", latestVideo.airDate());
-          if(latestVideo != null) {
-            playVideo(latestVideo);
-          } else {
-            feedback("Sorry, I couldn't find a video to play.");
-          }
+    final PlexDirectory show = shows.get(0);
+    String url = "http://" + show.server.getAddress() + ":" + show.server.getPort() + "/library/metadata/" + show.ratingKey + "/allLeaves";
+    PlexHttpClient.get(url, null, new PlexHttpMediaContainerHandler()
+    {
+      @Override
+      public void onSuccess(MediaContainer mc)
+      {
+        showSectionsSearched++;
+        PlexVideo latestVideo = null;
+        for(int j=0;j<mc.videos.size();j++) {
+          PlexVideo video = mc.videos.get(j);
+          if(latestVideo == null || latestVideo.airDate().before(video.airDate()))
+            latestVideo = video;
         }
-      });
-
-    } catch (Exception e) {
-      Logger.e("Exception getting search results: %s", e.toString());
-    }
+        latestVideo.setServer(show.server);
+        Logger.d("Found video: %s", latestVideo.airDate());
+        if(latestVideo != null) {
+          playVideo(latestVideo);
+        } else {
+          feedback("Sorry, I couldn't find a video to play.");
+        }
+      }
+    });
   }
 
 	private void doNextEpisodeSearch(final String queryTerm) {
 		showSectionsSearched = 0;
 		serversSearched = 0;
 		for(final PlexServer server : this.plexmediaServers.values()) {
-            if(server.getTvSections().size() == 0) {
-                serversSearched++;
-                if(serversSearched == plexmediaServers.size()) {
-                    onFinishedNextEpisodeSearch(queryTerm);
-                }
-            }
+      if(server.getTvSections().size() == 0) {
+        serversSearched++;
+        if(serversSearched == plexmediaServers.size()) {
+            onFinishedNextEpisodeSearch(queryTerm);
+        }
+      }
 			for(int i=0;i<server.getTvSections().size();i++) {
 				String section = server.getTvSections().get(i);
-				try {
-				    String url = "http://" + server.getAddress() + ":" + server.getPort() + "/library/sections/" + section + "/onDeck";
-				    AsyncHttpClient httpClient = new AsyncHttpClient();
-				    httpClient.get(url, new AsyncHttpResponseHandler() {
-				        @Override
-				        public void onSuccess(String response) {
-	//			            Logger.d("HTTP REQUEST: %s", response);
-				            showSectionsSearched++;
-				            
-				            MediaContainer mc = new MediaContainer();
-				            try {
-				            	mc = serial.read(MediaContainer.class, response);
-				            } catch (NotFoundException e) {
-				                e.printStackTrace();
-				            } catch (Exception e) {
-				                e.printStackTrace();
-				            }
-				            for(int j=0;j<mc.videos.size();j++) {
-				            	PlexVideo video = mc.videos.get(j);
-				            	if(video.getGrandparentTitle().toLowerCase().equals(queryTerm)) {
-					            	video.setServer(server);
-					            	video.setThumb(video.getGrandparentThumb());
-					            	video.setShowTitle(video.getGrandparentTitle());
-					            	videos.add(video);
-				            	}
-				            }
+        String url = "http://" + server.getAddress() + ":" + server.getPort() + "/library/sections/" + section + "/onDeck";
+        PlexHttpClient.get(url, null, new PlexHttpMediaContainerHandler()
+        {
+          @Override
+          public void onSuccess(MediaContainer mc)
+          {
+            showSectionsSearched++;
+            for (int j = 0; j < mc.videos.size(); j++)
+            {
+              PlexVideo video = mc.videos.get(j);
+              if (video.getGrandparentTitle().toLowerCase().equals(queryTerm))
+              {
+                video.setServer(server);
+                video.setThumb(video.getGrandparentThumb());
+                video.setShowTitle(video.getGrandparentTitle());
+                videos.add(video);
+              }
+            }
 
-				            if(server.getTvSections().size() == showSectionsSearched) {
-                                serversSearched++;
-				            	if(serversSearched == plexmediaServers.size()) {
-				            		onFinishedNextEpisodeSearch(queryTerm);
-				            	}
-				        	}
-				        }
-				    });
-				} catch(Exception e) {
-					Logger.e("Exception doing latest episode search: %s", e.toString());
-				}
+            if (server.getTvSections().size() == showSectionsSearched)
+            {
+              serversSearched++;
+              if (serversSearched == plexmediaServers.size())
+              {
+                onFinishedNextEpisodeSearch(queryTerm);
+              }
+            }
+          }
+        });
 			}
 		}
 	}
@@ -942,56 +810,42 @@ public class PlayMediaActivity extends Activity {
 		}
 	}
 	
-	private void doMovieSearch(String mediaType, final String queryTerm) {
+	private void doMovieSearch(final String queryTerm) {
 		movieSectionsSearched = 0;
 		serversSearched = 0;
 		for(final PlexServer server : this.plexmediaServers.values()) {
 			Logger.d("Searching server: %s", server.getMachineIdentifier());
-            if(server.getMovieSections().size() == 0) {
-                serversSearched++;
-                if(serversSearched == plexmediaServers.size()) {
-                    onMovieSearchFinished(queryTerm);
-                }
-            }
+      if(server.getMovieSections().size() == 0) {
+        serversSearched++;
+        if(serversSearched == plexmediaServers.size()) {
+            onMovieSearchFinished(queryTerm);
+        }
+      }
 			for(int i=0;i<server.getMovieSections().size();i++) {
 				String section = server.getMovieSections().get(i);
-				try {
-				    String url = "http://" + server.getAddress() + ":" + server.getPort() + "/library/sections/" + section + "/search?type=1&query=" + queryTerm;
-				    AsyncHttpClient httpClient = new AsyncHttpClient();
-				    httpClient.get(url, new AsyncHttpResponseHandler() {
-				        @Override
-				        public void onSuccess(String response) {
-	//			            Logger.d("HTTP REQUEST: %s", response);
-				            movieSectionsSearched++;
-				            
-				            MediaContainer mc = new MediaContainer();
-				            try {
-				            	mc = serial.read(MediaContainer.class, response);
-				            } catch (NotFoundException e) {
-				                e.printStackTrace();
-				            } catch (Exception e) {
-				                e.printStackTrace();
-				            }
-				            for(int j=0;j<mc.videos.size();j++) {
-				            	PlexVideo video = mc.videos.get(j);
-				            	video.setServer(server);
+        String url = "http://" + server.getAddress() + ":" + server.getPort() + "/library/sections/" + section + "/search?type=1&query=" + queryTerm;
+        PlexHttpClient.get(url, null, new PlexHttpMediaContainerHandler()
+        {
+          @Override
+          public void onSuccess(MediaContainer mc)
+          {
+            movieSectionsSearched++;
+            for(int j=0;j<mc.videos.size();j++) {
+              PlexVideo video = mc.videos.get(j);
+              video.setServer(server);
 //				            	video.setThumbnail(video.getThumb());
-				            	video.setShowTitle(mc.grandparentTitle);
-				            	videos.add(video);
-				            }
-				            Logger.d("Videos: %d", mc.videos.size());
-				            if(server.getMovieSections().size() == movieSectionsSearched) {
-				            	serversSearched++;
-				            	if(serversSearched == plexmediaServers.size()) {
-				            		onMovieSearchFinished(queryTerm);
-				            	}
-				            }
-				        }
-				    });
-		
-				} catch (Exception e) {
-					Logger.e("Exception getting search results: %s", e.toString());
-				}
+              video.setShowTitle(mc.grandparentTitle);
+              videos.add(video);
+            }
+            Logger.d("Videos: %d", mc.videos.size());
+            if(server.getMovieSections().size() == movieSectionsSearched) {
+              serversSearched++;
+              if(serversSearched == plexmediaServers.size()) {
+                onMovieSearchFinished(queryTerm);
+              }
+            }
+          }
+        });
 			}
 			
 		}
@@ -1035,21 +889,11 @@ public class PlayMediaActivity extends Activity {
 //    if(mPrefs.getBoolean("resume", false) || resumePlayback) {
 //      url += "&viewOffset=" + track.getViewOffset();
 //    }
-    Logger.d("Url: %s", url);
-    AsyncHttpClient httpClient = new AsyncHttpClient();
-    httpClient.get(url, new AsyncHttpResponseHandler() {
+    PlexHttpClient.get(url, null, new PlexHttpMediaContainerHandler()
+    {
       @Override
-      public void onSuccess(String response) {
-//        Logger.d("Children: %s", response);
-        MediaContainer mc = new MediaContainer();
-        try {
-          mc = serial.read(MediaContainer.class, response);
-        } catch (NotFoundException e) {
-          e.printStackTrace();
-        } catch (Exception e) {
-          e.printStackTrace();
-        }
-
+      public void onSuccess(MediaContainer mc)
+      {
         if(mc.tracks.size() > 0) {
           PlexTrack track = mc.tracks.get(0);
           track.setServer(album.server);
@@ -1073,40 +917,30 @@ public class PlayMediaActivity extends Activity {
   }
 
 	private void playTrack(final PlexTrack track, final PlexDirectory album) {
-		try {
 //			Logger.d("Host: %s", client.getHost());
 //			Logger.d("Port: %s", client.getPort());
 //			Logger.d("key: %s", video.getKey());
 //			Logger.d("Machine ID: %s", video.getServer().getMachineIdentifier());
-      String url = "http://" + client.getHost() + ":" + client.getPort() + "/player/playback/playMedia?machineIdentifier=" + track.getServer().getMachineIdentifier() + "&key=" + track.getKey();
-      if(album != null)
-        url += "&containerKey=" + album.key;
-      if(mPrefs.getBoolean("resume", false) || resumePlayback) {
-        url += "&viewOffset=" + track.getViewOffset();
-      }
-      Logger.d("Url: %s", url);
-      AsyncHttpClient httpClient = new AsyncHttpClient();
-      httpClient.get(url, new AsyncHttpResponseHandler() {
-        @Override
-        public void onSuccess(String response) {
-//		            Logger.d("HTTP REQUEST: %s", response);
-
-          searchDialog.dismiss();
-
-          PlexResponse r = new PlexResponse();
-          try {
-            r = serial.read(PlexResponse.class, response);
-          } catch (Exception e) {
-            Logger.e("Exception parsing response: %s", e.toString());
+    String url = "http://" + client.getHost() + ":" + client.getPort() + "/player/playback/playMedia?machineIdentifier=" + track.getServer().getMachineIdentifier() + "&key=" + track.getKey();
+    if(album != null)
+      url += "&containerKey=" + album.key;
+    if(mPrefs.getBoolean("resume", false) || resumePlayback) {
+      url += "&viewOffset=" + track.getViewOffset();
+    }
+    PlexHttpClient.get(url, null, new PlexHttpResponseHandler()
+    {
+      @Override
+      public void onSuccess(PlexResponse r)
+      {
+        searchDialog.dismiss();
+        Boolean passed = true;
+        if(r.getCode() != null) {
+          if(!r.getCode().equals("200")) {
+            passed = false;
           }
-          Boolean passed = true;
-          if(r.getCode() != null) {
-              if(!r.getCode().equals("200")) {
-                  passed = false;
-              }
-          }
-          Logger.d("Playback response: %s", r.getCode());
-          if(passed) {
+        }
+        Logger.d("Playback response: %s", r.getCode());
+        if(passed) {
           setContentView(R.layout.now_playing_music);
 
           TextView artist = (TextView)findViewById(R.id.nowPlayingArtist);
@@ -1119,41 +953,12 @@ public class PlayMediaActivity extends Activity {
           TextView nowPlayingOnClient = (TextView)findViewById(R.id.nowPlayingOnClient);
           nowPlayingOnClient.setText(getResources().getString(R.string.now_playing_on) + " " + client.getName());
 
-          if(!track.getThumb().equals("")) {
-//	            			final RelativeLayout layout = (RelativeLayout)findViewById(R.id.background);
-            try {
-              final String url = "http://" + track.getServer().getAddress() + ":" + track.getServer().getPort() + track.getThumb();
-              Logger.d("url: %s", url);
-                AsyncHttpClient httpClient = new AsyncHttpClient();
-                httpClient.get(url, new BinaryHttpResponseHandler() {
-                  @Override
-                  public void onSuccess(byte[] imageData) {
-//		            		        	Logger.d("Response length: %s", response.getBytes().length);
-                    InputStream is  = new ByteArrayInputStream(imageData);
-                    try {
-                      is.reset();
-                    } catch (IOException e) {
-                      e.printStackTrace();
-                    }
-                    Drawable d = Drawable.createFromStream(is, "thumb");
-                    d.setAlpha(80);
-    //		            		        	layout.setBackground(d);
-                    ImageView nowPlayingImage = (ImageView)findViewById(R.id.nowPlayingImage);
-                    nowPlayingImage.setImageDrawable(d);
-                  }
-                });
-              } catch(Exception e) {
-                e.printStackTrace();
-              }
-            }
-          }
-        }
-      });
+          PlexHttpClient.setThumb(track, (ImageView)findViewById(R.id.nowPlayingImage));
 
-		} catch (Exception e) {
-			Logger.e("Exception trying to play track: %s", e.toString());
-			e.printStackTrace();
-		}
+
+        }
+      }
+    });
 	}
 	
 	private void playVideo(final PlexVideo video) {
@@ -1163,92 +968,60 @@ public class PlayMediaActivity extends Activity {
 			Logger.d("Port: %s", client.getPort());
 			Logger.d("key: %s", video.getKey());
 			Logger.d("Machine ID: %s", video.getServer().getMachineIdentifier());
-		    String url = "http://" + client.getHost() + ":" + client.getPort() + "/player/playback/playMedia?machineIdentifier=" + video.getServer().getMachineIdentifier() + "&key=" + video.getKey();
-		    if(mPrefs.getBoolean("resume", false) || resumePlayback) {
-		    	url += "&viewOffset=" + video.getViewOffset();
-		    }
-		    Logger.d("Url: %s", url);
-		    AsyncHttpClient httpClient = new AsyncHttpClient();
-		    httpClient.get(url, new AsyncHttpResponseHandler() {
-		        @Override
-		        public void onSuccess(String response) {
-//		            Logger.d("HTTP REQUEST: %s", response);
-		            searchDialog.dismiss();
-		            
-		            PlexResponse r = new PlexResponse();
-		            try {
-		            	r = serial.read(PlexResponse.class, response);
-		            } catch (Exception e) {
-		            	Logger.e("Exception parsing response: %s", e.toString());
-		            }
-		            Boolean passed = true;
-		            if(r.getCode() != null) {
-		            	if(!r.getCode().equals("200")) {
-		            		passed = false;
-		            	}
-		            }
-		            Logger.d("Playback response: %s", r.getCode());
-		            if(passed) {
-		            	videoPlayed = true;
-		            	if(video.getType().equals("movie")) {
-		            		setContentView(R.layout.now_playing_movie);
-		            		TextView title = (TextView)findViewById(R.id.nowPlayingTitle);
-		            		title.setText(video.getTitle());
-		            		TextView genre = (TextView)findViewById(R.id.nowPlayingGenre);
-		            		genre.setText(video.getGenres());
-		            		TextView year = (TextView)findViewById(R.id.nowPlayingYear);
-		            		year.setText(video.getYear());
-		            		TextView duration = (TextView)findViewById(R.id.nowPlayingDuration);
-		            		duration.setText(video.getDuration());
-		            		TextView summary = (TextView)findViewById(R.id.nowPlayingSummary);
-		            		summary.setText(video.getSummary());
-		            	} else {
-		            		setContentView(R.layout.now_playing_show);
-		            		
-		            		TextView showTitle = (TextView)findViewById(R.id.nowPlayingShowTitle);
-		            		showTitle.setText(video.getShowTitle());
-		            		TextView episodeTitle = (TextView)findViewById(R.id.nowPlayingEpisodeTitle);
-		            		episodeTitle.setText(video.getTitle());
-		            		TextView year = (TextView)findViewById(R.id.nowPlayingYear);
-		            		year.setText(video.getYear());
-		            		TextView duration = (TextView)findViewById(R.id.nowPlayingDuration);
-		            		duration.setText(video.getDuration());
-		            		TextView summary = (TextView)findViewById(R.id.nowPlayingSummary);
-		            		summary.setText(video.getSummary());
-		            	}
-		            	
-		            	TextView nowPlayingOnClient = (TextView)findViewById(R.id.nowPlayingOnClient);
-		            	nowPlayingOnClient.setText(getResources().getString(R.string.now_playing_on) + " " + client.getName());
-		            	
-		            	if(!video.getThumb().equals("")) {
-		            		final ScrollView layout = (ScrollView)findViewById(R.id.background);
-		            		try {
-		            			final String url = "http://" + video.getServer().getAddress() + ":" + video.getServer().getPort() + video.getThumb();
-		            			Logger.d("url: %s", url);
-		            		    AsyncHttpClient httpClient = new AsyncHttpClient();
-		            		    httpClient.get(url, new BinaryHttpResponseHandler() {
-		            		        @Override
-		            		        public void onSuccess(byte[] imageData) {
-//		            		        	Logger.d("Response length: %d", response.getBytes().length);
-		            		        	InputStream is  = new ByteArrayInputStream(imageData);
-		            		        	try {
-											is.reset();
-										} catch (IOException e) {
-											e.printStackTrace();
-										}
-		            		        	Drawable d = Drawable.createFromStream(is, "thumb");
-		            		        	d.setAlpha(80);
-		            		        	layout.setBackground(d);
-		            		        }
-		            		    });
-		            		} catch(Exception e) {
-		            			e.printStackTrace();
-		            		}
-		            	}
-		            }
-		        }
-		    });
+      String url = "http://" + client.getHost() + ":" + client.getPort() + "/player/playback/playMedia?machineIdentifier=" + video.getServer().getMachineIdentifier() + "&key=" + video.getKey();
+      if(mPrefs.getBoolean("resume", false) || resumePlayback) {
+        url += "&viewOffset=" + video.getViewOffset();
+      }
 
+      PlexHttpClient.get(url, null, new PlexHttpResponseHandler()
+      {
+        @Override
+        public void onSuccess(PlexResponse r)
+        {
+          searchDialog.dismiss();
+          Boolean passed = true;
+          if(r.getCode() != null) {
+            if(!r.getCode().equals("200")) {
+              passed = false;
+            }
+          }
+          Logger.d("Playback response: %s", r.getCode());
+          if(passed) {
+            videoPlayed = true;
+            if(video.getType().equals("movie")) {
+              setContentView(R.layout.now_playing_movie);
+              TextView title = (TextView)findViewById(R.id.nowPlayingTitle);
+              title.setText(video.getTitle());
+              TextView genre = (TextView)findViewById(R.id.nowPlayingGenre);
+              genre.setText(video.getGenres());
+              TextView year = (TextView)findViewById(R.id.nowPlayingYear);
+              year.setText(video.getYear());
+              TextView duration = (TextView)findViewById(R.id.nowPlayingDuration);
+              duration.setText(video.getDuration());
+              TextView summary = (TextView)findViewById(R.id.nowPlayingSummary);
+              summary.setText(video.getSummary());
+            } else {
+              setContentView(R.layout.now_playing_show);
+
+              TextView showTitle = (TextView)findViewById(R.id.nowPlayingShowTitle);
+              showTitle.setText(video.getShowTitle());
+              TextView episodeTitle = (TextView)findViewById(R.id.nowPlayingEpisodeTitle);
+              episodeTitle.setText(video.getTitle());
+              TextView year = (TextView)findViewById(R.id.nowPlayingYear);
+              year.setText(video.getYear());
+              TextView duration = (TextView)findViewById(R.id.nowPlayingDuration);
+              duration.setText(video.getDuration());
+              TextView summary = (TextView)findViewById(R.id.nowPlayingSummary);
+              summary.setText(video.getSummary());
+            }
+
+            TextView nowPlayingOnClient = (TextView)findViewById(R.id.nowPlayingOnClient);
+            nowPlayingOnClient.setText(getResources().getString(R.string.now_playing_on) + " " + client.getName());
+
+            PlexHttpClient.setThumb(video, (ScrollView)findViewById(R.id.background));
+          }
+        }
+      });
 		} catch (Exception e) {
 			Logger.e("Exception trying to play video: %s", e.toString());
 			e.printStackTrace();

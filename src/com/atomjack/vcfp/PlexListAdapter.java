@@ -1,6 +1,6 @@
 package com.atomjack.vcfp;
 
-import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import android.app.Dialog;
@@ -16,11 +16,11 @@ import com.atomjack.vcfp.model.PlexServer;
 
 public class PlexListAdapter extends BaseAdapter {
   private final Context context;
-  private List<PlexClient> m_clients;
+  private Map<String, PlexClient> m_clients;
   private ConcurrentHashMap<String, PlexServer> m_servers;
 
-  private String[] mKeys;
-
+  private String[] m_serverKeys;
+  private String[] m_clientKeys;
   private Dialog m_dialog;
 
   public final static int TYPE_SERVER = 0;
@@ -33,19 +33,20 @@ public class PlexListAdapter extends BaseAdapter {
     this.context = context;
   }
 
-  public void setClients(List<PlexClient> clients) {
+  public void setClients(Map<String, PlexClient> clients) {
     m_clients = clients;
+    m_clientKeys = m_clients.keySet().toArray(new String[clients.size()]);
   }
 
   public void setServers(ConcurrentHashMap<String, PlexServer> servers) {
     m_servers = servers;
-    mKeys = m_servers.keySet().toArray(new String[servers.size()]);
+    m_serverKeys = m_servers.keySet().toArray(new String[servers.size()]);
   }
 
   @Override
   public int getCount() {
     if(m_type == TYPE_SERVER)
-      return m_servers.size();
+      return m_servers.size() + 1;
     else if(m_type == TYPE_CLIENT)
       return m_clients.size();
     return 0;
@@ -54,9 +55,9 @@ public class PlexListAdapter extends BaseAdapter {
   @Override
   public Object getItem(int position) {
     if(m_type == TYPE_SERVER)
-      return m_servers.get(mKeys[position]);
+      return position == 0 ? new PlexServer("Scan All") : m_servers.get(m_serverKeys[position-1]);
     else if(m_type == TYPE_CLIENT)
-      return m_clients.get(position);
+      return m_clients.get(m_clientKeys[position]);
     return null;
   }
 

@@ -1,7 +1,7 @@
 package com.atomjack.vcfp;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.simpleframework.xml.Serializer;
@@ -33,9 +33,9 @@ import com.atomjack.vcfp.model.MainSetting;
 import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexServer;
+import com.atomjack.vcfp.net.PlexHttpClient;
+import com.atomjack.vcfp.net.PlexHttpMediaContainerHandler;
 import com.google.gson.Gson;
-import com.loopj.android.http.AsyncHttpClient;
-import com.loopj.android.http.AsyncHttpResponseHandler;
 import com.bugsense.trace.BugSenseHandler;
 
 public class MainActivity extends Activity {
@@ -54,8 +54,10 @@ public class MainActivity extends Activity {
 	
 	private PlexServer server = null;
 	private PlexClient client = null;
-	
-	private Serializer serial = new Persister();
+
+  private Map<String, PlexClient> m_clients = new HashMap<String, PlexClient>();
+
+	private static Serializer serial = new Persister();
 	
 	private SharedPreferences mPrefs;
 	private SharedPreferences.Editor mPrefsEditor;
@@ -67,7 +69,7 @@ public class MainActivity extends Activity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-    BugSenseHandler.initAndStartSession(MainActivity.this, BUGSENSE_APIKEY);
+//    BugSenseHandler.initAndStartSession(MainActivity.this, BUGSENSE_APIKEY);
 		
 		
 		mPrefs = getSharedPreferences(PREFS, MODE_PRIVATE);
@@ -256,55 +258,46 @@ public class MainActivity extends Activity {
 		serversScanned = 0;
 		for(PlexServer thisServer : servers.values()) {
 			Logger.d("ScanServersForClients server: %s", thisServer.getName());
-			try {
-			    AsyncHttpClient httpClient = new AsyncHttpClient();
-			    httpClient.get(thisServer.getClientsURL(), new AsyncHttpResponseHandler() {
-			        @Override
-			        public void onSuccess(String response) {
-			        	serversScanned++;
-			    		MediaContainer clientMC = new MediaContainer();
-			    		
-			    		try {
-			    			clientMC = serial.read(MediaContainer.class, response);
-			    		} catch (NotFoundException e) {
-			                e.printStackTrace();
-			            } catch (Exception e) {
-			                e.printStackTrace();
-			            }
-			    		// Exclude non-Plex Home Theater clients (pre 1.0.7)
-			    		List<PlexClient> clients = new ArrayList<PlexClient>();
-			    		for(int i=0;i<clientMC.clients.size();i++) {
-			    			float version = clientMC.clients.get(i).getNumericVersion();
-			    			Logger.d("Version: %f", version);
-			    			if(version >= 1.07 || !clientMC.clients.get(i).getProduct().equals("Plex Home Theater")) {
-			    				clients.add(clientMC.clients.get(i));
-			    			}
-			    		}
-			    		
-			    		searchDialog.dismiss();
-			    		if(clients.size() == 0) {
-			    			AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-			    			builder.setTitle("No Plex Clients Found");
-			    			builder.setCancelable(false)
-			    				.setNeutralButton(R.string.ok, new DialogInterface.OnClickListener() {
-			    			        public void onClick(DialogInterface dialog, int id) {
-			    			            dialog.cancel();
-			    			        }
-			    				});
-			    			AlertDialog d = builder.create();
-			    			d.show();
-			    		} else {
-				            Logger.d("Clients: " + clients.size());
-				            if(serversScanned == VoiceControlForPlexApplication.getPlexMediaServers().size()) {
-				            	showPlexClients(clients);
-				            }
-			    		}
-			        }
-			    });
+      PlexHttpClient.get(thisServer.getClientsURL(), null, new PlexHttpMediaContainerHandler()
+      {
+        @Override
+        public void onSuccess(MediaContainer clientMC)
+        {
+          serversScanned++;
+          // Exclude non-Plex Home Theater clients (pre 1.0.7)
+//          List<PlexClient> clients = new ArrayList<PlexClient>();
+          Logger.d("clientMC size: %d", clientMC.clients.size());
+          for(int i=0;i<clientMC.clients.size();i++) {
+            float version = clientMC.clients.get(i).getNumericVersion();
+            Logger.d("Version: %f", version);
+            if((version >= 1.07 || !clientMC.clients.get(i).getProduct().equals("Plex Home Theater")) && !m_clients.containsKey(clientMC.clients.get(i).getName())) {
+//              m_clients.add(clientMC.clients.get(i));
+              m_clients.put(clientMC.clients.get(i).getName(), clientMC.clients.get(i));
+            }
+          }
 
-			} catch (Exception e) {
-				Logger.e("Exception getting clients: " + e.toString());
-			}
+          if(serversScanned == VoiceControlForPlexApplication.getPlexMediaServers().size()) {
+            searchDialog.dismiss();
+            if(m_clients.size() == 0) {
+              AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+              builder.setTitle("No Plex Clients Found");
+              builder.setCancelable(false)
+                .setNeutralButton(R.string.ok, new DialogInterface.OnClickListener()
+                {
+                  public void onClick(DialogInterface dialog, int id)
+                  {
+                    dialog.cancel();
+                  }
+                });
+              AlertDialog d = builder.create();
+              d.show();
+            } else {
+              Logger.d("Clients: " + m_clients.size());
+              showPlexClients(m_clients);
+            }
+          }
+        }
+      });
 		}
 	}
 
@@ -320,27 +313,25 @@ public class MainActivity extends Activity {
 		
 		final ListView serverListView = (ListView)serverSelectDialog.findViewById(R.id.serverListView);
 		ConcurrentHashMap<String, PlexServer> servers = new ConcurrentHashMap<String, PlexServer>(VoiceControlForPlexApplication.getPlexMediaServers());
-		servers.put("Scan All", new PlexServer());
 		final PlexListAdapter adapter = new PlexListAdapter(this, PlexListAdapter.TYPE_SERVER);
     adapter.setServers(servers);
 		serverListView.setAdapter(adapter);
 		serverListView.setOnItemClickListener(new ListView.OnItemClickListener() {
 
 			@Override
-			public void onItemClick(AdapterView<?> parentAdapter, View view, int position,
-					long id) {
+			public void onItemClick(AdapterView<?> parentAdapter, View view, int position, long id) {
 				Logger.d("Clicked position %d", position);
 				PlexServer s = (PlexServer)parentAdapter.getItemAtPosition(position);
 				serverSelectDialog.dismiss();
 				setServer(s);
 			}
-			
+
 		});
 	}
 	
 	private void setServer(PlexServer server) {
 		Logger.d("Setting Server %s", server.getName());
-		if(server.getAddress().equals("")) {
+		if(server.getName().equals("")) {
 			this.server = null;
 			saveSettings();
 			initMainWithServer();
@@ -349,28 +340,15 @@ public class MainActivity extends Activity {
 		this.server = server;
 		
 		if(this.client == null) {
-			try {
-			    AsyncHttpClient httpClient = new AsyncHttpClient();
-			    httpClient.get(server.getBaseURL(), new AsyncHttpResponseHandler() {
-			        @Override
-			        public void onSuccess(String response) {
-			            Logger.d("HTTP REQUEST: %s", response);
-			            MediaContainer mc = new MediaContainer();
-			            try {
-			            	mc = serial.read(MediaContainer.class, response);
-			            } catch (NotFoundException e) {
-			                e.printStackTrace();
-			            } catch (Exception e) {
-			                e.printStackTrace();
-			            }
-			            Logger.d("Machine id: " + mc.getMachineIdentifier());
-			            getClients(mc);
-			        }
-			    });
-	
-			} catch (Exception e) {
-				Logger.e("Exception getting clients: " + e.toString());
-			}
+      PlexHttpClient.get(server.getBaseURL(), null, new PlexHttpMediaContainerHandler()
+      {
+        @Override
+        public void onSuccess(MediaContainer mediaContainer)
+        {
+          Logger.d("Machine id: " + mediaContainer.getMachineIdentifier());
+          getClients(mediaContainer);
+        }
+      });
 		} else {
 			this.server = server;
 			this.saveSettings();
@@ -401,6 +379,19 @@ public class MainActivity extends Activity {
 		startService(mServiceIntent);
 	}
 
+  private static MediaContainer getMediaContainer(String response) {
+    MediaContainer mediaContainer = new MediaContainer();
+
+    try {
+      mediaContainer = serial.read(MediaContainer.class, response);
+    } catch (NotFoundException e) {
+      e.printStackTrace();
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+    return mediaContainer;
+  }
+
 	private void getClients(MediaContainer mc) {
 		if(mc != null) {
 			this.server.setMachineIdentifier(mc.getMachineIdentifier());
@@ -414,57 +405,49 @@ public class MainActivity extends Activity {
 		searchDialog.setTitle("Searching for Plex Clients");
 		
 		searchDialog.show();
-		try {
-		    AsyncHttpClient httpClient = new AsyncHttpClient();
-		    httpClient.get(server.getClientsURL(), new AsyncHttpResponseHandler() {
-		        @Override
-		        public void onSuccess(String response) {
-//		            Logger.d("HTTP REQUEST: %s", response);
-		    		MediaContainer clientMC = new MediaContainer();
-		    		
-		    		try {
-		    			clientMC = serial.read(MediaContainer.class, response);
-		    		} catch (NotFoundException e) {
-		                e.printStackTrace();
-		            } catch (Exception e) {
-		                e.printStackTrace();
-		            }
-		    		// Exclude non-Plex Home Theater clients (pre 1.0.7)
-		    		List<PlexClient> clients = new ArrayList<PlexClient>();
-		    		for(int i=0;i<clientMC.clients.size();i++) {
-		    			float version = clientMC.clients.get(i).getNumericVersion();
-		    			Logger.d("Version: %f", version);
-		    			if(version >= 1.07) {
-		    				clients.add(clientMC.clients.get(i));
-		    			}
-		    		}
-		    		
-		    		searchDialog.dismiss();
-		    		if(clients.size() == 0) {
-		    			AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-		    			builder.setTitle("No Plex Clients Found");
-		    			builder.setCancelable(false)
-		    				.setNeutralButton(R.string.ok, new DialogInterface.OnClickListener() {
-		    			        public void onClick(DialogInterface dialog, int id) {
-		    			            dialog.cancel();
-		    			        }
-		    				});
-		    			AlertDialog d = builder.create();
-		    			d.show();
-		    		} else {
-			            Logger.d("Clients: " + clients.size());
-			            
-			            showPlexClients(clients);
-		    		}
-		        }
-		    });
+    PlexHttpClient.get(server.getClientsURL(), null, new PlexHttpMediaContainerHandler()
+    {
+      @Override
+      public void onSuccess(MediaContainer clientMC)
+      {
+        // Exclude non-Plex Home Theater clients (pre 1.0.7)
+        Map<String, PlexClient> clients = new HashMap<String, PlexClient>();
+        for (int i = 0; i < clientMC.clients.size(); i++)
+        {
+          float version = clientMC.clients.get(i).getNumericVersion();
+          Logger.d("Version: %f", version);
+          if (version >= 1.07)
+          {
+            clients.put(clientMC.clients.get(i).getName(), clientMC.clients.get(i));
+          }
+        }
 
-		} catch (Exception e) {
-			Logger.e("Exception getting clients: " + e.toString());
-		}
+        searchDialog.dismiss();
+        if (clients.size() == 0)
+        {
+          AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+          builder.setTitle("No Plex Clients Found");
+          builder.setCancelable(false)
+            .setNeutralButton(R.string.ok, new DialogInterface.OnClickListener()
+            {
+              public void onClick(DialogInterface dialog, int id)
+              {
+                dialog.cancel();
+              }
+            });
+          AlertDialog d = builder.create();
+          d.show();
+        } else
+        {
+          Logger.d("Clients: " + clients.size());
+
+          showPlexClients(clients);
+        }
+      }
+    });
 	}
 
-	private void showPlexClients(List<PlexClient> clients) {
+	private void showPlexClients(Map<String, PlexClient> clients) {
 		if(serverSelectDialog == null) {
 			serverSelectDialog = new Dialog(this);
 		}
