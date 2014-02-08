@@ -4,20 +4,15 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.simpleframework.xml.Serializer;
-import org.simpleframework.xml.core.Persister;
-
 import us.nineworlds.serenity.GDMReceiver;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
-import android.content.res.Resources.NotFoundException;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
@@ -47,8 +42,7 @@ public class MainActivity extends Activity {
   public final static String BUGSENSE_APIKEY = "879458d0";
 
 	private BroadcastReceiver gdmReceiver = new GDMReceiver();
-	private Activity mCurrentActivity = null;
-    
+
 	private Dialog searchDialog = null;
 	private Dialog serverSelectDialog = null;
 	
@@ -57,8 +51,6 @@ public class MainActivity extends Activity {
 
   private Map<String, PlexClient> m_clients = new HashMap<String, PlexClient>();
 
-	private static Serializer serial = new Persister();
-	
 	private SharedPreferences mPrefs;
 	private SharedPreferences.Editor mPrefsEditor;
 	
@@ -69,7 +61,7 @@ public class MainActivity extends Activity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-//    BugSenseHandler.initAndStartSession(MainActivity.this, BUGSENSE_APIKEY);
+    BugSenseHandler.initAndStartSession(MainActivity.this, BUGSENSE_APIKEY);
 		
 		
 		mPrefs = getSharedPreferences(PREFS, MODE_PRIVATE);
@@ -77,8 +69,8 @@ public class MainActivity extends Activity {
 		Gson gson = new Gson();
 		
 		setContentView(R.layout.main);
-		this.server = (PlexServer)gson.fromJson(mPrefs.getString("Server", ""), PlexServer.class);
-		this.client = (PlexClient)gson.fromJson(mPrefs.getString("Client", ""), PlexClient.class);
+		this.server = gson.fromJson(mPrefs.getString("Server", ""), PlexServer.class);
+		this.client = gson.fromJson(mPrefs.getString("Client", ""), PlexClient.class);
 		
 		initMainWithServer();
 	}
@@ -138,8 +130,8 @@ public class MainActivity extends Activity {
 					searchForPlexServers();
 				} else if(holder.tag.equals("client")) {
 					getClients();
-				} else if(holder.tag.equals("feedback")) {
-					selectFeedback();
+//				} else if(holder.tag.equals("feedback")) {
+//					selectFeedback();
 				}
 			}
 		});
@@ -155,14 +147,7 @@ public class MainActivity extends Activity {
 			helpDialog = new AlertDialog.Builder(MainActivity.this);
 		}
 		helpDialog.setTitle(R.string.app_name);
-		/*
-		AlertDialog.Builder alertDialog = new AlertDialog.Builder(MainActivity.this)
-		.setTitle(R.string.app_name)
-		.setMessage(R.string.about_text);
 
-		alertDialog.show();
-		*/
-		
 		if(helpButtonClicked.equals("server")) {
 			helpDialog.setMessage(R.string.help_server);
 		} else if(helpButtonClicked.equals("client")) {
@@ -265,13 +250,11 @@ public class MainActivity extends Activity {
         {
           serversScanned++;
           // Exclude non-Plex Home Theater clients (pre 1.0.7)
-//          List<PlexClient> clients = new ArrayList<PlexClient>();
           Logger.d("clientMC size: %d", clientMC.clients.size());
           for(int i=0;i<clientMC.clients.size();i++) {
             float version = clientMC.clients.get(i).getNumericVersion();
             Logger.d("Version: %f", version);
             if((version >= 1.07 || !clientMC.clients.get(i).getProduct().equals("Plex Home Theater")) && !m_clients.containsKey(clientMC.clients.get(i).getName())) {
-//              m_clients.add(clientMC.clients.get(i));
               m_clients.put(clientMC.clients.get(i).getName(), clientMC.clients.get(i));
             }
           }
@@ -379,19 +362,6 @@ public class MainActivity extends Activity {
 		startService(mServiceIntent);
 	}
 
-  private static MediaContainer getMediaContainer(String response) {
-    MediaContainer mediaContainer = new MediaContainer();
-
-    try {
-      mediaContainer = serial.read(MediaContainer.class, response);
-    } catch (NotFoundException e) {
-      e.printStackTrace();
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
-    return mediaContainer;
-  }
-
 	private void getClients(MediaContainer mc) {
 		if(mc != null) {
 			this.server.setMachineIdentifier(mc.getMachineIdentifier());
@@ -487,23 +457,6 @@ public class MainActivity extends Activity {
 		mPrefsEditor.commit();
 	}
 	
-	public void onReceive(Context context, Intent intent) {
-		String message = "Broadcast intent detected " + intent.getAction();
-		Logger.d(message);
-	}
-	
-	public void onFinishedSearch() {
-		Logger.d("done with search");
-	}
-
-	public Activity getCurrentActivity(){
-        return mCurrentActivity;
-	}
-	
-	public void setCurrentActivity(MainActivity mCurrentActivity){
-		this.mCurrentActivity = mCurrentActivity;
-	}
-  
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		// Inflate the menu; this adds items to the action bar if it is present.

@@ -6,9 +6,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.simpleframework.xml.Serializer;
-import org.simpleframework.xml.core.Persister;
-
 import us.nineworlds.serenity.GDMReceiver;
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -45,7 +42,6 @@ public class PlayMediaActivity extends Activity {
 	private String queryText;
 	private Dialog searchDialog = null;
 	private ConcurrentHashMap<String, PlexServer> plexmediaServers = new ConcurrentHashMap<String, PlexServer>();
-	private static Serializer serial = new Persister();
 	private int serversScanned = 0;
 	private BroadcastReceiver gdmReceiver = new GDMReceiver();
 	private Intent mServiceIntent;
@@ -66,7 +62,8 @@ public class PlayMediaActivity extends Activity {
 		Logger.d("on create PlayMediaActivity");
 		super.onCreate(savedInstanceState);
 
-//    BugSenseHandler.initAndStartSession(PlayMediaActivity.this, MainActivity.BUGSENSE_APIKEY);
+
+    BugSenseHandler.initAndStartSession(PlayMediaActivity.this, MainActivity.BUGSENSE_APIKEY);
 
     mPrefs = getSharedPreferences(PREFS, MODE_PRIVATE);
 
@@ -503,7 +500,6 @@ public class PlayMediaActivity extends Activity {
               thisTrack.setAlbum(thisTrack.getParentTitle());
               Logger.d("Track: %s by %s.", thisTrack.getTitle(), thisTrack.getArtist());
               if(compareTitle(thisTrack.getArtist(), artist)) {
-//              if(thisTrack.getArtist().toLowerCase().equals(artist.toLowerCase())) {
                 thisTrack.setServer(server);
                 tracks.add(thisTrack);
               }
@@ -972,15 +968,11 @@ public class PlayMediaActivity extends Activity {
 			return;
 		}
 	}
-	
-	private void feedback(String text) {
-//		if(mPrefs.getInt("feedback", MainActivity.FEEDBACK_VOICE) == MainActivity.FEEDBACK_VOICE) {
-//			GoogleSearchApi.speak(this, text);
-//		} else {
+
+  private void feedback(String text) {
     Toast.makeText(this, text, Toast.LENGTH_SHORT).show();
-//		}
-		Logger.d(text);
-	}
+    Logger.d(text);
+  }
 
   private void playAlbum(final PlexDirectory album) {
     String url = "http://" + album.server.getAddress() + ":" + album.server.getPort() + album.key;
