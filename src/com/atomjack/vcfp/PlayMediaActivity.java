@@ -12,6 +12,7 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.BroadcastReceiver;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
@@ -47,10 +48,7 @@ public class PlayMediaActivity extends Activity {
 	private Intent mServiceIntent;
 	private List<PlexClient> clients;
 	private PlexClient client = null;
-	private int movieSectionsSearched = 0;
 	private int serversSearched = 0;
-	private int showSectionsSearched = 0;
-	private int musicSectionsSearched = 0;
 	private List<PlexVideo> videos = new ArrayList<PlexVideo>();
 	private Boolean videoPlayed = false;
 	private List<PlexDirectory> shows = new ArrayList<PlexDirectory>();
@@ -399,10 +397,10 @@ public class PlayMediaActivity extends Activity {
 
   private void searchForAlbum(final String artist, final String album) {
     Logger.d("Searching for album %s by %s.", album, artist);
-    musicSectionsSearched = 0;
     serversSearched = 0;
     Logger.d("Servers: %d", this.plexmediaServers.size());
     for(final PlexServer server : this.plexmediaServers.values()) {
+      server.musicSectionsSearched = 0;
       if(server.getMusicSections().size() == 0) {
         serversSearched++;
         if(serversSearched == plexmediaServers.size()) {
@@ -424,7 +422,7 @@ public class PlayMediaActivity extends Activity {
           @Override
           public void onSuccess(MediaContainer mc)
           {
-            musicSectionsSearched++;
+            server.musicSectionsSearched++;
             for(int j=0;j<mc.directories.size();j++) {
               PlexDirectory thisAlbum = mc.directories.get(j);
               Logger.d("Album: %s by %s.", thisAlbum.title, thisAlbum.parentTitle);
@@ -436,7 +434,7 @@ public class PlayMediaActivity extends Activity {
               }
             }
 
-            if(server.getMusicSections().size() == musicSectionsSearched) {
+            if(server.getMusicSections().size() == server.musicSectionsSearched) {
               serversSearched++;
               if(serversSearched == plexmediaServers.size()) {
                 Logger.d("found %d albums to play.", albums.size());
@@ -467,10 +465,10 @@ public class PlayMediaActivity extends Activity {
   }
 
 	private void searchForSong(final String artist, final String track) {
-		musicSectionsSearched = 0;
 		serversSearched = 0;
 		Logger.d("Servers: %d", this.plexmediaServers.size());
 		for(final PlexServer server : this.plexmediaServers.values()) {
+      server.musicSectionsSearched = 0;
 			if(server.getMusicSections().size() == 0) {
 				serversSearched++;
 				if(serversSearched == plexmediaServers.size()) {
@@ -493,7 +491,7 @@ public class PlayMediaActivity extends Activity {
           @Override
           public void onSuccess(MediaContainer mc)
           {
-            musicSectionsSearched++;
+            server.musicSectionsSearched++;
             for(int j=0;j<mc.tracks.size();j++) {
               PlexTrack thisTrack = mc.tracks.get(j);
               thisTrack.setArtist(thisTrack.getGrandparentTitle());
@@ -505,7 +503,7 @@ public class PlayMediaActivity extends Activity {
               }
             }
 
-            if(server.getMusicSections().size() == musicSectionsSearched) {
+            if(server.getMusicSections().size() == server.musicSectionsSearched) {
               serversSearched++;
               if(serversSearched == plexmediaServers.size()) {
                 Logger.d("found music to play.");
@@ -535,9 +533,9 @@ public class PlayMediaActivity extends Activity {
 	}
 
 	private void doShowSearch(String episodeSpecified, final String showSpecified) {
-		showSectionsSearched = 0;
 		serversSearched = 0;
 		for(final PlexServer server : this.plexmediaServers.values()) {
+      server.showSectionsSearched = 0;
       if(server.getTvSections().size() == 0) {
         serversSearched++;
         if(serversSearched == plexmediaServers.size()) {
@@ -552,7 +550,7 @@ public class PlayMediaActivity extends Activity {
           @Override
           public void onSuccess(MediaContainer mc)
           {
-            showSectionsSearched++;
+            server.showSectionsSearched++;
             for(int j=0;j<mc.videos.size();j++) {
               Logger.d("Show: %s", mc.videos.get(j).getGrandparentTitle());
               PlexVideo video = mc.videos.get(j);
@@ -565,7 +563,7 @@ public class PlayMediaActivity extends Activity {
               }
             }
 
-            if(server.getTvSections().size() == showSectionsSearched) {
+            if(server.getTvSections().size() == server.showSectionsSearched) {
               serversSearched++;
               if(serversSearched == plexmediaServers.size()) {
                 playSpecificEpisode(showSpecified);
@@ -605,9 +603,9 @@ public class PlayMediaActivity extends Activity {
 	
 	private void doShowSearch(final String queryTerm, final String season, final String episode) {
 		Logger.d("doShowSearch: %s s%s e%s", queryTerm, season, episode);
-		showSectionsSearched = 0;
 		serversSearched = 0;
 		for(final PlexServer server : this.plexmediaServers.values()) {
+      server.showSectionsSearched = 0;
       Logger.d("Searching server %s", server.getName());
       if(server.getTvSections().size() == 0) {
           Logger.d("%s has no tv sections", server.getName());
@@ -624,12 +622,12 @@ public class PlayMediaActivity extends Activity {
           @Override
           public void onSuccess(MediaContainer mc)
           {
-            showSectionsSearched++;
+            server.showSectionsSearched++;
             for(int j=0;j<mc.directories.size();j++) {
               shows.add(mc.directories.get(j));
             }
 
-            if(server.getTvSections().size() == showSectionsSearched) {
+            if(server.getTvSections().size() == server.showSectionsSearched) {
               serversSearched++;
               if(serversSearched == plexmediaServers.size()) {
                 doEpisodeSearch(queryTerm, season, episode);
@@ -716,9 +714,9 @@ public class PlayMediaActivity extends Activity {
 
   private void doLatestEpisodeSearch(final String queryTerm) {
     Logger.d("doLatestEpisodeSearch: %s", queryTerm);
-    showSectionsSearched = 0;
     serversSearched = 0;
     for(final PlexServer server : this.plexmediaServers.values()) {
+      server.showSectionsSearched = 0;
       Logger.d("Searching server %s", server.getName());
       if(server.getTvSections().size() == 0) {
         Logger.d(server.getName() + " has no tv sections");
@@ -735,7 +733,7 @@ public class PlayMediaActivity extends Activity {
           @Override
           public void onSuccess(MediaContainer mc)
           {
-            showSectionsSearched++;
+            server.showSectionsSearched++;
             for(int j=0;j<mc.directories.size();j++) {
               PlexDirectory show = mc.directories.get(j);
               if(compareTitle(show.title, queryTerm)) {
@@ -745,7 +743,7 @@ public class PlayMediaActivity extends Activity {
               }
             }
 
-            if(server.getTvSections().size() == showSectionsSearched) {
+            if(server.getTvSections().size() == server.showSectionsSearched) {
               serversSearched++;
               if(serversSearched == plexmediaServers.size()) {
                 doLatestEpisode(queryTerm);
@@ -790,7 +788,6 @@ public class PlayMediaActivity extends Activity {
       @Override
       public void onSuccess(MediaContainer mc)
       {
-        showSectionsSearched++;
         PlexVideo latestVideo = null;
         for(int j=0;j<mc.videos.size();j++) {
           PlexVideo video = mc.videos.get(j);
@@ -814,9 +811,9 @@ public class PlayMediaActivity extends Activity {
   }
 
 	private void doNextEpisodeSearch(final String queryTerm) {
-		showSectionsSearched = 0;
 		serversSearched = 0;
 		for(final PlexServer server : this.plexmediaServers.values()) {
+      server.showSectionsSearched = 0;
       if(server.getTvSections().size() == 0) {
         serversSearched++;
         if(serversSearched == plexmediaServers.size()) {
@@ -831,7 +828,7 @@ public class PlayMediaActivity extends Activity {
           @Override
           public void onSuccess(MediaContainer mc)
           {
-            showSectionsSearched++;
+            server.showSectionsSearched++;
             for (int j = 0; j < mc.videos.size(); j++)
             {
               PlexVideo video = mc.videos.get(j);
@@ -844,7 +841,7 @@ public class PlayMediaActivity extends Activity {
               }
             }
 
-            if (server.getTvSections().size() == showSectionsSearched)
+            if (server.getTvSections().size() == server.showSectionsSearched)
             {
               serversSearched++;
               if (serversSearched == plexmediaServers.size())
@@ -893,9 +890,9 @@ public class PlayMediaActivity extends Activity {
 	
 	private void doMovieSearch(final String queryTerm) {
     Logger.d("Doing movie search. %d servers", plexmediaServers.size());
-		movieSectionsSearched = 0;
 		serversSearched = 0;
 		for(final PlexServer server : this.plexmediaServers.values()) {
+      server.movieSectionsSearched = 0;
 			Logger.d("Searching server: %s, %d sections", server.getMachineIdentifier(), server.getMovieSections().size());
       if(server.getMovieSections().size() == 0) {
         serversSearched++;
@@ -911,7 +908,7 @@ public class PlayMediaActivity extends Activity {
           @Override
           public void onSuccess(MediaContainer mc)
           {
-            movieSectionsSearched++;
+            server.movieSectionsSearched++;
             for(int j=0;j<mc.videos.size();j++) {
               PlexVideo video = mc.videos.get(j);
               if(compareTitle(video.getTitle().toLowerCase(), queryTerm.toLowerCase())) {
@@ -921,8 +918,8 @@ public class PlayMediaActivity extends Activity {
               }
             }
             Logger.d("Videos: %d", mc.videos.size());
-            Logger.d("sections searched: %d", movieSectionsSearched);
-            if(server.getMovieSections().size() == movieSectionsSearched) {
+            Logger.d("sections searched: %d", server.movieSectionsSearched);
+            if(server.getMovieSections().size() == server.movieSectionsSearched) {
               serversSearched++;
               if(serversSearched == plexmediaServers.size()) {
                 onMovieSearchFinished(queryTerm);
@@ -1126,10 +1123,10 @@ public class PlayMediaActivity extends Activity {
 	@Override
   protected void onResume() {
     super.onResume();
-//    IntentFilter filters = new IntentFilter();
-//    filters.addAction(GDMService.MSG_RECEIVED);
-//    filters.addAction(GDMService.SOCKET_CLOSED);
-//    LocalBroadcastManager.getInstance(this).registerReceiver(gdmReceiver, filters);
+    IntentFilter filters = new IntentFilter();
+    filters.addAction(GDMService.MSG_RECEIVED);
+    filters.addAction(GDMService.SOCKET_CLOSED);
+    LocalBroadcastManager.getInstance(this).registerReceiver(gdmReceiver, filters);
   }
 
   private static Boolean compareTitle(String title, String queryTerm) {

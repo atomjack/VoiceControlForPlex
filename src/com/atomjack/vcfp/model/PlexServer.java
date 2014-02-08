@@ -44,7 +44,11 @@ public class PlexServer extends PlexDevice {
 	public void setTvSections(List<String> tvSections) {
 		this.tvSections = tvSections;
 	}
-	
+
+  public int movieSectionsSearched = 0;
+  public int showSectionsSearched = 0;
+  public int musicSectionsSearched = 0;
+
 	public void addMovieSection(String key) {
 		if(!movieSections.contains(key)) {
 			movieSections.add(key);

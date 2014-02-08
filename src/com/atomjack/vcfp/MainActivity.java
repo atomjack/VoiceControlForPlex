@@ -341,7 +341,7 @@ public class MainActivity extends Activity {
 	}
 	
 	private void getClients() {
-		if(server.getName().equals(getResources().getString(R.string.scan_all))) {
+		if(server == null || server.getName().equals(getResources().getString(R.string.scan_all))) {
 			scanForClients();
 		} else {
 			getClients(null);
