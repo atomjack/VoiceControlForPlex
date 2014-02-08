@@ -2,9 +2,6 @@ package com.atomjack.vcfp;
 
 import android.util.Log;
 
-/**
- * Created by chris on 1/28/14.
- */
 public class Logger
 {
   public static void i(String format, Object ... args)

@@ -6,7 +6,6 @@ import android.widget.ImageView;
 import android.widget.ScrollView;
 
 import com.atomjack.vcfp.Logger;
-import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.PlexResponse;
 import com.atomjack.vcfp.model.PlexTrack;
@@ -23,9 +22,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-/**
- * Created by chris on 2/1/14.
- */
 public class PlexHttpClient
 {
   private static AsyncHttpClient client = new AsyncHttpClient();
@@ -72,7 +68,7 @@ public class PlexHttpClient
   }
 
   public static void setThumb(PlexTrack track, final ImageView imageView) {
-    if(!track.getThumb().equals("")) {
+    if(track.getThumb() != null && !track.getThumb().equals("")) {
       try {
         final String url = "http://" + track.getServer().getAddress() + ":" + track.getServer().getPort() + track.getThumb();
         Logger.d("Fetching thumb: %s", url);

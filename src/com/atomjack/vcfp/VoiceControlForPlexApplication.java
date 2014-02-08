@@ -33,11 +33,11 @@ public class VoiceControlForPlexApplication
     		    AsyncHttpClient httpClient = new AsyncHttpClient();
     		    httpClient.get(url, new AsyncHttpResponseHandler() {
     		        @Override
-    		        public void onSuccess(String response) {
+                public void onSuccess(int statusCode, org.apache.http.Header[] headers, byte[] responseBody) {
 //    		            Logger.d("HTTP REQUEST: %s", response);
     		            MediaContainer mc = new MediaContainer();
     		            try {
-    		            	mc = serial.read(MediaContainer.class, response);
+    		            	mc = serial.read(MediaContainer.class, new String(responseBody, "UTF-8"));
     		            } catch (NotFoundException e) {
     		                e.printStackTrace();
     		            } catch (Exception e) {

@@ -15,7 +15,6 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.BroadcastReceiver;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
@@ -402,6 +401,7 @@ public class PlayMediaActivity extends Activity {
 	}
 
   private void searchForAlbum(final String artist, final String album) {
+    Logger.d("Searching for album %s by %s.", album, artist);
     musicSectionsSearched = 0;
     serversSearched = 0;
     Logger.d("Servers: %d", this.plexmediaServers.size());
@@ -431,7 +431,9 @@ public class PlayMediaActivity extends Activity {
             for(int j=0;j<mc.directories.size();j++) {
               PlexDirectory thisAlbum = mc.directories.get(j);
               Logger.d("Album: %s by %s.", thisAlbum.title, thisAlbum.parentTitle);
-              if(thisAlbum.parentTitle.toLowerCase().equals(album.toLowerCase()) || artist.equals("")) {
+              if(compareTitle(thisAlbum.title, album) || artist.equals("")) {
+//              if(thisAlbum.title.toLowerCase().equals(album.toLowerCase()) || artist.equals("")) {
+                Logger.d("adding album");
                 thisAlbum.server = server;
                 albums.add(thisAlbum);
               }
@@ -440,14 +442,23 @@ public class PlayMediaActivity extends Activity {
             if(server.getMusicSections().size() == musicSectionsSearched) {
               serversSearched++;
               if(serversSearched == plexmediaServers.size()) {
-                Logger.d("found music to play.");
+                Logger.d("found %d albums to play.", albums.size());
                 if(albums.size() == 1) {
                   playAlbum(albums.get(0));
                 } else {
-                  feedback(albums.size() > 1 ? "I found more than one matching album. Please specify artist." : "Sorry, I couldn't find an album to play.");
-                  searchDialog.dismiss();
-                  finish();
-                  return;
+                  Boolean exactMatch = false;
+                  for(int k=0;k<albums.size();k++) {
+                    if(albums.get(k).title.toLowerCase().equals(album.toLowerCase())) {
+                      exactMatch = true;
+                      playAlbum(albums.get(k));
+                    }
+                  }
+                  if(!exactMatch) {
+                    feedback(albums.size() > 1 ? "I found more than one matching album. Please specify artist." : "Sorry, I couldn't find an album to play.");
+                    searchDialog.dismiss();
+                    finish();
+                    return;
+                  }
                 }
               }
 
@@ -491,7 +502,8 @@ public class PlayMediaActivity extends Activity {
               thisTrack.setArtist(thisTrack.getGrandparentTitle());
               thisTrack.setAlbum(thisTrack.getParentTitle());
               Logger.d("Track: %s by %s.", thisTrack.getTitle(), thisTrack.getArtist());
-              if(thisTrack.getArtist().toLowerCase().equals(artist.toLowerCase())) {
+              if(compareTitle(thisTrack.getArtist(), artist)) {
+//              if(thisTrack.getArtist().toLowerCase().equals(artist.toLowerCase())) {
                 thisTrack.setServer(server);
                 tracks.add(thisTrack);
               }
@@ -504,10 +516,19 @@ public class PlayMediaActivity extends Activity {
                 if(tracks.size() > 0) {
                   playTrack(tracks.get(0));
                 } else {
-                  feedback("Sorry, I couldn't find a track to play.");
-                  searchDialog.dismiss();
-                  finish();
-                  return;
+                  Boolean exactMatch = false;
+                  for(int k=0;k<albums.size();k++) {
+                    if(tracks.get(k).getArtist().toLowerCase().equals(artist.toLowerCase())) {
+                      exactMatch = true;
+                      playTrack(tracks.get(k));
+                    }
+                  }
+                  if(!exactMatch) {
+                    feedback("Sorry, I couldn't find a track to play.");
+                    searchDialog.dismiss();
+                    finish();
+                    return;
+                  }
                 }
               }
             }
@@ -524,7 +545,7 @@ public class PlayMediaActivity extends Activity {
       if(server.getTvSections().size() == 0) {
         serversSearched++;
         if(serversSearched == plexmediaServers.size()) {
-          playSpecificEpisode();
+          playSpecificEpisode(showSpecified);
         }
       }
 			for(int i=0;i<server.getTvSections().size();i++) {
@@ -539,7 +560,7 @@ public class PlayMediaActivity extends Activity {
             for(int j=0;j<mc.videos.size();j++) {
               Logger.d("Show: %s", mc.videos.get(j).getGrandparentTitle());
               PlexVideo video = mc.videos.get(j);
-              if(video.getGrandparentTitle().toLowerCase().equals(showSpecified.toLowerCase())) {
+              if(compareTitle(video.getGrandparentTitle(), showSpecified)) {
                 video.setServer(server);
                 video.setThumb(video.getGrandparentThumb());
                 video.setShowTitle(video.getGrandparentTitle());
@@ -551,7 +572,7 @@ public class PlayMediaActivity extends Activity {
             if(server.getTvSections().size() == showSectionsSearched) {
               serversSearched++;
               if(serversSearched == plexmediaServers.size()) {
-                playSpecificEpisode();
+                playSpecificEpisode(showSpecified);
               }
             }
           }
@@ -560,7 +581,7 @@ public class PlayMediaActivity extends Activity {
 		}
 	}
 
-	private void playSpecificEpisode() {
+	private void playSpecificEpisode(String showSpecified) {
 		if(videos.size() == 0) {
 			feedback("Sorry, I couldn't find the episode you specified.");
 			searchDialog.dismiss();
@@ -569,10 +590,20 @@ public class PlayMediaActivity extends Activity {
 		} else if(videos.size() == 1) {
 			playVideo(videos.get(0));
 		} else {
-			feedback("Sorry, I found more than one match. Try to be more specific?");
-			searchDialog.dismiss();
-			finish();
-			return;
+      Boolean exactMatch = false;
+      for(int i=0;i<videos.size();i++) {
+        if(videos.get(i).getGrandparentTitle().toLowerCase().equals(showSpecified.toLowerCase())) {
+          exactMatch = true;
+          playVideo(videos.get(i));
+          break;
+        }
+      }
+      if(!exactMatch) {
+        feedback("Sorry, I found more than one matching show. Try to be more specific?");
+        searchDialog.dismiss();
+        finish();
+        return;
+      }
 		}
 	}
 	
@@ -697,7 +728,7 @@ public class PlayMediaActivity extends Activity {
         Logger.d(server.getName() + " has no tv sections");
         serversSearched++;
         if(serversSearched == plexmediaServers.size()) {
-          doLatestEpisode();
+          doLatestEpisode(queryTerm);
         }
       }
       for(int i=0;i<server.getTvSections().size();i++) {
@@ -711,14 +742,17 @@ public class PlayMediaActivity extends Activity {
             showSectionsSearched++;
             for(int j=0;j<mc.directories.size();j++) {
               PlexDirectory show = mc.directories.get(j);
-              show.server = server;
-              shows.add(show);
+              if(compareTitle(show.title, queryTerm)) {
+                show.server = server;
+                shows.add(show);
+                Logger.d("Adding %s", show.title);
+              }
             }
 
             if(server.getTvSections().size() == showSectionsSearched) {
               serversSearched++;
               if(serversSearched == plexmediaServers.size()) {
-                doLatestEpisode();
+                doLatestEpisode(queryTerm);
               }
             }
           }
@@ -727,8 +761,33 @@ public class PlayMediaActivity extends Activity {
     }
   }
 
-  private void doLatestEpisode() {
-    final PlexDirectory show = shows.get(0);
+  private void doLatestEpisode(String queryTerm) {
+    if(shows.size() == 0) {
+      feedback("Sorry, I couldn't find a video to play.");
+      searchDialog.dismiss();
+      finish();
+      return;
+    }
+    PlexDirectory chosenShow = null;
+    if(shows.size() > 1) {
+      for(int i=0;i<shows.size();i++) {
+        PlexDirectory show = shows.get(i);
+        if(show.title.toLowerCase().equals(queryTerm.toLowerCase())) {
+          chosenShow = show;
+          break;
+        }
+      }
+    } else {
+      chosenShow = shows.get(0);
+    }
+
+    if(chosenShow == null) {
+      feedback("I found more than one matching show. Please be more specific.");
+      searchDialog.dismiss();
+      finish();
+      return;
+    }
+    final PlexDirectory show = chosenShow;
     String url = "http://" + show.server.getAddress() + ":" + show.server.getPort() + "/library/metadata/" + show.ratingKey + "/allLeaves";
     PlexHttpClient.get(url, null, new PlexHttpMediaContainerHandler()
     {
@@ -748,6 +807,9 @@ public class PlayMediaActivity extends Activity {
           playVideo(latestVideo);
         } else {
           feedback("Sorry, I couldn't find a video to play.");
+          searchDialog.dismiss();
+          finish();
+          return;
         }
       }
     });
@@ -775,12 +837,12 @@ public class PlayMediaActivity extends Activity {
             for (int j = 0; j < mc.videos.size(); j++)
             {
               PlexVideo video = mc.videos.get(j);
-              if (video.getGrandparentTitle().toLowerCase().equals(queryTerm))
-              {
+              if(compareTitle(video.getGrandparentTitle(), queryTerm)) {
                 video.setServer(server);
                 video.setThumb(video.getGrandparentThumb());
                 video.setShowTitle(video.getGrandparentTitle());
                 videos.add(video);
+                Logger.d("ADDING " + video.getGrandparentTitle());
               }
             }
 
@@ -805,20 +867,42 @@ public class PlayMediaActivity extends Activity {
 			finish();
 			return;
 		} else {
-			// For now, just take the first one
-			playVideo(videos.get(0));
+      if(videos.size() == 1)
+  			playVideo(videos.get(0));
+      else {
+        // We found more than one matching show. Let's check if the title of any of the matching shows
+        // exactly equals the query term, otherwise tell the user to be more specific.
+        //
+        int exactMatch = -1;
+        for(int i=0;i<videos.size();i++) {
+          if(videos.get(i).getGrandparentTitle().toLowerCase().equals(queryTerm.toLowerCase())) {
+            exactMatch = i;
+            break;
+          }
+        }
+
+        if(exactMatch > -1) {
+          playVideo(videos.get(exactMatch));
+        } else {
+          feedback("I found more than one matching show. Please be more specific.");
+          searchDialog.dismiss();
+          finish();
+          return;
+        }
+      }
 		}
 	}
 	
 	private void doMovieSearch(final String queryTerm) {
+    Logger.d("Doing movie search. %d servers", plexmediaServers.size());
 		movieSectionsSearched = 0;
 		serversSearched = 0;
 		for(final PlexServer server : this.plexmediaServers.values()) {
-			Logger.d("Searching server: %s", server.getMachineIdentifier());
+			Logger.d("Searching server: %s, %d sections", server.getMachineIdentifier(), server.getMovieSections().size());
       if(server.getMovieSections().size() == 0) {
         serversSearched++;
         if(serversSearched == plexmediaServers.size()) {
-            onMovieSearchFinished(queryTerm);
+          onMovieSearchFinished(queryTerm);
         }
       }
 			for(int i=0;i<server.getMovieSections().size();i++) {
@@ -832,12 +916,14 @@ public class PlayMediaActivity extends Activity {
             movieSectionsSearched++;
             for(int j=0;j<mc.videos.size();j++) {
               PlexVideo video = mc.videos.get(j);
-              video.setServer(server);
-//				            	video.setThumbnail(video.getThumb());
-              video.setShowTitle(mc.grandparentTitle);
-              videos.add(video);
+              if(compareTitle(video.getTitle().toLowerCase(), queryTerm.toLowerCase())) {
+                video.setServer(server);
+                video.setShowTitle(mc.grandparentTitle);
+                videos.add(video);
+              }
             }
             Logger.d("Videos: %d", mc.videos.size());
+            Logger.d("sections searched: %d", movieSectionsSearched);
             if(server.getMovieSections().size() == movieSectionsSearched) {
               serversSearched++;
               if(serversSearched == plexmediaServers.size()) {
@@ -853,20 +939,29 @@ public class PlayMediaActivity extends Activity {
 	
 	private void onMovieSearchFinished(String queryTerm) {
 		Logger.d("Done searching! Have videos: %d", videos.size());
-		PlexVideo chosenVideo = null;
-		
-		for(int i=0;i<videos.size();i++) {
-			if(videos.get(i).getTitle().toLowerCase().equals(queryTerm)) {
-				chosenVideo = videos.get(i);
-			}
-		}
-		
-		if(chosenVideo != null) {
-			Logger.d("Chosen video: %s", chosenVideo.getTitle());
-			feedback("Now watching " + chosenVideo.getTitle() + " on " + client.getName());
+
+		if(videos.size() == 1) {
+			Logger.d("Chosen video: %s", videos.get(0).getTitle());
+			feedback("Now watching " + videos.get(0).getTitle() + " on " + client.getName());
 			
-			playVideo(chosenVideo);
-		} else {
+			playVideo(videos.get(0));
+		} else if(videos.size() > 1) {
+      // We found more than one match, but let's see if any of them are an exact match
+      Boolean exactMatch = false;
+      for(int i=0;i<videos.size();i++) {
+        if(videos.get(i).getTitle().toLowerCase().equals(queryTerm.toLowerCase())) {
+          exactMatch = true;
+          playVideo(videos.get(i));
+          break;
+        }
+      }
+      if(!exactMatch) {
+        feedback("I found more than one matching movie. Please be more specific.");
+        searchDialog.dismiss();
+        finish();
+        return;
+      }
+    } else {
 			Logger.d("Didn't find a video");
 			feedback("Sorry, I couldn't find a video to play.");
 			searchDialog.dismiss();
@@ -917,10 +1012,6 @@ public class PlayMediaActivity extends Activity {
   }
 
 	private void playTrack(final PlexTrack track, final PlexDirectory album) {
-//			Logger.d("Host: %s", client.getHost());
-//			Logger.d("Port: %s", client.getPort());
-//			Logger.d("key: %s", video.getKey());
-//			Logger.d("Machine ID: %s", video.getServer().getMachineIdentifier());
     String url = "http://" + client.getHost() + ":" + client.getPort() + "/player/playback/playMedia?machineIdentifier=" + track.getServer().getMachineIdentifier() + "&key=" + track.getKey();
     if(album != null)
       url += "&containerKey=" + album.key;
@@ -932,31 +1023,31 @@ public class PlayMediaActivity extends Activity {
       @Override
       public void onSuccess(PlexResponse r)
       {
-        searchDialog.dismiss();
-        Boolean passed = true;
-        if(r.getCode() != null) {
-          if(!r.getCode().equals("200")) {
-            passed = false;
-          }
+      searchDialog.dismiss();
+      Boolean passed = true;
+      if(r.getCode() != null) {
+        if(!r.getCode().equals("200")) {
+          passed = false;
         }
-        Logger.d("Playback response: %s", r.getCode());
-        if(passed) {
-          setContentView(R.layout.now_playing_music);
+      }
+      Logger.d("Playback response: %s", r.getCode());
+      if(passed) {
+        setContentView(R.layout.now_playing_music);
 
-          TextView artist = (TextView)findViewById(R.id.nowPlayingArtist);
-          artist.setText(track.getArtist());
-          TextView album = (TextView)findViewById(R.id.nowPlayingAlbum);
-          album.setText(track.getAlbum());
-          TextView title = (TextView)findViewById(R.id.nowPlayingTitle);
-          title.setText(track.getTitle());
+        TextView artist = (TextView)findViewById(R.id.nowPlayingArtist);
+        artist.setText(track.getArtist());
+        TextView album = (TextView)findViewById(R.id.nowPlayingAlbum);
+        album.setText(track.getAlbum());
+        TextView title = (TextView)findViewById(R.id.nowPlayingTitle);
+        title.setText(track.getTitle());
 
-          TextView nowPlayingOnClient = (TextView)findViewById(R.id.nowPlayingOnClient);
-          nowPlayingOnClient.setText(getResources().getString(R.string.now_playing_on) + " " + client.getName());
+        TextView nowPlayingOnClient = (TextView)findViewById(R.id.nowPlayingOnClient);
+        nowPlayingOnClient.setText(getResources().getString(R.string.now_playing_on) + " " + client.getName());
 
-          PlexHttpClient.setThumb(track, (ImageView)findViewById(R.id.nowPlayingImage));
+        PlexHttpClient.setThumb(track, (ImageView)findViewById(R.id.nowPlayingImage));
 
 
-        }
+      }
       }
     });
 	}
@@ -1043,9 +1134,24 @@ public class PlayMediaActivity extends Activity {
 	@Override
   protected void onResume() {
     super.onResume();
-    IntentFilter filters = new IntentFilter();
-    filters.addAction(GDMService.MSG_RECEIVED);
-    filters.addAction(GDMService.SOCKET_CLOSED);
-    LocalBroadcastManager.getInstance(this).registerReceiver(gdmReceiver, filters);
+//    IntentFilter filters = new IntentFilter();
+//    filters.addAction(GDMService.MSG_RECEIVED);
+//    filters.addAction(GDMService.SOCKET_CLOSED);
+//    LocalBroadcastManager.getInstance(this).registerReceiver(gdmReceiver, filters);
+  }
+
+  private static Boolean compareTitle(String title, String queryTerm) {
+    // First, check if the two terms are equal
+    if(title.toLowerCase().equals(queryTerm.toLowerCase()))
+      return true;
+
+    // No equal match, so split the query term up by words, and see if the title contains every single word
+    String[] words = queryTerm.split(" ");
+    Boolean missing = false;
+    for(int i=0;i<words.length;i++) {
+      if(!title.toLowerCase().matches(".*\\b" + words[i].toLowerCase() + "\\b.*"))
+        missing = true;
+    }
+    return !missing;
   }
 }
