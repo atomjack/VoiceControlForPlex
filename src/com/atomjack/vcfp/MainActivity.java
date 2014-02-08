@@ -119,7 +119,7 @@ public class MainActivity extends Activity {
 		MainSetting setting_data[] = new MainSetting[] {
 			new MainSetting("server", getResources().getString(R.string.stream_video_from_server), this.server != null ? this.server.getName() : getResources().getString(R.string.scan_all)),
 			new MainSetting("client", getResources().getString(R.string.to_the_client), this.client != null ? this.client.getName() : getResources().getString(R.string.not_set)),
-			new MainSetting("feedback", getResources().getString(R.string.feedback), mPrefs.getInt("feedback", 0) == FEEDBACK_VOICE ? getResources().getString(R.string.voice) : getResources().getString(R.string.toast))
+//			new MainSetting("feedback", getResources().getString(R.string.feedback), mPrefs.getInt("feedback", 0) == FEEDBACK_VOICE ? getResources().getString(R.string.voice) : getResources().getString(R.string.toast))
 		};
 		
 		MainListAdapter adapter = new MainListAdapter(this, R.layout.main_setting_item_row, setting_data);

@@ -798,8 +798,10 @@ public class PlayMediaActivity extends Activity {
         PlexVideo latestVideo = null;
         for(int j=0;j<mc.videos.size();j++) {
           PlexVideo video = mc.videos.get(j);
-          if(latestVideo == null || latestVideo.airDate().before(video.airDate()))
+          if(latestVideo == null || latestVideo.airDate().before(video.airDate())) {
+            video.setShowTitle(video.getGrandparentTitle());
             latestVideo = video;
+          }
         }
         latestVideo.setServer(show.server);
         Logger.d("Found video: %s", latestVideo.airDate());
@@ -952,6 +954,7 @@ public class PlayMediaActivity extends Activity {
         if(videos.get(i).getTitle().toLowerCase().equals(queryTerm.toLowerCase())) {
           exactMatch = true;
           playVideo(videos.get(i));
+          feedback("Now watching " + videos.get(i).getTitle() + " on " + client.getName());
           break;
         }
       }
@@ -971,19 +974,16 @@ public class PlayMediaActivity extends Activity {
 	}
 	
 	private void feedback(String text) {
-		if(mPrefs.getInt("feedback", MainActivity.FEEDBACK_VOICE) == MainActivity.FEEDBACK_VOICE) {
-			GoogleSearchApi.speak(this, text);
-		} else {
-			Toast.makeText(this, text, Toast.LENGTH_SHORT).show();
-		}
+//		if(mPrefs.getInt("feedback", MainActivity.FEEDBACK_VOICE) == MainActivity.FEEDBACK_VOICE) {
+//			GoogleSearchApi.speak(this, text);
+//		} else {
+    Toast.makeText(this, text, Toast.LENGTH_SHORT).show();
+//		}
 		Logger.d(text);
 	}
 
   private void playAlbum(final PlexDirectory album) {
     String url = "http://" + album.server.getAddress() + ":" + album.server.getPort() + album.key;
-//    if(mPrefs.getBoolean("resume", false) || resumePlayback) {
-//      url += "&viewOffset=" + track.getViewOffset();
-//    }
     PlexHttpClient.get(url, null, new PlexHttpMediaContainerHandler()
     {
       @Override
