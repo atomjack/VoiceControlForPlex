@@ -26,5 +26,6 @@
     <string name="help_button_desc">Help Button</string>
     <string name="help_usage">Here are some examples to trigger playback:\n\nWatch V For Vendetta\nWatch Season 1 Episode 1 of Homeland\nWatch Breaking Bad Season 5 Episode 8\nWatch episode Once More With Feeling of Buffy The Vampire Slayer\nWatch the next episode of The Walking Dead\nWatch the latest episode of The Daily Show with Jon Stewart\n\n\n\nFor Music:\nListen to the album Drink The Sea by The Glitch Mob\nListen to the album Music Has The Right To Children (Artist is optional. Specify if more than one match is found)\n\nIf you don\'t have \&quot;Resume if in progress\&quot; checked, you can selectively resume by saying \&quot;Resume watching\&quot; instead of \&quot;Watch\&quot;\n\nYou can also specify a client by adding \&quot;on &lt;client name&gt;\&quot; to your spoken query.</string>
     <string name="help_usage_button">Usage Examples</string>
-
+    <string name="google_search_incompatibility">Attention:Software Incompatibility</string>
+    <string name="google_search_invalid_version">The version of Google Search you are running is currently no longer compatible with the Google Search API, which Voice Control for Plex relies upon. Unfortunately, this renders Voice Control for Plex non-functional. Find out how to install Google Search version 3.3 at <a href="http://goo.gl/0kXNHQ">http://goo.gl/0kXNHQ</a>.</string>
 </resources>

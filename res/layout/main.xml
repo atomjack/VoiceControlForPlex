@@ -38,6 +38,26 @@
             android:onClick="showUsageExamples"
             android:layout_centerInParent="true"
             android:text="@string/help_usage_button" />
+
+        <TextView
+            android:id="@+id/invalidGoogleSearchHeader"
+            android:layout_marginTop="25sp"
+            android:layout_marginBottom="10sp"
+            android:text="@string/google_search_incompatibility"
+            android:visibility="gone"
+            android:textSize="20sp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <TextView
+            android:id="@+id/invalidGoogleSearchView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="5sp"
+            android:text="@string/google_search_invalid_version"
+            android:visibility="invisible"
+            android:textSize="18sp" />
+
     </LinearLayout>
 
 </RelativeLayout>

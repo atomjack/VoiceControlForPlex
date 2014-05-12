@@ -13,6 +13,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.content.pm.PackageInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
@@ -22,6 +23,7 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.CheckBox;
 import android.widget.ListView;
+import android.widget.TextView;
 
 import com.atomjack.vcfp.MainListAdapter.SettingHolder;
 import com.atomjack.vcfp.model.MainSetting;
@@ -39,7 +41,7 @@ public class MainActivity extends Activity {
 	public final static int FEEDBACK_VOICE = 0;
 	public final static int FEEDBACK_TOAST = 1;
 
-  public final static String BUGSENSE_APIKEY = "879458d0";
+	public final static String BUGSENSE_APIKEY = "879458d0";
 
 	private BroadcastReceiver gdmReceiver = new GDMReceiver();
 
@@ -49,7 +51,7 @@ public class MainActivity extends Activity {
 	private PlexServer server = null;
 	private PlexClient client = null;
 
-  private Map<String, PlexClient> m_clients = new HashMap<String, PlexClient>();
+	private Map<String, PlexClient> m_clients = new HashMap<String, PlexClient>();
 
 	private SharedPreferences mPrefs;
 	private SharedPreferences.Editor mPrefsEditor;
@@ -61,7 +63,7 @@ public class MainActivity extends Activity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-    BugSenseHandler.initAndStartSession(MainActivity.this, BUGSENSE_APIKEY);
+		BugSenseHandler.initAndStartSession(MainActivity.this, BUGSENSE_APIKEY);
 		
 		
 		mPrefs = getSharedPreferences(PREFS, MODE_PRIVATE);
@@ -73,6 +75,27 @@ public class MainActivity extends Activity {
 		this.client = gson.fromJson(mPrefs.getString("Client", ""), PlexClient.class);
 		
 		initMainWithServer();
+
+		checkGoogleSearchVersion();
+	}
+
+	private void checkGoogleSearchVersion() {
+		try
+		{
+			PackageInfo pinfo = getPackageManager().getPackageInfo("com.google.android.googlequicksearchbox", 0);
+			if(!VoiceControlForPlexApplication.isVersionLessThan(pinfo.versionName, "3.4")) {
+				TextView t1 = (TextView) findViewById(R.id.invalidGoogleSearchHeader);
+				t1.setVisibility(TextView.VISIBLE);
+
+				TextView t2 = (TextView) findViewById(R.id.invalidGoogleSearchView);
+				t2.setVisibility(TextView.VISIBLE);
+
+
+			}
+		} catch(Exception e) {
+			Logger.d("Exception getting google search version: " + e.getStackTrace());
+		}
+
 	}
 	
 	public void resumeChecked(View v) {
@@ -137,7 +160,6 @@ public class MainActivity extends Activity {
 		});
 		
 		CheckBox resumeCheckbox = (CheckBox)findViewById(R.id.resumeCheckbox);
-    Logger.d("Checkbox: %s", resumeCheckbox);
 		resumeCheckbox.setChecked(mPrefs.getBoolean("resume", false));
 	}
 	
@@ -163,17 +185,17 @@ public class MainActivity extends Activity {
 		builder.setTitle("Feedback");
 		builder.setCancelable(false)
 			.setPositiveButton(R.string.feedback_voice, new DialogInterface.OnClickListener() {
-		        public void onClick(DialogInterface dialog, int id) {
-		        	mPrefsEditor.putInt("feedback", FEEDBACK_VOICE);
-		        	mPrefsEditor.commit();
-		        	initMainWithServer();
-		        }
+						public void onClick(DialogInterface dialog, int id) {
+							mPrefsEditor.putInt("feedback", FEEDBACK_VOICE);
+							mPrefsEditor.commit();
+							initMainWithServer();
+						}
 			}).setNegativeButton(R.string.feedback_toast, new DialogInterface.OnClickListener() {
-		        public void onClick(DialogInterface dialog, int id) {
-		        	mPrefsEditor.putInt("feedback", FEEDBACK_TOAST);
-		        	mPrefsEditor.commit();
-		        	initMainWithServer();
-		        }
+						public void onClick(DialogInterface dialog, int id) {
+							mPrefsEditor.putInt("feedback", FEEDBACK_TOAST);
+							mPrefsEditor.commit();
+							initMainWithServer();
+						}
 			});
 		AlertDialog d = builder.create();
 		d.show();
@@ -181,12 +203,12 @@ public class MainActivity extends Activity {
 	
 	public void showUsageExamples(View v) {
 		AlertDialog.Builder usageDialog = new AlertDialog.Builder(MainActivity.this);
-		usageDialog.setTitle("Usage Examples");
+		usageDialog.setTitle(R.string.help_usage_button);
 		usageDialog.setMessage(R.string.help_usage);
 		usageDialog.setPositiveButton("Got it", new DialogInterface.OnClickListener() {
-	        public void onClick(DialogInterface dialog, int id) {
-	        	dialog.dismiss();
-	        }
+					public void onClick(DialogInterface dialog, int id) {
+						dialog.dismiss();
+					}
 		});
 		usageDialog.show();
 	}
@@ -220,15 +242,15 @@ public class MainActivity extends Activity {
 				} else {
 					searchDialog.hide();
 					AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-	    			builder.setTitle("No Plex Servers Found");
-	    			builder.setCancelable(false)
-	    				.setNeutralButton(R.string.ok, new DialogInterface.OnClickListener() {
-	    			        public void onClick(DialogInterface dialog, int id) {
-	    			            dialog.cancel();
-	    			        }
-	    				});
-	    			AlertDialog d = builder.create();
-	    			d.show();
+						builder.setTitle("No Plex Servers Found");
+						builder.setCancelable(false)
+							.setNeutralButton(R.string.ok, new DialogInterface.OnClickListener() {
+										public void onClick(DialogInterface dialog, int id) {
+												dialog.cancel();
+										}
+							});
+						AlertDialog d = builder.create();
+						d.show();
 				}
 			} else if(origin.equals("ScanForClients")) {
 				// No default server specified, so we need to search all servers for all clients
@@ -243,44 +265,42 @@ public class MainActivity extends Activity {
 		serversScanned = 0;
 		for(PlexServer thisServer : servers.values()) {
 			Logger.d("ScanServersForClients server: %s", thisServer.getName());
-      PlexHttpClient.get(thisServer.getClientsURL(), null, new PlexHttpMediaContainerHandler()
-      {
-        @Override
-        public void onSuccess(MediaContainer clientMC)
-        {
-          serversScanned++;
-          // Exclude non-Plex Home Theater clients (pre 1.0.7)
-          Logger.d("clientMC size: %d", clientMC.clients.size());
-          for(int i=0;i<clientMC.clients.size();i++) {
-            float version = clientMC.clients.get(i).getNumericVersion();
-            Logger.d("Version: %f", version);
-            if((version >= 1.07 || !clientMC.clients.get(i).getProduct().equals("Plex Home Theater")) && !m_clients.containsKey(clientMC.clients.get(i).getName())) {
-              m_clients.put(clientMC.clients.get(i).getName(), clientMC.clients.get(i));
-            }
-          }
+			PlexHttpClient.get(thisServer.getClientsURL(), null, new PlexHttpMediaContainerHandler()
+			{
+				@Override
+				public void onSuccess(MediaContainer clientMC)
+				{
+					serversScanned++;
+					// Exclude non-Plex Home Theater clients (pre 1.0.7)
+					Logger.d("clientMC size: %d", clientMC.clients.size());
+					for(int i=0;i<clientMC.clients.size();i++) {
+						if((!VoiceControlForPlexApplication.isVersionLessThan(clientMC.clients.get(i).getVersion(), "1.0.7") || !clientMC.clients.get(i).getProduct().equals("Plex Home Theater")) && !m_clients.containsKey(clientMC.clients.get(i).getName())) {
+							m_clients.put(clientMC.clients.get(i).getName(), clientMC.clients.get(i));
+						}
+					}
 
-          if(serversScanned == VoiceControlForPlexApplication.getPlexMediaServers().size()) {
-            searchDialog.dismiss();
-            if(m_clients.size() == 0) {
-              AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-              builder.setTitle("No Plex Clients Found");
-              builder.setCancelable(false)
-                .setNeutralButton(R.string.ok, new DialogInterface.OnClickListener()
-                {
-                  public void onClick(DialogInterface dialog, int id)
-                  {
-                    dialog.cancel();
-                  }
-                });
-              AlertDialog d = builder.create();
-              d.show();
-            } else {
-              Logger.d("Clients: " + m_clients.size());
-              showPlexClients(m_clients);
-            }
-          }
-        }
-      });
+					if(serversScanned == VoiceControlForPlexApplication.getPlexMediaServers().size()) {
+						searchDialog.dismiss();
+						if(m_clients.size() == 0) {
+							AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+							builder.setTitle("No Plex Clients Found");
+							builder.setCancelable(false)
+								.setNeutralButton(R.string.ok, new DialogInterface.OnClickListener()
+								{
+									public void onClick(DialogInterface dialog, int id)
+									{
+										dialog.cancel();
+									}
+								});
+							AlertDialog d = builder.create();
+							d.show();
+						} else {
+							Logger.d("Clients: " + m_clients.size());
+							showPlexClients(m_clients);
+						}
+					}
+				}
+			});
 		}
 	}
 
@@ -297,7 +317,7 @@ public class MainActivity extends Activity {
 		final ListView serverListView = (ListView)serverSelectDialog.findViewById(R.id.serverListView);
 		ConcurrentHashMap<String, PlexServer> servers = new ConcurrentHashMap<String, PlexServer>(VoiceControlForPlexApplication.getPlexMediaServers());
 		final PlexListAdapter adapter = new PlexListAdapter(this, PlexListAdapter.TYPE_SERVER);
-    adapter.setServers(servers);
+		adapter.setServers(servers);
 		serverListView.setAdapter(adapter);
 		serverListView.setOnItemClickListener(new ListView.OnItemClickListener() {
 
@@ -323,15 +343,15 @@ public class MainActivity extends Activity {
 		this.server = server;
 		
 		if(this.client == null) {
-      PlexHttpClient.get(server.getBaseURL(), null, new PlexHttpMediaContainerHandler()
-      {
-        @Override
-        public void onSuccess(MediaContainer mediaContainer)
-        {
-          Logger.d("Machine id: " + mediaContainer.getMachineIdentifier());
-          getClients(mediaContainer);
-        }
-      });
+			PlexHttpClient.get(server.getBaseURL(), null, new PlexHttpMediaContainerHandler()
+			{
+				@Override
+				public void onSuccess(MediaContainer mediaContainer)
+				{
+					Logger.d("Machine id: " + mediaContainer.getMachineIdentifier());
+					getClients(mediaContainer);
+				}
+			});
 		} else {
 			this.server = server;
 			this.saveSettings();
@@ -375,46 +395,44 @@ public class MainActivity extends Activity {
 		searchDialog.setTitle("Searching for Plex Clients");
 		
 		searchDialog.show();
-    PlexHttpClient.get(server.getClientsURL(), null, new PlexHttpMediaContainerHandler()
-    {
-      @Override
-      public void onSuccess(MediaContainer clientMC)
-      {
-        // Exclude non-Plex Home Theater clients (pre 1.0.7)
-        Map<String, PlexClient> clients = new HashMap<String, PlexClient>();
-        for (int i = 0; i < clientMC.clients.size(); i++)
-        {
-          float version = clientMC.clients.get(i).getNumericVersion();
-          Logger.d("Version: %f", version);
-          if (version >= 1.07)
-          {
-            clients.put(clientMC.clients.get(i).getName(), clientMC.clients.get(i));
-          }
-        }
+		PlexHttpClient.get(server.getClientsURL(), null, new PlexHttpMediaContainerHandler()
+		{
+			@Override
+			public void onSuccess(MediaContainer clientMC)
+			{
+				// Exclude non-Plex Home Theater clients (pre 1.0.7)
+				Map<String, PlexClient> clients = new HashMap<String, PlexClient>();
+				for (int i = 0; i < clientMC.clients.size(); i++)
+				{
+					if (!VoiceControlForPlexApplication.isVersionLessThan(clientMC.clients.get(i).getVersion(), "1.0.7"))
+					{
+						clients.put(clientMC.clients.get(i).getName(), clientMC.clients.get(i));
+					}
+				}
 
-        searchDialog.dismiss();
-        if (clients.size() == 0)
-        {
-          AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-          builder.setTitle("No Plex Clients Found");
-          builder.setCancelable(false)
-            .setNeutralButton(R.string.ok, new DialogInterface.OnClickListener()
-            {
-              public void onClick(DialogInterface dialog, int id)
-              {
-                dialog.cancel();
-              }
-            });
-          AlertDialog d = builder.create();
-          d.show();
-        } else
-        {
-          Logger.d("Clients: " + clients.size());
+				searchDialog.dismiss();
+				if (clients.size() == 0)
+				{
+					AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+					builder.setTitle("No Plex Clients Found");
+					builder.setCancelable(false)
+						.setNeutralButton(R.string.ok, new DialogInterface.OnClickListener()
+						{
+							public void onClick(DialogInterface dialog, int id)
+							{
+								dialog.cancel();
+							}
+						});
+					AlertDialog d = builder.create();
+					d.show();
+				} else
+				{
+					Logger.d("Clients: " + clients.size());
 
-          showPlexClients(clients);
-        }
-      }
-    });
+					showPlexClients(clients);
+				}
+			}
+		});
 	}
 
 	private void showPlexClients(Map<String, PlexClient> clients) {
@@ -427,7 +445,7 @@ public class MainActivity extends Activity {
 		
 		final ListView serverListView = (ListView)serverSelectDialog.findViewById(R.id.serverListView);
 		final PlexListAdapter adapter = new PlexListAdapter(this, PlexListAdapter.TYPE_CLIENT);
-    adapter.setClients(clients);
+		adapter.setClients(clients);
 		serverListView.setAdapter(adapter);
 		serverListView.setOnItemClickListener(new ListView.OnItemClickListener() {
 
@@ -465,32 +483,32 @@ public class MainActivity extends Activity {
 	}
 
 	@Override
-    protected void onDestroy() {
-        super.onDestroy();
-        if(gdmReceiver != null) {
-        	LocalBroadcastManager.getInstance(this).unregisterReceiver(gdmReceiver);
-        }
-    }
+	protected void onDestroy() {
+		super.onDestroy();
+		if(gdmReceiver != null) {
+			LocalBroadcastManager.getInstance(this).unregisterReceiver(gdmReceiver);
+		}
+	}
 
 	@Override
-    protected void onPause() {
-        super.onPause();
-        if(gdmReceiver != null) {
-        	LocalBroadcastManager.getInstance(this).unregisterReceiver(gdmReceiver);
-        }
-    }
+	protected void onPause() {
+		super.onPause();
+		if(gdmReceiver != null) {
+			LocalBroadcastManager.getInstance(this).unregisterReceiver(gdmReceiver);
+		}
+	}
 
 	@Override
-    protected void onResume() {
-        super.onResume();
-        if(gdmReceiver != null) {
-            IntentFilter filters = new IntentFilter();
-            filters.addAction(GDMService.MSG_RECEIVED);
-            filters.addAction(GDMService.SOCKET_CLOSED);
-            LocalBroadcastManager.getInstance(this).registerReceiver(gdmReceiver,
-                            filters);
-        }
-    }
+	protected void onResume() {
+		super.onResume();
+		if(gdmReceiver != null) {
+			IntentFilter filters = new IntentFilter();
+			filters.addAction(GDMService.MSG_RECEIVED);
+			filters.addAction(GDMService.SOCKET_CLOSED);
+			LocalBroadcastManager.getInstance(this).registerReceiver(gdmReceiver,
+				filters);
+		}
+	}
 }
 
 

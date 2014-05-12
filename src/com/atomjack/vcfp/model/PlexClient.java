@@ -3,8 +3,6 @@ package com.atomjack.vcfp.model;
 import org.simpleframework.xml.Attribute;
 import org.simpleframework.xml.Root;
 
-import com.atomjack.vcfp.Logger;
-
 @Root(name="Server", strict=false)
 public class PlexClient extends PlexDevice {
 	@Attribute
@@ -16,23 +14,4 @@ public class PlexClient extends PlexDevice {
 	public void setHost(String host) {
 		this.host = host;
 	}
-
-	public float getNumericVersion() {
-		if(this.version == null)
-			return 0;
-    try {
-      String v = version.substring(0, version.indexOf(".")) + "." + version.substring(version.indexOf(".")+1).replaceAll("\\.", "");
-      v = v.split("-")[0];
-      v = v.replaceAll("[^0-9.]", "");
-      Logger.d("Numeric Version: %s", v);
-
-      return Float.parseFloat(v);
-    } catch (Exception ex) {
-      ex.printStackTrace();
-      Logger.d("Exception getting version: %s", version);
-      return 0;
-    }
-	}
-
-
 }
