@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:id="@+id/background"
+    android:layout_alignParentLeft="true"
+    android:layout_alignParentTop="true" >
+	<RelativeLayout 
+	    android:layout_width="fill_parent"
+	    android:layout_height="wrap_content" >
+		<TextView
+        android:id="@+id/nowPlayingOnClient"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginLeft="15dp"
+        android:layout_marginTop="17dp"
+        android:textColor="@color/white"
+        android:text="@string/now_playing_on" />
+
+		<TextView
+		    android:id="@+id/nowPlayingShowTitle"
+		    android:layout_width="wrap_content"
+		    android:layout_height="wrap_content"
+		    android:layout_alignLeft="@+id/nowPlayingOnClient"
+		    android:layout_alignParentRight="true"
+		    android:layout_below="@+id/nowPlayingOnClient"
+		    android:layout_marginTop="16dp"
+		    android:textSize="24sp"
+		    android:textStyle="bold"
+		    android:text="" />
+
+		<TextView
+		    android:id="@+id/nowPlayingEpisodeTitle"
+		    android:layout_width="wrap_content"
+		    android:layout_height="wrap_content"
+		    android:layout_alignLeft="@+id/nowPlayingShowTitle"
+		    android:layout_alignParentRight="true"
+		    android:layout_below="@+id/nowPlayingShowTitle"
+		    android:textSize="24sp"
+		    android:text="" />
+		
+		<TextView
+		    android:id="@+id/nowPlayingYear"
+		    android:layout_width="wrap_content"
+		    android:layout_height="wrap_content"
+		    android:layout_alignLeft="@+id/nowPlayingEpisodeTitle"
+		    android:layout_alignParentRight="true"
+		    android:layout_below="@+id/nowPlayingEpisodeTitle"
+		    android:text="" />
+
+		<TextView
+		    android:id="@+id/nowPlayingDuration"
+		    android:layout_width="wrap_content"
+		    android:layout_height="wrap_content"
+		    android:layout_alignLeft="@+id/nowPlayingYear"
+		    android:layout_alignParentRight="true"
+		    android:layout_below="@+id/nowPlayingYear"
+		    android:text="" />
+
+		<TextView
+		    android:id="@+id/nowPlayingSummary"
+		    android:layout_width="wrap_content"
+		    android:layout_height="wrap_content"
+		    android:layout_alignLeft="@+id/nowPlayingDuration"
+		    android:layout_alignParentRight="true"
+		    android:layout_below="@+id/nowPlayingDuration"
+		    android:layout_marginTop="68dp"
+		    android:text="" />
+
+   
+	</RelativeLayout>
+
+
+</ScrollView>
+<!-- From: file:/Users/chris/Documents/workspace/VoiceControlForPlex/Voice%20Control%20For%20Plex%20Library/src/main/res/layout/now_playing_show.xml -->

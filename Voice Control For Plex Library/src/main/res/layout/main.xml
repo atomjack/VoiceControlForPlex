@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/black"
+    android:textColor="@color/white"
+    android:orientation="vertical" >
+
+	<ListView
+        android:id="@+id/listView1"
+        android:layout_height="wrap_content"
+        android:layout_width="match_parent">
+    </ListView>
+    
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_below="@+id/listView1"
+        android:gravity="center">
+
+        <CheckBox
+            android:id="@+id/resumeCheckbox"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:onClick="resumeChecked"
+            android:layout_marginBottom="30dp"
+            android:layout_marginTop="10dp"
+            android:layout_below="@+id/listView1"
+            android:text="@string/resume_if_in_progress"
+            android:textColor="@color/white" />
+
+        <Button
+            android:id="@+id/helpUsageButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/resumeCheckbox"
+            android:onClick="showUsageExamples"
+            android:layout_centerInParent="true"
+            android:text="@string/help_usage_button" />
+
+        <TextView
+            android:id="@+id/taskerInstructionsHeader"
+            android:layout_marginTop="25sp"
+            android:layout_marginBottom="10sp"
+            android:text="@string/tasker_instructions_header"
+            android:visibility="gone"
+            android:textSize="20sp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <TextView
+            android:id="@+id/taskerInstructionsView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="5sp"
+            android:text="@string/tasker_instructions"
+            android:visibility="gone"
+            android:textSize="18sp" />
+
+        <Button
+            android:id="@+id/taskerInstallButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="10sp"
+            android:onClick="installTasker"
+            android:layout_centerInParent="true"
+            android:visibility="gone"
+            android:text="@string/install_tasker" />
+
+        <Button
+            android:id="@+id/utterInstallButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="10sp"
+            android:onClick="installUtter"
+            android:layout_centerInParent="true"
+            android:visibility="gone"
+            android:text="@string/install_utter" />
+
+        <Button
+            android:id="@+id/autoVoiceInstallButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="10sp"
+            android:onClick="installAutoVoice"
+            android:layout_centerInParent="true"
+            android:visibility="gone"
+            android:text="@string/install_autovoice" />
+
+        <TextView
+            android:id="@+id/taskerImportHeader"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="25sp"
+            android:layout_marginBottom="10sp"
+            android:text="@string/tasker_import_header"
+            android:gravity="center"
+            android:visibility="gone"
+            android:textSize="18sp"
+            />
+
+        <Button
+            android:id="@+id/taskerImportButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            android:text="@string/import_tasker_project"
+            android:onClick="importTaskerProject"
+            />
+    </LinearLayout>
+
+</RelativeLayout>

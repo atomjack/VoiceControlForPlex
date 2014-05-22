@@ -1,0 +1,47 @@
+<!-- From: file:/Users/chris/Documents/workspace/VoiceControlForPlex/Voice%20Control%20For%20Plex/src/main/AndroidManifest.xml --><manifest xmlns:android="http://schemas.android.com/apk/res/android" android:versionCode="7" android:versionName="1.7b3" package="com.atomjack.vcfp">
+
+    <uses-permission android:name="com.mohammadag.googlesearchapi.permission.ACCESS_GGOGLE_SEARCH_API"/>
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
+    <uses-permission android:name="net.dinglisch.android.tasker.PERMISSION_RUN_TASKS"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+
+    <uses-sdk android:minSdkVersion="16" android:targetSdkVersion="19"/>
+
+    <application android:allowBackup="true" android:icon="@drawable/ic_launcher">
+        
+        <!-- From: file:/Users/chris/Documents/workspace/VoiceControlForPlex/Voice%20Control%20For%20Plex/build/exploded-aar/VoiceControlForPlex/Voice%20Control%20For%20Plex%20Library/unspecified/AndroidManifest.xml -->
+        <activity android:label="@string/app_name" android:name="com.atomjack.vcfplib.SetupActivity">
+            <intent-filter>
+            </intent-filter>
+        </activity>
+        <activity android:label="@string/app_name" android:name="com.atomjack.vcfplib.MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+                <action android:name="com.twofortyfouram.locale.intent.action.EDIT_SETTING"/>
+            </intent-filter>
+        </activity>
+        <activity android:configChanges="orientation|screenSize" android:label="@string/app_name" android:name="com.atomjack.vcfplib.PlayMediaActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND"/>
+            </intent-filter>
+        </activity>
+
+        <service android:exported="false" android:name="com.atomjack.vcfplib.GDMService"/>
+
+        <receiver android:exported="true" android:name="com.atomjack.vcfplib.GoogleSearchReceiver">
+            <intent-filter>
+                <action android:name="com.mohammadag.googlesearchapi.NEW_SEARCH"/>
+            </intent-filter>
+        </receiver>
+
+        <receiver android:exported="true" android:name="com.atomjack.vcfplib.PlayReceiver" android:process=":background">
+            <intent-filter>
+                <action android:name="com.twofortyfouram.locale.intent.action.FIRE_SETTING"/>
+            </intent-filter>
+        </receiver>
+        <!-- From: file:/Users/chris/Documents/workspace/VoiceControlForPlex/Voice%20Control%20For%20Plex/src/main/AndroidManifest.xml -->
+        </application>
+
+</manifest>

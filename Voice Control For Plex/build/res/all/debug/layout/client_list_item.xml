@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:orientation="vertical"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:padding="10dp"
+    >
+    <TextView
+        android:id="@+id/clientListClientName"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentTop="true"
+        android:text=""
+        android:textSize="18sp" />
+    <TextView
+        android:id="@+id/clientListClientType"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentTop="true"
+        android:text=""
+        android:textSize="12sp"
+        />
+</LinearLayout><!-- From: file:/Users/chris/Documents/workspace/VoiceControlForPlex/Voice%20Control%20For%20Plex%20Library/src/main/res/layout/client_list_item.xml --><!-- From: file:/Users/chris/Documents/workspace/VoiceControlForPlex/Voice%20Control%20For%20Plex/build/exploded-aar/VoiceControlForPlex/Voice%20Control%20For%20Plex%20Library/unspecified/res/layout/client_list_item.xml -->

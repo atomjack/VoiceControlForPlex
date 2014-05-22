@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android" >
+    <item android:id="@+id/menu_about" 
+        android:title="@string/menu_about">
+    </item>
+    <item android:id="@+id/menu_donate" 
+        android:title="@string/menu_donate">
+    </item>
+    
+
+</menu>
+<!-- From: file:/Users/chris/Documents/workspace/VoiceControlForPlex/Voice%20Control%20For%20Plex%20Library/src/main/res/menu/menu_main.xml --><!-- From: file:/Users/chris/Documents/workspace/VoiceControlForPlex/Voice%20Control%20For%20Plex/build/exploded-aar/VoiceControlForPlex/Voice%20Control%20For%20Plex%20Library/unspecified/res/menu/menu_main.xml -->

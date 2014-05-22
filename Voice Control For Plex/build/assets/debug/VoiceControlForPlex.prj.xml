@@ -1,0 +1,276 @@
+<TaskerData sr="" dvi="1" tv="4.2u3">
+	<Profile sr="prof120" ve="2">
+		<cdate>1400722336080</cdate>
+		<clp>true</clp>
+		<edate>1400727519979</edate>
+		<id>120</id>
+		<mid0>116</mid0>
+		<nme>Voice Control For Plex (AutoVoice)</nme>
+		<State sr="con0">
+			<code>20126</code>
+			<Bundle sr="arg0">
+				<Vals sr="val">
+					<Contains>false</Contains>
+					<Contains-type>java.lang.Boolean</Contains-type>
+					<DisableCommand>&lt;null&gt;</DisableCommand>
+					<DisableCommand-type>java.lang.String</DisableCommand-type>
+					<DisableCommandExact>false</DisableCommandExact>
+					<DisableCommandExact-type>java.lang.Boolean</DisableCommandExact-type>
+					<DisableCommandRegex>false</DisableCommandRegex>
+					<DisableCommandRegex-type>java.lang.Boolean</DisableCommandRegex-type>
+					<LastCommandIdInvert>false</LastCommandIdInvert>
+					<LastCommandIdInvert-type>java.lang.Boolean</LastCommandIdInvert-type>
+					<LastCommandIdRegex>false</LastCommandIdRegex>
+					<LastCommandIdRegex-type>java.lang.Boolean</LastCommandIdRegex-type>
+					<NotOnContinuous>false</NotOnContinuous>
+					<NotOnContinuous-type>java.lang.Boolean</NotOnContinuous-type>
+					<NotOnNormal>false</NotOnNormal>
+					<NotOnNormal-type>java.lang.Boolean</NotOnNormal-type>
+					<Precision>&lt;null&gt;</Precision>
+					<Precision-type>java.lang.String</Precision-type>
+					<ProfileName>&lt;null&gt;</ProfileName>
+					<ProfileName-type>java.lang.String</ProfileName-type>
+					<Substitutions>&lt;null&gt;</Substitutions>
+					<Substitutions-type>java.lang.String</Substitutions-type>
+					<TriggerWord>&lt;null&gt;</TriggerWord>
+					<TriggerWord-type>java.lang.String</TriggerWord-type>
+					<TriggerWordExact>false</TriggerWordExact>
+					<TriggerWordExact-type>java.lang.Boolean</TriggerWordExact-type>
+					<TriggerWordRegex>false</TriggerWordRegex>
+					<TriggerWordRegex-type>java.lang.Boolean</TriggerWordRegex-type>
+					<com.twofortyfouram.locale.intent.extra.BLURB>Event Behaviour: true
+Command: "^(resume watching |watch |listen to ) (regex)"</com.twofortyfouram.locale.intent.extra.BLURB>
+					<com.twofortyfouram.locale.intent.extra.BLURB-type>java.lang.String</com.twofortyfouram.locale.intent.extra.BLURB-type>
+					<configcommand>^(resume watching |watch |listen to )</configcommand>
+					<configcommand-type>java.lang.String</configcommand-type>
+					<configcommandid>&lt;null&gt;</configcommandid>
+					<configcommandid-type>java.lang.String</configcommandid-type>
+					<configcommandinvert>false</configcommandinvert>
+					<configcommandinvert-type>java.lang.Boolean</configcommandinvert-type>
+					<configexactsub>false</configexactsub>
+					<configexactsub-type>java.lang.Boolean</configexactsub-type>
+					<configinstant>true</configinstant>
+					<configinstant-type>java.lang.Boolean</configinstant-type>
+					<configlastcommand>&lt;null&gt;</configlastcommand>
+					<configlastcommand-type>java.lang.String</configlastcommand-type>
+					<configregexsub>true</configregexsub>
+					<configregexsub-type>java.lang.Boolean</configregexsub-type>
+					<net.dinglisch.android.tasker.RELEVANT_VARIABLES>&lt;StringArray sr=""&gt;&lt;_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES0&gt;%avcommnofilter
+First Command Without Filter
+&lt;/_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES0&gt;&lt;_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES1&gt;%avsource
+Source of the Voice Command. Can be normal, continuous, test or googlenow
+&lt;/_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES1&gt;&lt;_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES2&gt;%avword()
+Word Array
+&lt;/_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES2&gt;&lt;_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES3&gt;%avcomm
+First recognized Command
+&lt;/_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES3&gt;&lt;_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES4&gt;%avcomms()
+All recognized commands
+&lt;/_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES4&gt;&lt;_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES5&gt;%avcommsnofilter()
+All recognized commands without filter
+&lt;/_array_net.dinglisch.android.tasker.RELEVANT_VARIABLES5&gt;&lt;/StringArray&gt;</net.dinglisch.android.tasker.RELEVANT_VARIABLES>
+					<net.dinglisch.android.tasker.RELEVANT_VARIABLES-type>[Ljava.lang.String;</net.dinglisch.android.tasker.RELEVANT_VARIABLES-type>
+					<net.dinglisch.android.tasker.extras.VARIABLE_REPLACE_KEYS>plugininstanceid plugintypeid configcommand configcommandid configlastcommand Precision DisableCommand TriggerWord ProfileName Substitutions </net.dinglisch.android.tasker.extras.VARIABLE_REPLACE_KEYS>
+					<net.dinglisch.android.tasker.extras.VARIABLE_REPLACE_KEYS-type>java.lang.String</net.dinglisch.android.tasker.extras.VARIABLE_REPLACE_KEYS-type>
+					<net.dinglisch.android.tasker.subbundled>true</net.dinglisch.android.tasker.subbundled>
+					<net.dinglisch.android.tasker.subbundled-type>java.lang.Boolean</net.dinglisch.android.tasker.subbundled-type>
+					<plugininstanceid>f724d257-57c7-4c98-94bc-d9bba0ec1502</plugininstanceid>
+					<plugininstanceid-type>java.lang.String</plugininstanceid-type>
+					<plugintypeid>com.joaomgcd.autovoice.intent.IntentReceiveVoice</plugintypeid>
+					<plugintypeid-type>java.lang.String</plugintypeid-type>
+				</Vals>
+			</Bundle>
+			<Str sr="arg1" ve="3">com.joaomgcd.autovoice</Str>
+			<Str sr="arg2" ve="3">AutoVoice Recognized</Str>
+		</State>
+	</Profile>
+	<Profile sr="prof121" ve="2">
+		<cdate>1400722336087</cdate>
+		<edate>1400727534640</edate>
+		<id>121</id>
+		<mid0>118</mid0>
+		<nme>Voice Control For Plex (utter!)</nme>
+		<Event sr="con0" ve="2">
+			<cname>Voice Data</cname>
+			<code>599</code>
+			<Str sr="arg0" ve="3">com.brandall.nutter.action.VOICE_DATA</Str>
+			<Int sr="arg1" val="0"/>
+			<Int sr="arg2" val="0"/>
+			<Str sr="arg3" ve="3"/>
+			<Str sr="arg4" ve="3"/>
+		</Event>
+	</Profile>
+	<Project sr="proj0">
+		<cdate>1377124751229</cdate>
+		<name>VoiceControlForPlex</name>
+		<pids>121,120</pids>
+		<tids>116,118,117</tids>
+		<Img sr="icon" ve="2">
+			<cls>com.atomjack.vcfplib.MainActivity</cls>
+			<pkg>com.atomjack.vcfp</pkg>
+		</Img>
+	</Project>
+	<Task sr="task116">
+		<cdate>1400192106190</cdate>
+		<edate>1400727519979</edate>
+		<id>116</id>
+		<Action sr="act0" ve="3">
+			<code>22851</code>
+			<Bundle sr="arg0">
+				<Vals sr="val">
+					<com.atomjack.vcfp.intent.ARGUMENTS>%avcomm</com.atomjack.vcfp.intent.ARGUMENTS>
+					<com.atomjack.vcfp.intent.ARGUMENTS-type>java.lang.String</com.atomjack.vcfp.intent.ARGUMENTS-type>
+					<com.twofortyfouram.locale.intent.extra.BLURB></com.twofortyfouram.locale.intent.extra.BLURB>
+					<com.twofortyfouram.locale.intent.extra.BLURB-type>java.lang.String</com.twofortyfouram.locale.intent.extra.BLURB-type>
+					<net.dinglisch.android.tasker.extras.VARIABLE_REPLACE_KEYS>com.atomjack.vcfp.intent.ARGUMENTS</net.dinglisch.android.tasker.extras.VARIABLE_REPLACE_KEYS>
+					<net.dinglisch.android.tasker.extras.VARIABLE_REPLACE_KEYS-type>java.lang.String</net.dinglisch.android.tasker.extras.VARIABLE_REPLACE_KEYS-type>
+				</Vals>
+			</Bundle>
+			<Str sr="arg1" ve="3">com.atomjack.vcfp</Str>
+			<Str sr="arg2" ve="3">Voice Control for Plex</Str>
+			<Int sr="arg3" val="0"/>
+		</Action>
+	</Task>
+	<Task sr="task117">
+		<cdate>1376944785561</cdate>
+		<edate>1400727723455</edate>
+		<id>117</id>
+		<nme>VoiceControlForPlex</nme>
+		<Action sr="act0" ve="3">
+			<code>547</code>
+			<Str sr="arg0" ve="3">%avcomm</Str>
+			<Str sr="arg1" ve="3">%par1</Str>
+			<Int sr="arg2" val="0"/>
+			<Int sr="arg3" val="0"/>
+		</Action>
+		<Action sr="act1" ve="3">
+			<code>22851</code>
+			<Bundle sr="arg0">
+				<Vals sr="val">
+					<com.atomjack.vcfp.intent.ARGUMENTS>%avcomm</com.atomjack.vcfp.intent.ARGUMENTS>
+					<com.atomjack.vcfp.intent.ARGUMENTS-type>java.lang.String</com.atomjack.vcfp.intent.ARGUMENTS-type>
+					<com.twofortyfouram.locale.intent.extra.BLURB></com.twofortyfouram.locale.intent.extra.BLURB>
+					<com.twofortyfouram.locale.intent.extra.BLURB-type>java.lang.String</com.twofortyfouram.locale.intent.extra.BLURB-type>
+					<net.dinglisch.android.tasker.extras.VARIABLE_REPLACE_KEYS>com.atomjack.vcfp.intent.ARGUMENTS</net.dinglisch.android.tasker.extras.VARIABLE_REPLACE_KEYS>
+					<net.dinglisch.android.tasker.extras.VARIABLE_REPLACE_KEYS-type>java.lang.String</net.dinglisch.android.tasker.extras.VARIABLE_REPLACE_KEYS-type>
+				</Vals>
+			</Bundle>
+			<Str sr="arg1" ve="3">com.atomjack.vcfp</Str>
+			<Str sr="arg2" ve="3">Voice Control for Plex</Str>
+			<Int sr="arg3" val="0"/>
+		</Action>
+		<Img sr="icn" ve="2">
+			<cls>com.brandall.nutter.ActivityHomeFragment</cls>
+			<pkg>com.brandall.nutter</pkg>
+		</Img>
+	</Task>
+	<Task sr="task118">
+		<cdate>1376675516238</cdate>
+		<edate>1400727730583</edate>
+		<id>118</id>
+		<nme>VoiceDataReceiver</nme>
+		<pri>10</pri>
+		<Action sr="act0" ve="3">
+			<code>547</code>
+			<label>Used in the loop below</label>
+			<Str sr="arg0" ve="3">%voice_data_count</Str>
+			<Str sr="arg1" ve="3">1</Str>
+			<Int sr="arg2" val="1"/>
+			<Int sr="arg3" val="0"/>
+		</Action>
+		<Action sr="act1" ve="3">
+			<code>547</code>
+			<label>Set the loop count to the voice data size</label>
+			<Str sr="arg0" ve="3">%voice_data_size</Str>
+			<Str sr="arg1" ve="3">%voice_data(#)</Str>
+			<Int sr="arg2" val="1"/>
+			<Int sr="arg3" val="0"/>
+		</Action>
+		<Action sr="act10" ve="3">
+			<code>2272</code>
+			<label>Speak the response</label>
+			<Bundle sr="arg0">
+				<Vals sr="val">
+					<com.brandall.nutter.extra.STRING_MESSAGE>%response</com.brandall.nutter.extra.STRING_MESSAGE>
+					<com.brandall.nutter.extra.STRING_MESSAGE-type>java.lang.String</com.brandall.nutter.extra.STRING_MESSAGE-type>
+					<com.brandall.nutter.extra.STRING_MESSAGE1>true</com.brandall.nutter.extra.STRING_MESSAGE1>
+					<com.brandall.nutter.extra.STRING_MESSAGE1-type>java.lang.String</com.brandall.nutter.extra.STRING_MESSAGE1-type>
+					<com.brandall.nutter.extra.STRING_MESSAGE2></com.brandall.nutter.extra.STRING_MESSAGE2>
+					<com.brandall.nutter.extra.STRING_MESSAGE2-type>java.lang.String</com.brandall.nutter.extra.STRING_MESSAGE2-type>
+					<com.brandall.nutter.extra.STRING_MESSAGE3>false</com.brandall.nutter.extra.STRING_MESSAGE3>
+					<com.brandall.nutter.extra.STRING_MESSAGE3-type>java.lang.String</com.brandall.nutter.extra.STRING_MESSAGE3-type>
+					<com.brandall.nutter.extra.STRING_MESSAGE4>false</com.brandall.nutter.extra.STRING_MESSAGE4>
+					<com.brandall.nutter.extra.STRING_MESSAGE4-type>java.lang.String</com.brandall.nutter.extra.STRING_MESSAGE4-type>
+					<com.brandall.nutter.extra.STRING_MESSAGE5></com.brandall.nutter.extra.STRING_MESSAGE5>
+					<com.brandall.nutter.extra.STRING_MESSAGE5-type>java.lang.String</com.brandall.nutter.extra.STRING_MESSAGE5-type>
+					<com.brandall.nutter.extra.STRING_MESSAGE6></com.brandall.nutter.extra.STRING_MESSAGE6>
+					<com.brandall.nutter.extra.STRING_MESSAGE6-type>java.lang.String</com.brandall.nutter.extra.STRING_MESSAGE6-type>
+					<com.brandall.nutter.extra.STRING_MESSAGE7></com.brandall.nutter.extra.STRING_MESSAGE7>
+					<com.brandall.nutter.extra.STRING_MESSAGE7-type>java.lang.String</com.brandall.nutter.extra.STRING_MESSAGE7-type>
+					<com.twofortyfouram.locale.intent.extra.BLURB>%response</com.twofortyfouram.locale.intent.extra.BLURB>
+					<com.twofortyfouram.locale.intent.extra.BLURB-type>java.lang.String</com.twofortyfouram.locale.intent.extra.BLURB-type>
+					<net.dinglisch.android.tasker.extras.VARIABLE_REPLACE_KEYS>com.brandall.nutter.extra.STRING_MESSAGE</net.dinglisch.android.tasker.extras.VARIABLE_REPLACE_KEYS>
+					<net.dinglisch.android.tasker.extras.VARIABLE_REPLACE_KEYS-type>java.lang.String</net.dinglisch.android.tasker.extras.VARIABLE_REPLACE_KEYS-type>
+					<net.dinglisch.android.tasker.subbundled>true</net.dinglisch.android.tasker.subbundled>
+					<net.dinglisch.android.tasker.subbundled-type>java.lang.Boolean</net.dinglisch.android.tasker.subbundled-type>
+				</Vals>
+			</Bundle>
+			<Str sr="arg1" ve="3">com.brandall.nutter</Str>
+			<Str sr="arg2" ve="3">utter!</Str>
+			<Int sr="arg3"/>
+		</Action>
+		<Action sr="act2" ve="3">
+			<code>39</code>
+			<label>Loop through the voice data</label>
+			<Str sr="arg0" ve="3">%voice_data</Str>
+			<Str sr="arg1" ve="3">1:%voice_data_size</Str>
+		</Action>
+		<Action sr="act3" ve="3">
+			<code>37</code>
+			<label>Compare each voice data string to each command</label>
+			<lhs>%voice_data(%voice_data_count)</lhs>
+			<op>11</op>
+			<rhs>%Commands</rhs>
+		</Action>
+		<Action sr="act4" ve="3">
+			<code>300</code>
+			<label>A command has been matched! The number of the command in your master command array, corresponds to the task that will now be performed.</label>
+		</Action>
+		<Action sr="act5" ve="3">
+			<code>130</code>
+			<label>Break loops &amp; perform corresponding task</label>
+			<Str sr="arg0" ve="3">VoiceControlForPlex</Str>
+			<Int sr="arg1" val="1"/>
+			<Int sr="arg2" val="5"/>
+			<Str sr="arg3" ve="3">%voice_data(%voice_data_count)</Str>
+			<Str sr="arg4" ve="3"/>
+			<Str sr="arg5" ve="3"/>
+		</Action>
+		<Action sr="act6" ve="3">
+			<code>38</code>
+			<label>No match</label>
+		</Action>
+		<Action sr="act7" ve="3">
+			<code>547</code>
+			<Str sr="arg0" ve="3">%voice_data_count</Str>
+			<Str sr="arg1" ve="3">%voice_data_count+1</Str>
+			<Int sr="arg2" val="1"/>
+			<Int sr="arg3" val="0"/>
+		</Action>
+		<Action sr="act8" ve="3">
+			<code>40</code>
+			<label>End of loops with no matches</label>
+		</Action>
+		<Action sr="act9" ve="3">
+			<code>547</code>
+			<label>Set the voice response for utter!</label>
+			<Str sr="arg0" ve="3">%response</Str>
+			<Str sr="arg1" ve="3">Tasker didn't understand </Str>
+			<Int sr="arg2" val="0"/>
+			<Int sr="arg3" val="0"/>
+		</Action>
+		<Img sr="icn" ve="2">
+			<cls>com.brandall.nutter.ActivityHomeFragment</cls>
+			<pkg>com.brandall.nutter</pkg>
+		</Img>
+	</Task>
+</TaskerData>
