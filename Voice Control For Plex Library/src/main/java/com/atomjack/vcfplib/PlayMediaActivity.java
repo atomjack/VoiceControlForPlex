@@ -59,20 +59,35 @@ public class PlayMediaActivity extends Activity implements TextToSpeech.OnInitLi
 	private List<PlexDirectory> albums = new ArrayList<PlexDirectory>();
 	private TextToSpeech mTts = null;
 	private String ttsDelayedFeedback = null;
+	private PlexVideo playingVideo; // The video currently playing
+	private PlexTrack playingTrack; // The track currently playing
 
 	protected void onCreate(Bundle savedInstanceState) {
 		Logger.d("on create PlayMediaActivity");
 		super.onCreate(savedInstanceState);
-
 
     BugSenseHandler.initAndStartSession(PlayMediaActivity.this, MainActivity.BUGSENSE_APIKEY);
 
     mPrefs = getSharedPreferences(PREFS, MODE_PRIVATE);
 
 		setContentView(R.layout.play_media);
-		Intent intent = getIntent();
-		this.queryText = intent.getStringExtra("queryText");
-		startup();
+		if(savedInstanceState == null) {
+			playingVideo = null;
+			playingTrack = null;
+			client = null;
+			Intent intent = getIntent();
+			this.queryText = intent.getStringExtra("queryText");
+			startup();
+		} else {
+			Logger.d("found saved instance state");
+			playingVideo = savedInstanceState.getParcelable("video");
+			playingTrack = savedInstanceState.getParcelable("track");
+			client = savedInstanceState.getParcelable("client");
+			if(playingVideo != null)
+				showPlayingVideo();
+			else if(playingTrack != null)
+				showPlayingTrack();
+		}
 	}
 
 	@Override
@@ -1239,7 +1254,7 @@ public class PlayMediaActivity extends Activity implements TextToSpeech.OnInitLi
           track.album = album.title;
           playTrack(track, album);
         } else {
-          Logger.d("Didn't find a video");
+          Logger.d("Didn't find any tracks");
 					feedback(getResources().getString(R.string.couldnt_find_album));
           searchDialog.dismiss();
           finish();
@@ -1281,19 +1296,8 @@ public class PlayMediaActivity extends Activity implements TextToSpeech.OnInitLi
 				}
 				Logger.d("Playback response: %s", r.code);
 				if(passed) {
-					setContentView(R.layout.now_playing_music);
-
-					TextView artist = (TextView)findViewById(R.id.nowPlayingArtist);
-					artist.setText(track.artist);
-					TextView album = (TextView)findViewById(R.id.nowPlayingAlbum);
-					album.setText(track.album);
-					TextView title = (TextView)findViewById(R.id.nowPlayingTitle);
-					title.setText(track.title);
-
-					TextView nowPlayingOnClient = (TextView)findViewById(R.id.nowPlayingOnClient);
-					nowPlayingOnClient.setText(getResources().getString(R.string.now_playing_on) + " " + client.name);
-
-					PlexHttpClient.setThumb(track, (ImageView)findViewById(R.id.nowPlayingImage));
+					playingTrack = track;
+					showPlayingTrack();
 				} else {
 					searchDialog.dismiss();
 					feedback(getResources().getString(R.string.http_status_code_error), r.code);
@@ -1308,6 +1312,24 @@ public class PlayMediaActivity extends Activity implements TextToSpeech.OnInitLi
 				finish();
 			}
     });
+	}
+
+	private void showPlayingTrack() {
+		if(playingTrack == null)
+			return;
+		setContentView(R.layout.now_playing_music);
+
+		TextView artist = (TextView)findViewById(R.id.nowPlayingArtist);
+		artist.setText(playingTrack.artist);
+		TextView album = (TextView)findViewById(R.id.nowPlayingAlbum);
+		album.setText(playingTrack.album);
+		TextView title = (TextView)findViewById(R.id.nowPlayingTitle);
+		title.setText(playingTrack.title);
+
+		TextView nowPlayingOnClient = (TextView)findViewById(R.id.nowPlayingOnClient);
+		nowPlayingOnClient.setText(getResources().getString(R.string.now_playing_on) + " " + client.name);
+
+		PlexHttpClient.setThumb(playingTrack, (ImageView)findViewById(R.id.nowPlayingImage));
 	}
 
 	private void playVideo(final PlexVideo video) {
@@ -1337,38 +1359,10 @@ public class PlayMediaActivity extends Activity implements TextToSpeech.OnInitLi
           }
           Logger.d("Playback response: %s", r.code);
           if(passed) {
+						playingVideo = video;
+						Logger.d("duration: %s", video.getDuration());
             videoPlayed = true;
-            if(video.type.equals("movie")) {
-              setContentView(R.layout.now_playing_movie);
-              TextView title = (TextView)findViewById(R.id.nowPlayingTitle);
-              title.setText(video.title);
-              TextView genre = (TextView)findViewById(R.id.nowPlayingGenre);
-              genre.setText(video.getGenres());
-              TextView year = (TextView)findViewById(R.id.nowPlayingYear);
-              year.setText(video.year);
-              TextView duration = (TextView)findViewById(R.id.nowPlayingDuration);
-              duration.setText(video.getDuration());
-              TextView summary = (TextView)findViewById(R.id.nowPlayingSummary);
-              summary.setText(video.summary);
-            } else {
-              setContentView(R.layout.now_playing_show);
-
-              TextView showTitle = (TextView)findViewById(R.id.nowPlayingShowTitle);
-              showTitle.setText(video.showTitle);
-              TextView episodeTitle = (TextView)findViewById(R.id.nowPlayingEpisodeTitle);
-              episodeTitle.setText(video.title);
-              TextView year = (TextView)findViewById(R.id.nowPlayingYear);
-              year.setText(video.year);
-              TextView duration = (TextView)findViewById(R.id.nowPlayingDuration);
-              duration.setText(video.getDuration());
-              TextView summary = (TextView)findViewById(R.id.nowPlayingSummary);
-              summary.setText(video.summary);
-            }
-
-            TextView nowPlayingOnClient = (TextView)findViewById(R.id.nowPlayingOnClient);
-            nowPlayingOnClient.setText(getResources().getString(R.string.now_playing_on) + " " + client.name);
-
-            PlexHttpClient.setThumb(video, (ScrollView)findViewById(R.id.background));
+            showPlayingVideo();
           } else {
 						searchDialog.dismiss();
 						feedback(getResources().getString(R.string.http_status_code_error), r.code);
@@ -1410,6 +1404,41 @@ public class PlayMediaActivity extends Activity implements TextToSpeech.OnInitLi
     LocalBroadcastManager.getInstance(this).registerReceiver(gdmReceiver, filters);
   }
 
+	private void showPlayingVideo() {
+		if(playingVideo == null)
+			return;
+		if(playingVideo.type.equals("movie")) {
+			setContentView(R.layout.now_playing_movie);
+			TextView title = (TextView)findViewById(R.id.nowPlayingTitle);
+			title.setText(playingVideo.title);
+			TextView genre = (TextView)findViewById(R.id.nowPlayingGenre);
+			genre.setText(playingVideo.getGenres());
+			TextView year = (TextView)findViewById(R.id.nowPlayingYear);
+			year.setText(playingVideo.year);
+			TextView duration = (TextView)findViewById(R.id.nowPlayingDuration);
+			duration.setText(playingVideo.getDuration());
+			TextView summary = (TextView)findViewById(R.id.nowPlayingSummary);
+			summary.setText(playingVideo.summary);
+		} else {
+			setContentView(R.layout.now_playing_show);
+
+			TextView showTitle = (TextView)findViewById(R.id.nowPlayingShowTitle);
+			showTitle.setText(playingVideo.showTitle);
+			TextView episodeTitle = (TextView)findViewById(R.id.nowPlayingEpisodeTitle);
+			episodeTitle.setText(playingVideo.title);
+			TextView year = (TextView)findViewById(R.id.nowPlayingYear);
+			year.setText(playingVideo.year);
+			TextView duration = (TextView)findViewById(R.id.nowPlayingDuration);
+			duration.setText(playingVideo.getDuration());
+			TextView summary = (TextView)findViewById(R.id.nowPlayingSummary);
+			summary.setText(playingVideo.summary);
+		}
+
+		TextView nowPlayingOnClient = (TextView)findViewById(R.id.nowPlayingOnClient);
+		nowPlayingOnClient.setText(getResources().getString(R.string.now_playing_on) + " " + client.name);
+
+		PlexHttpClient.setThumb(playingVideo, (ScrollView)findViewById(R.id.background));
+	}
   private static Boolean compareTitle(String title, String queryTerm) {
     // First, check if the two terms are equal
     if(title.toLowerCase().equals(queryTerm.toLowerCase()))
@@ -1424,4 +1453,12 @@ public class PlayMediaActivity extends Activity implements TextToSpeech.OnInitLi
     }
     return !missing;
   }
+
+	@Override
+	protected void onSaveInstanceState(Bundle outState) {
+		super.onSaveInstanceState(outState);
+		outState.putParcelable("video", playingVideo);
+		outState.putParcelable("client", client);
+		outState.putParcelable("track", playingTrack);
+	}
 }

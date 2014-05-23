@@ -109,7 +109,7 @@ public class PlexHttpClient
   public static void setThumb(PlexVideo video, final ScrollView layout) {
     if(!video.thumb.equals("")) {
       try {
-        final String url = "http://" + video.server.address + ":" + video.server.getPort() + video.thumb;
+        final String url = "http://" + video.server.address + ":" + video.server.port + video.thumb;
         Logger.d("Fetching Video Thumb: %s", url);
         AsyncHttpClient httpClient = new AsyncHttpClient();
         httpClient.get(url, new BinaryHttpResponseHandler() {

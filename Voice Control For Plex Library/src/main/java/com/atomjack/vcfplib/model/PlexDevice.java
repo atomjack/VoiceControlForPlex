@@ -1,8 +1,10 @@
 package com.atomjack.vcfplib.model;
 
+import android.os.Parcelable;
+
 import org.simpleframework.xml.Attribute;
 
-public abstract class PlexDevice {
+public abstract class PlexDevice implements Parcelable {
   @Attribute
   public String name;
   @Attribute
@@ -21,17 +23,6 @@ public abstract class PlexDevice {
   }
   public void setName(String name) {
     this.name = name;
-  }
-
-  public void setAddress(String address) {
-    this.address = address;
-  }
-
-  public String getPort() {
-    return port;
-  }
-  public void setPort(String port) {
-    this.port = port;
   }
 
   public String getVersion() {

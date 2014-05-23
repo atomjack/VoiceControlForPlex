@@ -9,10 +9,12 @@ import org.simpleframework.xml.Attribute;
 import org.simpleframework.xml.ElementList;
 import org.simpleframework.xml.Root;
 
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.text.TextUtils;
 
 @Root(strict=false)
-public class PlexVideo {
+public class PlexVideo implements Parcelable {
 	@Attribute
 	public String key;
 	@Attribute
@@ -34,7 +36,7 @@ public class PlexVideo {
 	@Attribute(required=false)
 	public String year;
 	@ElementList(required=false, inline=true, entry="Genre")
-	public ArrayList<Genre> genre = new ArrayList<Genre>();
+	public ArrayList<Genre> genre;
 	@Attribute(required=false)
 	public String duration;
 	@Attribute(required=false)
@@ -51,7 +53,12 @@ public class PlexVideo {
     }
   }
 	public String showTitle;
-	
+
+	public PlexVideo() {
+		super();
+		genre = new ArrayList<Genre>();
+	}
+
 	public PlexServer getServer() {
 		return server;
 	}
@@ -73,11 +80,62 @@ public class PlexVideo {
 			return String.format("%d min", TimeUnit.MILLISECONDS.toMinutes(Long.parseLong(duration)));
 		}
 	}
+
+	public void writeToParcel(Parcel out, int flags) {
+		out.writeString(key);
+		out.writeString(title);
+		out.writeString(viewOffset);
+		out.writeString(index);
+		out.writeString(grandparentTitle);
+		out.writeString(grandparentThumb);
+		out.writeString(thumb);
+		out.writeString(type);
+		out.writeString(year);
+		out.writeString(duration);
+		out.writeString(summary);
+		out.writeString(originallyAvailableAt);
+		out.writeString(showTitle);
+		out.writeParcelable(server, flags);
+		out.writeTypedList(genre);
+	}
+
+	public PlexVideo(Parcel in) {
+		this();
+		key = in.readString();
+		title = in.readString();
+		viewOffset = in.readString();
+		index = in.readString();
+		grandparentTitle = in.readString();
+		grandparentThumb = in.readString();
+		thumb = in.readString();
+		type = in.readString();
+		year = in.readString();
+		duration = in.readString();
+		summary = in.readString();
+		originallyAvailableAt = in.readString();
+		showTitle = in.readString();
+		server = in.readParcelable(PlexServer.class.getClassLoader());
+		in.readTypedList(genre, Genre.CREATOR);
+	}
+
+	public int describeContents() {
+		return 0; // TODO: Customise this generated block
+	}
+
+	public static final Parcelable.Creator<PlexVideo> CREATOR = new Parcelable.Creator<PlexVideo>() {
+		public PlexVideo createFromParcel(Parcel in) {
+			return new PlexVideo(in);
+		}
+
+		public PlexVideo[] newArray(int size) {
+			return new PlexVideo[size];
+		}
+	};
 }
 
 
 
-class Genre {
+class Genre implements Parcelable {
 	@Attribute
 	public String tag;
 	
@@ -85,5 +143,31 @@ class Genre {
 	public String toString() {
 		return tag;
 	}
+
+	public Genre() {
+		super();
+	}
+
+	protected Genre(Parcel in) {
+		tag = in.readString();
+	}
+
+	public void writeToParcel(Parcel out, int flags) {
+		out.writeString(tag);
+	}
+
+	public int describeContents() {
+		return 0; // TODO: Customise this generated block
+	}
+
+	public static final Parcelable.Creator<Genre> CREATOR = new Parcelable.Creator<Genre>() {
+		public Genre createFromParcel(Parcel in) {
+			return new Genre(in);
+		}
+
+		public Genre[] newArray(int size) {
+			return new Genre[size];
+		}
+	};
 }
 

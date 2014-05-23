@@ -42,9 +42,9 @@ public class GDMReceiver extends BroadcastReceiver {
 //      if(matcher.matches()) {
         String machineIdentifier = matcher.group(1);
 
-        server.setPort(serverPort);
-        server.setName(serverName);
-        server.setAddress(ipAddress);
+        server.port = serverPort;
+        server.name = serverName;
+        server.address = ipAddress;
         server.machineIdentifier = machineIdentifier;
 
         VoiceControlForPlexApplication.addPlexServer(server);
