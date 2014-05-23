@@ -1,10 +1,26 @@
 <TaskerData sr="" dvi="1" tv="4.2u3">
-	<Profile sr="prof148" ve="2">
-		<cdate>1400797081692</cdate>
+	<Profile sr="prof50" ve="2">
+		<cdate>1400873431393</cdate>
+		<edate>1400873465734</edate>
+		<id>50</id>
+		<mid0>49</mid0>
+		<nme>Voice Control For Plex (utter!)</nme>
+		<Event sr="con0" ve="2">
+			<cname>Voice Data</cname>
+			<code>599</code>
+			<Str sr="arg0" ve="3">com.brandall.nutter.action.VOICE_DATA</Str>
+			<Int sr="arg1" val="0"/>
+			<Int sr="arg2" val="0"/>
+			<Str sr="arg3" ve="3"/>
+			<Str sr="arg4" ve="3"/>
+		</Event>
+	</Profile>
+	<Profile sr="prof51" ve="2">
+		<cdate>1400873431393</cdate>
 		<clp>true</clp>
 		<edate>1400727519979</edate>
-		<id>148</id>
-		<mid0>144</mid0>
+		<id>51</id>
+		<mid0>46</mid0>
 		<nme>Voice Control For Plex (AutoVoice)</nme>
 		<State sr="con0">
 			<code>20126</code>
@@ -83,37 +99,20 @@ All recognized commands without filter
 			<Str sr="arg2" ve="3">AutoVoice Recognized</Str>
 		</State>
 	</Profile>
-	<Profile sr="prof149" ve="2">
-		<cdate>1400797081698</cdate>
-		<clp>true</clp>
-		<edate>1400727534640</edate>
-		<id>149</id>
-		<mid0>147</mid0>
-		<nme>Voice Control For Plex (utter!)</nme>
-		<Event sr="con0" ve="2">
-			<cname>Voice Data</cname>
-			<code>599</code>
-			<Str sr="arg0" ve="3">com.brandall.nutter.action.VOICE_DATA</Str>
-			<Int sr="arg1" val="0"/>
-			<Int sr="arg2" val="0"/>
-			<Str sr="arg3" ve="3"/>
-			<Str sr="arg4" ve="3"/>
-		</Event>
-	</Profile>
 	<Project sr="proj0">
 		<cdate>1377124751229</cdate>
 		<name>VoiceControlForPlex</name>
-		<pids>148,149</pids>
-		<tids>145,144,147,146</tids>
+		<pids>50,51</pids>
+		<tids>49,46,48</tids>
 		<Img sr="icon" ve="2">
 			<cls>com.atomjack.vcfplib.MainActivity</cls>
 			<pkg>com.atomjack.vcfp</pkg>
 		</Img>
 	</Project>
-	<Task sr="task144">
+	<Task sr="task46">
 		<cdate>1400192106190</cdate>
 		<edate>1400727519979</edate>
-		<id>144</id>
+		<id>46</id>
 		<Action sr="act0" ve="3">
 			<code>22851</code>
 			<Bundle sr="arg0">
@@ -131,24 +130,10 @@ All recognized commands without filter
 			<Int sr="arg3" val="0"/>
 		</Action>
 	</Task>
-	<Task sr="task145">
-		<cdate>1400796521385</cdate>
-		<edate>1400797125762</edate>
-		<id>145</id>
-		<nme>SetCommands</nme>
-		<pri>10</pri>
-		<Action sr="act0" ve="3">
-			<code>547</code>
-			<Str sr="arg0" ve="3">%Commands</Str>
-			<Str sr="arg1" ve="3">^(((watch|resume watching|listen to) )|((offset|timecode) (.*))|((pause|stop|resume) playback))(on )?</Str>
-			<Int sr="arg2" val="0"/>
-			<Int sr="arg3" val="0"/>
-		</Action>
-	</Task>
-	<Task sr="task146">
+	<Task sr="task48">
 		<cdate>1376944785561</cdate>
 		<edate>1400727723455</edate>
-		<id>146</id>
+		<id>48</id>
 		<nme>VoiceControlForPlex</nme>
 		<Action sr="act0" ve="3">
 			<code>547</code>
@@ -178,22 +163,13 @@ All recognized commands without filter
 			<pkg>com.brandall.nutter</pkg>
 		</Img>
 	</Task>
-	<Task sr="task147">
+	<Task sr="task49">
 		<cdate>1376675516238</cdate>
-		<edate>1400797175710</edate>
-		<id>147</id>
+		<edate>1400873532538</edate>
+		<id>49</id>
 		<nme>VoiceDataReceiver</nme>
 		<pri>10</pri>
 		<Action sr="act0" ve="3">
-			<code>130</code>
-			<Str sr="arg0" ve="3">SetCommands</Str>
-			<Int sr="arg1" val="0"/>
-			<Int sr="arg2" val="10"/>
-			<Str sr="arg3" ve="3"/>
-			<Str sr="arg4" ve="3"/>
-			<Str sr="arg5" ve="3"/>
-		</Action>
-		<Action sr="act1" ve="3">
 			<code>547</code>
 			<label>Used in the loop below</label>
 			<Str sr="arg0" ve="3">%voice_data_count</Str>
@@ -201,15 +177,15 @@ All recognized commands without filter
 			<Int sr="arg2" val="1"/>
 			<Int sr="arg3" val="0"/>
 		</Action>
-		<Action sr="act10" ve="3">
+		<Action sr="act1" ve="3">
 			<code>547</code>
-			<label>Set the voice response for utter!</label>
-			<Str sr="arg0" ve="3">%response</Str>
-			<Str sr="arg1" ve="3">Tasker didn't understand </Str>
-			<Int sr="arg2" val="0"/>
+			<label>Set the loop count to the voice data size</label>
+			<Str sr="arg0" ve="3">%voice_data_size</Str>
+			<Str sr="arg1" ve="3">%voice_data(#)</Str>
+			<Int sr="arg2" val="1"/>
 			<Int sr="arg3" val="0"/>
 		</Action>
-		<Action sr="act11" ve="3">
+		<Action sr="act10" ve="3">
 			<code>2272</code>
 			<label>Speak the response</label>
 			<Bundle sr="arg0">
@@ -243,31 +219,23 @@ All recognized commands without filter
 			<Int sr="arg3"/>
 		</Action>
 		<Action sr="act2" ve="3">
-			<code>547</code>
-			<label>Set the loop count to the voice data size</label>
-			<Str sr="arg0" ve="3">%voice_data_size</Str>
-			<Str sr="arg1" ve="3">%voice_data(#)</Str>
-			<Int sr="arg2" val="1"/>
-			<Int sr="arg3" val="0"/>
-		</Action>
-		<Action sr="act3" ve="3">
 			<code>39</code>
 			<label>Loop through the voice data</label>
 			<Str sr="arg0" ve="3">%voice_data</Str>
 			<Str sr="arg1" ve="3">1:%voice_data_size</Str>
 		</Action>
-		<Action sr="act4" ve="3">
+		<Action sr="act3" ve="3">
 			<code>37</code>
 			<label>Compare each voice data string to each command</label>
 			<lhs>%voice_data(%voice_data_count)</lhs>
 			<op>11</op>
-			<rhs>%Commands</rhs>
+			<rhs>^(((watch|resume watching|listen to) )|((offset|timecode) (.*))|((pause|stop|resume) playback))(on )?</rhs>
+		</Action>
+		<Action sr="act4" ve="3">
+			<code>300</code>
+			<label>Spoken query matches what Voice Control for Plex will respond to. So let's pass that query on to the app.</label>
 		</Action>
 		<Action sr="act5" ve="3">
-			<code>300</code>
-			<label>A command has been matched! The number of the command in your master command array, corresponds to the task that will now be performed.</label>
-		</Action>
-		<Action sr="act6" ve="3">
 			<code>130</code>
 			<label>Break loops &amp; perform corresponding task</label>
 			<Str sr="arg0" ve="3">VoiceControlForPlex</Str>
@@ -277,20 +245,28 @@ All recognized commands without filter
 			<Str sr="arg4" ve="3"/>
 			<Str sr="arg5" ve="3"/>
 		</Action>
-		<Action sr="act7" ve="3">
+		<Action sr="act6" ve="3">
 			<code>38</code>
 			<label>No match</label>
 		</Action>
-		<Action sr="act8" ve="3">
+		<Action sr="act7" ve="3">
 			<code>547</code>
 			<Str sr="arg0" ve="3">%voice_data_count</Str>
 			<Str sr="arg1" ve="3">%voice_data_count+1</Str>
 			<Int sr="arg2" val="1"/>
 			<Int sr="arg3" val="0"/>
 		</Action>
-		<Action sr="act9" ve="3">
+		<Action sr="act8" ve="3">
 			<code>40</code>
 			<label>End of loops with no matches</label>
+		</Action>
+		<Action sr="act9" ve="3">
+			<code>547</code>
+			<label>Set the voice response for utter!</label>
+			<Str sr="arg0" ve="3">%response</Str>
+			<Str sr="arg1" ve="3">Tasker didn't understand </Str>
+			<Int sr="arg2" val="0"/>
+			<Int sr="arg3" val="0"/>
 		</Action>
 		<Img sr="icn" ve="2">
 			<cls>com.brandall.nutter.ActivityHomeFragment</cls>
