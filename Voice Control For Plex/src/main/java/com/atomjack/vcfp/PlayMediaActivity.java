@@ -1109,7 +1109,7 @@ public class PlayMediaActivity extends Activity implements TextToSpeech.OnInitLi
 
 	private void onFinishedNextEpisodeSearch(String queryTerm) {
 		if(videos.size() == 0) {
-			errors(getResources().getString(R.string.couldnt_find), queryTerm);
+			errors(getResources().getString(R.string.couldnt_find_next), queryTerm);
 			searchDialog.dismiss();
 			finish();
 			return;
