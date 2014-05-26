@@ -18,5 +18,9 @@ android {
 }
 
 dependencies {
-    compile project(':Voice Control For Plex Library')
+    compile files('libs/android-async-http-1.4.4.jar')
+    compile files('libs/bugsense-3.6.jar')
+    compile files('libs/simple-xml-2.7.1.jar')
+    compile 'com.google.code.gson:gson:2.2.+'
+    compile 'com.android.support:support-v4:+'
 }
