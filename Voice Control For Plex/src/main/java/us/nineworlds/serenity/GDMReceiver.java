@@ -10,8 +10,8 @@ import android.content.Intent;
 import com.atomjack.vcfp.GDMService;
 import com.atomjack.vcfp.Logger;
 import com.atomjack.vcfp.MainActivity;
+import com.atomjack.vcfp.PlexSearch;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
-import com.atomjack.vcfp.PlayMediaActivity;
 import com.atomjack.vcfp.model.PlexServer;
 
 public class GDMReceiver extends BroadcastReceiver {
@@ -53,8 +53,8 @@ public class GDMReceiver extends BroadcastReceiver {
 			Logger.i("Finished Searching");
 			Intent i;
 			Logger.d("ORIGIN: %s", intent.getStringExtra("ORIGIN"));
-			if(intent.getStringExtra("ORIGIN").equals("PlayMediaActivity")) {
-				i = new Intent(context, PlayMediaActivity.class);
+			if(intent.getStringExtra("ORIGIN").equals("PlexSearch")) {
+				i = new Intent(context, PlexSearch.class);
 			} else {
 				i = new Intent(context, MainActivity.class);
 			}
@@ -64,7 +64,12 @@ public class GDMReceiver extends BroadcastReceiver {
 			i.addFlags(Intent.FLAG_FROM_BACKGROUND);
 			i.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
 			i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-			context.startActivity(i);
+			if(intent.getStringExtra("ORIGIN").equals("PlexSearch")) {
+				context.startService(i);
+			} else {
+				context.startActivity(i);
+			}
+
 		}
 	}
 	

@@ -2,3 +2,6 @@
 local.properties
 app/build
 Voice Control For Plex/build
+.idea
+out
+ignored

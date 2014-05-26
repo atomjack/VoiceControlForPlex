@@ -6,8 +6,12 @@ import android.appwidget.AppWidgetProvider;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
 import android.speech.RecognizerIntent;
 import android.widget.RemoteViews;
+
+import java.math.BigInteger;
+import java.security.SecureRandom;
 
 public class ListenerWidget extends AppWidgetProvider {
 
@@ -21,8 +25,10 @@ public class ListenerWidget extends AppWidgetProvider {
 			RemoteViews remoteViews = new RemoteViews(context.getPackageName(),
 							R.layout.widget_layout);
 
-			Intent activityIntent = new Intent(context, PlayMediaActivity.class);
-			PendingIntent resultsPendingIntent = PendingIntent.getActivity(context, 0, activityIntent, 0);
+			Intent serviceIntent = new Intent(context, PlexSearch.class);
+//			SecureRandom random = new SecureRandom();
+//			serviceIntent.setData(Uri.parse(new BigInteger(130, random).toString(32)));
+			PendingIntent resultsPendingIntent = PendingIntent.getService(context, 0, serviceIntent, Intent.FLAG_ACTIVITY_NEW_TASK);
 
 			Intent listenerIntent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
 			listenerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
@@ -37,4 +43,5 @@ public class ListenerWidget extends AppWidgetProvider {
 			Logger.d("Widget updated.");
 		}
 	}
+
 }
