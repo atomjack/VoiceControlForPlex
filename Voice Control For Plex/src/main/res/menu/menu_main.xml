@@ -1,11 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android" >
     <item android:id="@+id/menu_about" 
-        android:title="@string/menu_about">
+        android:title="@string/menu_about"
+        android:onClick="showAbout">
     </item>
     <item android:id="@+id/menu_donate" 
-        android:title="@string/menu_donate">
+        android:title="@string/menu_donate"
+        android:onClick="donate">
     </item>
-    
-
+    <item android:id="@+id/menu_tasker_import"
+          android:title="@string/menu_tasker_import"
+          android:onClick="importTaskerProject">
+    </item>
+    <item android:id="@+id/menu_install_tasker"
+          android:title="@string/menu_install_tasker"
+          android:visible="false"
+          android:onClick="installTasker">
+    </item>
+    <item android:id="@+id/menu_install_utter"
+          android:title="@string/menu_install_utter"
+          android:visible="false"
+          android:onClick="installUtter">
+    </item>
+    <item android:id="@+id/menu_install_autovoice"
+          android:title="@string/menu_install_autovoice"
+          android:visible="false"
+          android:onClick="installAutoVoice">
+    </item>
 </menu>

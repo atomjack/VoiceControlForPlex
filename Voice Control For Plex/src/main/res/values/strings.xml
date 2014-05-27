@@ -11,6 +11,10 @@
     <string name="menu_about">About</string>
     <string name="about_text">Voice Control for Plex\n© 2013 Chris Bellew\nLicensed under GPLv3\n\nPlex is copyright Plex, Inc.</string>
     <string name="menu_donate">Donate</string>
+    <string name="menu_tasker_import">Import Tasker Project</string>
+    <string name="menu_install_tasker">Install Tasker</string>
+    <string name="menu_install_utter">Install utter!</string>
+    <string name="menu_install_autovoice">Install AutoVoice</string>
     <string name="feedback_voice">Voice</string>
     <string name="feedback_toast">Toast</string>
     <string name="now_playing_on">Now Playing On</string>
@@ -54,4 +58,6 @@
     <string name="playback_resumed">Playback resumed.</string>
     <string name="playback_stopped">Playback stopped.</string>
     <string name="widget_instructions">To trigger voice recognition, simply add the <b>Voice Control for Plex</b> widget on to your home screen.</string>
+    <string name="title_changelog">What\'s New</string>
+    <string name="changelog_close">Close</string>
 </resources>

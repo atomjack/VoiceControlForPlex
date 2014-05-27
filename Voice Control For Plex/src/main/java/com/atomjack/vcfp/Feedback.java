@@ -36,6 +36,13 @@ public class Feedback implements TextToSpeech.OnInitListener {
 		}
 	}
 
+	public void destroy() {
+		if(errorsTts != null)
+			errorsTts.shutdown();
+		if(feedbackTts != null)
+			feedbackTts.shutdown();
+	}
+
 	public void m(String text, Object... arguments) {
 		text = String.format(text, arguments);
 		m(text);

@@ -16,7 +16,7 @@ public class PlayReceiver extends BroadcastReceiver
 		if(queryText == null && intent.getStringExtra(GoogleSearchApi.KEY_QUERY_TEXT) != null)
 			queryText = intent.getStringExtra(GoogleSearchApi.KEY_QUERY_TEXT);
 
-		if(queryText != null) {
+		if(queryText != null && queryText.matches(VoiceControlForPlexApplication.recognition_regex)) {
 			queryText = queryText.toLowerCase();
 			Intent sendIntent = new Intent(context, PlexSearch.class);
 			sendIntent.setAction("com.atomjack.vcfp.intent.ACTION_SEARCH");

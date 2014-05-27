@@ -79,6 +79,12 @@ public class PlexSearch extends Service {
 	}
 
 	@Override
+	public void onDestroy() {
+		feedback.destroy();
+		super.onDestroy();
+	}
+
+	@Override
 	public void onCreate() {
 		Logger.d("PlexSearch onCreate");
 		mPrefs = getSharedPreferences(PREFS, MODE_PRIVATE);

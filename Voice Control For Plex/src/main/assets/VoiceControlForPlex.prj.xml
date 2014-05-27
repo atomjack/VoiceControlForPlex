@@ -55,9 +55,9 @@
 					<TriggerWordRegex>false</TriggerWordRegex>
 					<TriggerWordRegex-type>java.lang.Boolean</TriggerWordRegex-type>
 					<com.twofortyfouram.locale.intent.extra.BLURB>Event Behaviour: true
-Command: "^(((watch|resume watching|listen to) )|((offset|timecode) (.*))|((pause|stop|resume) playback))(on )? (regex)"</com.twofortyfouram.locale.intent.extra.BLURB>
+Command: "%RECOGNITION_REGEX% (regex)"</com.twofortyfouram.locale.intent.extra.BLURB>
 					<com.twofortyfouram.locale.intent.extra.BLURB-type>java.lang.String</com.twofortyfouram.locale.intent.extra.BLURB-type>
-					<configcommand>^(((watch|resume watching|listen to) )|((offset|timecode) (.*))|((pause|stop|resume) playback))(on )?</configcommand>
+					<configcommand>%RECOGNITION_REGEX%</configcommand>
 					<configcommand-type>java.lang.String</configcommand-type>
 					<configcommandid>&lt;null&gt;</configcommandid>
 					<configcommandid-type>java.lang.String</configcommandid-type>
@@ -229,7 +229,7 @@ All recognized commands without filter
 			<label>Compare each voice data string to each command</label>
 			<lhs>%voice_data(%voice_data_count)</lhs>
 			<op>11</op>
-			<rhs>^(((watch|resume watching|listen to) )|((offset|timecode) (.*))|((pause|stop|resume) playback))(on )?</rhs>
+			<rhs>%RECOGNITION_REGEX%</rhs>
 		</Action>
 		<Action sr="act4" ve="3">
 			<code>300</code>

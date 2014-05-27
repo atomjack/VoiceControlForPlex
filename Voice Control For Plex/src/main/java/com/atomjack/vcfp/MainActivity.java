@@ -31,11 +31,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.CheckBox;
-import android.widget.ImageButton;
 import android.widget.ListAdapter;
 import android.widget.ListView;
-import android.widget.TextView;
-import android.widget.Toast;
 
 import com.atomjack.vcfp.model.MainSetting;
 import com.atomjack.vcfp.model.MediaContainer;
@@ -43,6 +40,7 @@ import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexServer;
 import com.atomjack.vcfp.net.PlexHttpClient;
 import com.atomjack.vcfp.net.PlexHttpMediaContainerHandler;
+import com.cubeactive.martin.inscription.WhatsNewDialog;
 import com.google.gson.Gson;
 import com.bugsense.trace.BugSenseHandler;
 
@@ -59,11 +57,10 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
 	private BroadcastReceiver gdmReceiver = new GDMReceiver();
 
-	private TextToSpeech feedbackTts;
-	private TextToSpeech errorsTts;
-	private String ttsDelayedFeedback = null;
 	private ArrayList<String> availableVoices;
 	private boolean settingErrorFeedback = false;
+
+	private Feedback feedback;
 
 	private Dialog searchDialog = null;
 	private Dialog serverSelectDialog = null;
@@ -75,7 +72,9 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
 	private SharedPreferences mPrefs;
 	private SharedPreferences.Editor mPrefsEditor;
-	
+
+	private Menu menu;
+
 	private int serversScanned = 0;
 	AlertDialog.Builder helpDialog;
 
@@ -84,35 +83,30 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 		super.onCreate(savedInstanceState);
 
 		BugSenseHandler.initAndStartSession(MainActivity.this, BUGSENSE_APIKEY);
-		
+
+
+		final WhatsNewDialog whatsNewDialog = new WhatsNewDialog(this);
+		whatsNewDialog.show();
 		
 		mPrefs = getSharedPreferences(PREFS, MODE_PRIVATE);
 		mPrefsEditor = mPrefs.edit();
 		Gson gson = new Gson();
 
+		feedback = new Feedback(mPrefs, this);
+
 		setContentView(R.layout.main);
 
-		if (hasValidAutoVoice() || hasValidUtter() && false) {
-//		if(false) {
-			TextView t = (TextView) findViewById(R.id.taskerImportHeader);
-			t.setVisibility(TextView.VISIBLE);
-			ImageButton b = (ImageButton) findViewById(R.id.taskerImportButton);
-			b.setVisibility(ImageButton.VISIBLE);
-		} else if (!hasValidGoogleSearch()) {
-			TextView t2 = (TextView) findViewById(R.id.taskerInstructionsView);
-			t2.setVisibility(TextView.VISIBLE);
+		if (hasValidAutoVoice() || hasValidUtter()) {
 
+		} else if (!hasValidGoogleSearch()) {
 			if (!hasValidTasker()) {
-				ImageButton taskerButton = (ImageButton) findViewById(R.id.taskerInstallButton);
-				taskerButton.setVisibility(ImageButton.VISIBLE);
+				menu.findItem(R.id.menu_install_tasker).setVisible(true);
 			}
 			if (!hasValidUtter()) {
-				ImageButton utterButton = (ImageButton) findViewById(R.id.utterInstallButton);
-				utterButton.setVisibility(ImageButton.VISIBLE);
+				menu.findItem(R.id.menu_install_utter).setVisible(true);
 			}
 			if (!hasValidAutoVoice()) {
-				ImageButton autoVoiceButton = (ImageButton) findViewById(R.id.autoVoiceInstallButton);
-				autoVoiceButton.setVisibility(ImageButton.VISIBLE);
+				menu.findItem(R.id.menu_install_autovoice).setVisible(true);
 			}
 		}
 
@@ -122,15 +116,15 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 		initMainWithServer();
 	}
 
-	public void installTasker(View v) {
+	public void installTasker(MenuItem item) {
 		openAppInPlayStore("net.dinglisch.android.taskerm");
 	}
 
-	public void installUtter(View v) {
+	public void installUtter(MenuItem item) {
 		openAppInPlayStore("com.brandall.nutter");
 	}
 
-	public void installAutoVoice(View v) {
+	public void installAutoVoice(MenuItem item) {
 		openAppInPlayStore("com.joaomgcd.autovoice");
 	}
 
@@ -204,19 +198,6 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 		mPrefsEditor.putBoolean("resume", ((CheckBox)v).isChecked());
 		mPrefsEditor.commit();
 	}
-	
-	@Override
-	public boolean onOptionsItemSelected(MenuItem item) {
-		if(item.getItemId() == R.id.menu_about) {
-			return showAbout();
-		} else if(item.getItemId() == R.id.menu_donate) {
-			Intent intent = new Intent(Intent.ACTION_VIEW,
-							Uri.parse("https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=UJF9QY9QELERG"));
-			startActivity(intent);
-			return true;
-		}
-		return super.onOptionsItemSelected(item);
-	}
 
 	@Override
 	public void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -225,7 +206,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 			if (resultCode == TextToSpeech.Engine.CHECK_VOICE_DATA_PASS) {
 				// success, create the TTS instance
 				availableVoices = data.getStringArrayListExtra(TextToSpeech.Engine.EXTRA_AVAILABLE_VOICES);
-				feedbackTts = new TextToSpeech(this, this);
+				TextToSpeech tts = new TextToSpeech(this, this);
 //				errorsTts = new TextToSpeech(this, this);
 			} else {
 				// missing data, install it
@@ -260,16 +241,6 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 			});
 			usageDialog.show();
 		}
-	}
-
-	private boolean showAbout() {
-		AlertDialog.Builder alertDialog = new AlertDialog.Builder(MainActivity.this)
-		.setTitle(R.string.app_name)
-		.setMessage(R.string.about_text);
-
-		alertDialog.show();
-
-		return true;
 	}
 
 	private void initMainWithServer() {
@@ -371,34 +342,55 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 		d.show();
 	}
 
-	public void importTaskerProject(View v) {
+	public void showAbout(MenuItem item) {
+		AlertDialog.Builder alertDialog = new AlertDialog.Builder(MainActivity.this)
+						.setTitle(R.string.app_name)
+						.setMessage(R.string.about_text);
+
+		alertDialog.show();
+	}
+
+	public void donate(MenuItem item) {
+		Intent intent = new Intent(Intent.ACTION_VIEW,
+						Uri.parse("https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=UJF9QY9QELERG"));
+		startActivity(intent);
+	}
+
+	public void importTaskerProject(MenuItem item) {
 		String xmlfile = "VoiceControlForPlex.prj.xml";
-		File f = new File(Environment.getExternalStorageDirectory() + "/" + xmlfile);
-		if(!f.exists()) {
-			try
-			{
-				AssetManager am = this.getAssets();
-				InputStream is = am.open(xmlfile);
-				int size = is.available();
-				byte[] buffer = new byte[size];
-				is.read(buffer);
-				is.close();
 
-				FileOutputStream fos = new FileOutputStream(f);
-				fos.write(buffer);
-				fos.close();
+		try
+		{
+			AssetManager am = this.getAssets();
+			InputStream is = am.open(xmlfile);
+			int size = is.available();
+			byte[] buffer = new byte[size];
+			is.read(buffer);
+			is.close();
 
-				Logger.d("Wrote xml file");
-			} catch (Exception e) {
-				Logger.d("Exception opening tasker profile xml: ");
-				e.printStackTrace();
-				return;
-			}
+			String xmlContents = new String(buffer);
+			xmlContents = xmlContents.replace("%RECOGNITION_REGEX%", VoiceControlForPlexApplication.recognition_regex);
+			buffer = xmlContents.getBytes();
+			Logger.d("directory: %s", Environment.getExternalStorageDirectory());
+
+			File f = new File(Environment.getExternalStorageDirectory() + "/" + xmlfile);
+			FileOutputStream fos = new FileOutputStream(f);
+			fos.write(buffer);
+			fos.close();
+
+			Logger.d("Wrote xml file");
+
+			Intent i = new Intent();
+			i.setAction(Intent.ACTION_VIEW);
+			i.setDataAndType(Uri.fromFile(f), "text/xml");
+			startActivityForResult(i, TASKER_PROJECT_IMPORTED);
+		} catch (Exception e) {
+			Logger.d("Exception opening tasker profile xml: ");
+			e.printStackTrace();
+			return;
 		}
-		Intent i = new Intent();
-		i.setAction(Intent.ACTION_VIEW);
-		i.setDataAndType(Uri.fromFile(f), "text/xml");
-		startActivityForResult(i, TASKER_PROJECT_IMPORTED);
+
+
 	}
 	
 	public void showUsageExamples(View v) {
@@ -530,32 +522,11 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 				@Override
 				public void onFailure(Throwable error) {
 					searchDialog.dismiss();
-					feedback(getResources().getString(R.string.got_error), error.getMessage());
+					feedback.e(getResources().getString(R.string.got_error), error.getMessage());
 					finish();
 				}
 			});
 		}
-	}
-
-	private void feedback(String text, Object... arguments) {
-		text = String.format(text, arguments);
-		feedback(text);
-	}
-
-	public void feedback(String text) {
-		//feedbackTts = new TextToSpeech(this, this);
-		if(mPrefs.getInt("feedback", 0) == MainActivity.FEEDBACK_VOICE) {
-			if(feedbackTts == null) {
-				// Set up the TTS engine, and save the text that should be spoken so it can be done after the engine is initialized
-				feedbackTts = new TextToSpeech(getApplicationContext(), this);
-				ttsDelayedFeedback = text;
-				return;
-			} else
-				feedbackTts.speak(text, TextToSpeech.QUEUE_FLUSH, null);
-		} else {
-			Toast.makeText(this, text, Toast.LENGTH_SHORT).show();
-		}
-		Logger.d(text);
 	}
 
 	private void showPlexServers() {
@@ -609,7 +580,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 				@Override
 				public void onFailure(Throwable error) {
 					searchDialog.dismiss();
-					feedback(getResources().getString(R.string.got_error), error.getMessage());
+					feedback.e(getResources().getString(R.string.got_error), error.getMessage());
 					finish();
 				}
 			});
@@ -697,7 +668,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 			@Override
 			public void onFailure(Throwable error) {
 				searchDialog.dismiss();
-				feedback(getResources().getString(R.string.got_error), error.getMessage());
+				feedback.e(getResources().getString(R.string.got_error), error.getMessage());
 				finish();
 			}
 		});
@@ -744,9 +715,10 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 	}
 	
 	@Override
-	public boolean onCreateOptionsMenu(Menu menu) {
+	public boolean onCreateOptionsMenu(Menu _menu) {
 		// Inflate the menu; this adds items to the action bar if it is present.
-		getMenuInflater().inflate(R.menu.menu_main, menu);
+		getMenuInflater().inflate(R.menu.menu_main, _menu);
+		menu = _menu;
 		return true;
 	}
 
@@ -755,10 +727,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 		if(gdmReceiver != null) {
 			LocalBroadcastManager.getInstance(this).unregisterReceiver(gdmReceiver);
 		}
-		if (feedbackTts != null) {
-			feedbackTts.stop();
-			feedbackTts.shutdown();
-		}
+		feedback.destroy();
 		super.onDestroy();
 	}
 
@@ -809,39 +778,31 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
 	@Override
 	public void onInit(int status) {
-		if(feedbackTts == null)
-			return;
+		if (status == TextToSpeech.SUCCESS) {
+			final String pref = settingErrorFeedback ? VoiceControlForPlexApplication.PREF_ERRORS_VOICE : VoiceControlForPlexApplication.PREF_FEEDBACK_VOICE;
+			if (availableVoices != null) {
+				AlertDialog.Builder adb = new AlertDialog.Builder(this);
+				final CharSequence items[] = availableVoices.toArray(new CharSequence[availableVoices.size()]);
+				int selectedVoice = -1;
+				String v = mPrefs.getString(pref, "Locale.US");
+				if (availableVoices.indexOf(v) > -1)
+					selectedVoice = availableVoices.indexOf(v);
 
-		if(ttsDelayedFeedback != null) {
-			feedback(ttsDelayedFeedback);
-			ttsDelayedFeedback = null;
-		}
-
-		final String pref = settingErrorFeedback ? VoiceControlForPlexApplication.PREF_ERRORS_VOICE : VoiceControlForPlexApplication.PREF_FEEDBACK_VOICE;
-		if(availableVoices != null) {
-			AlertDialog.Builder adb = new AlertDialog.Builder(this);
-			final CharSequence items[] = availableVoices.toArray(new CharSequence[availableVoices.size()]);
-			int selectedVoice = -1;
-			String v = mPrefs.getString(pref, "Locale.US");
-			if (availableVoices.indexOf(v) > -1)
-				selectedVoice = availableVoices.indexOf(v);
-
-			adb.setSingleChoiceItems(items, selectedVoice, new DialogInterface.OnClickListener() {
-				@Override
-				public void onClick(DialogInterface d, int n) {
-					feedbackTts.setLanguage(VoiceControlForPlexApplication.getVoiceLocale(items[n].toString()));
-					mPrefsEditor.putString(pref, items[n].toString());
-					mPrefsEditor.commit();
-					d.dismiss();
-				}
-			});
-			adb.setNegativeButton(R.string.cancel, null);
-			adb.setTitle(R.string.select_voice);
-			adb.show();
-		} else {
-			feedbackTts.setLanguage(VoiceControlForPlexApplication.getVoiceLocale("Locale.US"));
-			mPrefsEditor.putString(pref, "Locale.US");
-			mPrefsEditor.commit();
+				adb.setSingleChoiceItems(items, selectedVoice, new DialogInterface.OnClickListener() {
+					@Override
+					public void onClick(DialogInterface d, int n) {
+						mPrefsEditor.putString(pref, items[n].toString());
+						mPrefsEditor.commit();
+						d.dismiss();
+					}
+				});
+				adb.setNegativeButton(R.string.cancel, null);
+				adb.setTitle(R.string.select_voice);
+				adb.show();
+			} else {
+				mPrefsEditor.putString(pref, "Locale.US");
+				mPrefsEditor.commit();
+			}
 		}
 	}
 }

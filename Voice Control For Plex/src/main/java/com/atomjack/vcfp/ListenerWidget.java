@@ -26,8 +26,8 @@ public class ListenerWidget extends AppWidgetProvider {
 							R.layout.widget_layout);
 
 			Intent serviceIntent = new Intent(context, PlexSearch.class);
-//			SecureRandom random = new SecureRandom();
-//			serviceIntent.setData(Uri.parse(new BigInteger(130, random).toString(32)));
+			SecureRandom random = new SecureRandom();
+			serviceIntent.setData(Uri.parse(new BigInteger(130, random).toString(32)));
 			PendingIntent resultsPendingIntent = PendingIntent.getService(context, 0, serviceIntent, Intent.FLAG_ACTIVITY_NEW_TASK);
 
 			Intent listenerIntent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
