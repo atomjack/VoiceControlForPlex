@@ -65,4 +65,5 @@
     <string name="no_wifi_connection_message">A WiFi connection is required. Please check your WiFi settings and try again.</string>
     <string name="voice_prompt">Voice Control for Plex is listening</string>
     <string name="searching_for_plex_servers">Searching for Plex Servers</string>
+    <string name="didnt_understand">Sorry, I didn\'t understand that.</string>
 </resources>

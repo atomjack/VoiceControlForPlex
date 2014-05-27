@@ -22,7 +22,7 @@ public class ShortcutActivity extends Activity {
 		Intent listenerIntent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
 		listenerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
 		listenerIntent.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, "voice.recognition.test");
-		listenerIntent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1);
+		listenerIntent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 5);
 		listenerIntent.putExtra(RecognizerIntent.EXTRA_RESULTS_PENDINGINTENT, resultsPendingIntent);
 		listenerIntent.putExtra(RecognizerIntent.EXTRA_PROMPT, getResources().getString(R.string.voice_prompt));
 

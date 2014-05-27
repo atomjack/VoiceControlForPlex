@@ -54,6 +54,7 @@ public class PlexSearch extends Service {
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		Logger.d("PlexSearch: onStartCommand");
 
+		queryText = null;
 		BugSenseHandler.initAndStartSession(PlexSearch.this, MainActivity.BUGSENSE_APIKEY);
 
 		String from = intent.getStringExtra("FROM");
@@ -65,11 +66,14 @@ public class PlexSearch extends Service {
 		} else {
 			if (intent.getExtras().getStringArrayList(RecognizerIntent.EXTRA_RESULTS) != null) {
 				ArrayList<String> voiceResults = intent.getExtras().getStringArrayList(RecognizerIntent.EXTRA_RESULTS);
-				if (voiceResults.size() > 0) {
-					queryText = voiceResults.get(0);
-				} else {
-					feedback.e(getResources().getString(R.string.nothing_to_play));
+				for(String q : voiceResults) {
+					if(q.matches(VoiceControlForPlexApplication.recognition_regex)) {
+						queryText = q;
+						break;
+					}
 				}
+				if(queryText == null)
+					feedback.e(getResources().getString(R.string.didnt_understand));
 			} else
 				queryText = intent.getStringExtra("queryText");
 			if (queryText != null)
@@ -396,11 +400,11 @@ public class PlexSearch extends Service {
 					searchForSong(artist, track);
 				}
 			} else {
-				feedback.e(getResources().getString(R.string.nothing_to_play));
+				feedback.e(getResources().getString(R.string.didnt_understand));
 				return;
 			}
 		} else {
-			feedback.e(getResources().getString(R.string.nothing_to_play));
+			feedback.e(getResources().getString(R.string.didnt_understand));
 			return;
 		}
 	}
