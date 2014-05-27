@@ -107,7 +107,9 @@ public class LocalScan {
 		PlexServer server = gson.fromJson(mPrefs.getString("Server", ""), PlexServer.class);
 		if(mc != null) {
 			server.machineIdentifier = mc.machineIdentifier;
-			//saveSettings();
+			SharedPreferences.Editor mPrefsEditor = mPrefs.edit();
+			mPrefsEditor.putString("Server", gson.toJson(server));
+			mPrefsEditor.commit();
 		}
 		if(searchDialog == null) {
 			searchDialog = new Dialog(context);

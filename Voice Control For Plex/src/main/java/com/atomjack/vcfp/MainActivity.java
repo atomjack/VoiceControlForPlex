@@ -4,16 +4,12 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import us.nineworlds.serenity.GDMReceiver;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -21,8 +17,6 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -67,8 +61,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 	private Feedback feedback;
 
 	private Dialog searchDialog = null;
-	private Dialog serverSelectDialog = null;
-	
+
 	private PlexServer server = null;
 	private PlexClient client = null;
 
@@ -249,8 +242,8 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 		MainSetting setting_data[] = new MainSetting[] {
 			new MainSetting(MainListAdapter.SettingHolder.TAG_SERVER, getResources().getString(R.string.stream_video_from_server), server != null ? server.name : getResources().getString(R.string.scan_all)),
 			new MainSetting(MainListAdapter.SettingHolder.TAG_CLIENT, getResources().getString(R.string.to_the_client), client != null ? client.name : getResources().getString(R.string.not_set)),
-			new MainSetting(MainListAdapter.SettingHolder.TAG_FEEDBACK, getResources().getString(R.string.feedback), mPrefs.getInt("feedback", 0) == FEEDBACK_VOICE ? getResources().getString(R.string.voice) : getResources().getString(R.string.toast)),
-			new MainSetting(MainListAdapter.SettingHolder.TAG_ERRORS, getResources().getString(R.string.errors), mPrefs.getInt("errors", 0) == FEEDBACK_VOICE ? getResources().getString(R.string.voice) : getResources().getString(R.string.toast))
+			new MainSetting(MainListAdapter.SettingHolder.TAG_FEEDBACK, getResources().getString(R.string.feedback), mPrefs.getInt("feedback", FEEDBACK_TOAST) == FEEDBACK_VOICE ? getResources().getString(R.string.voice) : getResources().getString(R.string.toast)),
+			new MainSetting(MainListAdapter.SettingHolder.TAG_ERRORS, getResources().getString(R.string.errors), mPrefs.getInt("errors", FEEDBACK_TOAST) == FEEDBACK_VOICE ? getResources().getString(R.string.voice) : getResources().getString(R.string.toast))
 		};
 		
 		MainListAdapter adapter = new MainListAdapter(this, R.layout.main_setting_item_row, setting_data);
@@ -470,34 +463,31 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
 	private void setServer(PlexServer _server) {
 		Logger.d("Setting Server %s", _server.name);
-		if(_server.name.equals("")) {
+		if(_server.name.equals(getResources().getString(R.string.scan_all)))
 			server = null;
-			saveSettings();
-			initMainWithServer();
-			return;
-		}
-		server = _server;
+		else
+			server = _server;
+		saveSettings();
 
 		if(client == null) {
-			PlexHttpClient.get(server.getBaseURL(), null, new PlexHttpMediaContainerHandler()
-			{
-				@Override
-				public void onSuccess(MediaContainer mediaContainer)
-				{
-					Logger.d("Machine id: " + mediaContainer.machineIdentifier);
-					localScan.getClients(mediaContainer);
-				}
+			if(_server.name.equals(getResources().getString(R.string.scan_all))) {
+				localScan.scanServersForClients();
+			} else {
+				PlexHttpClient.get(server.getBaseURL(), null, new PlexHttpMediaContainerHandler() {
+					@Override
+					public void onSuccess(MediaContainer mediaContainer) {
+						Logger.d("Machine id: " + mediaContainer.machineIdentifier);
+						localScan.getClients(mediaContainer);
+					}
 
-				@Override
-				public void onFailure(Throwable error) {
-					searchDialog.dismiss();
-					feedback.e(getResources().getString(R.string.got_error), error.getMessage());
-					finish();
-				}
-			});
+					@Override
+					public void onFailure(Throwable error) {
+						feedback.e(getResources().getString(R.string.got_error), error.getMessage());
+						finish();
+					}
+				});
+			}
 		} else {
-			server = _server;
-			saveSettings();
 			initMainWithServer();
 		}
 		
