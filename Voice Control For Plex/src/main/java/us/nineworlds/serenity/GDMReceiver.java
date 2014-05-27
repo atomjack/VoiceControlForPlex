@@ -67,8 +67,6 @@ public class GDMReceiver extends BroadcastReceiver {
 			} else if(theClass.getSuperclass() == Activity.class) {
 				context.startActivity(i);
 			}
-
 		}
 	}
-	
 }

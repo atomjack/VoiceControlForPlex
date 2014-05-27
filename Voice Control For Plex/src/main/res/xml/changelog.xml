@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog>
-    <release version="1.7b6" versioncode="9">
+    <release version="1.7b7" versioncode="9">
         <change>Added homescreen widget &amp; shortcut.</change>
         <change>Added support for utter! and AutoVoice, in combination with Tasker. To use Voice Control for Plex with utter! or AutoVoice, import the Tasker Project via the menu button.</change>
         <change>Use separate feedback for informational messages and error messages.</change>
