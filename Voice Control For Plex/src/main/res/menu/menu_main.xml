@@ -8,6 +8,10 @@
         android:title="@string/menu_donate"
         android:onClick="donate">
     </item>
+    <item android:id="@+id/menu_install_short"
+          android:title="@string/menu_install_shortcut"
+          android:onClick="installShortcut">
+    </item>
     <item android:id="@+id/menu_tasker_import"
           android:title="@string/menu_tasker_import"
           android:onClick="importTaskerProject">

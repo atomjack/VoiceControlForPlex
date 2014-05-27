@@ -3,12 +3,15 @@ package com.atomjack.vcfp;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.math.BigInteger;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 
 import us.nineworlds.serenity.GDMReceiver;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -20,6 +23,7 @@ import android.content.res.AssetManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.speech.RecognizerIntent;
 import android.speech.tts.TextToSpeech;
 import android.support.v4.content.LocalBroadcastManager;
 import android.view.Menu;
@@ -335,6 +339,20 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 		});
 		AlertDialog d = builder.create();
 		d.show();
+	}
+
+	public void installShortcut(MenuItem item) {
+		Intent.ShortcutIconResource icon = Intent.ShortcutIconResource.fromContext(this, R.drawable.ic_launcher);
+
+		Intent launchIntent = new Intent(this, ShortcutActivity.class);
+
+		final Intent intent = new Intent();
+		intent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, launchIntent);
+		intent.putExtra(Intent.EXTRA_SHORTCUT_NAME, getString(R.string.app_name));
+		intent.putExtra(Intent.EXTRA_SHORTCUT_ICON_RESOURCE, Intent.ShortcutIconResource.fromContext(this, R.drawable.ic_launcher));
+		intent.setAction("com.android.launcher.action.INSTALL_SHORTCUT");
+
+		sendBroadcast(intent);
 	}
 
 	public void showAbout(MenuItem item) {
