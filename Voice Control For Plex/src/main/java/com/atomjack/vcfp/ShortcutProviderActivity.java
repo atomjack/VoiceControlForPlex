@@ -15,7 +15,7 @@ public class ShortcutProviderActivity extends Activity {
 		Intent launchIntent = new Intent(this, ShortcutActivity.class);
 
 		sendIntent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, launchIntent);
-		sendIntent.putExtra(Intent.EXTRA_SHORTCUT_NAME, "");
+		sendIntent.putExtra(Intent.EXTRA_SHORTCUT_NAME, getResources().getString(R.string.app_name));
 		sendIntent.putExtra(Intent.EXTRA_SHORTCUT_ICON_RESOURCE, icon);
 
 		setResult(RESULT_OK, sendIntent);
