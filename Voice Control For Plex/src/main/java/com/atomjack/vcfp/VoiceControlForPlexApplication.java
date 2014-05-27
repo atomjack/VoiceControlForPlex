@@ -75,7 +75,6 @@ public class VoiceControlForPlexApplication
 										server.addMusicSection(mc.directories.get(i).key);
 									}
 								}
-								Logger.d("title1: %s", mc.title1);
 								if(mc.directories != null)
 									Logger.d("Directories: %d", mc.directories.size());
 								else

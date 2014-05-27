@@ -51,6 +51,7 @@ public class GDMService extends IntentService {
 							packetBroadcast.putExtra("data", packetData);
 							packetBroadcast.putExtra("ipaddress", packet.getAddress().toString());
 							packetBroadcast.putExtra("ORIGIN", origin);
+							packetBroadcast.putExtra("class", intent.getSerializableExtra("class"));
 							LocalBroadcastManager.getInstance(this).sendBroadcast(packetBroadcast);
 						}
 					}
@@ -61,6 +62,7 @@ public class GDMService extends IntentService {
 						listening = false;
 						Intent socketBroadcast = new Intent(GDMService.SOCKET_CLOSED);
 						socketBroadcast.putExtra("ORIGIN", origin);
+						socketBroadcast.putExtra("class", intent.getSerializableExtra("class"));
 						if(queryText != null) {
 							socketBroadcast.putExtra("queryText", queryText);
 						}

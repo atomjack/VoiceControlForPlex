@@ -27,4 +27,8 @@
           android:visible="false"
           android:onClick="installAutoVoice">
     </item>
+    <item android:id="@+id/menu_changelog"
+          android:title="@string/menu_changelog"
+          android:onClick="showChangelog">
+    </item>
 </menu>

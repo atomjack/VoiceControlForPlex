@@ -15,7 +15,7 @@ import com.atomjack.vcfp.model.PlexVideo;
 import com.atomjack.vcfp.net.PlexHttpClient;
 import com.bugsense.trace.BugSenseHandler;
 
-import java.util.ArrayList;
+import org.codechimp.apprater.AppRater;
 
 public class NowPlayingActivity extends Activity {
 	public final static String PREFS = MainActivity.PREFS;
@@ -35,6 +35,8 @@ public class NowPlayingActivity extends Activity {
 		mPrefs = getSharedPreferences(PREFS, MODE_PRIVATE);
 
 		setContentView(R.layout.play_media);
+
+		AppRater.app_launched(this);
 
 		if(savedInstanceState != null) {
 			Logger.d("found saved instance state");

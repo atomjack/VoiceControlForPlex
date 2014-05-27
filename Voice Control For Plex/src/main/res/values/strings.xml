@@ -15,6 +15,7 @@
     <string name="menu_install_tasker">Install Tasker</string>
     <string name="menu_install_utter">Install utter!</string>
     <string name="menu_install_autovoice">Install AutoVoice</string>
+    <string name="menu_changelog">Changelog</string>
     <string name="feedback_voice">Voice</string>
     <string name="feedback_toast">Toast</string>
     <string name="now_playing_on">Now Playing On</string>
@@ -63,4 +64,5 @@
     <string name="no_wifi_connection">No WiFi Connection</string>
     <string name="no_wifi_connection_message">A WiFi connection is required. Please check your WiFi settings and try again.</string>
     <string name="voice_prompt">Voice Control for Plex is listening</string>
+    <string name="searching_for_plex_servers">Searching for Plex Servers</string>
 </resources>
