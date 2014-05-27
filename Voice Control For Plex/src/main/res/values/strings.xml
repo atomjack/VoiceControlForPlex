@@ -62,4 +62,5 @@
     <string name="changelog_close">Close</string>
     <string name="no_wifi_connection">No WiFi Connection</string>
     <string name="no_wifi_connection_message">A WiFi connection is required. Please check your WiFi settings and try again.</string>
+    <string name="voice_prompt">Voice Control for Plex is listening</string>
 </resources>

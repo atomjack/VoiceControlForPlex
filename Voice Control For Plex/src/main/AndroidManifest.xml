@@ -49,7 +49,20 @@
                 <action android:name="android.intent.action.SEND" />
             </intent-filter>
         </activity>
-
+        <activity android:name=".ShortcutProviderActivity"
+                  android:theme="@android:style/Theme.NoDisplay">
+            <intent-filter>
+                <action android:name="android.intent.action.CREATE_SHORTCUT" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".ShortcutActivity"
+                  android:theme="@android:style/Theme.NoDisplay"
+                  android:launchMode="singleInstance">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+            </intent-filter>
+        </activity>
         <service
             android:name=".GDMService"
             android:exported="false" />

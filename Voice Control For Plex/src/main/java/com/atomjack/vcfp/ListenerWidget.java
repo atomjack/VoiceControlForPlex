@@ -35,7 +35,7 @@ public class ListenerWidget extends AppWidgetProvider {
 			listenerIntent.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, "voice.recognition.test");
 			listenerIntent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1);
 			listenerIntent.putExtra(RecognizerIntent.EXTRA_RESULTS_PENDINGINTENT, resultsPendingIntent);
-			listenerIntent.putExtra(RecognizerIntent.EXTRA_PROMPT, "Voice Control for Plex is listening");
+			listenerIntent.putExtra(RecognizerIntent.EXTRA_PROMPT, context.getResources().getString(R.string.voice_prompt));
 
 			PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, listenerIntent, 0);
 			remoteViews.setOnClickPendingIntent(R.id.listenButton, pendingIntent);
