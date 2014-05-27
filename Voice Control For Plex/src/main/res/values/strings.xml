@@ -60,4 +60,6 @@
     <string name="widget_instructions">To trigger voice recognition, simply add the <b>Voice Control for Plex</b> widget on to your home screen.</string>
     <string name="title_changelog">What\'s New</string>
     <string name="changelog_close">Close</string>
+    <string name="no_wifi_connection">No WiFi Connection</string>
+    <string name="no_wifi_connection_message">A WiFi connection is required. Please check your WiFi settings and try again.</string>
 </resources>

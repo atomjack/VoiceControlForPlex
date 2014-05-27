@@ -99,5 +99,4 @@ public class VoiceControlForPlexApplication
 		VersionComparator cmp = new VersionComparator();
 		return cmp.compare(v1, v2) < 0;
 	}
-
 }

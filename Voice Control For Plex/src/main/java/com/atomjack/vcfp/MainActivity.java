@@ -13,6 +13,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -20,6 +21,8 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -73,8 +76,6 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 	private SharedPreferences mPrefs;
 	private SharedPreferences.Editor mPrefsEditor;
 
-	private Menu menu;
-
 	private int serversScanned = 0;
 	AlertDialog.Builder helpDialog;
 
@@ -95,20 +96,6 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 		feedback = new Feedback(mPrefs, this);
 
 		setContentView(R.layout.main);
-
-		if (hasValidAutoVoice() || hasValidUtter()) {
-
-		} else if (!hasValidGoogleSearch()) {
-			if (!hasValidTasker()) {
-				menu.findItem(R.id.menu_install_tasker).setVisible(true);
-			}
-			if (!hasValidUtter()) {
-				menu.findItem(R.id.menu_install_utter).setVisible(true);
-			}
-			if (!hasValidAutoVoice()) {
-				menu.findItem(R.id.menu_install_autovoice).setVisible(true);
-			}
-		}
 
 		this.server = gson.fromJson(mPrefs.getString("Server", ""), PlexServer.class);
 		this.client = gson.fromJson(mPrefs.getString("Client", ""), PlexClient.class);
@@ -404,8 +391,12 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 		});
 		usageDialog.show();
 	}
-	
+
 	private void searchForPlexServers() {
+		if(!isWifiConnected()) {
+			showNoWifiDialog();
+			return;
+		}
 		searchDialog = new Dialog(this);
 		
 		searchDialog.setContentView(R.layout.search_popup);
@@ -593,6 +584,10 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 	}
 	
 	private void getClients() {
+		if(!isWifiConnected()) {
+			showNoWifiDialog();
+			return;
+		}
 		if(server == null || server.name.equals(getResources().getString(R.string.scan_all))) {
 			scanForClients();
 		} else {
@@ -718,7 +713,18 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 	public boolean onCreateOptionsMenu(Menu _menu) {
 		// Inflate the menu; this adds items to the action bar if it is present.
 		getMenuInflater().inflate(R.menu.menu_main, _menu);
-		menu = _menu;
+		if (!hasValidAutoVoice() || !hasValidUtter()) {
+			_menu.findItem(R.id.menu_tasker_import).setVisible(false);
+			if (!hasValidTasker()) {
+				_menu.findItem(R.id.menu_install_tasker).setVisible(true);
+			}
+			if (!hasValidUtter()) {
+				_menu.findItem(R.id.menu_install_utter).setVisible(true);
+			}
+			if (!hasValidAutoVoice()) {
+				_menu.findItem(R.id.menu_install_autovoice).setVisible(true);
+			}
+		}
 		return true;
 	}
 
@@ -804,6 +810,24 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 				mPrefsEditor.commit();
 			}
 		}
+	}
+
+	public boolean isWifiConnected() {
+		ConnectivityManager connManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+		NetworkInfo mWifi = connManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
+		return mWifi.isConnected();
+	}
+
+	public void showNoWifiDialog() {
+		AlertDialog.Builder usageDialog = new AlertDialog.Builder(MainActivity.this);
+		usageDialog.setTitle(R.string.no_wifi_connection);
+		usageDialog.setMessage(R.string.no_wifi_connection_message);
+		usageDialog.setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+			public void onClick(DialogInterface dialog, int id) {
+				dialog.dismiss();
+			}
+		});
+		usageDialog.show();
 	}
 }
 
