@@ -707,7 +707,7 @@ public class PlexSearch extends Service {
 
 	private void onFinishedNextEpisodeSearch(String queryTerm) {
 		if(videos.size() == 0) {
-			feedback.e(getResources().getString(R.string.couldnt_find_next), queryTerm);
+			feedback.e(getResources().getString(R.string.couldnt_find_next), queryTerm, queryTerm);
 			return;
 		} else {
 			if(videos.size() == 1)

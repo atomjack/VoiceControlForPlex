@@ -188,11 +188,6 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 		return false;
 	}
 
-
-
-
-
-
 	public void resumeChecked(View v) {
 		mPrefsEditor.putBoolean("resume", ((CheckBox)v).isChecked());
 		mPrefsEditor.commit();
@@ -530,7 +525,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 	public boolean onCreateOptionsMenu(Menu _menu) {
 		// Inflate the menu; this adds items to the action bar if it is present.
 		getMenuInflater().inflate(R.menu.menu_main, _menu);
-		if (!hasValidAutoVoice() || !hasValidUtter()) {
+		if (!hasValidAutoVoice() && !hasValidUtter()) {
 			_menu.findItem(R.id.menu_tasker_import).setVisible(false);
 			if (!hasValidTasker()) {
 				_menu.findItem(R.id.menu_install_tasker).setVisible(true);
