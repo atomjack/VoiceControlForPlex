@@ -123,7 +123,7 @@ public class LocalScan {
 				// Exclude non-Plex Home Theater clients (pre 1.0.7)
 				Map<String, PlexClient> clients = new HashMap<String, PlexClient>();
 				for (int i = 0; i < clientMC.clients.size(); i++) {
-					if (!VoiceControlForPlexApplication.isVersionLessThan(clientMC.clients.get(i).version, VoiceControlForPlexApplication.MINIMUM_PHT_VERSION)) {
+					if (!VoiceControlForPlexApplication.isVersionLessThan(clientMC.clients.get(i).version, VoiceControlForPlexApplication.MINIMUM_PHT_VERSION) || !clientMC.clients.get(i).product.equals("Plex Home Theater")) {
 						clients.put(clientMC.clients.get(i).name, clientMC.clients.get(i));
 					}
 				}
