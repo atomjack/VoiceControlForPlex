@@ -6,7 +6,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.simpleframework.xml.Serializer;
 import org.simpleframework.xml.core.Persister;
 
+import android.app.AlertDialog;
+import android.content.Context;
+import android.content.DialogInterface;
 import android.content.res.Resources.NotFoundException;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 
 import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.PlexServer;
@@ -99,5 +104,23 @@ public class VoiceControlForPlexApplication
 	public static boolean isVersionLessThan(String v1, String v2) {
 		VersionComparator cmp = new VersionComparator();
 		return cmp.compare(v1, v2) < 0;
+	}
+
+	public static boolean isWifiConnected(Context context) {
+		ConnectivityManager connManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+		NetworkInfo mWifi = connManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
+		return mWifi.isConnected();
+	}
+
+	public static void showNoWifiDialog(Context context) {
+		AlertDialog.Builder usageDialog = new AlertDialog.Builder(context);
+		usageDialog.setTitle(R.string.no_wifi_connection);
+		usageDialog.setMessage(R.string.no_wifi_connection_message);
+		usageDialog.setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+			public void onClick(DialogInterface dialog, int id) {
+				dialog.dismiss();
+			}
+		});
+		usageDialog.show();
 	}
 }

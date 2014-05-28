@@ -57,6 +57,12 @@ public class PlexSearch extends Service {
 		queryText = null;
 		BugSenseHandler.initAndStartSession(PlexSearch.this, MainActivity.BUGSENSE_APIKEY);
 
+
+		if(!VoiceControlForPlexApplication.isWifiConnected(this)) {
+			feedback.e(getResources().getString(R.string.no_wifi_connection_message));
+			return Service.START_NOT_STICKY;
+		}
+
 		String from = intent.getStringExtra("FROM");
 		if(from != null && from.equals("GDMReceiver")) {
 			videoPlayed = false;

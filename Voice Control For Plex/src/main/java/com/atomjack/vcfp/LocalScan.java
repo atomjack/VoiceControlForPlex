@@ -6,8 +6,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
@@ -45,8 +43,8 @@ public class LocalScan {
 
 	public void searchForPlexServers() {
 		Logger.d("searchForPlexServers()");
-		if(!isWifiConnected()) {
-			showNoWifiDialog();
+		if(!VoiceControlForPlexApplication.isWifiConnected(context)) {
+			VoiceControlForPlexApplication.showNoWifiDialog(context);
 			return;
 		}
 		searchDialog = new Dialog(context);
@@ -91,8 +89,8 @@ public class LocalScan {
 	}
 
 	public void getClients() {
-		if(!isWifiConnected()) {
-			showNoWifiDialog();
+		if(!VoiceControlForPlexApplication.isWifiConnected(context)) {
+			VoiceControlForPlexApplication.showNoWifiDialog(context);
 			return;
 		}
 		PlexServer server = gson.fromJson(mPrefs.getString("Server", ""), PlexServer.class);
@@ -245,23 +243,5 @@ public class LocalScan {
 				}
 			});
 		}
-	}
-
-	public boolean isWifiConnected() {
-		ConnectivityManager connManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-		NetworkInfo mWifi = connManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
-		return mWifi.isConnected();
-	}
-
-	public void showNoWifiDialog() {
-		AlertDialog.Builder usageDialog = new AlertDialog.Builder(context);
-		usageDialog.setTitle(R.string.no_wifi_connection);
-		usageDialog.setMessage(R.string.no_wifi_connection_message);
-		usageDialog.setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
-			public void onClick(DialogInterface dialog, int id) {
-				dialog.dismiss();
-			}
-		});
-		usageDialog.show();
 	}
 }
