@@ -91,6 +91,8 @@ public class PlexSearch extends Service {
 	@Override
 	public void onDestroy() {
 		feedback.destroy();
+		if(gdmReceiver != null)
+			unregisterReceiver(gdmReceiver);
 		super.onDestroy();
 	}
 
