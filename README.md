@@ -3,14 +3,20 @@
 An Android app to control Plex clients with your voice.
 
 ## Requirements
-There are three ways to use Voice Control for Plex. One way requires root, the other two do not.
+There are four ways to use Voice Control for Plex. One way requires root, the others do not.
 
-1. Xposed Framework & Google Search API (requires root)
-    To use this method, you must have the Xposed Framework (http://forum.xda-developers.com/showthread.php?t=1574401) and the Google Search API (http://forum.xda-developers.com/showthread.php?t=2554173). Voice input is done through Google Search/Now. However, a recent update (>= 3.4) of Google Search has rendered the Google Search API non-functional.
+1. Voice Control for Plex homescreen Shortcut
+
+    Simply add the included homescreen shortcut via the menu button.
 1. Tasker + utter!
+
     Requires Tasker (https://play.google.com/store/apps/details?id=net.dinglisch.android.taskerm) and utter! (https://play.google.com/store/apps/details?id=com.brandall.nutter). You must also go into utter! Settings->Advanced Settings->Try Again->select "Send to Tasker".
 1. Tasker + AutoVoice
+
     Requires Tasker (https://play.google.com/store/apps/details?id=net.dinglisch.android.taskerm) and AutoVoice (https://play.google.com/store/apps/details?id=com.joaomgcd.autovoice).
+1. Xposed Framework & Google Search API (requires root)
+
+    To use this method, you must have the Xposed Framework (http://forum.xda-developers.com/showthread.php?t=1574401) and the Google Search API (http://forum.xda-developers.com/showthread.php?t=2554173). Voice input is done through Google Search/Now. However, a recent update (>= 3.4) of Google Search has rendered the Google Search API non-functional.
 
 For the utter! and AutoVoice methods, the app includes a Tasker project which you must import in order for Tasker to send your voice input to Voice Control for Plex. The settings screen has an button which will import this project - however you will have to then go into Tasker and finish the import process. Instructions are shown when using the button.
 
@@ -68,3 +74,6 @@ Below are examples of what to say to Google Now to trigger playback. Sentence fr
 "***Offset** *2* **hour(s)** *32* **minutes(s)**"
 
 Any combination of hour(s), minute(s), and second(s) is accepted, as long as they are specified in that order. You may also substitute "Timecode" for "Offset".
+
+### Localization
+If you'd like to add translations for your language please see the wiki entry: https://github.com/atomjack/VoiceControlForPlex/wiki/Localization-Instructions
