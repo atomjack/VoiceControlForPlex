@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+This file contains the regular expressions patterns used for figuring out what action the user wishes to take. When
+adding translations, please to not modify (.*), $1, ([0-9]+), etc.
+-->
+<resources>
+    <!--
+    This pattern is the main pattern that will need to be matched in order for anything to be done. As you can see it is
+    a quite complicated regular expression. Plugging it into https://www.debuggex.com/ should help you figure out how
+    it is constructed.
+    -->
+    <item name="pattern_recognition" type="string">^(((watch|resume watching|listen to|watch movie) (.+))|((offset|timecode) (.+))|((pause|stop|resume) playback))(on (.+))?</item>
+
+    <item name="pattern_resume_watching" type="string">^resume watching (.*)</item>
+    <item name="pattern_watch" type="string">watch $1</item>
+    <item name="pattern_watch_movie" type="string">watch movie (.*)</item>
+    <item name="pattern_watch_season_episode_of_show" type="string">watch season ([0-9]+) episode ([0-9]+) of (.*)</item>
+    <item name="pattern_watch_show_season_episode" type="string">watch (.*) season ([0-9]+) episode ([0-9]+)</item>
+    <item name="pattern_watch_episode_of_show" type="string">watch episode (.*) of (.*)</item>
+    <item name="pattern_watch_next_episode_of_show" type="string">watch the next episode of (.*)</item>
+    <item name="pattern_watch_latest_episode_of_show" type="string">watch( the)? latest episode of (.*)</item>
+    <item name="pattern_watch_show_episode_named" type="string">watch (.*) episode (.*)</item>
+    <item name="pattern_watch2" type="string">watch (.*)</item>
+
+    <!--
+    The following pattern lets the user say "listen to <album> by <artist>" or
+    "listen to the album <album> by <artist>".
+    -->
+    <item name="pattern_listen_to_album_by_artist" type="string">listen to( the album)? (.*) by (.*)</item>
+
+    <item name="pattern_listen_to_album" type="string">listen to the album (.*)</item>
+    <item name="pattern_pause_playback" type="string">pause playback</item>
+    <item name="pattern_resume_playback" type="string">resume playback</item>
+    <item name="pattern_stop_playback" type="string">stop playback</item>
+
+    <!--
+    The following are used in conjunction with the pattern_offset below. These should match the
+    (hours?minutes?seconds?), with the addition of the ^ character (to indicate that in the matching
+    pattern group starts with (hours or minutes or seconds). Unreliable behavior may result if
+    these to not match the corresponding groups in pattern_offset.
+    -->
+    <item name="pattern_hours" type="string">^hours?</item>
+    <item name="pattern_minutes" type="string">^minutes?</item>
+    <item name="pattern_seconds" type="string">^seconds?</item>
+
+    <!--
+    Offset pattern. This lets the user start with with "offset" or "timecode", followed by:
+        any number followed by "hour(s)" or "minute(s)" or "second(s)", and optionally followed by:
+        any number followed by "minute(s)" or "second(s)", and optionally followed by:
+        any number followed by "second(s)"
+    The ([0-9]+|two|to) pattern will most likely only need to be ([0-9]+) for other languages, as in English,
+    the number 2 sounds the same as "to" and "two", so sometimes the Voice Recognition engine will confuse the
+    number 2 with "to" or "two". If your language has numbers that sound exactly like other words that the
+    Voice Recognition will sometimes mis-translate, please contact Chris Bellew as some further changes will need
+    to be made to the code to accommodate this.
+
+    The (hours?|minutes?|seconds?) means hour, with or without an s at the end (singular or plural), and the
+    same for minutes and seconds (the | means "or").
+    -->
+    <item name="pattern_offset" type="string">^(offset|timecode) ([0-9]+|two|to) (hours?|minutes?|seconds?)(?: ([0-9]+|two|to) (minutes?|seconds?))?(?: ([0-9]+|two|to) (seconds?))?</item>
+</resources>

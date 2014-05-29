@@ -73,7 +73,7 @@ public class PlexSearch extends Service {
 			if (intent.getExtras().getStringArrayList(RecognizerIntent.EXTRA_RESULTS) != null) {
 				ArrayList<String> voiceResults = intent.getExtras().getStringArrayList(RecognizerIntent.EXTRA_RESULTS);
 				for(String q : voiceResults) {
-					if(q.matches(VoiceControlForPlexApplication.recognition_regex)) {
+					if(q.matches(getString(R.string.pattern_recognition))) {
 						queryText = q;
 						break;
 					}
@@ -217,22 +217,22 @@ public class PlexSearch extends Service {
 		Logger.d("Servers: %d", VoiceControlForPlexApplication.getPlexMediaServers().size());
 
 		// Check for a sentence starting with "resume watching"
-		p = Pattern.compile("^resume watching (.*)");
+		p = Pattern.compile(getString(R.string.pattern_resume_watching));
 		matcher = p.matcher(queryText);
 		if(matcher.find()) {
 			resumePlayback = true;
 			// Replace "resume watching" with just "watch" so the pattern matching below works
-			queryText = queryText.replaceAll("^resume watching ", "watch ");
+			queryText = matcher.replaceAll(getString(R.string.pattern_watch));
 		}
 
-		p = Pattern.compile( "watch movie (.*)", Pattern.DOTALL);
+		p = Pattern.compile( getString(R.string.pattern_watch_movie), Pattern.DOTALL);
 		matcher = p.matcher(queryText);
 		if(matcher.find()) {
 			mediaType = "movie";
 			queryTerm = matcher.group(1);
 		}
 		if(mediaType.equals("")) {
-			p = Pattern.compile("watch season ([0-9]+) episode ([0-9]+) of (.*)");
+			p = Pattern.compile(getString(R.string.pattern_watch_season_episode_of_show));
 			matcher = p.matcher(queryText);
 
 			if(matcher.find()) {
@@ -243,7 +243,7 @@ public class PlexSearch extends Service {
 			}
 		}
 		if(mediaType.equals("")) {
-			p = Pattern.compile("watch (.*) season ([0-9]+) episode ([0-9]+)");
+			p = Pattern.compile(getString(R.string.pattern_watch_show_season_episode));
 			matcher = p.matcher(queryText);
 
 			if(matcher.find()) {
@@ -254,7 +254,7 @@ public class PlexSearch extends Service {
 			}
 		}
 		if(mediaType.equals("")) {
-			p = Pattern.compile("watch episode (.*) of (.*)");
+			p = Pattern.compile(getString(R.string.pattern_watch_episode_of_show));
 			matcher = p.matcher(queryText);
 			if(matcher.find()) {
 				mediaType = "show";
@@ -263,7 +263,7 @@ public class PlexSearch extends Service {
 			}
 		}
 		if(mediaType.equals("")) {
-			p = Pattern.compile("watch the next episode of (.*)");
+			p = Pattern.compile(getString(R.string.pattern_watch_next_episode_of_show));
 			matcher = p.matcher(queryText);
 
 			if(matcher.find()) {
@@ -273,7 +273,7 @@ public class PlexSearch extends Service {
 			}
 		}
 		if(mediaType.equals("")) {
-			p = Pattern.compile("watch( the)? latest episode of (.*)");
+			p = Pattern.compile(getString(R.string.pattern_watch_latest_episode_of_show));
 			matcher = p.matcher(queryText);
 
 			if(matcher.find()) {
@@ -283,7 +283,7 @@ public class PlexSearch extends Service {
 			}
 		}
 		if(mediaType.equals("")) {
-			p = Pattern.compile("watch (.*) episode (.*)");
+			p = Pattern.compile(getString(R.string.pattern_watch_show_episode_named));
 			matcher = p.matcher(queryText);
 			if(matcher.find()) {
 				mediaType = "show";
@@ -293,7 +293,7 @@ public class PlexSearch extends Service {
 		}
 		// Lastly, try to find a movie matching whatever comes after "watch"
 		if(mediaType.equals("")) {
-			p = Pattern.compile("watch (.*)");
+			p = Pattern.compile(getString(R.string.pattern_watch2));
 			matcher = p.matcher(queryText);
 
 			if(matcher.find()) {
@@ -302,7 +302,7 @@ public class PlexSearch extends Service {
 			}
 		}
 		if(mediaType.equals("")) {
-			p = Pattern.compile("listen to the album (.*) by (.*)");
+			p = Pattern.compile(getString(R.string.pattern_listen_to_album_by_artist));
 			matcher = p.matcher(queryText);
 			if(matcher.find()) {
 				mediaType = "music";
@@ -311,13 +311,14 @@ public class PlexSearch extends Service {
 			}
 		}
 		if(mediaType.equals("")) {
-			p = Pattern.compile("listen to the album (.*)");
+			p = Pattern.compile(getString(R.string.pattern_listen_to_album));
 			matcher = p.matcher(queryText);
 			if(matcher.find()) {
 				mediaType = "music";
 				album = matcher.group(1);
 			}
 		}
+		/*
 		if(mediaType.equals("")) {
 			p = Pattern.compile("listen to (.*) by (.*)");
 			matcher = p.matcher(queryText);
@@ -327,48 +328,49 @@ public class PlexSearch extends Service {
 				artist = matcher.group(2);
 			}
 		}
+		*/
 		if(mediaType.equals("")) {
-			p = Pattern.compile("pause playback", Pattern.DOTALL);
+			p = Pattern.compile(getString(R.string.pattern_pause_playback), Pattern.DOTALL);
 			matcher = p.matcher(queryText);
 			if (matcher.find()) {
 				Logger.d("pausing playback");
 				pausePlayback();
 				return;
 			}
-			p = Pattern.compile("resume playback", Pattern.DOTALL);
+			p = Pattern.compile(getString(R.string.pattern_resume_playback), Pattern.DOTALL);
 			matcher = p.matcher(queryText);
 			if (matcher.find()) {
 				Logger.d("resuming playback");
 				resumePlayback();
 				return;
 			}
-			p = Pattern.compile("stop playback", Pattern.DOTALL);
+			p = Pattern.compile(getString(R.string.pattern_stop_playback), Pattern.DOTALL);
 			matcher = p.matcher(queryText);
 			if (matcher.find()) {
 				Logger.d("stopping playback");
 				stopPlayback();
 				return;
 			}
-			p = Pattern.compile("(offset|timecode) ([0-9]+|two) (hours?|minutes?|seconds?)(?: ([0-9]+|two) (minutes?|seconds?))?(?: ([0-9]+|two) (seconds?))?", Pattern.DOTALL);
+			p = Pattern.compile(getString(R.string.pattern_offset), Pattern.DOTALL);
 			matcher = p.matcher(queryText);
 			if (matcher.find()) {
-				String groupOne = matcher.group(2) != null && matcher.group(2).equals("two") ? "2" : matcher.group(2);
-				String groupThree = matcher.group(4) != null && matcher.group(4).equals("two") ? "2" : matcher.group(4);
-				String groupFive = matcher.group(6) != null && matcher.group(6).equals("two") ? "2" : matcher.group(6);
+				String groupOne = matcher.group(2) != null && matcher.group(2).matches("two|to") ? "2" : matcher.group(2);
+				String groupThree = matcher.group(4) != null && matcher.group(4).matches("two|to") ? "2" : matcher.group(4);
+				String groupFive = matcher.group(6) != null && matcher.group(6).matches("two|to") ? "2" : matcher.group(6);
 				int hours = 0, minutes = 0, seconds = 0;
-				if(matcher.group(5) != null && matcher.group(5).startsWith("minute"))
+				if(matcher.group(5) != null && matcher.group(5).matches(getString(R.string.pattern_minutes)))
 					minutes = Integer.parseInt(groupThree);
-				else if(matcher.group(3) != null && matcher.group(3).startsWith("minute"))
+				else if(matcher.group(3) != null && matcher.group(3).matches(getString(R.string.pattern_minutes)))
 					minutes = Integer.parseInt(groupOne);
 
-				if(matcher.group(6) != null && matcher.group(6).startsWith("second"))
+				if(matcher.group(7) != null && matcher.group(7).matches(getString(R.string.pattern_seconds)))
 					seconds = Integer.parseInt(groupFive);
-				else if(matcher.group(5) != null && matcher.group(5).startsWith("second"))
+				else if(matcher.group(5) != null && matcher.group(5).matches(getString(R.string.pattern_seconds)))
 					seconds = Integer.parseInt(groupThree);
-				else if(matcher.group(3).startsWith("second"))
+				else if(matcher.group(3).matches(getString(R.string.pattern_seconds)))
 					seconds = Integer.parseInt(groupOne);
 
-				if(matcher.group(3).startsWith("hour"))
+				if(matcher.group(3).matches(getString(R.string.pattern_hours)))
 					hours = Integer.parseInt(groupOne);
 
 				seekTo(hours, minutes, seconds);

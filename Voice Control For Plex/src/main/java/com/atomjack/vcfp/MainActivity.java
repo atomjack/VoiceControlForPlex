@@ -377,7 +377,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 			is.close();
 
 			String xmlContents = new String(buffer);
-			xmlContents = xmlContents.replace("%RECOGNITION_REGEX%", VoiceControlForPlexApplication.recognition_regex);
+			xmlContents = xmlContents.replace("%RECOGNITION_REGEX%", getString(R.string.pattern_recognition));
 			buffer = xmlContents.getBytes();
 			Logger.d("directory: %s", Environment.getExternalStorageDirectory());
 

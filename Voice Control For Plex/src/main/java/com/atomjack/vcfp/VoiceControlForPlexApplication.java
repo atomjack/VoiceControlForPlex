@@ -27,7 +27,6 @@ public class VoiceControlForPlexApplication
 
 	public final static String INTENT_GDMRECEIVE = "0";
 
-	public final static String recognition_regex = "^(((watch|resume watching|listen to|watch movie) )|((offset|timecode) (.*))|((pause|stop|resume) playback))(.*)(on )?";
 	private static ConcurrentHashMap<String, PlexServer> plexmediaServers = new ConcurrentHashMap<String, PlexServer>();
     
 	public static ConcurrentHashMap<String, PlexServer> getPlexMediaServers() {
