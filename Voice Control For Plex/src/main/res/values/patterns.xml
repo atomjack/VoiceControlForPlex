@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
 This file contains the regular expressions patterns used for figuring out what action the user wishes to take. When
-adding translations, please to not modify (.*), $1, ([0-9]+), etc.
+adding translations, please do not modify (.*), $1, ([0-9]+), etc.
 -->
 <resources>
     <!--
