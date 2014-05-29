@@ -11,24 +11,24 @@ adding translations, please do not modify (.*), $1, ([0-9]+), etc.
     -->
     <item name="pattern_recognition" type="string">^(((watch|resume watching|listen to|watch movie) (.+))|((offset|timecode) (.+))|((pause|stop|resume) playback))(on (.+))?</item>
 
-    <item name="pattern_resume_watching" type="string">^resume watching (.*)</item>
+    <item name="pattern_resume_watching" type="string">^resume watching (.+)</item>
     <item name="pattern_watch" type="string">watch $1</item>
-    <item name="pattern_watch_movie" type="string">watch movie (.*)</item>
-    <item name="pattern_watch_season_episode_of_show" type="string">watch season ([0-9]+) episode ([0-9]+) of (.*)</item>
-    <item name="pattern_watch_show_season_episode" type="string">watch (.*) season ([0-9]+) episode ([0-9]+)</item>
-    <item name="pattern_watch_episode_of_show" type="string">watch episode (.*) of (.*)</item>
-    <item name="pattern_watch_next_episode_of_show" type="string">watch the next episode of (.*)</item>
-    <item name="pattern_watch_latest_episode_of_show" type="string">watch( the)? latest episode of (.*)</item>
-    <item name="pattern_watch_show_episode_named" type="string">watch (.*) episode (.*)</item>
-    <item name="pattern_watch2" type="string">watch (.*)</item>
+    <item name="pattern_watch_movie" type="string">watch movie (.+)</item>
+    <item name="pattern_watch_season_episode_of_show" type="string">watch season ([0-9]+) episode ([0-9]+) of (.+)</item>
+    <item name="pattern_watch_show_season_episode" type="string">watch (.+) season ([0-9]+) episode ([0-9]+)</item>
+    <item name="pattern_watch_episode_of_show" type="string">watch episode (.+) of (.+)</item>
+    <item name="pattern_watch_next_episode_of_show" type="string">watch the next episode of (.+)</item>
+    <item name="pattern_watch_latest_episode_of_show" type="string">watch( the)? latest episode of (.+)</item>
+    <item name="pattern_watch_show_episode_named" type="string">watch (.+) episode (.+)</item>
+    <item name="pattern_watch2" type="string">watch (.+)</item>
 
     <!--
     The following pattern lets the user say "listen to <album> by <artist>" or
     "listen to the album <album> by <artist>".
     -->
-    <item name="pattern_listen_to_album_by_artist" type="string">listen to( the album)? (.*) by (.*)</item>
+    <item name="pattern_listen_to_album_by_artist" type="string">listen to( the album)? (.+) by (.+)</item>
 
-    <item name="pattern_listen_to_album" type="string">listen to the album (.*)</item>
+    <item name="pattern_listen_to_album" type="string">listen to the album (.+)</item>
     <item name="pattern_pause_playback" type="string">pause playback</item>
     <item name="pattern_resume_playback" type="string">resume playback</item>
     <item name="pattern_stop_playback" type="string">stop playback</item>
