@@ -26,9 +26,9 @@ adding translations, please do not modify (.*), $1, ([0-9]+), etc.
     The following pattern lets the user say "listen to <album> by <artist>" or
     "listen to the album <album> by <artist>".
     -->
-    <item name="pattern_listen_to_album_by_artist" type="string">écouter( l'album)? (.+) de (.+)</item>
+    <item name="pattern_listen_to_album_by_artist" type="string">écouter( l\'album)? (.+) de (.+)</item>
 
-    <item name="pattern_listen_to_album" type="string">écouter l'album (.+)</item>
+    <item name="pattern_listen_to_album" type="string">écouter l\'album (.+)</item>
     <item name="pattern_pause_playback" type="string">pause lecture</item>
     <item name="pattern_resume_playback" type="string">reprise lecture</item>
     <item name="pattern_stop_playback" type="string">arrêt lecture</item>

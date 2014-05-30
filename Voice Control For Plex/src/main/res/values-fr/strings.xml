@@ -1,7 +1,6 @@
 <resources>
     <string name="app_name">Voice Control for Plex</string>
     <string name="action_settings">Paramètres</string>
-    <string name="hello_world">Hello world!</string>
     <string name="ok">OK</string>
     <string name="got_it">Compris</string>
     <string name="stream_video_from_server">Flux vidéo du serveur</string>
