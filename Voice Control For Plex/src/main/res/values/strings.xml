@@ -26,7 +26,7 @@
     <string name="feedback">Feedback</string>
     <string name="errors">Errors</string>
     <string name="help_server">Select a Plex Media Server to stream from. If you have more than one media server, select &quot;Scan All&quot; to search all available servers for media. If you only have one, you should select it here as scanning all servers each time will take longer to trigger playback.</string>
-    <string name="help_client">Select the default client to stream media to. You can easily stream to a different client by ending your search query with \&quot;on &lt;client name&gt;\&quot;, where &lt;client name&gt; is the name of the PHT Client.</string>
+    <string name="help_client">Select the default client to stream media to. You can easily stream to a different client by ending your search query with \&quot;on &lt;client name&gt;\&quot;, where &lt;client name&gt; is the name of the Plex Client.</string>
     <string name="help_feedback">Select which type of feedback I should give you.</string>
     <string name="help_errors">Select which type of feedback I should give you when I run into problems (can\'t find something to play, etc).</string>
     <string name="help_button_desc">Help Button</string>
@@ -66,4 +66,9 @@
     <string name="voice_prompt">Voice Control for Plex is listening</string>
     <string name="searching_for_plex_servers">Searching for Plex Servers</string>
     <string name="didnt_understand">Sorry, I didn\'t understand that.</string>
+    <string name="create_shortcut">Create Shortcut</string>
+    <string name="create_shortcut_blurb">You may create a shortcut that uses a specific Server and Client, or one that will use whatever your current Server and Client are set to when run. Which would you like to do?</string>
+    <string name="create_shortcut_blurb_no_servers">You may create a shortcut that uses a specific Server and Client, or one that will use whatever your current Server and Client are set to when run. However, you have not scanned for Servers and/or Clients yet, so you can only create a shortcut that uses the current Server and Client. Do you wish to continue?</string>
+    <string name="specify_now">Specify Now</string>
+    <string name="use_current">Use current Server/Client</string>
 </resources>
