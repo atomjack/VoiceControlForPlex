@@ -66,4 +66,9 @@
     <string name="voice_prompt">Voice Control for Plex écoute</string>
     <string name="searching_for_plex_servers">Recherche des serveurs Plex</string>
     <string name="didnt_understand">Désolé, je n\'ai pas compris.</string>
+    <string name="create_shortcut">Créer raccourci</string>
+    <string name="create_shortcut_blurb">Vous pouvez créer un raccourci qui utlise des client et serveur spécifiques, ou qui utilise les client et serveur configurés actuellement. Lequel voulez-vous créer ?</string>
+    <string name="create_shortcut_blurb_no_servers">Vous pouvez créer un raccourci qui utlise des client et serveur spécifiques, ou qui utilise les client et serveur configurés actuellement. Cependant, vous n'avez pas encore scanné les serveurs et/ou clients, vous ne pouvez donc créer que le second type. Voulez-vous continuer ?</string>
+    <string name="specify_now">Préciser maintenant</string>
+    <string name="use_current">Utiliser serveur/client actuels</string>
 </resources>
