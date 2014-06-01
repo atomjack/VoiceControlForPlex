@@ -65,7 +65,8 @@
     <string name="no_wifi_connection_message">A WiFi connection is required. Please check your WiFi settings and try again.</string>
     <string name="voice_prompt">Voice Control for Plex is listening</string>
     <string name="searching_for_plex_servers">Searching for Plex Servers</string>
-    <string name="didnt_understand">Sorry, I didn\'t understand that.</string>
+    <string name="didnt_understand">Sorry, I didn\'t understand %s.</string>
+    <string name="didnt_understand_that">Sorry, I didn\'t understand that.</string>
     <string name="create_shortcut">Create Shortcut</string>
     <string name="create_shortcut_blurb">You may create a shortcut that uses a specific Server and Client, or one that will use whatever your current Server and Client are set to when run. Which would you like to do?</string>
     <string name="create_shortcut_blurb_no_servers">You may create a shortcut that uses a specific Server and Client, or one that will use whatever your current Server and Client are set to when run. However, you have not scanned for Servers and/or Clients yet, so you can only create a shortcut that uses the current Server and Client. Do you wish to continue?</string>

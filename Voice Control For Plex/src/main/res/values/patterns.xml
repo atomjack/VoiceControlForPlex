@@ -9,8 +9,9 @@ adding translations, please do not modify (.*), $1, ([0-9]+), etc.
     a quite complicated regular expression. Plugging it into https://www.debuggex.com/ should help you figure out how
     it is constructed.
     -->
-    <item name="pattern_recognition" type="string">^(((watch|resume watching|listen to|watch movie) (.+))|((offset|timecode) (.+))|((pause|stop|resume) playback))(on (.+))?</item>
+    <item name="pattern_recognition" type="string">^(((watch|resume watching|listen to|watch movie) (.+)( on (.+))?)|((offset|timecode) (.+)( on (.+))?)|((pause|stop|resume) playback( on (.+))?))$</item>
 
+    <item name="pattern_on_client" type="string"> on (.+)$</item>
     <item name="pattern_resume_watching" type="string">^resume watching (.+)</item>
     <item name="pattern_watch" type="string">watch $1</item>
     <item name="pattern_watch_movie" type="string">watch movie (.+)</item>
@@ -26,9 +27,11 @@ adding translations, please do not modify (.*), $1, ([0-9]+), etc.
     The following pattern lets the user say "listen to <album> by <artist>" or
     "listen to the album <album> by <artist>".
     -->
-    <item name="pattern_listen_to_album_by_artist" type="string">listen to( the album)? (.+) by (.+)</item>
+    <item name="pattern_listen_to_album_by_artist" type="string">listen to the album (.+) by (.+)</item>
 
     <item name="pattern_listen_to_album" type="string">listen to the album (.+)</item>
+    <item name="pattern_listen_to_song_by_artist" type="string">listen to (.+) by (.+)</item>
+
     <item name="pattern_pause_playback" type="string">pause playback</item>
     <item name="pattern_resume_playback" type="string">resume playback</item>
     <item name="pattern_stop_playback" type="string">stop playback</item>
