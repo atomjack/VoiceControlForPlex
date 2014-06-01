@@ -72,4 +72,5 @@
     <string name="create_shortcut_blurb_no_servers">Vous pouvez créer un raccourci qui utlise des client et serveur spécifiques, ou qui utilise les client et serveur configurés actuellement. Cependant, vous n\'avez pas encore scanné les serveurs et/ou clients, vous ne pouvez donc créer que le second type. Voulez-vous continuer ?</string>
     <string name="specify_now">Préciser maintenant</string>
     <string name="use_current">Utiliser serveur/client actuels</string>
+    <string name="shortcut_created">Raccourci créé</string>
 </resources>

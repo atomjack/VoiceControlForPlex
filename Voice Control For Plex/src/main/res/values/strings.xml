@@ -72,4 +72,5 @@
     <string name="create_shortcut_blurb_no_servers">You may create a shortcut that uses a specific Server and Client, or one that will use whatever your current Server and Client are set to when run. However, you have not scanned for Servers and/or Clients yet, so you can only create a shortcut that uses the current Server and Client. Do you wish to continue?</string>
     <string name="specify_now">Specify Now</string>
     <string name="use_current">Use current Server/Client</string>
+    <string name="shortcut_created">Shortcut created</string>
 </resources>
