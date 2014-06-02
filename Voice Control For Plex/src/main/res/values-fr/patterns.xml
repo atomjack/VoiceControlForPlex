@@ -11,7 +11,7 @@ adding translations, please do not modify (.*), $1, ([0-9]+), etc.
     -->
     <item name="pattern_recognition" type="string">^(((lancer|reprendre lecture|écouter|lancer film) (.+)( sur (.+))?)|((position) (.+)( sur (.+))?)|((pause|reprise|arrêt) lecture( sur (.+))?))$</item>
 
-    <item name="pattern_on_client" type="string"> sur (.+)$</item>
+    <item name="pattern_on_client" type="string">(.+) sur (.+)$</item>
     <item name="pattern_resume_watching" type="string">^reprendre lecture (.+)</item>
     <item name="pattern_watch" type="string">lancer $1</item>
     <item name="pattern_watch_movie" type="string">lancer film (.+)</item>

@@ -94,6 +94,7 @@ public class PlexSearch extends Service {
 				// Received spoken query from the RecognizerIntent
 				ArrayList<String> voiceResults = intent.getExtras().getStringArrayList(RecognizerIntent.EXTRA_RESULTS);
 				for(String q : voiceResults) {
+					Logger.d("q: %s", q);
 					if(q.matches(getString(R.string.pattern_recognition))) {
 						queryText = q;
 						break;
@@ -163,6 +164,7 @@ public class PlexSearch extends Service {
 		PlexServer defaultServer = gson.fromJson(mPrefs.getString("Server", ""), PlexServer.class);
 		if(specifiedServer != null && client != null && !specifiedServer.name.equals(getResources().getString(R.string.scan_all))) {
 			// got a specified server and client from a shortcut
+			Logger.d("Got hardcoded server and client from shortcut");
 			plexmediaServers = new ConcurrentHashMap<String, PlexServer>();
 			plexmediaServers.put(specifiedServer.name, specifiedServer);
 			setClient();
@@ -172,11 +174,13 @@ public class PlexSearch extends Service {
 //				return;
 		} else if(specifiedServer == null && defaultServer != null && !defaultServer.name.equals(getResources().getString(R.string.scan_all))) {
 			// Use the server specified in the main settings
+			Logger.d("Using server and client specified in main settings");
 			plexmediaServers = new ConcurrentHashMap<String, PlexServer>();
 			plexmediaServers.put(defaultServer.name, defaultServer);
 			setClient();
 		} else {
 			// Scan All was chosen
+			Logger.d("Scan all was chosen");
 			if(mServiceIntent == null) {
 				mServiceIntent = new Intent(this, GDMService.class);
 			}
@@ -193,10 +197,12 @@ public class PlexSearch extends Service {
 		Matcher matcher = p.matcher(queryText);
 		if(!matcher.find()) {
 			// Client not specified, so use default
+			Logger.d("Using default client since none specified in query");
 			actionToDo = handleVoiceSearch();
 			actionToDo.run();
 		} else {
 			// Get available clients
+			Logger.d("getting all available clients");
 			serversScanned = 0;
 			clients = new ArrayList<PlexClient>();
 			for(PlexServer server : plexmediaServers.values()) {
@@ -234,15 +240,15 @@ public class PlexSearch extends Service {
 		Matcher matcher = p.matcher(queryText);
 
 		if(matcher.find()) {
-			String specifiedClient = matcher.group(1).toLowerCase();
+			String specifiedClient = matcher.group(2).toLowerCase();
 
 			Logger.d("Clients: %d", clients.size());
-			Logger.d("query text now %s", queryText);
+			Logger.d("Specified client: %s", specifiedClient);
 			for(int i=0;i<clients.size();i++) {
 				if(clients.get(i).name.toLowerCase().equals(specifiedClient)) {
 					client = clients.get(i);
-					Logger.d("Specified client %s", client.name);
-					queryText = queryText.replaceAll(" on (.*)$", "");
+					queryText = queryText.replaceAll(getString(R.string.pattern_on_client), "$1");
+					Logger.d("query text now %s", queryText);
 					break;
 				}
 			}
@@ -1090,6 +1096,8 @@ public class PlexSearch extends Service {
 						feedback.e(getResources().getString(R.string.got_error), error.getMessage());
 					}
 				});
+			} else {
+				feedback.e(getResources().getString(R.string.couldnt_find), queryTerm);
 			}
 		}
 	}
