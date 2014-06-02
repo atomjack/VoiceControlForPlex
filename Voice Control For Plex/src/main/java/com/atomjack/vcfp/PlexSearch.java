@@ -3,9 +3,11 @@ package com.atomjack.vcfp;
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.os.IBinder;
 import android.speech.RecognizerIntent;
+import android.support.v4.content.LocalBroadcastManager;
 
 import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.PlexClient;
@@ -52,11 +54,13 @@ public class PlexSearch extends Service {
 	private List<PlexTrack> tracks = new ArrayList<PlexTrack>();
 	private List<PlexDirectory> albums = new ArrayList<PlexDirectory>();
 
+	// Callbacks for when we figure out what action the user wishes to take.
 	private myRunnable actionToDo;
 	private interface myRunnable {
-		boolean stop = false;
 		void run();
 	}
+	// An instance of this interface will be returned by handleVoiceSearch when no server discovery is needed (e.g. pause/resume/stop playback or offset)
+	private interface stopRunnable extends myRunnable {}
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
@@ -138,6 +142,13 @@ public class PlexSearch extends Service {
 		queryText = null;
 		mPrefs = getSharedPreferences(PREFS, MODE_PRIVATE);
 		feedback = new Feedback(mPrefs, this);
+		if(gdmReceiver != null) {
+			IntentFilter filters = new IntentFilter();
+			filters.addAction(GDMService.MSG_RECEIVED);
+			filters.addAction(GDMService.SOCKET_CLOSED);
+			LocalBroadcastManager.getInstance(this).registerReceiver(gdmReceiver,
+							filters);
+		}
 	}
 
 	@Override
@@ -152,14 +163,6 @@ public class PlexSearch extends Service {
 		videos = new ArrayList<PlexVideo>();
 		shows = new ArrayList<PlexDirectory>();
 
-		/*
-		actionToDo = handleVoiceSearch();
-		if(actionToDo.stop) {
-			actionToDo.run();
-			return;
-		}
-		*/
-
 		Gson gson = new Gson();
 		PlexServer defaultServer = gson.fromJson(mPrefs.getString("Server", ""), PlexServer.class);
 		if(specifiedServer != null && client != null && !specifiedServer.name.equals(getResources().getString(R.string.scan_all))) {
@@ -168,10 +171,6 @@ public class PlexSearch extends Service {
 			plexmediaServers = new ConcurrentHashMap<String, PlexServer>();
 			plexmediaServers.put(specifiedServer.name, specifiedServer);
 			setClient();
-//			actionToDo = handleVoiceSearch();
-//			actionToDo.run();
-//			if(actionToDo.stop)
-//				return;
 		} else if(specifiedServer == null && defaultServer != null && !defaultServer.name.equals(getResources().getString(R.string.scan_all))) {
 			// Use the server specified in the main settings
 			Logger.d("Using server and client specified in main settings");
@@ -181,6 +180,18 @@ public class PlexSearch extends Service {
 		} else {
 			// Scan All was chosen
 			Logger.d("Scan all was chosen");
+
+			// First, see if what needs to be done actually needs to know about the server (i.e. pause/stop/resume playback of offset).
+			// If it does, execute the action and return as we don't need to do anything else. However, also check to see if the user
+			// has specified a client (using " on <client name>") - if this is the case, we will need to find that client via server
+			// discovery
+			myRunnable actionToDo = handleVoiceSearch(true);
+			if(actionToDo instanceof stopRunnable && !queryText.matches(getString(R.string.pattern_on_client))) {
+				actionToDo.run();
+				return;
+			}
+
+
 			if(mServiceIntent == null) {
 				mServiceIntent = new Intent(this, GDMService.class);
 			}
@@ -197,7 +208,7 @@ public class PlexSearch extends Service {
 		Matcher matcher = p.matcher(queryText);
 		if(!matcher.find()) {
 			// Client not specified, so use default
-			Logger.d("Using default client since none specified in query");
+			Logger.d("Using default client since none specified in query: %s", client.name);
 			actionToDo = handleVoiceSearch();
 			actionToDo.run();
 		} else {
@@ -232,35 +243,44 @@ public class PlexSearch extends Service {
 	}
 
 	private myRunnable handleVoiceSearch() {
+		return handleVoiceSearch(false);
+	}
+
+	private myRunnable handleVoiceSearch(boolean noChange) {
 		Logger.d("GOT QUERY: %s", queryText);
 
 		resumePlayback = false;
 
-		Pattern p = Pattern.compile(getString(R.string.pattern_on_client), Pattern.DOTALL);
-		Matcher matcher = p.matcher(queryText);
+		Pattern p;
+		Matcher matcher;
 
-		if(matcher.find()) {
-			String specifiedClient = matcher.group(2).toLowerCase();
+		if(!noChange) {
+			p = Pattern.compile(getString(R.string.pattern_on_client), Pattern.DOTALL);
+			matcher = p.matcher(queryText);
 
-			Logger.d("Clients: %d", clients.size());
-			Logger.d("Specified client: %s", specifiedClient);
-			for(int i=0;i<clients.size();i++) {
-				if(clients.get(i).name.toLowerCase().equals(specifiedClient)) {
-					client = clients.get(i);
-					queryText = queryText.replaceAll(getString(R.string.pattern_on_client), "$1");
-					Logger.d("query text now %s", queryText);
-					break;
+			if (matcher.find()) {
+				String specifiedClient = matcher.group(2).toLowerCase();
+
+				Logger.d("Clients: %d", clients.size());
+				Logger.d("Specified client: %s", specifiedClient);
+				for (int i = 0; i < clients.size(); i++) {
+					if (clients.get(i).name.toLowerCase().equals(specifiedClient)) {
+						client = clients.get(i);
+						queryText = queryText.replaceAll(getString(R.string.pattern_on_client), "$1");
+						Logger.d("query text now %s", queryText);
+						break;
+					}
 				}
 			}
-		}
 
-		// Check for a sentence starting with "resume watching"
-		p = Pattern.compile(getString(R.string.pattern_resume_watching));
-		matcher = p.matcher(queryText);
-		if(matcher.find()) {
-			resumePlayback = true;
-			// Replace "resume watching" with just "watch" so the pattern matching below works
-			queryText = matcher.replaceAll(getString(R.string.pattern_watch));
+			// Check for a sentence starting with "resume watching"
+			p = Pattern.compile(getString(R.string.pattern_resume_watching));
+			matcher = p.matcher(queryText);
+			if(matcher.find()) {
+				resumePlayback = true;
+				// Replace "resume watching" with just "watch" so the pattern matching below works
+				queryText = matcher.replaceAll(getString(R.string.pattern_watch));
+			}
 		}
 
 		p = Pattern.compile( getString(R.string.pattern_watch_movie), Pattern.DOTALL);
@@ -413,8 +433,7 @@ public class PlexSearch extends Service {
 		p = Pattern.compile(getString(R.string.pattern_pause_playback), Pattern.DOTALL);
 		matcher = p.matcher(queryText);
 		if (matcher.find()) {
-			return new myRunnable() {
-				boolean stop = true;
+			return new stopRunnable() {
 				@Override
 				public void run() {
 					pausePlayback();
@@ -426,8 +445,7 @@ public class PlexSearch extends Service {
 		matcher = p.matcher(queryText);
 		if (matcher.find()) {
 			Logger.d("resuming playback");
-			return new myRunnable() {
-				boolean stop = true;
+			return new stopRunnable() {
 				@Override
 				public void run() {
 					resumePlayback();
@@ -439,8 +457,7 @@ public class PlexSearch extends Service {
 		matcher = p.matcher(queryText);
 		if (matcher.find()) {
 			Logger.d("stopping playback");
-			return new myRunnable() {
-				boolean stop = true;
+			return new stopRunnable() {
 				@Override
 				public void run() {
 					stopPlayback();
@@ -472,8 +489,7 @@ public class PlexSearch extends Service {
 			final int h = hours;
 			final int m = minutes;
 			final int s = seconds;
-			return new myRunnable() {
-				boolean stop = true;
+			return new stopRunnable() {
 				@Override
 				public void run() {
 					seekTo(h, m, s);
