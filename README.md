@@ -67,11 +67,11 @@ Below are examples of what to say to Google Now to trigger playback. Sentence fr
 
 
 ### Seeking:
-"***Offset** *1* **hour(s)** *15* **minute(s)** *30* **second(s)**"
+"**Offset** *1* **hour(s)** *15* **minute(s)** *30* **second(s)**"
 
-"***Offset** *25* **minute(s)** *50* **second(s)**"
+"**Offset** *25* **minute(s)** *50* **second(s)**"
 
-"***Offset** *2* **hour(s)** *32* **minutes(s)**"
+"**Offset** *2* **hour(s)** *32* **minutes(s)**"
 
 Any combination of hour(s), minute(s), and second(s) is accepted, as long as they are specified in that order. You may also substitute "Timecode" for "Offset".
 
