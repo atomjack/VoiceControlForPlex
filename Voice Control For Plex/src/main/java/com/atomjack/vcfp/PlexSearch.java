@@ -35,6 +35,7 @@ public class PlexSearch extends Service {
 	private SharedPreferences mPrefs;
 	private String queryText;
 	private Feedback feedback;
+	private Gson gson = new Gson();
 
 	private ConcurrentHashMap<String, PlexServer> plexmediaServers = new ConcurrentHashMap<String, PlexServer>();
 	private int serversScanned = 0;
@@ -42,6 +43,7 @@ public class PlexSearch extends Service {
 	private Intent mServiceIntent;
 	private List<PlexClient> clients;
 	private PlexClient client = null;
+	private PlexServer specifiedServer = null;
 	private int serversSearched = 0;
 	private List<PlexVideo> videos = new ArrayList<PlexVideo>();
 	private Boolean videoPlayed = false;
@@ -50,27 +52,46 @@ public class PlexSearch extends Service {
 	private List<PlexTrack> tracks = new ArrayList<PlexTrack>();
 	private List<PlexDirectory> albums = new ArrayList<PlexDirectory>();
 
+	private myRunnable actionToDo;
+	private interface myRunnable {
+		boolean stop = false;
+		void run();
+	}
+
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		Logger.d("PlexSearch: onStartCommand");
 
-		queryText = null;
 		BugSenseHandler.initAndStartSession(PlexSearch.this, MainActivity.BUGSENSE_APIKEY);
 
+		videoPlayed = false;
 
 		if(!VoiceControlForPlexApplication.isWifiConnected(this)) {
 			feedback.e(getResources().getString(R.string.no_wifi_connection_message));
 			return Service.START_NOT_STICKY;
 		}
 
-		String from = intent.getStringExtra("FROM");
-		if(from != null && from.equals("GDMReceiver")) {
+		if(intent.getAction() != null && intent.getAction().equals(VoiceControlForPlexApplication.Intent.GDMRECEIVE)) {
+			// We just scanned for servers and are returning from that, so set the servers we found
+			// and then figure out which client to play to
+			Logger.d("Got back from scanning for servers.");
 			videoPlayed = false;
-			Logger.d("Origin: %s", intent.getStringExtra("ORIGIN"));
-			this.plexmediaServers = VoiceControlForPlexApplication.getPlexMediaServers();
+			plexmediaServers = VoiceControlForPlexApplication.getPlexMediaServers();
 			setClient();
 		} else {
+			queryText = null;
+			client = null;
+
+			specifiedServer = gson.fromJson(intent.getStringExtra(VoiceControlForPlexApplication.Intent.EXTRA_SERVER), PlexServer.class);
+			if(specifiedServer != null)
+				Logger.d("specified server %s", specifiedServer);
+			PlexClient thisClient = gson.fromJson(intent.getStringExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLIENT), PlexClient.class);
+			if(thisClient != null)
+				client = thisClient;
+
 			if (intent.getExtras().getStringArrayList(RecognizerIntent.EXTRA_RESULTS) != null) {
+				Logger.d("internal query");
+				// Received spoken query from the RecognizerIntent
 				ArrayList<String> voiceResults = intent.getExtras().getStringArrayList(RecognizerIntent.EXTRA_RESULTS);
 				for(String q : voiceResults) {
 					if(q.matches(getString(R.string.pattern_recognition))) {
@@ -79,11 +100,25 @@ public class PlexSearch extends Service {
 					}
 				}
 				if(queryText == null)
-					feedback.e(getResources().getString(R.string.didnt_understand));
-			} else
+					feedback.e(getResources().getString(R.string.didnt_understand_that));
+			} else {
+				// Received spoken query from Google Search API
+				Logger.d("Google Search API query");
 				queryText = intent.getStringExtra("queryText");
+			}
+
+			if(client == null)
+				client = gson.fromJson(mPrefs.getString("Client", ""), PlexClient.class);
+
+			if(client == null) {
+				// No client set in options, and either none specified in the query or I just couldn't find it.
+				feedback.e(getResources().getString(R.string.client_not_found));
+				return Service.START_NOT_STICKY;
+			}
 			if (queryText != null)
 				startup();
+			else
+				feedback.e(getResources().getString(R.string.didnt_understand_that));
 		}
 		return Service.START_NOT_STICKY;
 	}
@@ -99,6 +134,7 @@ public class PlexSearch extends Service {
 	@Override
 	public void onCreate() {
 		Logger.d("PlexSearch onCreate");
+		queryText = null;
 		mPrefs = getSharedPreferences(PREFS, MODE_PRIVATE);
 		feedback = new Feedback(mPrefs, this);
 	}
@@ -110,20 +146,42 @@ public class PlexSearch extends Service {
 	}
 
 	private void startup() {
+		Logger.d("Starting up with query string: %s", queryText);
 		tracks = new ArrayList<PlexTrack>();
 		videos = new ArrayList<PlexVideo>();
 		shows = new ArrayList<PlexDirectory>();
 
+		/*
+		actionToDo = handleVoiceSearch();
+		if(actionToDo.stop) {
+			actionToDo.run();
+			return;
+		}
+		*/
+
 		Gson gson = new Gson();
 		PlexServer defaultServer = gson.fromJson(mPrefs.getString("Server", ""), PlexServer.class);
-		if(defaultServer != null && !defaultServer.name.equals(getResources().getString(R.string.scan_all))) {
+		if(specifiedServer != null && client != null && !specifiedServer.name.equals(getResources().getString(R.string.scan_all))) {
+			// got a specified server and client from a shortcut
+			plexmediaServers = new ConcurrentHashMap<String, PlexServer>();
+			plexmediaServers.put(specifiedServer.name, specifiedServer);
+			setClient();
+//			actionToDo = handleVoiceSearch();
+//			actionToDo.run();
+//			if(actionToDo.stop)
+//				return;
+		} else if(specifiedServer == null && defaultServer != null && !defaultServer.name.equals(getResources().getString(R.string.scan_all))) {
+			// Use the server specified in the main settings
 			plexmediaServers = new ConcurrentHashMap<String, PlexServer>();
 			plexmediaServers.put(defaultServer.name, defaultServer);
 			setClient();
 		} else {
+			// Scan All was chosen
 			if(mServiceIntent == null) {
 				mServiceIntent = new Intent(this, GDMService.class);
 			}
+			mServiceIntent.setAction(VoiceControlForPlexApplication.Intent.GDMRECEIVE);
+			mServiceIntent.putExtra("class", PlexSearch.class);
 			mServiceIntent.putExtra("ORIGIN", "PlexSearch");
 			startService(mServiceIntent);
 			feedback.m("Scanning for Plex Servers");
@@ -131,11 +189,12 @@ public class PlexSearch extends Service {
 	}
 
 	private void setClient() {
-		Pattern p = Pattern.compile( "on (.*)$", Pattern.DOTALL);
+		Pattern p = Pattern.compile(getString(R.string.pattern_on_client), Pattern.DOTALL);
 		Matcher matcher = p.matcher(queryText);
 		if(!matcher.find()) {
 			// Client not specified, so use default
-			handleVoiceSearch();
+			actionToDo = handleVoiceSearch();
+			actionToDo.run();
 		} else {
 			// Get available clients
 			serversScanned = 0;
@@ -153,7 +212,7 @@ public class PlexSearch extends Service {
 							clients.add(mc.clients.get(i));
 						}
 						if (serversScanned == plexmediaServers.size()) {
-							handleVoiceSearch();
+							handleVoiceSearch().run();
 						}
 					}
 
@@ -166,32 +225,16 @@ public class PlexSearch extends Service {
 		}
 	}
 
-	private void handleVoiceSearch() {
+	private myRunnable handleVoiceSearch() {
 		Logger.d("GOT QUERY: %s", queryText);
 
 		resumePlayback = false;
-		String mediaType = ""; // movie or show or music
-		String queryTerm = "";
-		String season = "";
-		String episode = "";
-		String episodeSpecified = "";
-		String showSpecified = "";
-		Boolean latest = false;
-		Boolean next = false;
-		String specifiedClient = "";
 
-		// Music
-		String artist = "";
-		String track = "";
-		String album = "";
-
-		// If the query spoken ends with "on <something>", check to see if the <something> matches the name of a client to play the media on
-		Pattern p = Pattern.compile( "on (.*)$", Pattern.DOTALL);
+		Pattern p = Pattern.compile(getString(R.string.pattern_on_client), Pattern.DOTALL);
 		Matcher matcher = p.matcher(queryText);
-		Gson gson = new Gson();
-		client = null;
+
 		if(matcher.find()) {
-			specifiedClient = matcher.group(1).toLowerCase();
+			String specifiedClient = matcher.group(1).toLowerCase();
 
 			Logger.d("Clients: %d", clients.size());
 			Logger.d("query text now %s", queryText);
@@ -204,17 +247,6 @@ public class PlexSearch extends Service {
 				}
 			}
 		}
-		if(client == null) {
-			client = gson.fromJson(mPrefs.getString("Client", ""), PlexClient.class);
-		}
-
-		if(client == null) {
-			// No client set in options, and either none specified in the query or I just couldn't find it.
-			feedback.e(getResources().getString(R.string.client_not_found));
-			return;
-		}
-
-		Logger.d("Servers: %d", VoiceControlForPlexApplication.getPlexMediaServers().size());
 
 		// Check for a sentence starting with "resume watching"
 		p = Pattern.compile(getString(R.string.pattern_resume_watching));
@@ -228,195 +260,227 @@ public class PlexSearch extends Service {
 		p = Pattern.compile( getString(R.string.pattern_watch_movie), Pattern.DOTALL);
 		matcher = p.matcher(queryText);
 		if(matcher.find()) {
-			mediaType = "movie";
-			queryTerm = matcher.group(1);
-		}
-		if(mediaType.equals("")) {
-			p = Pattern.compile(getString(R.string.pattern_watch_season_episode_of_show));
-			matcher = p.matcher(queryText);
-
-			if(matcher.find()) {
-				mediaType = "show";
-				queryTerm = matcher.group(3);
-				season = matcher.group(1);
-				episode = matcher.group(2);
-			}
-		}
-		if(mediaType.equals("")) {
-			p = Pattern.compile(getString(R.string.pattern_watch_show_season_episode));
-			matcher = p.matcher(queryText);
-
-			if(matcher.find()) {
-				mediaType = "show";
-				queryTerm = matcher.group(1);
-				season = matcher.group(2);
-				episode = matcher.group(3);
-			}
-		}
-		if(mediaType.equals("")) {
-			p = Pattern.compile(getString(R.string.pattern_watch_episode_of_show));
-			matcher = p.matcher(queryText);
-			if(matcher.find()) {
-				mediaType = "show";
-				episodeSpecified = matcher.group(1);
-				showSpecified = matcher.group(2);
-			}
-		}
-		if(mediaType.equals("")) {
-			p = Pattern.compile(getString(R.string.pattern_watch_next_episode_of_show));
-			matcher = p.matcher(queryText);
-
-			if(matcher.find()) {
-				mediaType = "show";
-				next = true;
-				queryTerm = matcher.group(1);
-			}
-		}
-		if(mediaType.equals("")) {
-			p = Pattern.compile(getString(R.string.pattern_watch_latest_episode_of_show));
-			matcher = p.matcher(queryText);
-
-			if(matcher.find()) {
-				mediaType = "show";
-				latest = true;
-				queryTerm = matcher.group(2);
-			}
-		}
-		if(mediaType.equals("")) {
-			p = Pattern.compile(getString(R.string.pattern_watch_show_episode_named));
-			matcher = p.matcher(queryText);
-			if(matcher.find()) {
-				mediaType = "show";
-				episodeSpecified = matcher.group(2);
-				showSpecified = matcher.group(1);
-			}
-		}
-		// Lastly, try to find a movie matching whatever comes after "watch"
-		if(mediaType.equals("")) {
-			p = Pattern.compile(getString(R.string.pattern_watch2));
-			matcher = p.matcher(queryText);
-
-			if(matcher.find()) {
-				mediaType = "movie";
-				queryTerm = matcher.group(1);
-			}
-		}
-		if(mediaType.equals("")) {
-			p = Pattern.compile(getString(R.string.pattern_listen_to_album_by_artist));
-			matcher = p.matcher(queryText);
-			if(matcher.find()) {
-				mediaType = "music";
-				album = matcher.group(1);
-				artist = matcher.group(2);
-			}
-		}
-		if(mediaType.equals("")) {
-			p = Pattern.compile(getString(R.string.pattern_listen_to_album));
-			matcher = p.matcher(queryText);
-			if(matcher.find()) {
-				mediaType = "music";
-				album = matcher.group(1);
-			}
-		}
-		/*
-		if(mediaType.equals("")) {
-			p = Pattern.compile("listen to (.*) by (.*)");
-			matcher = p.matcher(queryText);
-			if(matcher.find()) {
-				mediaType = "music";
-				track = matcher.group(1);
-				artist = matcher.group(2);
-			}
-		}
-		*/
-		if(mediaType.equals("")) {
-			p = Pattern.compile(getString(R.string.pattern_pause_playback), Pattern.DOTALL);
-			matcher = p.matcher(queryText);
-			if (matcher.find()) {
-				Logger.d("pausing playback");
-				pausePlayback();
-				return;
-			}
-			p = Pattern.compile(getString(R.string.pattern_resume_playback), Pattern.DOTALL);
-			matcher = p.matcher(queryText);
-			if (matcher.find()) {
-				Logger.d("resuming playback");
-				resumePlayback();
-				return;
-			}
-			p = Pattern.compile(getString(R.string.pattern_stop_playback), Pattern.DOTALL);
-			matcher = p.matcher(queryText);
-			if (matcher.find()) {
-				Logger.d("stopping playback");
-				stopPlayback();
-				return;
-			}
-			p = Pattern.compile(getString(R.string.pattern_offset), Pattern.DOTALL);
-			matcher = p.matcher(queryText);
-			if (matcher.find()) {
-				String groupOne = matcher.group(2) != null && matcher.group(2).matches("two|to") ? "2" : matcher.group(2);
-				String groupThree = matcher.group(4) != null && matcher.group(4).matches("two|to") ? "2" : matcher.group(4);
-				String groupFive = matcher.group(6) != null && matcher.group(6).matches("two|to") ? "2" : matcher.group(6);
-				int hours = 0, minutes = 0, seconds = 0;
-				if(matcher.group(5) != null && matcher.group(5).matches(getString(R.string.pattern_minutes)))
-					minutes = Integer.parseInt(groupThree);
-				else if(matcher.group(3) != null && matcher.group(3).matches(getString(R.string.pattern_minutes)))
-					minutes = Integer.parseInt(groupOne);
-
-				if(matcher.group(7) != null && matcher.group(7).matches(getString(R.string.pattern_seconds)))
-					seconds = Integer.parseInt(groupFive);
-				else if(matcher.group(5) != null && matcher.group(5).matches(getString(R.string.pattern_seconds)))
-					seconds = Integer.parseInt(groupThree);
-				else if(matcher.group(3).matches(getString(R.string.pattern_seconds)))
-					seconds = Integer.parseInt(groupOne);
-
-				if(matcher.group(3).matches(getString(R.string.pattern_hours)))
-					hours = Integer.parseInt(groupOne);
-
-				seekTo(hours, minutes, seconds);
-				return;
-			}
+			final String queryTerm = matcher.group(1);
+			return new myRunnable() {
+				@Override
+				public void run() {
+					doMovieSearch(queryTerm);
+				}
+			};
 		}
 
-		Logger.d("media type: %s", mediaType);
-		Logger.d("query term: !%s!", queryTerm);
-		Logger.d("season: %s", season);
-		Logger.d("episode: %s", episode);
-		Logger.d("latest: %s", latest);
-		Logger.d("next: %s", next);
-		Logger.d("album: %s", album);
-		Logger.d("episodeSpecified: %s", episodeSpecified);
-		Logger.d("showSpecified: %s", showSpecified);
+		p = Pattern.compile(getString(R.string.pattern_watch_season_episode_of_show));
+		matcher = p.matcher(queryText);
 
-		if(!queryTerm.equals("") || (!episodeSpecified.equals("") && !showSpecified.equals("")) || (!artist.equals("") && (!track.equals("")) || !album.equals(""))) {
-			if(mediaType.equals("movie")) {
-				doMovieSearch(queryTerm);
-			} else if(mediaType.equals("show")) {
-				if(next == true) {
-					doNextEpisodeSearch(queryTerm);
-				} else if(latest == true) {
-					doLatestEpisodeSearch(queryTerm);
-				} else if(!episodeSpecified.equals("") && !showSpecified.equals("")) {
-					doShowSearch(episodeSpecified, showSpecified);
-				} else {
+		if(matcher.find()) {
+			final String queryTerm = matcher.group(3);
+			final String season = matcher.group(1);
+			final String episode = matcher.group(2);
+			return new myRunnable() {
+				@Override
+				public void run() {
 					doShowSearch(queryTerm, season, episode);
 				}
-			} else if(mediaType.equals("music")) {
-				if(!album.equals("")) {
-					Logger.d("Searching for album %s by %s.", album, artist);
+			};
+		}
+
+		p = Pattern.compile(getString(R.string.pattern_watch_show_season_episode));
+		matcher = p.matcher(queryText);
+
+		if(matcher.find()) {
+			final String queryTerm = matcher.group(1);
+			final String season = matcher.group(2);
+			final String episode = matcher.group(3);
+			return new myRunnable() {
+				@Override
+				public void run() {
+					doShowSearch(queryTerm, season, episode);
+				}
+			};
+		}
+
+		p = Pattern.compile(getString(R.string.pattern_watch_episode_of_show));
+		matcher = p.matcher(queryText);
+		if(matcher.find()) {
+			final String episodeSpecified = matcher.group(1);
+			final String showSpecified = matcher.group(2);
+			return new myRunnable() {
+				@Override
+				public void run() {
+					doShowSearch(episodeSpecified, showSpecified);
+				}
+			};
+		}
+
+
+		p = Pattern.compile(getString(R.string.pattern_watch_next_episode_of_show));
+		matcher = p.matcher(queryText);
+
+		if(matcher.find()) {
+			final String queryTerm = matcher.group(1);
+			return new myRunnable() {
+				@Override
+				public void run() {
+					doNextEpisodeSearch(queryTerm);
+				}
+			};
+		}
+
+		p = Pattern.compile(getString(R.string.pattern_watch_latest_episode_of_show));
+		matcher = p.matcher(queryText);
+
+		if(matcher.find()) {
+			final String queryTerm = matcher.group(2);
+			Logger.d("found latest: %s", queryTerm);
+			return new myRunnable() {
+				@Override
+				public void run() {
+					doLatestEpisodeSearch(queryTerm);
+				}
+			};
+		}
+
+		p = Pattern.compile(getString(R.string.pattern_watch_show_episode_named));
+		matcher = p.matcher(queryText);
+		if(matcher.find()) {
+			final String episodeSpecified = matcher.group(2);
+			final String showSpecified = matcher.group(1);
+			return new myRunnable() {
+				@Override
+				public void run() {
+						doShowSearch(episodeSpecified, showSpecified);
+				}
+			};
+		}
+
+		p = Pattern.compile(getString(R.string.pattern_watch2));
+		matcher = p.matcher(queryText);
+
+		if(matcher.find()) {
+			final String queryTerm = matcher.group(1);
+			return new myRunnable() {
+				@Override
+				public void run() {
+					doMovieSearch(queryTerm);
+				}
+			};
+		}
+
+		p = Pattern.compile(getString(R.string.pattern_listen_to_album_by_artist));
+		matcher = p.matcher(queryText);
+		if(matcher.find()) {
+			final String album = matcher.group(1);
+			final String artist = matcher.group(2);
+			return new myRunnable() {
+				@Override
+				public void run() {
 					searchForAlbum(artist, album);
-				} else {
-					Logger.d("Searching for %s by %s.", track, artist);
+				}
+			};
+		}
+
+		p = Pattern.compile(getString(R.string.pattern_listen_to_album));
+		matcher = p.matcher(queryText);
+		if(matcher.find()) {
+			final String album = matcher.group(1);
+			return new myRunnable() {
+				@Override
+				public void run() {
+					searchForAlbum("", album);
+				}
+			};
+		}
+
+		p = Pattern.compile(getString(R.string.pattern_listen_to_song_by_artist));
+		matcher = p.matcher(queryText);
+		if(matcher.find()) {
+			final String track = matcher.group(1);
+			final String artist = matcher.group(2);
+			return new myRunnable() {
+				@Override
+				public void run() {
 					searchForSong(artist, track);
 				}
-			} else {
-				feedback.e(getResources().getString(R.string.didnt_understand));
-				return;
-			}
-		} else {
-			feedback.e(getResources().getString(R.string.didnt_understand));
-			return;
+			};
 		}
+
+		p = Pattern.compile(getString(R.string.pattern_pause_playback), Pattern.DOTALL);
+		matcher = p.matcher(queryText);
+		if (matcher.find()) {
+			return new myRunnable() {
+				boolean stop = true;
+				@Override
+				public void run() {
+					pausePlayback();
+				}
+			};
+		}
+
+		p = Pattern.compile(getString(R.string.pattern_resume_playback), Pattern.DOTALL);
+		matcher = p.matcher(queryText);
+		if (matcher.find()) {
+			Logger.d("resuming playback");
+			return new myRunnable() {
+				boolean stop = true;
+				@Override
+				public void run() {
+					resumePlayback();
+				}
+			};
+		}
+
+		p = Pattern.compile(getString(R.string.pattern_stop_playback), Pattern.DOTALL);
+		matcher = p.matcher(queryText);
+		if (matcher.find()) {
+			Logger.d("stopping playback");
+			return new myRunnable() {
+				boolean stop = true;
+				@Override
+				public void run() {
+					stopPlayback();
+				}
+			};
+		}
+
+		p = Pattern.compile(getString(R.string.pattern_offset), Pattern.DOTALL);
+		matcher = p.matcher(queryText);
+		if (matcher.find()) {
+			String groupOne = matcher.group(2) != null && matcher.group(2).matches("two|to") ? "2" : matcher.group(2);
+			String groupThree = matcher.group(4) != null && matcher.group(4).matches("two|to") ? "2" : matcher.group(4);
+			String groupFive = matcher.group(6) != null && matcher.group(6).matches("two|to") ? "2" : matcher.group(6);
+			int hours = 0, minutes = 0, seconds = 0;
+			if(matcher.group(5) != null && matcher.group(5).matches(getString(R.string.pattern_minutes)))
+				minutes = Integer.parseInt(groupThree);
+			else if(matcher.group(3) != null && matcher.group(3).matches(getString(R.string.pattern_minutes)))
+				minutes = Integer.parseInt(groupOne);
+
+			if(matcher.group(7) != null && matcher.group(7).matches(getString(R.string.pattern_seconds)))
+				seconds = Integer.parseInt(groupFive);
+			else if(matcher.group(5) != null && matcher.group(5).matches(getString(R.string.pattern_seconds)))
+				seconds = Integer.parseInt(groupThree);
+			else if(matcher.group(3).matches(getString(R.string.pattern_seconds)))
+				seconds = Integer.parseInt(groupOne);
+
+			if(matcher.group(3).matches(getString(R.string.pattern_hours)))
+				hours = Integer.parseInt(groupOne);
+			final int h = hours;
+			final int m = minutes;
+			final int s = seconds;
+			return new myRunnable() {
+				boolean stop = true;
+				@Override
+				public void run() {
+					seekTo(h, m, s);
+				}
+			};
+		}
+
+		return new myRunnable() {
+			@Override
+			public void run() {
+				feedback.e(getString(R.string.didnt_understand), queryText);
+			}
+		};
 	}
 
 	private void adjustPlayback(String which, final String onFinish) {
@@ -990,6 +1054,8 @@ public class PlexSearch extends Service {
 								public void onSuccess(MediaContainer mc)
 								{
 									Boolean foundEpisode = false;
+									Logger.d("Looking for episode %s", episode);
+									Logger.d("videoPlayed: %s", videoPlayed);
 									for(int i=0;i<mc.videos.size();i++) {
 										Logger.d("Looking at episode %s", mc.videos.get(i).index);
 										if(mc.videos.get(i).index.equals(episode) && !videoPlayed) {

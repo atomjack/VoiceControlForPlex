@@ -15,6 +15,11 @@ public class ShortcutActivity extends Activity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		Intent serviceIntent = new Intent(getApplicationContext(), PlexSearch.class);
+
+		serviceIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_SERVER, getIntent().getStringExtra(VoiceControlForPlexApplication.Intent.EXTRA_SERVER));
+		serviceIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLIENT, getIntent().getStringExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLIENT));
+
+
 		SecureRandom random = new SecureRandom();
 		serviceIntent.setData(Uri.parse(new BigInteger(130, random).toString(32)));
 		PendingIntent resultsPendingIntent = PendingIntent.getService(getApplicationContext(), 0, serviceIntent, Intent.FLAG_ACTIVITY_NEW_TASK);

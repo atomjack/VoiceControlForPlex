@@ -32,6 +32,7 @@ public class LocalScan {
 	private Feedback feedback;
 	private int serversScanned = 0;
 	private Map<String, PlexClient> m_clients = new HashMap<String, PlexClient>();
+	private PlexServer server;
 
 	public LocalScan(Context ctx, Class cls, SharedPreferences prefs, LocalScanHandler handler) {
 		context = ctx;
@@ -47,6 +48,7 @@ public class LocalScan {
 			VoiceControlForPlexApplication.showNoWifiDialog(context);
 			return;
 		}
+
 		searchDialog = new Dialog(context);
 
 		searchDialog.setContentView(R.layout.search_popup);
@@ -55,13 +57,17 @@ public class LocalScan {
 		searchDialog.show();
 
 		Intent mServiceIntent = new Intent(context, GDMService.class);
+		mServiceIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
 		mServiceIntent.putExtra("ORIGIN", theClass.getSimpleName());
 		mServiceIntent.putExtra("class", theClass);
 		context.startService(mServiceIntent);
 	}
 
 	public void showPlexServers() {
-		Logger.d("servers: " + VoiceControlForPlexApplication.getPlexMediaServers().size());
+		showPlexServers(null);
+	}
+
+	public void showPlexServers(ConcurrentHashMap<String, PlexServer> servers) {
 		if(searchDialog != null)
 			searchDialog.dismiss();
 		if(serverSelectDialog == null) {
@@ -72,7 +78,8 @@ public class LocalScan {
 		serverSelectDialog.show();
 
 		final ListView serverListView = (ListView)serverSelectDialog.findViewById(R.id.serverListView);
-		ConcurrentHashMap<String, PlexServer> servers = new ConcurrentHashMap<String, PlexServer>(VoiceControlForPlexApplication.getPlexMediaServers());
+		if(servers == null)
+			servers = new ConcurrentHashMap<String, PlexServer>(VoiceControlForPlexApplication.getPlexMediaServers());
 		final PlexListAdapter adapter = new PlexListAdapter(context, PlexListAdapter.TYPE_SERVER);
 		adapter.setServers(servers);
 		serverListView.setAdapter(adapter);
@@ -89,21 +96,27 @@ public class LocalScan {
 	}
 
 	public void getClients() {
+		getClients(new PlexServer("none"));
+	}
+
+	public void getClients(PlexServer _server) {
 		if(!VoiceControlForPlexApplication.isWifiConnected(context)) {
 			VoiceControlForPlexApplication.showNoWifiDialog(context);
 			return;
 		}
-		PlexServer server = gson.fromJson(mPrefs.getString("Server", ""), PlexServer.class);
+		server = _server;
+		if(_server.name.equals("none"))
+			server = gson.fromJson(mPrefs.getString("Server", ""), PlexServer.class);
 		if(server == null || server.name.equals(context.getResources().getString(R.string.scan_all))) {
 			scanForClients();
 		} else {
-			getClients(null);
+			getClients(new MediaContainer());
 		}
 	}
 
 	public void getClients(MediaContainer mc) {
 		PlexServer server = gson.fromJson(mPrefs.getString("Server", ""), PlexServer.class);
-		if(mc != null) {
+		if(mc.machineIdentifier != null) {
 			server.machineIdentifier = mc.machineIdentifier;
 			SharedPreferences.Editor mPrefsEditor = mPrefs.edit();
 			mPrefsEditor.putString("Server", gson.toJson(server));
@@ -142,6 +155,9 @@ public class LocalScan {
 					d.show();
 				} else {
 					Logger.d("Clients: " + clients.size());
+					SharedPreferences.Editor mPrefsEditor = mPrefs.edit();
+					mPrefsEditor.putString(VoiceControlForPlexApplication.Pref.SAVED_CLIENTS, gson.toJson(clients));
+					mPrefsEditor.commit();
 					showPlexClients(clients);
 				}
 			}

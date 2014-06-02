@@ -22,9 +22,9 @@ public class Feedback implements TextToSpeech.OnInitListener {
 	public void onInit(int i) {
 		Logger.d("Feedback onInit");
 		if(errorsTts != null)
-			errorsTts.setLanguage(VoiceControlForPlexApplication.getVoiceLocale(mPrefs.getString(VoiceControlForPlexApplication.PREF_ERRORS_VOICE, "Locale.US")));
+			errorsTts.setLanguage(VoiceControlForPlexApplication.getVoiceLocale(mPrefs.getString(VoiceControlForPlexApplication.Pref.ERRORS_VOICE, "Locale.US")));
 		if(feedbackTts != null)
-			feedbackTts.setLanguage(VoiceControlForPlexApplication.getVoiceLocale(mPrefs.getString(VoiceControlForPlexApplication.PREF_FEEDBACK_VOICE, "Locale.US")));
+			feedbackTts.setLanguage(VoiceControlForPlexApplication.getVoiceLocale(mPrefs.getString(VoiceControlForPlexApplication.Pref.FEEDBACK_VOICE, "Locale.US")));
 
 		if(errorsQueue != null) {
 			feedback(errorsQueue, true);

@@ -3,15 +3,12 @@ package com.atomjack.vcfp;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
-import java.math.BigInteger;
-import java.security.SecureRandom;
 import java.util.ArrayList;
 
 import us.nineworlds.serenity.GDMReceiver;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
-import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -23,7 +20,6 @@ import android.content.res.AssetManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
-import android.speech.RecognizerIntent;
 import android.speech.tts.TextToSpeech;
 import android.support.v4.content.LocalBroadcastManager;
 import android.view.Menu;
@@ -54,8 +50,9 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
 	public final static String BUGSENSE_APIKEY = "879458d0";
 
-	private final static int VOICE_FEEDBACK_SELECTED = 0;
-	private final static int TASKER_PROJECT_IMPORTED = 1;
+	private final static int RESULT_VOICE_FEEDBACK_SELECTED = 0;
+	private final static int RESULT_TASKER_PROJECT_IMPORTED = 1;
+	private final static int RESULT_SHORTCUT_CREATED = 2;
 
 	private BroadcastReceiver gdmReceiver = new GDMReceiver();
 
@@ -196,19 +193,17 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 	@Override
 	public void onActivityResult(int requestCode, int resultCode, Intent data) {
 		super.onActivityResult(requestCode, resultCode, data);
-		if (requestCode == VOICE_FEEDBACK_SELECTED) {
+		if (requestCode == RESULT_VOICE_FEEDBACK_SELECTED) {
 			if (resultCode == TextToSpeech.Engine.CHECK_VOICE_DATA_PASS) {
 				// success, create the TTS instance
 				availableVoices = data.getStringArrayListExtra(TextToSpeech.Engine.EXTRA_AVAILABLE_VOICES);
-				TextToSpeech tts = new TextToSpeech(this, this);
-//				errorsTts = new TextToSpeech(this, this);
 			} else {
 				// missing data, install it
 				Intent installIntent = new Intent();
 				installIntent.setAction(TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA);
 				startActivity(installIntent);
 			}
-		} else if(requestCode == TASKER_PROJECT_IMPORTED) {
+		} else if(requestCode == RESULT_TASKER_PROJECT_IMPORTED) {
 			AlertDialog.Builder usageDialog = new AlertDialog.Builder(MainActivity.this);
 			usageDialog.setTitle(R.string.import_tasker_project);
 			usageDialog.setMessage(R.string.import_tasker_instructions);
@@ -234,6 +229,14 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 				}
 			});
 			usageDialog.show();
+		} else if(requestCode == RESULT_SHORTCUT_CREATED) {
+			if(resultCode == RESULT_OK) {
+
+				data.setAction("com.android.launcher.action.INSTALL_SHORTCUT");
+				sendBroadcast(data);
+
+				feedback.m(getString(R.string.shortcut_created));
+			}
 		}
 	}
 
@@ -322,7 +325,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 				if (engine != null)
 					checkIntent.setPackage(engine);
 				settingErrorFeedback = errors;
-				startActivityForResult(checkIntent, VOICE_FEEDBACK_SELECTED);
+				startActivityForResult(checkIntent, RESULT_VOICE_FEEDBACK_SELECTED);
 				initMainWithServer();
 			}
 		}).setNegativeButton(R.string.feedback_toast, new DialogInterface.OnClickListener() {
@@ -337,6 +340,12 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 	}
 
 	public void installShortcut(MenuItem item) {
+		Intent intent = new Intent(this, ShortcutProviderActivity.class);
+
+		startActivityForResult(intent, RESULT_SHORTCUT_CREATED);
+
+//		startActivity(intent);
+		/*
 		Intent.ShortcutIconResource icon = Intent.ShortcutIconResource.fromContext(this, R.drawable.ic_launcher);
 
 		Intent launchIntent = new Intent(this, ShortcutActivity.class);
@@ -348,6 +357,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 		intent.setAction("com.android.launcher.action.INSTALL_SHORTCUT");
 
 		sendBroadcast(intent);
+		*/
 	}
 
 	public void showAbout(MenuItem item) {
@@ -391,7 +401,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 			Intent i = new Intent();
 			i.setAction(Intent.ACTION_VIEW);
 			i.setDataAndType(Uri.fromFile(f), "text/xml");
-			startActivityForResult(i, TASKER_PROJECT_IMPORTED);
+			startActivityForResult(i, RESULT_TASKER_PROJECT_IMPORTED);
 		} catch (Exception e) {
 			Logger.d("Exception opening tasker profile xml: ");
 			e.printStackTrace();
@@ -443,12 +453,14 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 		Logger.d("ON NEW INTENT IN MAINACTIVITY");
 		String from = intent.getStringExtra("FROM");
 		Logger.d("From: %s", from);
-		if(from == null) {
-		} else if(from.equals("GDMReceiver")) {
+		if(intent.getAction().equals(VoiceControlForPlexApplication.Intent.GDMRECEIVE)) {
 			Logger.d("Origin: " + intent.getStringExtra("ORIGIN"));
 			String origin = intent.getStringExtra("ORIGIN") == null ? "" : intent.getStringExtra("ORIGIN");
 			if(origin.equals("MainActivity")) {
 				Logger.d("Got " + VoiceControlForPlexApplication.getPlexMediaServers().size() + " servers");
+				Gson gson = new Gson();
+				mPrefsEditor.putString(VoiceControlForPlexApplication.Pref.SAVED_SERVERS, gson.toJson(VoiceControlForPlexApplication.getPlexMediaServers()));
+				mPrefsEditor.commit();
 				if(VoiceControlForPlexApplication.getPlexMediaServers().size() > 0) {
 					localScan.showPlexServers();
 				} else {
@@ -597,7 +609,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 	@Override
 	public void onInit(int status) {
 		if (status == TextToSpeech.SUCCESS) {
-			final String pref = settingErrorFeedback ? VoiceControlForPlexApplication.PREF_ERRORS_VOICE : VoiceControlForPlexApplication.PREF_FEEDBACK_VOICE;
+			final String pref = settingErrorFeedback ? VoiceControlForPlexApplication.Pref.ERRORS_VOICE : VoiceControlForPlexApplication.Pref.FEEDBACK_VOICE;
 			if (availableVoices != null) {
 				AlertDialog.Builder adb = new AlertDialog.Builder(this);
 				final CharSequence items[] = availableVoices.toArray(new CharSequence[availableVoices.size()]);

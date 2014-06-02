@@ -18,7 +18,7 @@ public class GDMReceiver extends BroadcastReceiver {
 	
 	@Override
 	public void onReceive(Context context, Intent intent) {
-
+		Logger.d("GDMReceiver onReceive: %s", intent.getAction());
 		if (intent.getAction().equals(GDMService.MSG_RECEIVED)) {
 			String message = intent.getStringExtra("data").trim();
 			String ipAddress = intent.getStringExtra("ipaddress").substring(1);
@@ -51,11 +51,11 @@ public class GDMReceiver extends BroadcastReceiver {
       }
 		} else if (intent.getAction().equals(GDMService.SOCKET_CLOSED)) {
 			Logger.i("Finished Searching");
+			// Send the reply back to whichever class called for it.
 			Class theClass = (Class)intent.getSerializableExtra("class");
-			Intent i;
+			Intent i = new Intent(context, theClass);
 			Logger.d("ORIGIN: %s", intent.getStringExtra("ORIGIN"));
-			i = new Intent(context, theClass);
-			i.setAction(VoiceControlForPlexApplication.INTENT_GDMRECEIVE);
+			i.setAction(VoiceControlForPlexApplication.Intent.GDMRECEIVE);
 			i.putExtra("FROM", "GDMReceiver");
 			i.putExtra("ORIGIN", intent.getStringExtra("ORIGIN"));
 			i.putExtra("queryText", intent.getStringExtra("queryText"));

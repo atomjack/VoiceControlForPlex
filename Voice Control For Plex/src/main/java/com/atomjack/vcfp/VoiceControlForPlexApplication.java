@@ -20,12 +20,26 @@ import com.loopj.android.http.AsyncHttpResponseHandler;
 
 public class VoiceControlForPlexApplication
 {
-	public final static String PREF_FEEDBACK_VOICE = "pref.feedback.voice";
-	public final static String PREF_ERRORS_VOICE = "pref.errors.voice";
+	public final static class Pref {
+		public final static String FEEDBACK_VOICE = "pref.feedback.voice";
+		public final static String ERRORS_VOICE = "pref.errors.voice";
+		public final static String SAVED_SERVERS = "pref.saved_servers";
+		public final static String SAVED_CLIENTS = "pref.saved_clients";
+
+	};
 
 	public final static String MINIMUM_PHT_VERSION = "1.0.7";
 
-	public final static String INTENT_GDMRECEIVE = "0";
+	public final static class Intent {
+			public final static String GDMRECEIVE = "com.atomjack.vcfp.intent.gdmreceive";
+			public final static String SERVER = "com.atomjack.vcfp.intent.server";
+			public final static String CLIENT = "com.atomjack.vcfp.intent.client";
+
+			public final static String EXTRA_SERVER = "com.atomjack.vcfp.intent.extra_server";
+			public final static String EXTRA_CLIENT = "com.atomjack.vcfp.intent.extra_client";
+
+
+	};
 
 	private static ConcurrentHashMap<String, PlexServer> plexmediaServers = new ConcurrentHashMap<String, PlexServer>();
     

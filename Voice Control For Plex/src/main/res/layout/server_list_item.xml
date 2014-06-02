@@ -11,6 +11,7 @@
         android:layout_alignParentRight="true"
         android:layout_alignParentTop="true"
         android:padding="10dp"
+        android:textColor="@color/white"
         android:text="Example application"
         android:textSize="24sp" />
 </LinearLayout>
