@@ -12,7 +12,7 @@ public class PlayReceiver extends BroadcastReceiver
 	{
 		Logger.d("PLAYRECEIVER");
 		Bundle bundle = intent.getExtras();
-		String queryText = bundle.getString("com.atomjack.vcfp.intent.ARGUMENTS");
+		String queryText = bundle.getString(VoiceControlForPlexApplication.Intent.ARGUMENTS);
 		if(queryText == null && intent.getStringExtra(GoogleSearchApi.KEY_QUERY_TEXT) != null)
 			queryText = intent.getStringExtra(GoogleSearchApi.KEY_QUERY_TEXT);
 

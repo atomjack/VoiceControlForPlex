@@ -587,9 +587,9 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 		{
 			Bundle bundle = new Bundle();
 			// Pass the entire string of what was said into autovoice
-			bundle.putString("com.atomjack.vcfp.intent.ARGUMENTS", "%avcomm");
+			bundle.putString(VoiceControlForPlexApplication.Intent.ARGUMENTS, "%avcomm");
 			if (TaskerPlugin.Setting.hostSupportsOnFireVariableReplacement(this))
-				TaskerPlugin.Setting.setVariableReplaceKeys(bundle, new String[]{"com.atomjack.vcfp.intent.ARGUMENTS"});
+				TaskerPlugin.Setting.setVariableReplaceKeys(bundle, new String[]{VoiceControlForPlexApplication.Intent.ARGUMENTS});
 
 			Intent i = new Intent();
 			i.putExtras(bundle);

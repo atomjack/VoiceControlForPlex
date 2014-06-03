@@ -37,7 +37,7 @@ public class VoiceControlForPlexApplication
 
 			public final static String EXTRA_SERVER = "com.atomjack.vcfp.intent.extra_server";
 			public final static String EXTRA_CLIENT = "com.atomjack.vcfp.intent.extra_client";
-
+			public final static String ARGUMENTS = "com.atomjack.vcfp.intent.ARGUMENTS";
 
 	};
 
