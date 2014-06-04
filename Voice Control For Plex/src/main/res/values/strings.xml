@@ -44,7 +44,7 @@
     <string name="select_voice">Select Voice</string>
     <string name="cancel">Cancel</string>
     <string name="nothing_to_play">Sorry, I couldn\'t find anything to play.</string>
-    <string name="http_status_code_error">Sorry, but I got an error, HTTP status code: %d</string>
+    <string name="http_status_code_error">Sorry, but I got an error, HTTP status code: %s</string>
     <string name="got_error">Sorry, but I got an error: %s</string>
     <string name="client_not_found">Sorry, you didn\'t specify a client in the main settings, or I couldn\'t find it.</string>
     <string name="found_more_than_one_album">I found more than one matching album. Please specify artist.</string>
@@ -83,4 +83,8 @@
     <string name="logged_in">You are now logged in.</string>
     <string name="logged_out">You are now logged out.</string>
     <string name="sections">sections</string>
+    <string name="searching_for">Searching for %s.</string>
+    <string name="searching_for_episode">Searching for %1$s episode %2$s.</string>
+    <string name="searching_for_show_season_episode">Searching for %1$s season %2$s episode %3$s.</string>
+    <string name="searching_for_album">Searching for %1$s by %2$s.</string>
 </resources>

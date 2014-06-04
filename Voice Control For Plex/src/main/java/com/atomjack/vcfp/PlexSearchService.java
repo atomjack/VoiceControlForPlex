@@ -108,8 +108,10 @@ public class PlexSearchService extends Service {
 						break;
 					}
 				}
-				if(queryText == null)
+				if(queryText == null) {
 					feedback.e(getResources().getString(R.string.didnt_understand_that));
+					return Service.START_NOT_STICKY;
+				}
 			} else {
 				// Received spoken query from Google Search API
 				Logger.d("Google Search API query");
@@ -186,7 +188,7 @@ public class PlexSearchService extends Service {
 			Logger.d("Scan all was chosen");
 
 			// First, see if what needs to be done actually needs to know about the server (i.e. pause/stop/resume playback of offset).
-			// If it does, execute the action and return as we don't need to do anything else. However, also check to see if the user
+			// If it doesn't, execute the action and return as we don't need to do anything else. However, also check to see if the user
 			// has specified a client (using " on <client name>") - if this is the case, we will need to find that client via server
 			// discovery
 			myRunnable actionToDo = handleVoiceSearch(true);
@@ -604,6 +606,7 @@ public class PlexSearchService extends Service {
 
 	private void doMovieSearch(final String queryTerm) {
 		Logger.d("Doing movie search. %d servers", plexmediaServers.size());
+		feedback.m(getString(R.string.searching_for), queryTerm);
 		serversSearched = 0;
 		for(final PlexServer server : plexmediaServers.values()) {
 			server.movieSectionsSearched = 0;
@@ -787,6 +790,7 @@ public class PlexSearchService extends Service {
 	}
 
 	private void doNextEpisodeSearch(final String queryTerm, final boolean fallback) {
+		feedback.m(getString(R.string.searching_for), queryTerm);
 		serversSearched = 0;
 		for(final PlexServer server : plexmediaServers.values()) {
 			server.showSectionsSearched = 0;
@@ -866,6 +870,7 @@ public class PlexSearchService extends Service {
 	}
 
 	private void doLatestEpisodeSearch(final String queryTerm) {
+		feedback.m(getString(R.string.searching_for), queryTerm);
 		Logger.d("doLatestEpisodeSearch: %s", queryTerm);
 		serversSearched = 0;
 		for(final PlexServer server : plexmediaServers.values()) {
@@ -968,6 +973,7 @@ public class PlexSearchService extends Service {
 	}
 
 	private void doShowSearch(String episodeSpecified, final String showSpecified) {
+		feedback.m(getString(R.string.searching_for_episode), showSpecified, episodeSpecified);
 		serversSearched = 0;
 		for(final PlexServer server : plexmediaServers.values()) {
 			server.showSectionsSearched = 0;
@@ -1038,6 +1044,7 @@ public class PlexSearchService extends Service {
 	}
 
 	private void doShowSearch(final String queryTerm, final String season, final String episode) {
+		feedback.m(getString(R.string.searching_for_show_season_episode), queryTerm, season, episode);
 		Logger.d("doShowSearch: %s s%s e%s", queryTerm, season, episode);
 		serversSearched = 0;
 		for(final PlexServer server : plexmediaServers.values()) {
@@ -1160,6 +1167,7 @@ public class PlexSearchService extends Service {
 	}
 
 	private void searchForAlbum(final String artist, final String album) {
+		feedback.m(getString(R.string.searching_for_album), album, artist);
 		Logger.d("Searching for album %s by %s.", album, artist);
 		serversSearched = 0;
 		Logger.d("Servers: %d", plexmediaServers.size());
@@ -1231,6 +1239,7 @@ public class PlexSearchService extends Service {
 
 	private void searchForSong(final String artist, final String track) {
 		serversSearched = 0;
+		feedback.m(getString(R.string.searching_for_album), track, artist);
 		Logger.d("Servers: %d", plexmediaServers.size());
 		for(final PlexServer server : plexmediaServers.values()) {
 			server.musicSectionsSearched = 0;

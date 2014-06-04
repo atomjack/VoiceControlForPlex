@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
-import java.util.Vector;
 
 @Root(strict=false)
 public class Device {
@@ -29,7 +28,7 @@ public class Device {
 	@ElementList(required=false, inline=true, entry="Connection")
 	public List<Connection> connections = new ArrayList<Connection>();
 
-	public Vector<String> provides;
+	public List<String> provides;
 	public Date lastSeenDate;
 	public boolean owned;
 
@@ -43,8 +42,9 @@ public class Device {
 	private int ownedInt;
 
 	@Commit
+	@SuppressWarnings("unused")
 	public void build() {
-		provides = new Vector(Arrays.asList(providesStr.split(",")));
+		provides = Arrays.asList(providesStr.split(","));
 		lastSeenDate = new Date(lastSeenAt*1000);
 		owned = ownedInt == 1;
 	}
