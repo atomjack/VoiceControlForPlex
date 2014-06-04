@@ -25,7 +25,7 @@ public class ListenerWidget extends AppWidgetProvider {
 			RemoteViews remoteViews = new RemoteViews(context.getPackageName(),
 							R.layout.widget_layout);
 
-			Intent serviceIntent = new Intent(context, PlexSearch.class);
+			Intent serviceIntent = new Intent(context, PlexSearchService.class);
 			SecureRandom random = new SecureRandom();
 			serviceIntent.setData(Uri.parse(new BigInteger(130, random).toString(32)));
 			PendingIntent resultsPendingIntent = PendingIntent.getService(context, 0, serviceIntent, Intent.FLAG_ACTIVITY_NEW_TASK);

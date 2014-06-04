@@ -90,6 +90,8 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
 	private Gson gson = new Gson();
 
+	private TextToSpeech tts;
+
 	Menu menu;
 
 	private boolean loggedIn = false;
@@ -133,11 +135,6 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 				else if(device instanceof PlexClient)
 					setClient((PlexClient)device);
 			}
-
-			@Override
-			public void onFinishedScan() {
-
-			}
 		});
 		remoteScan = new RemoteScan(mPrefs);
 
@@ -167,16 +164,6 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 		} catch (android.content.ActivityNotFoundException anfe) {
 			startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("http://play.google.com/store/apps/details?id=" + packageName)));
 		}
-	}
-
-	private boolean hasValidGoogleSearch() {
-		try
-		{
-			PackageInfo pinfo = getPackageManager().getPackageInfo("com.google.android.googlequicksearchbox", 0);
-			if(VoiceControlForPlexApplication.isVersionLessThan(pinfo.versionName, "3.4"))
-				return true;
-		} catch(Exception e) {}
-		return false;
 	}
 
 	private boolean hasValidTasker() {
@@ -235,7 +222,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 				// success, create the TTS instance
 				availableVoices = data.getStringArrayListExtra(TextToSpeech.Engine.EXTRA_AVAILABLE_VOICES);
 				// Need this or else voice selection won't show up:
-				TextToSpeech tts = new TextToSpeech(this, this);
+				tts = new TextToSpeech(this, this);
 			} else {
 				// missing data, install it
 				Intent installIntent = new Intent();
@@ -370,7 +357,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 				mPrefsEditor.commit();
 				Intent checkIntent = new Intent();
 				checkIntent.setAction(TextToSpeech.Engine.ACTION_CHECK_TTS_DATA);
-				final TextToSpeech tts = new TextToSpeech(ctx, new TextToSpeech.OnInitListener() {
+				tts = new TextToSpeech(ctx, new TextToSpeech.OnInitListener() {
 					@Override
 					public void onInit(int i) {
 
@@ -710,6 +697,8 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 			LocalBroadcastManager.getInstance(this).unregisterReceiver(gdmReceiver);
 		}
 		feedback.destroy();
+		if(tts != null)
+			tts.shutdown();
 		super.onDestroy();
 	}
 

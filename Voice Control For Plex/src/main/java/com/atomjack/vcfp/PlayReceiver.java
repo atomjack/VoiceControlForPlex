@@ -18,7 +18,7 @@ public class PlayReceiver extends BroadcastReceiver
 
 		if(queryText != null && queryText.matches(context.getResources().getString(R.string.pattern_recognition))) {
 			queryText = queryText.toLowerCase();
-			Intent sendIntent = new Intent(context, PlexSearch.class);
+			Intent sendIntent = new Intent(context, PlexSearchService.class);
 			sendIntent.setAction("com.atomjack.vcfp.intent.ACTION_SEARCH");
 			sendIntent.putExtra("queryText", queryText);
 			sendIntent.putExtra("ORIGIN", "Tasker");

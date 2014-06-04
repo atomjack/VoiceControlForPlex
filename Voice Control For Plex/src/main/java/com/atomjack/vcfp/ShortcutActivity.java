@@ -14,7 +14,7 @@ public class ShortcutActivity extends Activity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		Intent serviceIntent = new Intent(getApplicationContext(), PlexSearch.class);
+		Intent serviceIntent = new Intent(getApplicationContext(), PlexSearchService.class);
 
 		serviceIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_SERVER, getIntent().getStringExtra(VoiceControlForPlexApplication.Intent.EXTRA_SERVER));
 		serviceIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLIENT, getIntent().getStringExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLIENT));

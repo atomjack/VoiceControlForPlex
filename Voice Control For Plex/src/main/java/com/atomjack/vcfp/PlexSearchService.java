@@ -31,7 +31,7 @@ import java.util.regex.Pattern;
 
 import us.nineworlds.serenity.GDMReceiver;
 
-public class PlexSearch extends Service {
+public class PlexSearchService extends Service {
 
 	public final static String PREFS = MainActivity.PREFS;
 	private SharedPreferences mPrefs;
@@ -70,7 +70,7 @@ public class PlexSearch extends Service {
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		Logger.d("PlexSearch: onStartCommand");
 
-		BugSenseHandler.initAndStartSession(PlexSearch.this, MainActivity.BUGSENSE_APIKEY);
+		BugSenseHandler.initAndStartSession(PlexSearchService.this, MainActivity.BUGSENSE_APIKEY);
 
 		videoPlayed = false;
 
@@ -200,7 +200,7 @@ public class PlexSearch extends Service {
 				mServiceIntent = new Intent(this, GDMService.class);
 			}
 			mServiceIntent.setAction(VoiceControlForPlexApplication.Intent.GDMRECEIVE);
-			mServiceIntent.putExtra("class", PlexSearch.class);
+			mServiceIntent.putExtra("class", PlexSearchService.class);
 			mServiceIntent.putExtra("ORIGIN", "PlexSearch");
 			startService(mServiceIntent);
 			feedback.m("Scanning for Plex Servers");
