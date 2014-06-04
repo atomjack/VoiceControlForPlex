@@ -42,7 +42,7 @@
     <string name="select_voice">Choisir Voix</string>
     <string name="cancel">Annuler</string>
     <string name="nothing_to_play">Désolé, impossible de trouver de contenu à lire.</string>
-    <string name="http_status_code_error">Désolé, une erreur HTTP est survenue. Code: %d</string>
+    <string name="http_status_code_error">Désolé, une erreur HTTP est survenue. Code: %s</string>
     <string name="got_error">Désolé, une erreur est survenue: %s</string>
     <string name="client_not_found">Désolé, vous n\'avez pas spécifié de client dans les paramètres ou il est introuvable.</string>
     <string name="found_more_than_one_album">Plus d\'un album correspond, veuillez spécifier l\'artiste.</string>

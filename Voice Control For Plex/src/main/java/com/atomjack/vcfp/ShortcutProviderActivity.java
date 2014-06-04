@@ -41,13 +41,8 @@ public class ShortcutProviderActivity extends Activity {
 
 		String from = getIntent().getStringExtra("FROM");
 		Logger.d("from: %s", from);
-		// finish() immediately if we aren't supposed to be here
-//		if (Intent.ACTION_CREATE_SHORTCUT.equals(getIntent().getAction())) {
-//			finish();
-//			return;
-//		}
 
-		localScan = new LocalScan(this, ShortcutProviderActivity.class, null, new LocalScanHandler() {
+		localScan = new LocalScan(this, ShortcutProviderActivity.class, null, new ScanHandler() {
 			@Override
 			public void onDeviceSelected(PlexDevice device) {
 				Logger.d("chose %s", device.name);
@@ -111,7 +106,7 @@ public class ShortcutProviderActivity extends Activity {
 			Logger.d("setting client to %s", client.name);
 			launchIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_SERVER, gson.toJson(server));
 			launchIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLIENT, gson.toJson(client));
-			String label = server.name.equals(client.name) ? server.name : server.name + "/" + client.name;
+			String label = server.name.equals(client.name) ? server.name : (server.owned ? server.name : server.sourceTitle) + "/" + client.name;
 			sendIntent.putExtra(Intent.EXTRA_SHORTCUT_NAME, label);
 		} else
 			sendIntent.putExtra(Intent.EXTRA_SHORTCUT_NAME, getResources().getString(R.string.app_name));

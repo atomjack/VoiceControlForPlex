@@ -32,4 +32,10 @@ public class MediaContainer {
 	
 	@ElementList(required=false, inline=true, entry="Track")
 	public List<PlexTrack> tracks = new ArrayList<PlexTrack>();
+
+	@ElementList(required=false, inline=true, entry="Device")
+	public List<Device> devices = new ArrayList<Device>();
+
+	@Attribute(required=false)
+	public String token;
 }

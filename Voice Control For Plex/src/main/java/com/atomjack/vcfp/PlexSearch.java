@@ -62,6 +62,10 @@ public class PlexSearch extends Service {
 	// An instance of this interface will be returned by handleVoiceSearch when no server discovery is needed (e.g. pause/resume/stop playback or offset)
 	private interface stopRunnable extends myRunnable {}
 
+	private interface AfterTransientTokenRequest {
+		void success(String token);
+		void failure();
+	}
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		Logger.d("PlexSearch: onStartCommand");
@@ -80,7 +84,7 @@ public class PlexSearch extends Service {
 			// and then figure out which client to play to
 			Logger.d("Got back from scanning for servers.");
 			videoPlayed = false;
-			plexmediaServers = VoiceControlForPlexApplication.getPlexMediaServers();
+			plexmediaServers = VoiceControlForPlexApplication.servers;
 			setClient();
 		} else {
 			queryText = null;
@@ -219,8 +223,8 @@ public class PlexSearch extends Service {
 			for(PlexServer server : plexmediaServers.values()) {
 				Logger.d("ip: %s", server.address);
 				Logger.d("port: %s", server.port);
-				String url = "http://" + server.address + ":" + server.port + "/clients";
-				PlexHttpClient.get(url, null, new PlexHttpMediaContainerHandler() {
+
+				PlexHttpClient.get(server, "/clients", new PlexHttpMediaContainerHandler() {
 					@Override
 					public void onSuccess(MediaContainer mc) {
 						serversScanned++;
@@ -347,7 +351,7 @@ public class PlexSearch extends Service {
 			return new myRunnable() {
 				@Override
 				public void run() {
-					doNextEpisodeSearch(queryTerm);
+					doNextEpisodeSearch(queryTerm, false);
 				}
 			};
 		}
@@ -512,9 +516,8 @@ public class PlexSearch extends Service {
 		try {
 			Logger.d("Host: %s", client.host);
 			Logger.d("Port: %s", client.port);
-			String url = "http://" + client.host + ":" + client.port + "/player/playback/" + which;
-
-			PlexHttpClient.get(url, null, new PlexHttpResponseHandler()
+			String url = String.format("http://%s:%s/player/playback/%s", client.host, client.port, which);
+			PlexHttpClient.get(url, new PlexHttpResponseHandler()
 			{
 				@Override
 				public void onSuccess(PlexResponse r)
@@ -570,9 +573,8 @@ public class PlexSearch extends Service {
 		try {
 			Logger.d("Host: %s", client.host);
 			Logger.d("Port: %s", client.port);
-			String url = "http://" + client.host + ":" + client.port + "/player/playback/seekTo?offset=" + offset;
-
-			PlexHttpClient.get(url, null, new PlexHttpResponseHandler()
+			String url = String.format("http://%s:%s/player/playback/seekTo?offset=%s", client.host, client.port, offset);
+			PlexHttpClient.get(url, new PlexHttpResponseHandler()
 			{
 				@Override
 				public void onSuccess(PlexResponse r)
@@ -605,7 +607,7 @@ public class PlexSearch extends Service {
 		serversSearched = 0;
 		for(final PlexServer server : plexmediaServers.values()) {
 			server.movieSectionsSearched = 0;
-			Logger.d("Searching server: %s, %d sections", server.machineIdentifier, server.movieSections.size());
+			Logger.d("Searching server: %s, %d sections", server.name, server.movieSections.size());
 			if(server.movieSections.size() == 0) {
 				serversSearched++;
 				if(serversSearched == plexmediaServers.size()) {
@@ -614,8 +616,8 @@ public class PlexSearch extends Service {
 			}
 			for(int i=0;i<server.movieSections.size();i++) {
 				String section = server.movieSections.get(i);
-				String url = "http://" + server.address + ":" + server.port + "/library/sections/" + section + "/search?type=1&query=" + queryTerm;
-				PlexHttpClient.get(url, null, new PlexHttpMediaContainerHandler()
+				String path = String.format("/library/sections/%s/search?type=1&query=%s", section, queryTerm);
+				PlexHttpClient.get(server, path, new PlexHttpMediaContainerHandler()
 				{
 					@Override
 					public void onSuccess(MediaContainer mc)
@@ -674,7 +676,9 @@ public class PlexSearch extends Service {
 			// We found more than one match, but let's see if any of them are an exact match
 			Boolean exactMatch = false;
 			for(int i=0;i<videos.size();i++) {
+				Logger.d("Looking at video %s", videos.get(i).title);
 				if(videos.get(i).title.toLowerCase().equals(queryTerm.toLowerCase())) {
+					Logger.d("found exact match!");
 					exactMatch = true;
 					playVideo(videos.get(i));
 					break;
@@ -686,24 +690,63 @@ public class PlexSearch extends Service {
 			}
 		} else {
 			Logger.d("Didn't find a video");
-			feedback.e(getResources().getString(R.string.couldnt_find), queryTerm);
-			return;
+			// Let's also support using this syntax to play the next episode in a tv show. Probably will want to use a different error message if nothing is found, though.
+			doNextEpisodeSearch(queryTerm, true);
+//			feedback.e(getResources().getString(R.string.couldnt_find), queryTerm);
+//			return;
 		}
 	}
 
 	private void playVideo(final PlexVideo video) {
-		Logger.d("Playing video: %s", video.title);
-		try {
-			Logger.d("Host: %s", client.host);
-			Logger.d("Port: %s", client.port);
-			Logger.d("key: %s", video.key);
-			Logger.d("Machine ID: %s", video.server.machineIdentifier);
-			String url = "http://" + client.host + ":" + client.port + "/player/playback/playMedia?machineIdentifier=" + video.server.machineIdentifier + "&key=" + video.key;
-			if(mPrefs.getBoolean("resume", false) || resumePlayback) {
-				url += "&viewOffset=" + video.viewOffset;
+		if(video.server.owned)
+			playVideo(video, null);
+		else {
+			requestTransientAccessToken(video.server, new AfterTransientTokenRequest() {
+				@Override
+				public void success(String token) {
+					playVideo(video, token);
+				}
+
+				@Override
+				public void failure() {
+					// Just try to play without a transient token
+					playVideo(video, null);
+				}
+			});
+		}
+	}
+
+	private void requestTransientAccessToken(PlexServer server, final AfterTransientTokenRequest onFinish) {
+		String path = "/security/token?type=delegation&scope=all";
+		PlexHttpClient.get(server, path, new PlexHttpMediaContainerHandler() {
+			@Override
+			public void onSuccess(MediaContainer mediaContainer) {
+				onFinish.success(mediaContainer.token);
 			}
 
-			PlexHttpClient.get(url, null, new PlexHttpResponseHandler()
+			@Override
+			public void onFailure(Throwable error) {
+				onFinish.failure();
+			}
+		});
+	}
+
+	private void playVideo(final PlexVideo video, String transientToken) {
+		Logger.d("Playing video: %s", video.title);
+		try {
+			QueryString qs = new QueryString("machineIdentifier", video.server.machineIdentifier);
+			qs.add("key", video.key);
+			qs.add("port", video.server.port);
+			qs.add("address", video.server.address);
+			if(mPrefs.getBoolean("resume", false) || resumePlayback)
+				qs.add("viewOffset", video.viewOffset);
+			if(transientToken != null)
+				qs.add("token", transientToken);
+			if(video.server.accessToken != null)
+				qs.add(MainActivity.PlexHeaders.XPlexToken, video.server.accessToken);
+
+			String url = String.format("http://%s:%s/player/playback/playMedia?%s", client.host, client.port, qs);
+			PlexHttpClient.get(url, new PlexHttpResponseHandler()
 			{
 				@Override
 				public void onSuccess(PlexResponse r)
@@ -743,20 +786,20 @@ public class PlexSearch extends Service {
 		startActivity(nowPlayingIntent);
 	}
 
-	private void doNextEpisodeSearch(final String queryTerm) {
+	private void doNextEpisodeSearch(final String queryTerm, final boolean fallback) {
 		serversSearched = 0;
 		for(final PlexServer server : plexmediaServers.values()) {
 			server.showSectionsSearched = 0;
 			if(server.tvSections.size() == 0) {
 				serversSearched++;
 				if(serversSearched == plexmediaServers.size()) {
-					onFinishedNextEpisodeSearch(queryTerm);
+					onFinishedNextEpisodeSearch(queryTerm, fallback);
 				}
 			}
 			for(int i=0;i<server.tvSections.size();i++) {
 				String section = server.tvSections.get(i);
-				String url = "http://" + server.address + ":" + server.port + "/library/sections/" + section + "/onDeck";
-				PlexHttpClient.get(url, null, new PlexHttpMediaContainerHandler()
+				String path = String.format("/library/sections/%s/onDeck", section);
+				PlexHttpClient.get(server, path, new PlexHttpMediaContainerHandler()
 				{
 					@Override
 					public void onSuccess(MediaContainer mc)
@@ -779,7 +822,7 @@ public class PlexSearch extends Service {
 							serversSearched++;
 							if (serversSearched == plexmediaServers.size())
 							{
-								onFinishedNextEpisodeSearch(queryTerm);
+								onFinishedNextEpisodeSearch(queryTerm, fallback);
 							}
 						}
 					}
@@ -793,9 +836,9 @@ public class PlexSearch extends Service {
 		}
 	}
 
-	private void onFinishedNextEpisodeSearch(String queryTerm) {
+	private void onFinishedNextEpisodeSearch(String queryTerm, boolean fallback) {
 		if(videos.size() == 0) {
-			feedback.e(getResources().getString(R.string.couldnt_find_next), queryTerm, queryTerm);
+			feedback.e(getResources().getString(fallback ? R.string.couldnt_find : R.string.couldnt_find_next), queryTerm);
 			return;
 		} else {
 			if(videos.size() == 1)
@@ -837,8 +880,8 @@ public class PlexSearch extends Service {
 			}
 			for(int i=0;i<server.tvSections.size();i++) {
 				String section = server.tvSections.get(i);
-				String url = "http://" + server.address + ":" + server.port + "/library/sections/" + section + "/search?type=2&query=" + queryTerm;
-				PlexHttpClient.get(url, null, new PlexHttpMediaContainerHandler()
+				String path = String.format("/library/sections/%s/search?type=2&query=%s", section, queryTerm);
+				PlexHttpClient.get(server, path, new PlexHttpMediaContainerHandler()
 				{
 					@Override
 					public void onSuccess(MediaContainer mc)
@@ -893,8 +936,8 @@ public class PlexSearch extends Service {
 			return;
 		}
 		final PlexDirectory show = chosenShow;
-		String url = "http://" + show.server.address + ":" + show.server.port + "/library/metadata/" + show.ratingKey + "/allLeaves";
-		PlexHttpClient.get(url, null, new PlexHttpMediaContainerHandler()
+		String path = String.format("/library/metadata/%s/allLeaves", show.ratingKey);
+		PlexHttpClient.get(show.server, path, new PlexHttpMediaContainerHandler()
 		{
 			@Override
 			public void onSuccess(MediaContainer mc)
@@ -936,8 +979,8 @@ public class PlexSearch extends Service {
 			}
 			for(int i=0;i<server.tvSections.size();i++) {
 				String section = server.tvSections.get(i);
-				String url = "http://" + server.address + ":" + server.port + "/library/sections/" + section + "/search?type=4&query=" + episodeSpecified;
-				PlexHttpClient.get(url, null, new PlexHttpMediaContainerHandler()
+				String path = String.format("/library/sections/%s/search?type=4&query=%s", section, episodeSpecified);
+				PlexHttpClient.get(server, path, new PlexHttpMediaContainerHandler()
 				{
 					@Override
 					public void onSuccess(MediaContainer mc)
@@ -1009,8 +1052,8 @@ public class PlexSearch extends Service {
 			}
 			for(int i=0;i<server.tvSections.size();i++) {
 				String section = server.tvSections.get(i);
-				String url = "http://" + server.address + ":" + server.port + "/library/sections/" + section + "/search?type=2&query=" + queryTerm;
-				PlexHttpClient.get(url, null, new PlexHttpMediaContainerHandler()
+				String path = String.format("/library/sections/%s/search?type=2&query=%s", section, queryTerm);
+				PlexHttpClient.get(server, path, new PlexHttpMediaContainerHandler()
 				{
 					@Override
 					public void onSuccess(MediaContainer mc)
@@ -1048,8 +1091,7 @@ public class PlexSearch extends Service {
 			} else if(shows.size() == 1) {
 				final PlexDirectory show = shows.get(0);
 				Logger.d("Show key: %s", show.key);
-				String url = "http://" + server.address + ":" + server.port + "" + show.key;
-				PlexHttpClient.get(url, null, new PlexHttpMediaContainerHandler()
+				PlexHttpClient.get(server, show.key, new PlexHttpMediaContainerHandler()
 				{
 					@Override
 					public void onSuccess(MediaContainer mc)
@@ -1069,8 +1111,7 @@ public class PlexSearch extends Service {
 							feedback.e(getResources().getString(R.string.couldnt_find_season));
 							return;
 						} else if(foundSeason != null) {
-							String url = "http://" + server.address + ":" + server.port + "" + foundSeason.key;
-							PlexHttpClient.get(url, null, new PlexHttpMediaContainerHandler()
+							PlexHttpClient.get(server, foundSeason.key, new PlexHttpMediaContainerHandler()
 							{
 								@Override
 								public void onSuccess(MediaContainer mc)
@@ -1137,8 +1178,8 @@ public class PlexSearch extends Service {
 			}
 			for(int i=0;i<server.musicSections.size();i++) {
 				String section = server.musicSections.get(i);
-				String url = "http://" + server.address + ":" + server.port + "/library/sections/" + section + "/search?type=9&query=" + album;
-				PlexHttpClient.get(url, null, new PlexHttpMediaContainerHandler()
+				String path = String.format("/library/sections/%s/search?type=9&query=%s", section, album);
+				PlexHttpClient.get(server, path, new PlexHttpMediaContainerHandler()
 				{
 					@Override
 					public void onSuccess(MediaContainer mc)
@@ -1206,8 +1247,8 @@ public class PlexSearch extends Service {
 			}
 			for(int i=0;i<server.musicSections.size();i++) {
 				String section = server.musicSections.get(i);
-				String url = "http://" + server.address + ":" + server.port + "/library/sections/" + section + "/search?type=10&query=" + track;
-				PlexHttpClient.get(url, null, new PlexHttpMediaContainerHandler()
+				String path = String.format("/library/sections/%s/search?type=10&query=%s", section, track);
+				PlexHttpClient.get(server, path, new PlexHttpMediaContainerHandler()
 				{
 					@Override
 					public void onSuccess(MediaContainer mc)
@@ -1257,8 +1298,7 @@ public class PlexSearch extends Service {
 	}
 
 	private void playAlbum(final PlexDirectory album) {
-		String url = "http://" + album.server.address + ":" + album.server.port + album.key;
-		PlexHttpClient.get(url, null, new PlexHttpMediaContainerHandler()
+		PlexHttpClient.get(album.server, album.key, new PlexHttpMediaContainerHandler()
 		{
 			@Override
 			public void onSuccess(MediaContainer mc)
@@ -1289,13 +1329,18 @@ public class PlexSearch extends Service {
 	}
 
 	private void playTrack(final PlexTrack track, final PlexDirectory album) {
-		String url = "http://" + client.host + ":" + client.port + "/player/playback/playMedia?machineIdentifier=" + track.server.machineIdentifier + "&key=" + track.key;
+		QueryString qs = new QueryString("machineIdentifier", track.server.machineIdentifier);
+		qs.add("key", track.key);
+		qs.add("port", track.server.port);
+		qs.add("address", track.server.address);
 		if(album != null)
-			url += "&containerKey=" + album.key;
-		if(mPrefs.getBoolean("resume", false) || resumePlayback) {
-			url += "&viewOffset=" + track.viewOffset;
-		}
-		PlexHttpClient.get(url, null, new PlexHttpResponseHandler()
+			qs.add("containerKey", album.key);
+		if(mPrefs.getBoolean("resume", false) || resumePlayback)
+			qs.add("viewOffset", track.viewOffset);
+		qs.add(MainActivity.PlexHeaders.XPlexTargetClientIdentifier, client.machineIdentifier);
+		String url = String.format("http://%s:%s/player/playback/playMedia?%s", client.host, client.port, qs);
+
+		PlexHttpClient.get(url, new PlexHttpResponseHandler()
 		{
 			@Override
 			public void onSuccess(PlexResponse r)

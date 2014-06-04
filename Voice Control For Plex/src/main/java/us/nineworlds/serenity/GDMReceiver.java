@@ -15,7 +15,7 @@ import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.model.PlexServer;
 
 public class GDMReceiver extends BroadcastReceiver {
-	
+
 	@Override
 	public void onReceive(Context context, Intent intent) {
 		Logger.d("GDMReceiver onReceive: %s", intent.getAction());
@@ -59,6 +59,7 @@ public class GDMReceiver extends BroadcastReceiver {
 			i.putExtra("FROM", "GDMReceiver");
 			i.putExtra("ORIGIN", intent.getStringExtra("ORIGIN"));
 			i.putExtra("queryText", intent.getStringExtra("queryText"));
+			i.putExtra(VoiceControlForPlexApplication.Intent.SHOWRESOURCE, intent.getBooleanExtra(VoiceControlForPlexApplication.Intent.SHOWRESOURCE, false));
 			i.addFlags(Intent.FLAG_FROM_BACKGROUND);
 			i.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
 			i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);

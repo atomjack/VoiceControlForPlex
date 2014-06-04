@@ -73,8 +73,16 @@ public class PlexListAdapter extends BaseAdapter {
 
     if(m_type == TYPE_SERVER) {
       PlexServer server = (PlexServer)getItem(pos);
-      TextView textView = (TextView) rowView.findViewById(R.id.serverListTextView);
-      textView.setText(server.name.equals("") ? "Scan All" : server.name);
+      TextView serverName = (TextView) rowView.findViewById(R.id.serverListName);
+			serverName.setText(server.name.equals("") ? context.getString(R.string.scan_all) : (!server.owned ? server.sourceTitle : server.name));
+			if(!server.name.equals(context.getString(R.string.scan_all))) {
+				TextView serverExtra = (TextView) rowView.findViewById(R.id.serverListExtra);
+				int numSections = server.movieSections.size() + server.tvSections.size() + server.musicSections.size();
+				if (server.owned)
+					serverExtra.setText(String.format("(%d %s)", numSections, context.getString(R.string.sections)));
+				else
+					serverExtra.setText(String.format("%s (%d %s)", server.name, numSections, context.getString(R.string.sections)));
+			}
     } else if(m_type == TYPE_CLIENT) {
       PlexClient client = (PlexClient)getItem(pos);
       rowView = inflater.inflate(R.layout.client_list_item, parent, false);
@@ -85,12 +93,5 @@ public class PlexListAdapter extends BaseAdapter {
     }
 
     return rowView;
-  }
-
-  public Dialog getDialog() {
-    return m_dialog;
-  }
-  public void setDialog(Dialog dialog) {
-    this.m_dialog = dialog;
   }
 }

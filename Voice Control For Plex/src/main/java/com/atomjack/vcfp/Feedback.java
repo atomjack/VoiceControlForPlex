@@ -57,8 +57,16 @@ public class Feedback implements TextToSpeech.OnInitListener {
 		feedback(text, false);
 	}
 
+	public void m(int id) {
+		feedback(context.getString(id), false);
+	}
+
 	public void e(String text) {
 		feedback(text, true);
+	}
+
+	public void e(int id) {
+		feedback(context.getString(id), true);
 	}
 
 	private void feedback(String text, boolean errors) {

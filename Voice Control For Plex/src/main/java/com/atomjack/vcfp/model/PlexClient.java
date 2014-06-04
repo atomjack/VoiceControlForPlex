@@ -15,6 +15,16 @@ public class PlexClient extends PlexDevice {
 
 	}
 
+	public static PlexClient fromDevice(Device device) {
+		PlexClient client = new PlexClient();
+		client.name = device.name;
+		client.address = device.connections.get(0).address;
+		client.port = device.connections.get(0).port;
+		client.version = device.productVersion;
+
+		return client;
+	}
+
 	@Override
 	public int describeContents() {
 		return 0;

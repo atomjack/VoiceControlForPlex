@@ -10,6 +10,8 @@
     <string name="menu_about">About</string>
     <string name="about_text">Voice Control for Plex\n© 2013 Chris Bellew\nLicensed under GPLv3\n\nPlex is copyright Plex, Inc.</string>
     <string name="menu_donate">Donate</string>
+    <string name="menu_login">Login</string>
+    <string name="menu_logout">Logout</string>
     <string name="menu_install_shortcut">Install Homescreen Shortcut</string>
     <string name="menu_tasker_import">Import Tasker Project</string>
     <string name="menu_install_tasker">Install Tasker</string>
@@ -73,4 +75,12 @@
     <string name="specify_now">Specify Now</string>
     <string name="use_current">Use current Server/Client</string>
     <string name="shortcut_created">Shortcut created</string>
+    <string name="username">Username</string>
+    <string name="password">Password</string>
+    <string name="login_title">Plex Login</string>
+    <string name="login_message">Enter your Plex username and password below. These will not be saved - only your Authentication Token will be saved.</string>
+    <string name="login_error">Sorry, there was an unknown error trying to log in.</string>
+    <string name="logged_in">You are now logged in.</string>
+    <string name="logged_out">You are now logged out.</string>
+    <string name="sections">sections</string>
 </resources>

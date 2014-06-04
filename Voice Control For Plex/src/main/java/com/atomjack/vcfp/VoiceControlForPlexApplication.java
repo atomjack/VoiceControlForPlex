@@ -1,6 +1,8 @@
 package com.atomjack.vcfp;
 
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.simpleframework.xml.Serializer;
@@ -14,6 +16,7 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 
 import com.atomjack.vcfp.model.MediaContainer;
+import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexServer;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
@@ -25,7 +28,8 @@ public class VoiceControlForPlexApplication
 		public final static String ERRORS_VOICE = "pref.errors.voice";
 		public final static String SAVED_SERVERS = "pref.saved_servers";
 		public final static String SAVED_CLIENTS = "pref.saved_clients";
-
+		public final static String UUID = "pref.uuid";
+		public final static String AUTHENTICATION_TOKEN = "pref.authentication_token";
 	};
 
 	public final static String MINIMUM_PHT_VERSION = "1.0.7";
@@ -39,13 +43,12 @@ public class VoiceControlForPlexApplication
 			public final static String EXTRA_CLIENT = "com.atomjack.vcfp.intent.extra_client";
 			public final static String ARGUMENTS = "com.atomjack.vcfp.intent.ARGUMENTS";
 
+			public final static String SHOWRESOURCE = "com.atomjack.vcfp.intent.SHOWRESOURCE";
+
 	};
 
-	private static ConcurrentHashMap<String, PlexServer> plexmediaServers = new ConcurrentHashMap<String, PlexServer>();
-    
-	public static ConcurrentHashMap<String, PlexServer> getPlexMediaServers() {
-		return plexmediaServers;
-	}
+	public static ConcurrentHashMap<String, PlexServer> servers = new ConcurrentHashMap<String, PlexServer>();
+	public static Map<String, PlexClient> clients = new HashMap<String, PlexClient>();
 
 	private static Serializer serial = new Persister();
 
@@ -68,14 +71,15 @@ public class VoiceControlForPlexApplication
 		if(server.name.equals("") || server.address.equals("")) {
 			return;
 		}
-		if (!plexmediaServers.containsKey(server.name)) {
+		if (!servers.containsKey(server.name)) {
 			try {
-				String url = "http://" + server.address + ":" + server.port + "/library/sections/";
+				String url = String.format("http://%s:%s/library/sections/", server.address, server.port);
+				if(server.accessToken != null)
+					url += String.format("?%s=%s", MainActivity.PlexHeaders.XPlexToken, server.accessToken);
 				AsyncHttpClient httpClient = new AsyncHttpClient();
 				httpClient.get(url, new AsyncHttpResponseHandler() {
 						@Override
 						public void onSuccess(int statusCode, org.apache.http.Header[] headers, byte[] responseBody) {
-//    		            Logger.d("HTTP REQUEST: %s", response);
 								MediaContainer mc = new MediaContainer();
 								try {
 									mc = serial.read(MediaContainer.class, new String(responseBody, "UTF-8"));
@@ -95,12 +99,10 @@ public class VoiceControlForPlexApplication
 										server.addMusicSection(mc.directories.get(i).key);
 									}
 								}
-								if(mc.directories != null)
-									Logger.d("Directories: %d", mc.directories.size());
-								else
-									Logger.d("No directories found!");
+								Logger.d("%s has %d directories.", server.name, mc.directories != null ? mc.directories.size() : 0);
 								if(!server.name.equals("") && !server.address.equals("")) {
-									plexmediaServers.putIfAbsent(server.name, server);
+									servers.putIfAbsent(server.name, server);
+									Logger.d("Added %s.", server.name);
 								}
 						}
 				});
@@ -108,7 +110,6 @@ public class VoiceControlForPlexApplication
 			} catch (Exception e) {
 				Logger.e("Exception getting clients: %s", e.toString());
 			}
-			Logger.d("Adding %s", server.name);
 		} else {
 			Logger.d("%s already added.", server.name);
 		}

@@ -26,7 +26,7 @@ public class LocalScan {
 	private Class theClass;
 	private Dialog searchDialog;
 	private Dialog serverSelectDialog = null;
-	private LocalScanHandler scanHandler;
+	private ScanHandler scanHandler;
 	private SharedPreferences mPrefs;
 	private Gson gson = new Gson();
 	private Feedback feedback;
@@ -34,7 +34,7 @@ public class LocalScan {
 	private Map<String, PlexClient> m_clients = new HashMap<String, PlexClient>();
 	private PlexServer server;
 
-	public LocalScan(Context ctx, Class cls, SharedPreferences prefs, LocalScanHandler handler) {
+	public LocalScan(Context ctx, Class cls, SharedPreferences prefs, ScanHandler handler) {
 		context = ctx;
 		theClass = cls;
 		scanHandler = handler;
@@ -79,7 +79,7 @@ public class LocalScan {
 
 		final ListView serverListView = (ListView)serverSelectDialog.findViewById(R.id.serverListView);
 		if(servers == null)
-			servers = new ConcurrentHashMap<String, PlexServer>(VoiceControlForPlexApplication.getPlexMediaServers());
+			servers = new ConcurrentHashMap<String, PlexServer>(VoiceControlForPlexApplication.servers);
 		final PlexListAdapter adapter = new PlexListAdapter(context, PlexListAdapter.TYPE_SERVER);
 		adapter.setServers(servers);
 		serverListView.setAdapter(adapter);
@@ -130,7 +130,7 @@ public class LocalScan {
 		searchDialog.setTitle("Searching for Plex Clients");
 
 		searchDialog.show();
-		PlexHttpClient.get(server.getClientsURL(), null, new PlexHttpMediaContainerHandler() {
+		PlexHttpClient.get(server, "/clients", new PlexHttpMediaContainerHandler() {
 			@Override
 			public void onSuccess(MediaContainer clientMC) {
 				// Exclude non-Plex Home Theater clients (pre 1.0.7)
@@ -211,12 +211,15 @@ public class LocalScan {
 	}
 
 	public void scanServersForClients() {
-		ConcurrentHashMap<String, PlexServer> servers = VoiceControlForPlexApplication.getPlexMediaServers();
+		ConcurrentHashMap<String, PlexServer> servers = VoiceControlForPlexApplication.servers;
 		Logger.d("ScanServersForClients, number of servers = " + servers.size());
 		serversScanned = 0;
 		for(PlexServer thisServer : servers.values()) {
+			// Skip non-owned servers
+			if(!thisServer.owned)
+				continue;
 			Logger.d("ScanServersForClients server: %s", thisServer.name);
-			PlexHttpClient.get(thisServer.getClientsURL(), null, new PlexHttpMediaContainerHandler()
+			PlexHttpClient.get(thisServer, "/clients", new PlexHttpMediaContainerHandler()
 			{
 				@Override
 				public void onSuccess(MediaContainer clientMC)
@@ -230,7 +233,7 @@ public class LocalScan {
 						}
 					}
 
-					if(serversScanned == VoiceControlForPlexApplication.getPlexMediaServers().size()) {
+					if(serversScanned == VoiceControlForPlexApplication.servers.size()) {
 						searchDialog.dismiss();
 						if(m_clients.size() == 0) {
 							AlertDialog.Builder builder = new AlertDialog.Builder(context);

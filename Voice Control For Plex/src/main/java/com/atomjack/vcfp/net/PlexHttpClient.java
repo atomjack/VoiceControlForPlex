@@ -1,20 +1,26 @@
 package com.atomjack.vcfp.net;
 
+import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.drawable.Drawable;
 import android.widget.ImageView;
 import android.widget.ScrollView;
 
 import com.atomjack.vcfp.Logger;
+import com.atomjack.vcfp.MainActivity;
 import com.atomjack.vcfp.model.MediaContainer;
+import com.atomjack.vcfp.model.PlexError;
 import com.atomjack.vcfp.model.PlexResponse;
+import com.atomjack.vcfp.model.PlexServer;
 import com.atomjack.vcfp.model.PlexTrack;
+import com.atomjack.vcfp.model.PlexUser;
 import com.atomjack.vcfp.model.PlexVideo;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
 import com.loopj.android.http.BinaryHttpResponseHandler;
 import com.loopj.android.http.RequestParams;
 
+import org.apache.http.Header;
 import org.simpleframework.xml.Serializer;
 import org.simpleframework.xml.core.Persister;
 
@@ -27,9 +33,12 @@ public class PlexHttpClient
   private static AsyncHttpClient client = new AsyncHttpClient();
   private static Serializer serial = new Persister();
 
-  public static void get(String url, RequestParams params, final PlexHttpMediaContainerHandler responseHandler) {
+	public static void get(PlexServer server, String path, final PlexHttpMediaContainerHandler responseHandler) {
+		String url = String.format("http://%s:%s%s", server.address, server.port, path);
+		if(server.accessToken != null)
+			url += String.format("%s%s=%s", (url.contains("?") ? "&" : "?"), MainActivity.PlexHeaders.XPlexToken, server.accessToken);
     Logger.d("Fetching %s", url);
-    client.get(url, params, new AsyncHttpResponseHandler() {
+    client.get(url, new RequestParams(), new AsyncHttpResponseHandler() {
       @Override
       public void onSuccess(int statusCode, org.apache.http.Header[] headers, byte[] responseBody) {
         try {
@@ -56,32 +65,64 @@ public class PlexHttpClient
     });
   }
 
-  public static void get(String url, RequestParams params, final PlexHttpResponseHandler responseHandler) {
-    Logger.d("Fetching %s", url);
-    client.get(url, params, new AsyncHttpResponseHandler() {
-      @Override
-      public void onSuccess(int statusCode, org.apache.http.Header[] headers, byte[] responseBody) {
-				Logger.d("GET SUCCESS");
-        PlexResponse r = new PlexResponse();
-        try {
-          r = serial.read(PlexResponse.class, new String(responseBody, "UTF-8"));
-        } catch (Exception e) {
-          Logger.e("Exception parsing response: %s", e.toString());
-        }
-        responseHandler.onSuccess(r);
-      }
+	public static void get(String url, final PlexHttpResponseHandler responseHandler) {
+		Logger.d("Fetching %s", url);
+		client.get(url, new RequestParams(), new AsyncHttpResponseHandler() {
+			@Override
+			public void onSuccess(int statusCode, org.apache.http.Header[] headers, byte[] responseBody) {
+				PlexResponse r = new PlexResponse();
+				try {
+					r = serial.read(PlexResponse.class, new String(responseBody, "UTF-8"));
+				} catch (Exception e) {
+					Logger.e("Exception parsing response: %s", e.toString());
+				}
+				responseHandler.onSuccess(r);
+			}
 
 			@Override
 			public void onFailure(int statusCode, org.apache.http.Header[] headers, byte[] responseBody, java.lang.Throwable error) {
 				responseHandler.onFailure(error);
 			}
 		});
-  }
+	}
 
-  public static void setThumb(PlexTrack track, final ImageView imageView) {
+	public static void signin(Context context, String username, String password, Header[] headers, String contentType, final PlexHttpUserHandler responseHandler) {
+		client.setBasicAuth(username, password);
+		client.post(context, "https://plex.tv/users/sign_in.xml", headers, new RequestParams(), contentType, new AsyncHttpResponseHandler() {
+			@Override
+			public void onSuccess(int statusCode, org.apache.http.Header[] headers, byte[] responseBody) {
+				Logger.d("GET SUCCESS: %d", statusCode);
+				PlexUser u = new PlexUser();
+				try {
+					u = serial.read(PlexUser.class, new String(responseBody, "UTF-8"));
+				} catch (Exception e) {
+					Logger.e("Exception parsing response: %s", e.toString());
+				}
+				responseHandler.onSuccess(u);
+			}
+
+			@Override
+			public void onFailure(int statusCode, org.apache.http.Header[] headers, byte[] responseBody, java.lang.Throwable error) {
+				if(responseBody != null)
+					Logger.d("body: %s", new String(responseBody));
+				PlexError er = new PlexError();
+				try {
+				  er = serial.read(PlexError.class, new String(responseBody, "UTF-8"));
+				} catch (Exception e) {
+					Logger.e("Exception parsing response: %s", e.toString());
+				}
+				Logger.d("error: %s", er.errors);
+				responseHandler.onFailure(statusCode, er);
+			}
+		});
+	}
+
+	public static void setThumb(PlexTrack track, final ImageView imageView) {
     if(track.thumb != null && !track.thumb.equals("")) {
       try {
-        final String url = "http://" + track.server.address + ":" + track.server.port + track.thumb;
+				String url = String.format("http://%s:%s%s", track.server.address, track.server.port, track.thumb);
+				if(track.server.accessToken != null)
+					url += String.format("?%s=%s", MainActivity.PlexHeaders.XPlexToken, track.server.accessToken);
         Logger.d("Fetching thumb: %s", url);
         AsyncHttpClient httpClient = new AsyncHttpClient();
         httpClient.get(url, new BinaryHttpResponseHandler() {
@@ -107,7 +148,9 @@ public class PlexHttpClient
   public static void setThumb(PlexVideo video, final ScrollView layout) {
     if(!video.thumb.equals("")) {
       try {
-        final String url = "http://" + video.server.address + ":" + video.server.port + video.thumb;
+				String url = String.format("http://%s:%s%s", video.server.address, video.server.port, video.thumb);
+				if(video.server.accessToken != null)
+					url += String.format("?%s=%s", MainActivity.PlexHeaders.XPlexToken, video.server.accessToken);
         Logger.d("Fetching Video Thumb: %s", url);
         AsyncHttpClient httpClient = new AsyncHttpClient();
         httpClient.get(url, new BinaryHttpResponseHandler() {
