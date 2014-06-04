@@ -1,5 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog>
+    <release version="1.8" versioncode="14">
+        <change>Added Plex login, including support for shared libraries.</change>
+        <change>Added ability to hardcode server and client into a homescreen shortcut.</change>
+        <change>Don't ignore Plex clients &lt; 1.0.7 unless they are a desktop client (was hiding Rasplex).</change>
+        <change>Increased support for localization.</change>
+        <change>Added French localization (Gostron).</change>
+        <change>Fixed Scan All functionality.</change>
+        <change>Various bug fixes and enhancements</change>
+    </release>
     <release version="1.7.1" versioncode="11">
         <change>Fixed bug that prevented Install Tasker Project action from being shown in the menu unless you have both utter! and AutoVoice installed - it should show if you have either installed.</change>
         <change>Fixed hardcoded value in strings.xml</change>

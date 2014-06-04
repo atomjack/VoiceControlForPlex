@@ -102,7 +102,6 @@ public class PlexSearchService extends Service {
 				// Received spoken query from the RecognizerIntent
 				ArrayList<String> voiceResults = intent.getExtras().getStringArrayList(RecognizerIntent.EXTRA_RESULTS);
 				for(String q : voiceResults) {
-					Logger.d("q: %s", q);
 					if(q.matches(getString(R.string.pattern_recognition))) {
 						queryText = q;
 						break;

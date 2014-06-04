@@ -32,6 +32,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
+import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ListAdapter;
@@ -444,38 +445,11 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 		final EditText usernameInput = (EditText) promptView.findViewById(R.id.usernameInput);
 		final EditText passwordInput = (EditText) promptView.findViewById(R.id.passwordInput);
 		alertDialogBuilder
-						.setCancelable(false)
-						.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-							public void onClick(DialogInterface dialog, int id) {
-								// get user input and set it to result
-								Header[] headers = {
-												new BasicHeader(PlexHeaders.XPlexClientPlatform, "Android"),
-												new BasicHeader(PlexHeaders.XPlexClientIdentifier, getUUID()),
-												new BasicHeader("Accept", "text/xml")
-								};
-								PlexHttpClient.signin(MainActivity.this, usernameInput.getText().toString(), passwordInput.getText().toString(), headers, "application/xml;charset=\"utf-8\"", new PlexHttpUserHandler() {
-									@Override
-									public void onSuccess(PlexUser user) {
-										mPrefsEditor.putString(VoiceControlForPlexApplication.Pref.AUTHENTICATION_TOKEN, user.authenticationToken);
-										remoteScan.authenticationToken = user.authenticationToken;
-										mPrefsEditor.commit();
-										feedback.m(R.string.logged_in);
-										MenuItem loginItem = menu.findItem(R.id.menu_login);
-										loginItem.setVisible(false);
-										MenuItem logoutItem = menu.findItem(R.id.menu_logout);
-										logoutItem.setVisible(true);
-										loggedIn = true;
-									}
+						.setCancelable(true)
+						.setNeutralButton("OK", new DialogInterface.OnClickListener() {
+							@Override
+							public void onClick(final DialogInterface dialog, int id) {
 
-									@Override
-									public void onFailure(int statusCode, PlexError error) {
-										Logger.e("Failure logging in");
-										String err = getString(R.string.login_error);
-										if(error.errors != null && error.errors.size() > 0)
-											err = error.errors.get(0);
-										feedback.e(err);
-									}
-								});
 
 							}
 						})
@@ -487,11 +461,48 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 										}
 						);
 
+
 		// create an alert dialog
-		AlertDialog alertD = alertDialogBuilder.create();
+		final AlertDialog alertD = alertDialogBuilder.create();
 
 		alertD.show();
 
+		Button b = alertD.getButton(DialogInterface.BUTTON_NEUTRAL);
+		b.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View view) {
+				Header[] headers = {
+								new BasicHeader(PlexHeaders.XPlexClientPlatform, "Android"),
+								new BasicHeader(PlexHeaders.XPlexClientIdentifier, getUUID()),
+								new BasicHeader("Accept", "text/xml")
+				};
+				PlexHttpClient.signin(MainActivity.this, usernameInput.getText().toString(), passwordInput.getText().toString(), headers, "application/xml;charset=\"utf-8\"", new PlexHttpUserHandler() {
+					@Override
+					public void onSuccess(PlexUser user) {
+						mPrefsEditor.putString(VoiceControlForPlexApplication.Pref.AUTHENTICATION_TOKEN, user.authenticationToken);
+						remoteScan.authenticationToken = user.authenticationToken;
+						mPrefsEditor.commit();
+						feedback.m(R.string.logged_in);
+						MenuItem loginItem = menu.findItem(R.id.menu_login);
+						loginItem.setVisible(false);
+						MenuItem logoutItem = menu.findItem(R.id.menu_logout);
+						logoutItem.setVisible(true);
+						loggedIn = true;
+						alertD.cancel();
+					}
+
+					@Override
+					public void onFailure(int statusCode, PlexError error) {
+						Logger.e("Failure logging in");
+						String err = getString(R.string.login_error);
+						if (error.errors != null && error.errors.size() > 0)
+							err = error.errors.get(0);
+						feedback.e(err);
+					}
+
+				});
+			}
+		});
 
 	}
 

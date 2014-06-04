@@ -2,9 +2,7 @@ package com.atomjack.vcfp;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.speech.RecognizerIntent;
 import android.widget.ImageView;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -18,8 +16,6 @@ import com.bugsense.trace.BugSenseHandler;
 import org.codechimp.apprater.AppRater;
 
 public class NowPlayingActivity extends Activity {
-	public final static String PREFS = MainActivity.PREFS;
-	private SharedPreferences mPrefs;
 	private PlexVideo playingVideo; // The video currently playing
 	private PlexTrack playingTrack; // The track currently playing
 	private PlexClient client = null;
@@ -31,8 +27,6 @@ public class NowPlayingActivity extends Activity {
 		super.onCreate(savedInstanceState);
 
 		BugSenseHandler.initAndStartSession(NowPlayingActivity.this, MainActivity.BUGSENSE_APIKEY);
-
-		mPrefs = getSharedPreferences(PREFS, MODE_PRIVATE);
 
 		setContentView(R.layout.play_media);
 

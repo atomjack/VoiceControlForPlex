@@ -3,6 +3,7 @@ package com.atomjack.vcfp.net;
 import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.widget.ImageView;
 import android.widget.ScrollView;
 
@@ -91,7 +92,7 @@ public class PlexHttpClient
 		client.post(context, "https://plex.tv/users/sign_in.xml", headers, new RequestParams(), contentType, new AsyncHttpResponseHandler() {
 			@Override
 			public void onSuccess(int statusCode, org.apache.http.Header[] headers, byte[] responseBody) {
-				Logger.d("GET SUCCESS: %d", statusCode);
+				Logger.d("signin success: %d", statusCode);
 				PlexUser u = new PlexUser();
 				try {
 					u = serial.read(PlexUser.class, new String(responseBody, "UTF-8"));
@@ -145,6 +146,7 @@ public class PlexHttpClient
     }
   }
 
+	@SuppressWarnings("deprecation")
   public static void setThumb(PlexVideo video, final ScrollView layout) {
     if(!video.thumb.equals("")) {
       try {
@@ -164,7 +166,10 @@ public class PlexHttpClient
             }
             Drawable d = Drawable.createFromStream(is, "thumb");
             d.setAlpha(80);
-            layout.setBackground(d);
+						if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
+							layout.setBackground(d);
+						else
+							layout.setBackgroundDrawable(d);
           }
         });
       } catch(Exception e) {
