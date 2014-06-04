@@ -51,7 +51,7 @@
     <string name="couldnt_find_episode">Sorry, I couldn\'t find the episode you specified.</string>
     <string name="found_more_than_one_show">Sorry, I found more than one matching show. Please be more specific.</string>
     <string name="couldnt_find">Sorry, I couldn\'t find %s.</string>
-    <string name="couldnt_find_next">Sorry, I couldn\'t find %1$s, or else no episodes for %2$s are on deck.</string>
+    <string name="couldnt_find_next">Sorry, I couldn\'t find %1$s, or else no episodes are on deck.</string>
     <string name="couldnt_find_season">Sorry, I couldn\'t find that season.</string>
     <string name="found_more_than_one_movie">I found more than one matching movie. Please be more specific.</string>
     <string name="now_watching_video">Now watching %1$s on %2$s.</string>
