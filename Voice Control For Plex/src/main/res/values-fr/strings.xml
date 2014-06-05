@@ -73,10 +73,10 @@
     <string name="specify_now">Préciser maintenant</string>
     <string name="use_current">Utiliser serveur/client actuels</string>
     <string name="shortcut_created">Raccourci créé</string>
-    <string name="username">Nom d'utilisateur</string>
+    <string name="username">Nom d\'utilisateur</string>
     <string name="password">Mot de passe</string>
     <string name="login_title">Connexion à Plex</string>
-    <string name="login_message">Renseignez vos identifiants Plex ci-dessous. Ils ne seront pas sauvegardés, seul le jeton d'authentification le sera.</string>
+    <string name="login_message">Renseignez vos identifiants Plex ci-dessous. Ils ne seront pas sauvegardés, seul le jeton d\'authentification le sera.</string>
     <string name="login_error">Désolé, une erreur inconnue a empêché la connexion.</string>
     <string name="logged_in">Vous êtes maintenant connecté.</string>
     <string name="logged_out">Vous êtes maintenant déconnecté.</string>
