@@ -58,7 +58,7 @@ gradle.taskGraph.whenReady { taskGraph ->
                         show: true // Let's show it
                 ) {
                     vbox { // Put everything below each other
-                        label(text: "!Please enter key passphrase:")
+                        label(text: "Please enter key passphrase:")
                         def input = passwordField()
                         button(defaultButton: true, text: 'OK', actionPerformed: {
                             pass = new String(input.password); // Set pass variable to value of input field
