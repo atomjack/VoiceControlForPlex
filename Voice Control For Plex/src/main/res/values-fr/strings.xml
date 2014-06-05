@@ -51,7 +51,7 @@
     <string name="couldnt_find_episode">Désolé, impossible de trouver l\'épisode spécifié.</string>
     <string name="found_more_than_one_show">Désolé, plus d\'une série correspond. Veuillez préciser.</string>
     <string name="couldnt_find">Désolé, impossible de trouver %s.</string>
-    <string name="couldnt_find_next">Désolé, impossible de trouver %1$s, ou bien %2$s n\'a pas d\'épisode \'En Cours\'.</string>
+    <string name="couldnt_find_next">Désolé, impossible de trouver %1$s ou bien il n\'y a pas d\'épisode \'En Cours\'.</string>
     <string name="couldnt_find_season">Désolé, impossible de trouver cette saison.</string>
     <string name="found_more_than_one_movie">Plus d\'un film correspond. Veuillez préciser.</string>
     <string name="now_watching_video">Lecture de 1$s sur %2$s.</string>
@@ -73,4 +73,16 @@
     <string name="specify_now">Préciser maintenant</string>
     <string name="use_current">Utiliser serveur/client actuels</string>
     <string name="shortcut_created">Raccourci créé</string>
+    <string name="username">Nom d'utilisateur</string>
+    <string name="password">Mot de passe</string>
+    <string name="login_title">Connexion à Plex</string>
+    <string name="login_message">Renseignez vos identifiants Plex ci-dessous. Ils ne seront pas sauvegardés, seul le jeton d'authentification le sera.</string>
+    <string name="login_error">Désolé, une erreur inconnue a empêché la connexion.</string>
+    <string name="logged_in">Vous êtes maintenant connecté.</string>
+    <string name="logged_out">Vous êtes maintenant déconnecté.</string>
+    <string name="sections">sections</string>
+    <string name="searching_for">Recherche de %s.</string>
+    <string name="searching_for_episode">Recherche de %1$s épisode %2$s.</string>
+    <string name="searching_for_show_season_episode">Recherche de %1$s saison %2$s épisode %3$s.</string>
+    <string name="searching_for_album">Recherche de %1$s de %2$s.</string>
 </resources>
