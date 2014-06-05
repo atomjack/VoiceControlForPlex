@@ -10,6 +10,8 @@
     <string name="menu_about">A propos</string>
     <string name="about_text">Voice Control for Plex\n© 2013 Chris Bellew\nSous licence GPLv3\n\nPlex est copyright Plex, Inc.</string>
     <string name="menu_donate">Faire un don</string>
+    <string name="menu_login">Se connecter</string>
+    <string name="menu_logout">Se déconnecter</string>
     <string name="menu_install_shortcut">Mettre raccourci écran d\'accueil</string>
     <string name="menu_tasker_import">Importer projet Tasker</string>
     <string name="menu_install_tasker">Installer Tasker</string>
