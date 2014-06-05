@@ -9,19 +9,19 @@ adding translations, please do not modify (.*), $1, ([0-9]+), etc.
     a quite complicated regular expression. Plugging it into https://www.debuggex.com/ should help you figure out how
     it is constructed.
     -->
-    <item name="pattern_recognition" type="string">^(((lancer|reprendre lecture|écouter|lancer film) (.+)( sur (.+))?)|((position) (.+)( sur (.+))?)|((pause|reprise|arrêt) lecture( sur (.+))?))$</item>
+    <item name="pattern_recognition" type="string">^(((regarder|reprendre lecture|écouter|regarder film) (.+)( sur (.+))?)|((position) (.+)( sur (.+))?)|((pauser|reprendre|arrêter) lecture( sur (.+))?))$</item>
 
     <item name="pattern_on_client" type="string">(.+) sur (.+)$</item>
     <item name="pattern_resume_watching" type="string">^reprendre lecture (.+)</item>
-    <item name="pattern_watch" type="string">lancer $1</item>
-    <item name="pattern_watch_movie" type="string">lancer film (.+)</item>
-    <item name="pattern_watch_season_episode_of_show" type="string">lancer saison ([0-9]+) épisode ([0-9]+) of (.+)</item>
-    <item name="pattern_watch_show_season_episode" type="string">lancer (.+) saison ([0-9]+) épisode ([0-9]+)</item>
-    <item name="pattern_watch_episode_of_show" type="string">lancer épisode (.+) of (.+)</item>
-    <item name="pattern_watch_next_episode_of_show" type="string">lancer( le)? prochain épisode de (.+)</item>
-    <item name="pattern_watch_latest_episode_of_show" type="string">lancer( le)? dernier épisode de (.+)</item>
-    <item name="pattern_watch_show_episode_named" type="string">lancer (.+) épisode (.+)</item>
-    <item name="pattern_watch2" type="string">lancer (.+)</item>
+    <item name="pattern_watch" type="string">regarder $1</item>
+    <item name="pattern_watch_movie" type="string">regarder film (.+)</item>
+    <item name="pattern_watch_season_episode_of_show" type="string">regarder saison ([0-9]+) épisode ([0-9]+) of (.+)</item>
+    <item name="pattern_watch_show_season_episode" type="string">regarder (.+) saison ([0-9]+) épisode ([0-9]+)</item>
+    <item name="pattern_watch_episode_of_show" type="string">regarder épisode (.+) of (.+)</item>
+    <item name="pattern_watch_next_episode_of_show" type="string">regarder( le)? prochain épisode de (.+)</item>
+    <item name="pattern_watch_latest_episode_of_show" type="string">regarder( le)? dernier épisode de (.+)</item>
+    <item name="pattern_watch_show_episode_named" type="string">regarder (.+) épisode (.+)</item>
+    <item name="pattern_watch2" type="string">regarder (.+)</item>
 
     <!--
     The following pattern lets the user say "listen to <album> by <artist>" or
@@ -32,9 +32,9 @@ adding translations, please do not modify (.*), $1, ([0-9]+), etc.
     <item name="pattern_listen_to_album" type="string">écouter l\'album (.+)</item>
     <item name="pattern_listen_to_song_by_artist" type="string">écouter (.+) de (.+)</item>
 
-    <item name="pattern_pause_playback" type="string">pause lecture</item>
-    <item name="pattern_resume_playback" type="string">reprise lecture</item>
-    <item name="pattern_stop_playback" type="string">arrêt lecture</item>
+    <item name="pattern_pause_playback" type="string">pauser lecture</item>
+    <item name="pattern_resume_playback" type="string">reprendre lecture</item>
+    <item name="pattern_stop_playback" type="string">arrêter lecture</item>
 
     <!--
     The following are used in conjunction with the pattern_offset below. These should match the
