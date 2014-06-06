@@ -310,6 +310,10 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 				MainListAdapter.SettingHolder holder = (MainListAdapter.SettingHolder) view.getTag();
 				Logger.d("Clicked %s", holder.tag);
 				if (holder.tag.equals(holder.TAG_SERVER)) {
+					if(!VoiceControlForPlexApplication.isWifiConnected(MainActivity.this)) {
+						feedback.e(getResources().getString(R.string.no_wifi_connection_message));
+						return;
+					}
 					if(authToken != null) {
 						Logger.d("Logged in");
 						remoteScan.refreshResources(authToken, new RemoteScan.RefreshResourcesResponseHandler() {
@@ -334,6 +338,10 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 						localScan.searchForPlexServers();
 					}
 				} else if (holder.tag.equals(holder.TAG_CLIENT)) {
+					if(!VoiceControlForPlexApplication.isWifiConnected(MainActivity.this)) {
+						feedback.e(getResources().getString(R.string.no_wifi_connection_message));
+						return;
+					}
 					if(server == null || server.owned)
 						localScan.getClients();
 					else {
