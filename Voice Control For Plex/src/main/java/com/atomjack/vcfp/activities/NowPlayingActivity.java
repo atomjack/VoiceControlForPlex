@@ -48,6 +48,7 @@ public class NowPlayingActivity extends Activity {
 
 	private int commandId = 0;
 	private int subscriptionPort = 7777;
+	private boolean subscribed = false;
 	private ServerSocket serverSocket;
 	Thread serverThread = null;
 	Handler updateConversationHandler;
@@ -267,15 +268,15 @@ public class NowPlayingActivity extends Activity {
 		qs.add("protocol", "http");
 
 		Header[] headers = {
-						new BasicHeader(PlexHeaders.XPlexClientIdentifier, VoiceControlForPlexApplication.getUUID(mPrefs)),
-						new BasicHeader(PlexHeaders.XPlexDeviceName, getString(R.string.app_name))
+			new BasicHeader(PlexHeaders.XPlexClientIdentifier, VoiceControlForPlexApplication.getUUID(mPrefs)),
+			new BasicHeader(PlexHeaders.XPlexDeviceName, getString(R.string.app_name))
 		};
-		Logger.d("Setting client id: %s", VoiceControlForPlexApplication.getUUID(mPrefs));
 		PlexHttpClient.get(NowPlayingActivity.this, String.format("http://%s:%s/player/timeline/subscribe?%s", client.host, client.port, qs), headers, new PlexHttpResponseHandler() {
 			@Override
 			public void onSuccess(PlexResponse response) {
 				Logger.d("Subscribed");
 				commandId++;
+				subscribed = true;
 			}
 
 			@Override
@@ -292,15 +293,15 @@ public class NowPlayingActivity extends Activity {
 	private void unsubscribe(final Runnable onFinish) {
 		QueryString qs = new QueryString("commandID", String.valueOf(commandId));
 		Header[] headers = {
-				new BasicHeader(PlexHeaders.XPlexClientIdentifier, VoiceControlForPlexApplication.getUUID(mPrefs)),
-				new BasicHeader(PlexHeaders.XPlexDeviceName, getString(R.string.app_name)),
-				new BasicHeader(PlexHeaders.XPlexTargetClientIdentifier, client.machineIdentifier)
-
+			new BasicHeader(PlexHeaders.XPlexClientIdentifier, VoiceControlForPlexApplication.getUUID(mPrefs)),
+			new BasicHeader(PlexHeaders.XPlexDeviceName, getString(R.string.app_name)),
+			new BasicHeader(PlexHeaders.XPlexTargetClientIdentifier, client.machineIdentifier)
 		};
 		PlexHttpClient.get(NowPlayingActivity.this, String.format("http://%s:%s/player/timeline/unsubscribe?%s", client.host, client.port, qs), headers, new PlexHttpResponseHandler() {
 			@Override
 			public void onSuccess(PlexResponse response) {
 				Logger.d("Unsubscribed");
+				subscribed = false;
 				commandId++;
 				if(onFinish != null)
 					onFinish.run();
@@ -317,7 +318,8 @@ public class NowPlayingActivity extends Activity {
 	protected void onDestroy() {
 		super.onDestroy();
 		try {
-			unsubscribe();
+			if(subscribed)
+				unsubscribe();
 			serverThread.interrupt();
 			serverSocket.close();
 		} catch(Exception ex) {
