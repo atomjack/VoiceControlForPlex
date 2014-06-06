@@ -221,9 +221,9 @@ public class NowPlayingActivity extends Activity {
 				} catch (IOException e) {
 				} finally {
 					try {
-						socket.close();
-					} catch (IOException ex) {
-						Logger.d("last exception");
+						if(socket != null)
+							socket.close();
+					} catch (Exception ex) {
 					}
 				}
 			}
