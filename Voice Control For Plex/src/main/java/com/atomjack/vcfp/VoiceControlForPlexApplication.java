@@ -3,6 +3,7 @@ package com.atomjack.vcfp;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.simpleframework.xml.Serializer;
@@ -11,6 +12,7 @@ import org.simpleframework.xml.core.Persister;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.SharedPreferences;
 import android.content.res.Resources.NotFoundException;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -23,15 +25,6 @@ import com.loopj.android.http.AsyncHttpResponseHandler;
 
 public class VoiceControlForPlexApplication
 {
-	public final static class Pref {
-		public final static String FEEDBACK_VOICE = "pref.feedback.voice";
-		public final static String ERRORS_VOICE = "pref.errors.voice";
-		public final static String SAVED_SERVERS = "pref.saved_servers";
-		public final static String SAVED_CLIENTS = "pref.saved_clients";
-		public final static String UUID = "pref.uuid";
-		public final static String AUTHENTICATION_TOKEN = "pref.authentication_token";
-	};
-
 	public final static String MINIMUM_PHT_VERSION = "1.0.7";
 
 	public final static class Intent {
@@ -66,6 +59,16 @@ public class VoiceControlForPlexApplication
 		return l;
 	}
 
+	public static String getUUID(SharedPreferences mPrefs) {
+		String uuid = mPrefs.getString(Preferences.UUID, null);
+		if(uuid == null) {
+			uuid = UUID.randomUUID().toString();
+			mPrefs.edit().putString(Preferences.UUID, uuid);
+			mPrefs.edit().commit();
+		}
+		return uuid;
+	}
+
 	public static void addPlexServer(final PlexServer server) {
 		Logger.d("ADDING PLEX SERVER: %s", server.name);
 		if(server.name.equals("") || server.address.equals("")) {
@@ -75,7 +78,7 @@ public class VoiceControlForPlexApplication
 			try {
 				String url = String.format("http://%s:%s/library/sections/", server.address, server.port);
 				if(server.accessToken != null)
-					url += String.format("?%s=%s", MainActivity.PlexHeaders.XPlexToken, server.accessToken);
+					url += String.format("?%s=%s", PlexHeaders.XPlexToken, server.accessToken);
 				AsyncHttpClient httpClient = new AsyncHttpClient();
 				httpClient.get(url, new AsyncHttpResponseHandler() {
 						@Override

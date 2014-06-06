@@ -5,6 +5,8 @@ import android.content.SharedPreferences;
 import android.speech.tts.TextToSpeech;
 import android.widget.Toast;
 
+import com.atomjack.vcfp.activities.MainActivity;
+
 public class Feedback implements TextToSpeech.OnInitListener {
 	private SharedPreferences mPrefs;
 	private TextToSpeech feedbackTts = null;
@@ -22,9 +24,9 @@ public class Feedback implements TextToSpeech.OnInitListener {
 	public void onInit(int i) {
 		Logger.d("Feedback onInit");
 		if(errorsTts != null)
-			errorsTts.setLanguage(VoiceControlForPlexApplication.getVoiceLocale(mPrefs.getString(VoiceControlForPlexApplication.Pref.ERRORS_VOICE, "Locale.US")));
+			errorsTts.setLanguage(VoiceControlForPlexApplication.getVoiceLocale(mPrefs.getString(Preferences.ERRORS_VOICE, "Locale.US")));
 		if(feedbackTts != null)
-			feedbackTts.setLanguage(VoiceControlForPlexApplication.getVoiceLocale(mPrefs.getString(VoiceControlForPlexApplication.Pref.FEEDBACK_VOICE, "Locale.US")));
+			feedbackTts.setLanguage(VoiceControlForPlexApplication.getVoiceLocale(mPrefs.getString(Preferences.FEEDBACK_VOICE, "Locale.US")));
 
 		if(errorsQueue != null) {
 			feedback(errorsQueue, true);

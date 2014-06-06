@@ -1,4 +1,4 @@
-package com.atomjack.vcfp;
+package com.atomjack.vcfp.activities;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -8,12 +8,17 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import us.nineworlds.serenity.GDMReceiver;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -24,6 +29,7 @@ import android.content.res.AssetManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
 import android.speech.tts.TextToSpeech;
 import android.support.v4.content.LocalBroadcastManager;
 import android.view.LayoutInflater;
@@ -38,8 +44,22 @@ import android.widget.EditText;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 
+import com.atomjack.vcfp.Feedback;
+import com.atomjack.vcfp.FutureRunnable;
+import com.atomjack.vcfp.GDMService;
+import com.atomjack.vcfp.LocalScan;
+import com.atomjack.vcfp.Logger;
+import com.atomjack.vcfp.PlexHeaders;
+import com.atomjack.vcfp.adapters.MainListAdapter;
+import com.atomjack.vcfp.Preferences;
+import com.atomjack.vcfp.R;
+import com.atomjack.vcfp.RemoteScan;
+import com.atomjack.vcfp.ScanHandler;
+import com.atomjack.vcfp.tasker.TaskerPlugin;
+import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.model.MainSetting;
 import com.atomjack.vcfp.model.MediaContainer;
+import com.atomjack.vcfp.model.Pin;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexDevice;
 import com.atomjack.vcfp.model.PlexError;
@@ -48,13 +68,19 @@ import com.atomjack.vcfp.model.PlexUser;
 import com.atomjack.vcfp.net.PlexHttpClient;
 import com.atomjack.vcfp.net.PlexHttpMediaContainerHandler;
 import com.atomjack.vcfp.net.PlexHttpUserHandler;
+import com.atomjack.vcfp.net.PlexPinResponseHandler;
 import com.bugsense.trace.BugSenseHandler;
 import com.cubeactive.martin.inscription.WhatsNewDialog;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import com.loopj.android.http.AsyncHttpClient;
+import com.loopj.android.http.AsyncHttpResponseHandler;
+import com.loopj.android.http.RequestParams;
 
 import org.apache.http.Header;
 import org.apache.http.message.BasicHeader;
+import org.simpleframework.xml.Serializer;
+import org.simpleframework.xml.core.Persister;
 
 public class MainActivity extends Activity implements TextToSpeech.OnInitListener {
 	public final static String PREFS = "VoiceControlForPlexPrefs";
@@ -68,12 +94,6 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 	private final static int RESULT_TASKER_PROJECT_IMPORTED = 1;
 	private final static int RESULT_SHORTCUT_CREATED = 2;
 
-	public static final class PlexHeaders {
-		public static final String XPlexClientPlatform = "X-Plex-Client-Platform";
-		public static final String XPlexClientIdentifier = "X-Plex-Client-Identifier";
-		public static final String XPlexTargetClientIdentifier = "X-Plex-Target-Client-Identifier";
-		public static final String XPlexToken = "X-Plex-Token";
-	};
 	private BroadcastReceiver gdmReceiver = new GDMReceiver();
 
 	private ArrayList<String> availableVoices;
@@ -82,6 +102,8 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 	private Feedback feedback;
 
 	private Dialog searchDialog = null;
+
+	private FutureRunnable fetchPinTask;
 
 	private PlexServer server = null;
 	private PlexClient client = null;
@@ -95,9 +117,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
 	Menu menu;
 
-	private boolean loggedIn = false;
-	private boolean localScanFinished = false;
-	private boolean remoteScanFinished = false;
+	private String authToken;
 
 	AlertDialog.Builder helpDialog;
 
@@ -120,8 +140,10 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
 		feedback = new Feedback(mPrefs, this);
 
+		authToken = mPrefs.getString(Preferences.AUTHENTICATION_TOKEN, null);
+
 		Type clientType = new TypeToken<HashMap<String, PlexClient>>(){}.getType();
-		VoiceControlForPlexApplication.clients = gson.fromJson(mPrefs.getString(VoiceControlForPlexApplication.Pref.SAVED_CLIENTS, ""), clientType);
+		VoiceControlForPlexApplication.clients = gson.fromJson(mPrefs.getString(Preferences.SAVED_CLIENTS, ""), clientType);
 
 		setContentView(R.layout.main);
 
@@ -258,7 +280,6 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 			usageDialog.show();
 		} else if(requestCode == RESULT_SHORTCUT_CREATED) {
 			if(resultCode == RESULT_OK) {
-
 				data.setAction("com.android.launcher.action.INSTALL_SHORTCUT");
 				sendBroadcast(data);
 
@@ -289,12 +310,23 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 				MainListAdapter.SettingHolder holder = (MainListAdapter.SettingHolder) view.getTag();
 				Logger.d("Clicked %s", holder.tag);
 				if (holder.tag.equals(holder.TAG_SERVER)) {
-					if(loggedIn) {
+					if(authToken != null) {
 						Logger.d("Logged in");
-						remoteScan.refreshResources(new Runnable() {
+						remoteScan.refreshResources(authToken, new RemoteScan.RefreshResourcesResponseHandler() {
 							@Override
-							public void run() {
+							public void onSuccess() {
 								localScan.searchForPlexServers();
+							}
+
+							@Override
+							public void onFailure(int statusCode) {
+								if(statusCode == 401) {
+									authToken = null;
+									mPrefsEditor.remove(Preferences.AUTHENTICATION_TOKEN);
+									feedback.e(R.string.login_unauthorized);
+									switchLogin();
+								} else
+									feedback.e(R.string.remote_scan_error);
 							}
 						});
 					} else {
@@ -418,16 +450,16 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 	}
 
 	public void logout(MenuItem item) {
-		mPrefsEditor.remove(VoiceControlForPlexApplication.Pref.AUTHENTICATION_TOKEN);
+		mPrefsEditor.remove(Preferences.AUTHENTICATION_TOKEN);
+		authToken = null;
 		VoiceControlForPlexApplication.servers = new ConcurrentHashMap<String, PlexServer>();
-		mPrefsEditor.putString(VoiceControlForPlexApplication.Pref.SAVED_SERVERS, gson.toJson(VoiceControlForPlexApplication.servers));
+		mPrefsEditor.putString(Preferences.SAVED_SERVERS, gson.toJson(VoiceControlForPlexApplication.servers));
 		mPrefsEditor.commit();
 		MenuItem loginItem = menu.findItem(R.id.menu_login);
 		loginItem.setVisible(true);
 		MenuItem logoutItem = menu.findItem(R.id.menu_logout);
 		logoutItem.setVisible(false);
 
-		loggedIn = false;
 		feedback.m(R.string.logged_out);
 	}
 
@@ -436,6 +468,118 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 	}
 
 	public void showLogin() {
+		Header[] headers = {
+			new BasicHeader(PlexHeaders.XPlexClientIdentifier, getUUID())
+		};
+
+		PlexHttpClient.getPinCode(MainActivity.this, headers, new PlexPinResponseHandler() {
+			@Override
+			public void onSuccess(Pin pin) {
+				showPin(pin);
+			}
+
+			@Override
+			public void onFailure(Throwable error) {
+				error.printStackTrace();
+				feedback.e(R.string.login_error);
+			}
+		});
+
+		/*
+
+*/
+	}
+
+	private void switchLogin() {
+		menu.findItem(R.id.menu_login).setVisible(!menu.findItem(R.id.menu_login).isVisible());
+		menu.findItem(R.id.menu_logout).setVisible(!menu.findItem(R.id.menu_logout).isVisible());
+	}
+
+	private void showPin(final Pin pin) {
+		AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(MainActivity.this);
+		alertDialogBuilder.setTitle(R.string.pin_title);
+		alertDialogBuilder.setMessage(String.format(getString(R.string.pin_message), pin.code));
+		alertDialogBuilder
+						.setCancelable(false)
+						.setNegativeButton("Cancel",
+										new DialogInterface.OnClickListener() {
+											public void onClick(DialogInterface dialog, int id) {
+												dialog.cancel();
+												fetchPinTask.getFuture().cancel(false);
+											}
+										}
+						)
+						.setNeutralButton("Manual", new DialogInterface.OnClickListener() {
+							@Override
+							public void onClick(final DialogInterface dialog, int id) {
+								dialog.dismiss();
+								fetchPinTask.getFuture().cancel(false);
+								showManualLogin();
+							}
+						});
+
+
+		// create and show an alert dialog
+		final AlertDialog pinAlert = alertDialogBuilder.create();
+		pinAlert.show();
+
+		// Now set up a task to hit the below url (based on the "id" field returned in the above http POST)
+		// every second. Once the user has entered the code on the plex website, the xml returned from the
+		// below http GET will contain their authentication token. Once that is retrieved, save it, switch
+		// the login/logout buttons in the menu, and cancel the dialog.
+		final Context context = MainActivity.this;
+		fetchPinTask = new FutureRunnable() {
+			@Override
+			public void run() {
+				AsyncHttpClient hclient = new AsyncHttpClient();
+				String url = String.format("https://plex.tv:443/pins/%d.xml", pin.id);
+				Logger.d("Fetching %s", url);
+				Header[] headers = {
+					new BasicHeader(PlexHeaders.XPlexClientIdentifier, getUUID())
+				};
+				hclient.get(MainActivity.this, url, headers, new RequestParams(), new AsyncHttpResponseHandler() {
+					@Override
+					public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+						Pin pin = new Pin();
+						Serializer serial = new Persister();
+						try {
+							pin = serial.read(Pin.class, new String(responseBody, "UTF-8"));
+						} catch (Exception e) {
+							Logger.e("Exception parsing response: %s", e.toString());
+						}
+						if(pin.authToken != null) {
+							authToken = pin.authToken;
+							mPrefsEditor.putString(Preferences.AUTHENTICATION_TOKEN, authToken);
+							mPrefsEditor.commit();
+							pinAlert.cancel();
+							Handler mainHandler = new Handler(context.getMainLooper());
+							mainHandler.post(new Runnable() {
+								@Override
+								public void run() {
+									feedback.m(R.string.logged_in);
+									switchLogin();
+								}
+							});
+							// We got the auth token, so cancel this task
+							getFuture().cancel(false);
+						}
+					}
+
+					@Override
+					public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+						error.printStackTrace();
+					}
+				});
+			}
+		};
+		// Set up the schedule service and let fetchPinTask know of the Future object, so the task can cancel
+		// itself once the authentication token is retrieved.
+		ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+		Future<?> future = executor.scheduleAtFixedRate(fetchPinTask, 0, 1000, TimeUnit.MILLISECONDS);
+		fetchPinTask.setFuture(future);
+	}
+
+	private void showManualLogin() {
 		LayoutInflater layoutInflater = LayoutInflater.from(MainActivity.this);
 		View promptView = layoutInflater.inflate(R.layout.login, null);
 		AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(MainActivity.this);
@@ -446,14 +590,19 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 		final EditText passwordInput = (EditText) promptView.findViewById(R.id.passwordInput);
 		alertDialogBuilder
 						.setCancelable(true)
-						.setNeutralButton("OK", new DialogInterface.OnClickListener() {
+						.setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
 							@Override
 							public void onClick(final DialogInterface dialog, int id) {
-
-
 							}
 						})
-						.setNegativeButton("Cancel",
+						.setNeutralButton(R.string.button_pin, new DialogInterface.OnClickListener() {
+							@Override
+							public void onClick(final DialogInterface dialog, int id) {
+								dialog.dismiss();
+								showLogin();
+							}
+						})
+						.setNegativeButton(R.string.cancel,
 										new DialogInterface.OnClickListener() {
 											public void onClick(DialogInterface dialog, int id) {
 												dialog.cancel();
@@ -467,27 +616,26 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
 		alertD.show();
 
-		Button b = alertD.getButton(DialogInterface.BUTTON_NEUTRAL);
+		Button b = alertD.getButton(DialogInterface.BUTTON_POSITIVE);
 		b.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View view) {
 				Header[] headers = {
-								new BasicHeader(PlexHeaders.XPlexClientPlatform, "Android"),
-								new BasicHeader(PlexHeaders.XPlexClientIdentifier, getUUID()),
+								new BasicHeader(com.atomjack.vcfp.PlexHeaders.XPlexClientPlatform, "Android"),
+								new BasicHeader(com.atomjack.vcfp.PlexHeaders.XPlexClientIdentifier, getUUID()),
 								new BasicHeader("Accept", "text/xml")
 				};
 				PlexHttpClient.signin(MainActivity.this, usernameInput.getText().toString(), passwordInput.getText().toString(), headers, "application/xml;charset=\"utf-8\"", new PlexHttpUserHandler() {
 					@Override
 					public void onSuccess(PlexUser user) {
-						mPrefsEditor.putString(VoiceControlForPlexApplication.Pref.AUTHENTICATION_TOKEN, user.authenticationToken);
-						remoteScan.authenticationToken = user.authenticationToken;
+						mPrefsEditor.putString(Preferences.AUTHENTICATION_TOKEN, user.authenticationToken);
+						authToken = user.authenticationToken;
 						mPrefsEditor.commit();
 						feedback.m(R.string.logged_in);
 						MenuItem loginItem = menu.findItem(R.id.menu_login);
 						loginItem.setVisible(false);
 						MenuItem logoutItem = menu.findItem(R.id.menu_logout);
 						logoutItem.setVisible(true);
-						loggedIn = true;
 						alertD.cancel();
 					}
 
@@ -503,14 +651,13 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 				});
 			}
 		});
-
 	}
 
-	private String getUUID() {
-		String uuid = mPrefs.getString(VoiceControlForPlexApplication.Pref.UUID, null);
+	public String getUUID() {
+		String uuid = mPrefs.getString(Preferences.UUID, null);
 		if(uuid == null) {
 			uuid = UUID.randomUUID().toString();
-			mPrefsEditor.putString(VoiceControlForPlexApplication.Pref.UUID, uuid);
+			mPrefsEditor.putString(Preferences.UUID, uuid);
 			mPrefsEditor.commit();
 		}
 		return uuid;
@@ -596,13 +743,12 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 		String from = intent.getStringExtra("FROM");
 		Logger.d("From: %s", from);
 		if(intent.getAction().equals(VoiceControlForPlexApplication.Intent.GDMRECEIVE)) {
-			localScanFinished = true;
 			Logger.d("Origin: " + intent.getStringExtra("ORIGIN"));
 			String origin = intent.getStringExtra("ORIGIN") == null ? "" : intent.getStringExtra("ORIGIN");
 			if(origin.equals("MainActivity")) {
 				Logger.d("Got " + VoiceControlForPlexApplication.servers.size() + " servers");
 
-				mPrefsEditor.putString(VoiceControlForPlexApplication.Pref.SAVED_SERVERS, gson.toJson(VoiceControlForPlexApplication.servers));
+				mPrefsEditor.putString(Preferences.SAVED_SERVERS, gson.toJson(VoiceControlForPlexApplication.servers));
 				mPrefsEditor.commit();
 				if(VoiceControlForPlexApplication.servers.size() > 0) {
 					localScan.showPlexServers();
@@ -682,10 +828,9 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 		// Inflate the menu; this adds items to the action bar if it is present.
 		getMenuInflater().inflate(R.menu.menu_main, _menu);
 		menu = _menu;
-		if(mPrefs.getString(VoiceControlForPlexApplication.Pref.AUTHENTICATION_TOKEN, null) != null) {
+		if(authToken != null) {
 			menu.findItem(R.id.menu_login).setVisible(false);
 			menu.findItem(R.id.menu_logout).setVisible(true);
-			loggedIn = true;
 		}
 		if (!hasValidAutoVoice() && !hasValidUtter()) {
 			_menu.findItem(R.id.menu_tasker_import).setVisible(false);
@@ -761,7 +906,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 	@Override
 	public void onInit(int status) {
 		if (status == TextToSpeech.SUCCESS) {
-			final String pref = settingErrorFeedback ? VoiceControlForPlexApplication.Pref.ERRORS_VOICE : VoiceControlForPlexApplication.Pref.FEEDBACK_VOICE;
+			final String pref = settingErrorFeedback ? Preferences.ERRORS_VOICE : Preferences.FEEDBACK_VOICE;
 			if (availableVoices != null) {
 				AlertDialog.Builder adb = new AlertDialog.Builder(this);
 				final CharSequence items[] = availableVoices.toArray(new CharSequence[availableVoices.size()]);

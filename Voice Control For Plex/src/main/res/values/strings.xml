@@ -87,4 +87,10 @@
     <string name="searching_for_episode">Searching for %1$s episode %2$s.</string>
     <string name="searching_for_show_season_episode">Searching for %1$s season %2$s episode %3$s.</string>
     <string name="searching_for_album">Searching for %1$s by %2$s.</string>
+    <string name="pin_title">Plex login</string>
+    <string name="pin_message">Please visit http://plex.tv/pin from your computer and enter the following code: %s.</string>
+    <string name="button_manual">Manual</string>
+    <string name="button_pin">Pin</string>
+    <string name="login_unauthorized">Sorry, but I got an unauthorized login error. You will have to login again.</string>
+    <string name="remote_scan_error">Sorry, but I got an error trying to access myPlex. You may have to logout and log back in.</string>
 </resources>

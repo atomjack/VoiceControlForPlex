@@ -38,4 +38,23 @@ public class MediaContainer {
 
 	@Attribute(required=false)
 	public String token;
+
+	@Attribute(required=false)
+	public String location;
+
+	@Attribute(required=false)
+	public String commandID;
+
+	@ElementList(required=false, inline=true, entry="Timeline")
+	public List<Timeline> timelines;
+
+	public Timeline getTimeline(String type) {
+		if(timelines != null) {
+			for (Timeline t : timelines) {
+				if (t.type.equals(type))
+					return t;
+			}
+		}
+		return null;
+	}
 }

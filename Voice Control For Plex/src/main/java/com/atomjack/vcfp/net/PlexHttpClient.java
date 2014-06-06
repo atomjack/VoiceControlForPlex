@@ -8,8 +8,9 @@ import android.widget.ImageView;
 import android.widget.ScrollView;
 
 import com.atomjack.vcfp.Logger;
-import com.atomjack.vcfp.MainActivity;
+import com.atomjack.vcfp.PlexHeaders;
 import com.atomjack.vcfp.model.MediaContainer;
+import com.atomjack.vcfp.model.Pin;
 import com.atomjack.vcfp.model.PlexError;
 import com.atomjack.vcfp.model.PlexResponse;
 import com.atomjack.vcfp.model.PlexServer;
@@ -37,7 +38,7 @@ public class PlexHttpClient
 	public static void get(PlexServer server, String path, final PlexHttpMediaContainerHandler responseHandler) {
 		String url = String.format("http://%s:%s%s", server.address, server.port, path);
 		if(server.accessToken != null)
-			url += String.format("%s%s=%s", (url.contains("?") ? "&" : "?"), MainActivity.PlexHeaders.XPlexToken, server.accessToken);
+			url += String.format("%s%s=%s", (url.contains("?") ? "&" : "?"), PlexHeaders.XPlexToken, server.accessToken);
     Logger.d("Fetching %s", url);
     client.get(url, new RequestParams(), new AsyncHttpResponseHandler() {
       @Override
@@ -66,6 +67,27 @@ public class PlexHttpClient
     });
   }
 
+	public static void get(Context context, String url, Header[] headers, final PlexHttpResponseHandler responseHandler) {
+		Logger.d("Fetching %s", url);
+		client.get(context, url, headers, new RequestParams(), new AsyncHttpResponseHandler() {
+			@Override
+			public void onSuccess(int statusCode, org.apache.http.Header[] headers, byte[] responseBody) {
+				PlexResponse r = new PlexResponse();
+				try {
+					r = serial.read(PlexResponse.class, new String(responseBody, "UTF-8"));
+				} catch (Exception e) {
+					Logger.e("Exception parsing response: %s", e.toString());
+				}
+				responseHandler.onSuccess(r);
+			}
+
+			@Override
+			public void onFailure(int statusCode, org.apache.http.Header[] headers, byte[] responseBody, java.lang.Throwable error) {
+				responseHandler.onFailure(error);
+			}
+		});
+	}
+
 	public static void get(String url, final PlexHttpResponseHandler responseHandler) {
 		Logger.d("Fetching %s", url);
 		client.get(url, new RequestParams(), new AsyncHttpResponseHandler() {
@@ -78,6 +100,28 @@ public class PlexHttpClient
 					Logger.e("Exception parsing response: %s", e.toString());
 				}
 				responseHandler.onSuccess(r);
+			}
+
+			@Override
+			public void onFailure(int statusCode, org.apache.http.Header[] headers, byte[] responseBody, java.lang.Throwable error) {
+				responseHandler.onFailure(error);
+			}
+		});
+	}
+
+	public static void getPinCode(Context context, Header[] headers, final PlexPinResponseHandler responseHandler) {
+		client.post(context, "https://plex.tv:443/pins.xml", headers, new RequestParams(), "text/xml", new AsyncHttpResponseHandler()
+		{
+			@Override
+			public void onSuccess(int statusCode, org.apache.http.Header[] headers, byte[] responseBody) {
+
+				Pin pin = new Pin();
+				try {
+					pin = serial.read(Pin.class, new String(responseBody, "UTF-8"));
+				} catch (Exception e) {
+					Logger.e("Exception parsing response: %s", e.toString());
+				}
+				responseHandler.onSuccess(pin);
 			}
 
 			@Override
@@ -123,7 +167,7 @@ public class PlexHttpClient
       try {
 				String url = String.format("http://%s:%s%s", track.server.address, track.server.port, track.thumb);
 				if(track.server.accessToken != null)
-					url += String.format("?%s=%s", MainActivity.PlexHeaders.XPlexToken, track.server.accessToken);
+					url += String.format("?%s=%s", PlexHeaders.XPlexToken, track.server.accessToken);
         Logger.d("Fetching thumb: %s", url);
         AsyncHttpClient httpClient = new AsyncHttpClient();
         httpClient.get(url, new BinaryHttpResponseHandler() {
@@ -152,7 +196,7 @@ public class PlexHttpClient
       try {
 				String url = String.format("http://%s:%s%s", video.server.address, video.server.port, video.thumb);
 				if(video.server.accessToken != null)
-					url += String.format("?%s=%s", MainActivity.PlexHeaders.XPlexToken, video.server.accessToken);
+					url += String.format("?%s=%s", PlexHeaders.XPlexToken, video.server.accessToken);
         Logger.d("Fetching Video Thumb: %s", url);
         AsyncHttpClient httpClient = new AsyncHttpClient();
         httpClient.get(url, new BinaryHttpResponseHandler() {

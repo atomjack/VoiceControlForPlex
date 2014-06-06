@@ -11,7 +11,7 @@
 
 // For usage examples see http://tasker.dinglisch.net/invoketasks.html
 
-package com.atomjack.vcfp;
+package com.atomjack.vcfp.tasker;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;

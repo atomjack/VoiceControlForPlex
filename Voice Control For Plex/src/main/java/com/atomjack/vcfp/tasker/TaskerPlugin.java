@@ -1,4 +1,4 @@
-package com.atomjack.vcfp;
+package com.atomjack.vcfp.tasker;
 
 // Constants and functions for Tasker *extensions* to the plugin protocol
 // See Also: http://tasker.dinglisch.net/plugins.html

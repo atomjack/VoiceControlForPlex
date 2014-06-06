@@ -1,7 +1,5 @@
 package com.atomjack.vcfp;
 
-import android.app.Dialog;
-import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
 
@@ -18,23 +16,25 @@ import org.simpleframework.xml.Serializer;
 import org.simpleframework.xml.core.Persister;
 
 import java.util.HashMap;
-import java.util.Map;
 
 public class RemoteScan {
 	private SharedPreferences mPrefs;
 	private Gson gson = new Gson();
-	public String authenticationToken;
 
 	private static AsyncHttpClient client = new AsyncHttpClient();
 	private static Serializer serial = new Persister();
 
 	public RemoteScan(SharedPreferences prefs) {
 		mPrefs = prefs;
-		authenticationToken = mPrefs.getString(VoiceControlForPlexApplication.Pref.AUTHENTICATION_TOKEN, null);
 	}
 
-	public void refreshResources(final Runnable onFinish) {
-		String url = String.format("https://plex.tv/pms/resources?%s=%s", MainActivity.PlexHeaders.XPlexToken, authenticationToken);
+	public interface RefreshResourcesResponseHandler {
+		void onSuccess();
+		void onFailure(int statusCode);
+	}
+
+	public void refreshResources(String authToken, final RefreshResourcesResponseHandler responseHandler) {
+		String url = String.format("https://plex.tv/pms/resources?%s=%s", PlexHeaders.XPlexToken, authToken);
 		Logger.d("Fetching %s", url);
 		client.get(url, new RequestParams(), new AsyncHttpResponseHandler() {
 			@Override
@@ -69,11 +69,10 @@ public class RemoteScan {
 							}
 						}
  					}
-					mPrefs.edit().putString(VoiceControlForPlexApplication.Pref.SAVED_CLIENTS, gson.toJson(VoiceControlForPlexApplication.clients));
+					mPrefs.edit().putString(Preferences.SAVED_CLIENTS, gson.toJson(VoiceControlForPlexApplication.clients));
 					mPrefs.edit().commit();
 
-					onFinish.run();
-//					responseHandler.onSuccess(mediaContainer);
+					responseHandler.onSuccess();
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -81,8 +80,9 @@ public class RemoteScan {
 
 			@Override
 			public void onFailure(int statusCode, org.apache.http.Header[] headers, byte[] responseBody, java.lang.Throwable error) {
-				Logger.d("Failure getting resources");
+				Logger.d("Failure getting resources: %d", statusCode);
 				error.printStackTrace();
+				responseHandler.onFailure(statusCode);
 //				responseHandler.onFailure(error);
 			}
 		});

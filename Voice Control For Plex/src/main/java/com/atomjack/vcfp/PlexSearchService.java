@@ -9,6 +9,8 @@ import android.os.IBinder;
 import android.speech.RecognizerIntent;
 import android.support.v4.content.LocalBroadcastManager;
 
+import com.atomjack.vcfp.activities.MainActivity;
+import com.atomjack.vcfp.activities.NowPlayingActivity;
 import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexDirectory;
@@ -745,7 +747,7 @@ public class PlexSearchService extends Service {
 			if(transientToken != null)
 				qs.add("token", transientToken);
 			if(video.server.accessToken != null)
-				qs.add(MainActivity.PlexHeaders.XPlexToken, video.server.accessToken);
+				qs.add(PlexHeaders.XPlexToken, video.server.accessToken);
 
 			String url = String.format("http://%s:%s/player/playback/playMedia?%s", client.host, client.port, qs);
 			PlexHttpClient.get(url, new PlexHttpResponseHandler()
@@ -1345,7 +1347,7 @@ public class PlexSearchService extends Service {
 			qs.add("containerKey", album.key);
 		if(mPrefs.getBoolean("resume", false) || resumePlayback)
 			qs.add("viewOffset", track.viewOffset);
-		qs.add(MainActivity.PlexHeaders.XPlexTargetClientIdentifier, client.machineIdentifier);
+		qs.add(PlexHeaders.XPlexTargetClientIdentifier, client.machineIdentifier);
 		String url = String.format("http://%s:%s/player/playback/playMedia?%s", client.host, client.port, qs);
 
 		PlexHttpClient.get(url, new PlexHttpResponseHandler()

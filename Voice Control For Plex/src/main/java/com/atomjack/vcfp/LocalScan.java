@@ -10,6 +10,7 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
 
+import com.atomjack.vcfp.adapters.PlexListAdapter;
 import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexServer;
@@ -156,7 +157,7 @@ public class LocalScan {
 				} else {
 					Logger.d("Clients: " + clients.size());
 					SharedPreferences.Editor mPrefsEditor = mPrefs.edit();
-					mPrefsEditor.putString(VoiceControlForPlexApplication.Pref.SAVED_CLIENTS, gson.toJson(clients));
+					mPrefsEditor.putString(Preferences.SAVED_CLIENTS, gson.toJson(clients));
 					mPrefsEditor.commit();
 					showPlexClients(clients);
 				}

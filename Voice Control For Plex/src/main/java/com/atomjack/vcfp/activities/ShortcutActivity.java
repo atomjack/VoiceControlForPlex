@@ -1,4 +1,4 @@
-package com.atomjack.vcfp;
+package com.atomjack.vcfp.activities;
 
 import android.app.Activity;
 import android.app.PendingIntent;
@@ -6,6 +6,10 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.speech.RecognizerIntent;
+
+import com.atomjack.vcfp.PlexSearchService;
+import com.atomjack.vcfp.R;
+import com.atomjack.vcfp.VoiceControlForPlexApplication;
 
 import java.math.BigInteger;
 import java.security.SecureRandom;

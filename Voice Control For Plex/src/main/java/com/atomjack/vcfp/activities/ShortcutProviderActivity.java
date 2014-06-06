@@ -1,4 +1,4 @@
-package com.atomjack.vcfp;
+package com.atomjack.vcfp.activities;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -10,6 +10,13 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
 
+import com.atomjack.vcfp.GDMService;
+import com.atomjack.vcfp.LocalScan;
+import com.atomjack.vcfp.Logger;
+import com.atomjack.vcfp.Preferences;
+import com.atomjack.vcfp.R;
+import com.atomjack.vcfp.ScanHandler;
+import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexDevice;
 import com.atomjack.vcfp.model.PlexServer;
@@ -60,8 +67,8 @@ public class ShortcutProviderActivity extends Activity {
 
 		Type serverType = new TypeToken<ConcurrentHashMap<String, PlexServer>>(){}.getType();
 		Type clientType = new TypeToken<HashMap<String, PlexClient>>(){}.getType();
-		servers = gson.fromJson(mPrefs.getString(VoiceControlForPlexApplication.Pref.SAVED_SERVERS, ""), serverType);
-		clients = gson.fromJson(mPrefs.getString(VoiceControlForPlexApplication.Pref.SAVED_CLIENTS, ""), clientType);
+		servers = gson.fromJson(mPrefs.getString(Preferences.SAVED_SERVERS, ""), serverType);
+		clients = gson.fromJson(mPrefs.getString(Preferences.SAVED_CLIENTS, ""), clientType);
 
 		Logger.d("server: %s", servers);
 		boolean didScan = false;
