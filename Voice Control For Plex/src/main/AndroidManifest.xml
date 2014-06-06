@@ -35,14 +35,6 @@
                   android:label="Plex Search">
         </service>
         <activity
-            android:name=".PlayMediaActivity"
-            android:configChanges="orientation|screenSize"
-            android:label="@string/app_name" >
-            <intent-filter>
-                <action android:name="android.intent.action.SEND" />
-            </intent-filter>
-        </activity>
-        <activity
             android:name=".activities.NowPlayingActivity"
             android:configChanges="orientation|screenSize"
             android:label="@string/app_name" >
