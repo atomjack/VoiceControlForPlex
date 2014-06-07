@@ -1,17 +1,46 @@
 package com.atomjack.vcfp.model;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+
 import org.simpleframework.xml.Attribute;
 import org.simpleframework.xml.Root;
 import org.simpleframework.xml.core.Commit;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+
 @Root(strict=false)
-public class Connection {
+public class Connection implements Parcelable {
 	@Attribute
 	public String protocol;
 	@Attribute
 	public String address;
 	@Attribute
 	public String port;
+
+	public Connection() {}
+
+	public Connection(String _protocol, String _address, String _port) {
+		protocol = _protocol;
+		address = _address;
+		port = _port;
+		uri = String.format("%s://%s:%s", protocol, address, port);
+		try {
+			InetAddress ad = InetAddress.getByName(address);
+			local = ad.isSiteLocalAddress();
+		} catch (UnknownHostException e) {
+			local = false;
+			e.printStackTrace();
+		}
+	}
+
+	@Override
+	public int describeContents() {
+		return 0;
+	}
+
+
 	@Attribute
 	public String uri;
 	public boolean local;
@@ -24,4 +53,25 @@ public class Connection {
 		local = localStr == 1;
 	}
 
+	@Override
+	public void writeToParcel(Parcel parcel, int i) {
+		parcel.writeString(protocol);
+		parcel.writeString(address);
+		parcel.writeString(port);
+	}
+
+	public Connection(Parcel in) {
+		protocol = in.readString();
+		address = in.readString();
+		port = in.readString();
+	}
+
+	public static final Parcelable.Creator<Connection> CREATOR = new Parcelable.Creator<Connection>() {
+		public Connection createFromParcel(Parcel in) {
+			return new Connection(in);
+		}
+		public Connection[] newArray(int size) {
+			return new Connection[size];
+		}
+	};
 }

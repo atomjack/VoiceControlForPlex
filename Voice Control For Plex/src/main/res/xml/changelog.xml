@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog>
+    <release version="1.8.1b1" versioncode="15">
+        <change>Added Pin login.</change>
+        <change>Subscribe to player and exit from Now Playing screen if the player stops.</change>
+        <change>Improved local client discovery.</change>
+        <change>Scan all of a Plex Media Servers connections to find one that works. This will enable viewing content from a server you own but are trying to view from remotely.</change>
+    </release>
     <release version="1.8" versioncode="14">
         <change>Added Plex login, including support for shared libraries.</change>
         <change>Added ability to hardcode server and client into a homescreen shortcut.</change>

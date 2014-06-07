@@ -36,7 +36,11 @@ public class PlexHttpClient
   private static Serializer serial = new Persister();
 
 	public static void get(PlexServer server, String path, final PlexHttpMediaContainerHandler responseHandler) {
-		String url = String.format("http://%s:%s%s", server.address, server.port, path);
+		if(server.activeConnection == null) {
+			responseHandler.onFailure(new Throwable());
+			return;
+		}
+		String url = String.format("%s%s", server.activeConnection.uri, path);
 		if(server.accessToken != null)
 			url += String.format("%s%s=%s", (url.contains("?") ? "&" : "?"), PlexHeaders.XPlexToken, server.accessToken);
     Logger.d("Fetching %s", url);

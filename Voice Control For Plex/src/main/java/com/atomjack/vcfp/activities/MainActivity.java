@@ -7,7 +7,6 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
@@ -44,6 +43,7 @@ import android.widget.EditText;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 
+import com.atomjack.vcfp.BuildConfig;
 import com.atomjack.vcfp.Feedback;
 import com.atomjack.vcfp.FutureRunnable;
 import com.atomjack.vcfp.GDMService;
@@ -58,7 +58,6 @@ import com.atomjack.vcfp.ScanHandler;
 import com.atomjack.vcfp.tasker.TaskerPlugin;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.model.MainSetting;
-import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.Pin;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexDevice;
@@ -66,7 +65,6 @@ import com.atomjack.vcfp.model.PlexError;
 import com.atomjack.vcfp.model.PlexServer;
 import com.atomjack.vcfp.model.PlexUser;
 import com.atomjack.vcfp.net.PlexHttpClient;
-import com.atomjack.vcfp.net.PlexHttpMediaContainerHandler;
 import com.atomjack.vcfp.net.PlexHttpUserHandler;
 import com.atomjack.vcfp.net.PlexPinResponseHandler;
 import com.bugsense.trace.BugSenseHandler;
@@ -128,7 +126,8 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		BugSenseHandler.initAndStartSession(MainActivity.this, BUGSENSE_APIKEY);
+		if(BuildConfig.USE_BUGSENSE)
+			BugSenseHandler.initAndStartSession(MainActivity.this, BUGSENSE_APIKEY);
 
 
 		final WhatsNewDialog whatsNewDialog = new WhatsNewDialog(this);
@@ -148,6 +147,9 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 		setContentView(R.layout.main);
 
 		server = gson.fromJson(mPrefs.getString("Server", ""), PlexServer.class);
+		if(server == null)
+			server = new PlexServer(getString(R.string.scan_all));
+
 		client = gson.fromJson(mPrefs.getString("Client", ""), PlexClient.class);
 
 		localScan = new LocalScan(this, MainActivity.class, mPrefs, new ScanHandler() {
@@ -290,7 +292,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
 	private void initMainWithServer() {
 		MainSetting setting_data[] = new MainSetting[] {
-			new MainSetting(MainListAdapter.SettingHolder.TAG_SERVER, getResources().getString(R.string.stream_video_from_server), server != null ? (server.owned ? server.name : server.sourceTitle) : getResources().getString(R.string.scan_all)),
+			new MainSetting(MainListAdapter.SettingHolder.TAG_SERVER, getResources().getString(R.string.stream_video_from_server), server.owned ? server.name : server.sourceTitle),
 			new MainSetting(MainListAdapter.SettingHolder.TAG_CLIENT, getResources().getString(R.string.to_the_client), client != null ? client.name : getResources().getString(R.string.not_set)),
 			new MainSetting(MainListAdapter.SettingHolder.TAG_FEEDBACK, getResources().getString(R.string.feedback), mPrefs.getInt("feedback", FEEDBACK_TOAST) == FEEDBACK_VOICE ? getResources().getString(R.string.voice) : getResources().getString(R.string.toast)),
 			new MainSetting(MainListAdapter.SettingHolder.TAG_ERRORS, getResources().getString(R.string.errors), mPrefs.getInt("errors", FEEDBACK_TOAST) == FEEDBACK_VOICE ? getResources().getString(R.string.voice) : getResources().getString(R.string.toast))
@@ -319,6 +321,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 						remoteScan.refreshResources(authToken, new RemoteScan.RefreshResourcesResponseHandler() {
 							@Override
 							public void onSuccess() {
+								Logger.d("server: %s", VoiceControlForPlexApplication.servers.get("callandor"));
 								localScan.searchForPlexServers();
 							}
 
@@ -343,7 +346,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 						return;
 					}
 					if(server == null || server.owned)
-						localScan.getClients();
+						localScan.searchForPlexClients();
 					else {
 						Logger.d("have %d clients", VoiceControlForPlexApplication.clients.size());
 						localScan.showPlexClients(VoiceControlForPlexApplication.clients);
@@ -460,7 +463,19 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 	public void logout(MenuItem item) {
 		mPrefsEditor.remove(Preferences.AUTHENTICATION_TOKEN);
 		authToken = null;
-		VoiceControlForPlexApplication.servers = new ConcurrentHashMap<String, PlexServer>();
+
+		// If the currently selected server is not local, reset it to scan all.
+		if(!server.local) {
+			server = new PlexServer(getString(R.string.scan_all));
+			initMainWithServer();
+		}
+
+		// Remove any non-local servers from our list
+		for(PlexServer s : VoiceControlForPlexApplication.servers.values()) {
+			if(!s.local)
+				VoiceControlForPlexApplication.servers.remove(s.name);
+		}
+
 		mPrefsEditor.putString(Preferences.SAVED_SERVERS, gson.toJson(VoiceControlForPlexApplication.servers));
 		mPrefsEditor.commit();
 		MenuItem loginItem = menu.findItem(R.id.menu_login);
@@ -754,25 +769,36 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 			Logger.d("Origin: " + intent.getStringExtra("ORIGIN"));
 			String origin = intent.getStringExtra("ORIGIN") == null ? "" : intent.getStringExtra("ORIGIN");
 			if(origin.equals("MainActivity")) {
-				Logger.d("Got " + VoiceControlForPlexApplication.servers.size() + " servers");
+				if(intent.getStringExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE).equals("server")) {
+					Logger.d("Got " + VoiceControlForPlexApplication.servers.size() + " servers");
 
-				mPrefsEditor.putString(Preferences.SAVED_SERVERS, gson.toJson(VoiceControlForPlexApplication.servers));
-				mPrefsEditor.commit();
-				if(VoiceControlForPlexApplication.servers.size() > 0) {
-					localScan.showPlexServers();
-				} else {
-					if(searchDialog != null)
-						searchDialog.hide();
-					AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-						builder.setTitle("No Plex Servers Found");
+					mPrefsEditor.putString(Preferences.SAVED_SERVERS, gson.toJson(VoiceControlForPlexApplication.servers));
+					mPrefsEditor.commit();
+					if (VoiceControlForPlexApplication.servers.size() > 0) {
+						localScan.showPlexServers();
+					} else {
+						if (searchDialog != null)
+							searchDialog.hide();
+						AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+						builder.setTitle(R.string.no_servers_found);
 						builder.setCancelable(false)
-							.setNeutralButton(R.string.ok, new DialogInterface.OnClickListener() {
-										public void onClick(DialogInterface dialog, int id) {
+										.setNeutralButton(R.string.ok, new DialogInterface.OnClickListener() {
+											public void onClick(DialogInterface dialog, int id) {
 												dialog.cancel();
-										}
-							});
+											}
+										});
 						AlertDialog d = builder.create();
 						d.show();
+					}
+				} else if(intent.getStringExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE).equals("client")) {
+					ArrayList<PlexClient> clients = intent.getParcelableArrayListExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLIENTS);
+					VoiceControlForPlexApplication.clients = new HashMap<String, PlexClient>();
+					for(PlexClient c : clients) {
+						VoiceControlForPlexApplication.clients.put(c.name, c);
+					}
+					mPrefsEditor.putString(Preferences.SAVED_CLIENTS, gson.toJson(VoiceControlForPlexApplication.clients));
+					mPrefsEditor.commit();
+					localScan.showPlexClients(VoiceControlForPlexApplication.clients);
 				}
 			} else if(origin.equals("ScanForClients")) {
 				// No default server specified, so we need to search all servers for all clients
@@ -785,30 +811,11 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
 	private void setServer(PlexServer _server) {
 		Logger.d("Setting Server %s", _server.name);
-		if(_server.name.equals(getResources().getString(R.string.scan_all)))
-			server = null;
-		else
-			server = _server;
+		server = _server;
 		saveSettings();
 
 		if(client == null) {
-			if(_server.name.equals(getResources().getString(R.string.scan_all))) {
-				localScan.scanServersForClients();
-			} else {
-				PlexHttpClient.get(server, "/", new PlexHttpMediaContainerHandler() {
-					@Override
-					public void onSuccess(MediaContainer mediaContainer) {
-						Logger.d("Machine id: " + mediaContainer.machineIdentifier);
-						localScan.getClients(mediaContainer);
-					}
-
-					@Override
-					public void onFailure(Throwable error) {
-						feedback.e(getResources().getString(R.string.got_error), error.getMessage());
-						finish();
-					}
-				});
-			}
+			localScan.searchForPlexClients();
 		} else {
 			initMainWithServer();
 		}

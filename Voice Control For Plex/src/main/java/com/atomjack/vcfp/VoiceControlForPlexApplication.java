@@ -29,11 +29,13 @@ public class VoiceControlForPlexApplication
 
 	public final static class Intent {
 			public final static String GDMRECEIVE = "com.atomjack.vcfp.intent.gdmreceive";
-			public final static String SERVER = "com.atomjack.vcfp.intent.server";
-			public final static String CLIENT = "com.atomjack.vcfp.intent.client";
 
 			public final static String EXTRA_SERVER = "com.atomjack.vcfp.intent.extra_server";
 			public final static String EXTRA_CLIENT = "com.atomjack.vcfp.intent.extra_client";
+
+			public final static String SCAN_TYPE = "com.atomjack.vcfp.intent.scan_type";
+			public final static String EXTRA_SERVERS = "com.atomjack.vcfp.intent.extra_servers";
+			public final static String EXTRA_CLIENTS = "com.atomjack.vcfp.intent.extra_clients";
 			public final static String ARGUMENTS = "com.atomjack.vcfp.intent.ARGUMENTS";
 
 			public final static String SHOWRESOURCE = "com.atomjack.vcfp.intent.SHOWRESOURCE";
@@ -70,7 +72,7 @@ public class VoiceControlForPlexApplication
 	}
 
 	public static void addPlexServer(final PlexServer server) {
-		Logger.d("ADDING PLEX SERVER: %s", server.name);
+		Logger.d("ADDING PLEX SERVER: %s, %s", server.name, server.address);
 		if(server.name.equals("") || server.address.equals("")) {
 			return;
 		}
@@ -104,7 +106,7 @@ public class VoiceControlForPlexApplication
 								}
 								Logger.d("%s has %d directories.", server.name, mc.directories != null ? mc.directories.size() : 0);
 								if(!server.name.equals("") && !server.address.equals("")) {
-									servers.putIfAbsent(server.name, server);
+									servers.put(server.name, server);
 									Logger.d("Added %s.", server.name);
 								}
 						}
@@ -114,7 +116,13 @@ public class VoiceControlForPlexApplication
 				Logger.e("Exception getting clients: %s", e.toString());
 			}
 		} else {
-			Logger.d("%s already added.", server.name);
+			// Copy over the sections from the locally found server. We'll want to include the Connections that belong to the server that come from plex.tv
+			PlexServer thatServer = servers.get(server.name);
+			server.musicSections = thatServer.musicSections;
+			server.movieSections = thatServer.movieSections;
+			server.tvSections = thatServer.tvSections;
+			servers.put(thatServer.name, thatServer);
+			Logger.d("%s already added.", thatServer.name);
 		}
 	}
 

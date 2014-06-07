@@ -8,9 +8,6 @@ import org.simpleframework.xml.Root;
 
 @Root(name="Server", strict=false)
 public class PlexClient extends PlexDevice {
-	@Attribute
-	public String host;
-
 	public PlexClient() {
 
 	}
@@ -36,7 +33,7 @@ public class PlexClient extends PlexDevice {
 		parcel.writeString(port);
 		parcel.writeString(version);
 		parcel.writeString(product);
-		parcel.writeString(host);
+		parcel.writeString(address);
 	}
 
 	public PlexClient(Parcel in) {
@@ -44,7 +41,7 @@ public class PlexClient extends PlexDevice {
 		port = in.readString();
 		version = in.readString();
 		product = in.readString();
-		host = in.readString();
+		address = in.readString();
 	}
 
 	public static final Parcelable.Creator<PlexClient> CREATOR = new Parcelable.Creator<PlexClient>() {

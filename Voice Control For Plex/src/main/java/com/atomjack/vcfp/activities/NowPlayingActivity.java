@@ -271,7 +271,7 @@ public class NowPlayingActivity extends Activity {
 			new BasicHeader(PlexHeaders.XPlexClientIdentifier, VoiceControlForPlexApplication.getUUID(mPrefs)),
 			new BasicHeader(PlexHeaders.XPlexDeviceName, getString(R.string.app_name))
 		};
-		PlexHttpClient.get(NowPlayingActivity.this, String.format("http://%s:%s/player/timeline/subscribe?%s", client.host, client.port, qs), headers, new PlexHttpResponseHandler() {
+		PlexHttpClient.get(NowPlayingActivity.this, String.format("http://%s:%s/player/timeline/subscribe?%s", client.address, client.port, qs), headers, new PlexHttpResponseHandler() {
 			@Override
 			public void onSuccess(PlexResponse response) {
 				Logger.d("Subscribed");
@@ -297,7 +297,7 @@ public class NowPlayingActivity extends Activity {
 			new BasicHeader(PlexHeaders.XPlexDeviceName, getString(R.string.app_name)),
 			new BasicHeader(PlexHeaders.XPlexTargetClientIdentifier, client.machineIdentifier)
 		};
-		PlexHttpClient.get(NowPlayingActivity.this, String.format("http://%s:%s/player/timeline/unsubscribe?%s", client.host, client.port, qs), headers, new PlexHttpResponseHandler() {
+		PlexHttpClient.get(NowPlayingActivity.this, String.format("http://%s:%s/player/timeline/unsubscribe?%s", client.address, client.port, qs), headers, new PlexHttpResponseHandler() {
 			@Override
 			public void onSuccess(PlexResponse response) {
 				Logger.d("Unsubscribed");
@@ -318,10 +318,11 @@ public class NowPlayingActivity extends Activity {
 	protected void onDestroy() {
 		super.onDestroy();
 		try {
-			if(subscribed)
+			if(subscribed) {
 				unsubscribe();
-			serverThread.interrupt();
-			serverSocket.close();
+				serverThread.interrupt();
+				serverSocket.close();
+			}
 		} catch(Exception ex) {
 			ex.printStackTrace();
 		}

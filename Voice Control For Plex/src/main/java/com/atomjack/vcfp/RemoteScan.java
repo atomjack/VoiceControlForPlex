@@ -16,6 +16,7 @@ import org.simpleframework.xml.Serializer;
 import org.simpleframework.xml.core.Persister;
 
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class RemoteScan {
 	private SharedPreferences mPrefs;
@@ -34,6 +35,8 @@ public class RemoteScan {
 	}
 
 	public void refreshResources(String authToken, final RefreshResourcesResponseHandler responseHandler) {
+		VoiceControlForPlexApplication.servers = new ConcurrentHashMap<String, PlexServer>();
+		VoiceControlForPlexApplication.clients = new HashMap<String, PlexClient>();
 		String url = String.format("https://plex.tv/pms/resources?%s=%s", PlexHeaders.XPlexToken, authToken);
 		Logger.d("Fetching %s", url);
 		client.get(url, new RequestParams(), new AsyncHttpResponseHandler() {
@@ -56,7 +59,7 @@ public class RemoteScan {
 						if(device.provides.contains("server")) {
 
 							PlexServer server = PlexServer.fromDevice(device);
-							Logger.d("Device %s is a server", server.name);
+							Logger.d("Device %s is a server, has %d connections", server.name, server.connections.size());
 							VoiceControlForPlexApplication.addPlexServer(server);
 
 						} else if(device.provides.contains("player")) {

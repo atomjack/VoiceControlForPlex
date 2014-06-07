@@ -22,7 +22,6 @@ public class PlexListAdapter extends BaseAdapter {
 
   private String[] m_serverKeys;
   private String[] m_clientKeys;
-  private Dialog m_dialog;
 
   public final static int TYPE_SERVER = 0;
   public final static int TYPE_CLIENT = 1;
@@ -56,7 +55,7 @@ public class PlexListAdapter extends BaseAdapter {
   @Override
   public Object getItem(int position) {
     if(m_type == TYPE_SERVER)
-      return position == 0 ? new PlexServer("Scan All") : m_servers.get(m_serverKeys[position-1]);
+      return position == 0 ? new PlexServer(context.getString(R.string.scan_all)) : m_servers.get(m_serverKeys[position-1]);
     else if(m_type == TYPE_CLIENT)
       return m_clients.get(m_clientKeys[position]);
     return null;
@@ -75,7 +74,7 @@ public class PlexListAdapter extends BaseAdapter {
     if(m_type == TYPE_SERVER) {
       PlexServer server = (PlexServer)getItem(pos);
       TextView serverName = (TextView) rowView.findViewById(R.id.serverListName);
-			serverName.setText(server.name.equals("") ? context.getString(R.string.scan_all) : (!server.owned ? server.sourceTitle : server.name));
+			serverName.setText(!server.owned ? server.sourceTitle : server.name);
 			if(!server.name.equals(context.getString(R.string.scan_all))) {
 				TextView serverExtra = (TextView) rowView.findViewById(R.id.serverListExtra);
 				int numSections = server.movieSections.size() + server.tvSections.size() + server.musicSections.size();

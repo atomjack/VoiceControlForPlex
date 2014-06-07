@@ -61,6 +61,7 @@ public class LocalScan {
 		mServiceIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
 		mServiceIntent.putExtra("ORIGIN", theClass.getSimpleName());
 		mServiceIntent.putExtra("class", theClass);
+		mServiceIntent.putExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE, "server");
 		context.startService(mServiceIntent);
 	}
 
@@ -96,102 +97,37 @@ public class LocalScan {
 		});
 	}
 
-	public void getClients() {
-		getClients(new PlexServer("none"));
-	}
-
-	public void getClients(PlexServer _server) {
+	public void searchForPlexClients() {
+		Logger.d("searchForPlexClients()");
 		if(!VoiceControlForPlexApplication.isWifiConnected(context)) {
 			VoiceControlForPlexApplication.showNoWifiDialog(context);
 			return;
 		}
-		server = _server;
-		if(_server.name.equals("none"))
-			server = gson.fromJson(mPrefs.getString("Server", ""), PlexServer.class);
-		if(server == null || server.name.equals(context.getResources().getString(R.string.scan_all))) {
-			scanForClients();
-		} else {
-			getClients(new MediaContainer());
-		}
-	}
 
-	public void getClients(MediaContainer mc) {
-		PlexServer server = gson.fromJson(mPrefs.getString("Server", ""), PlexServer.class);
-		if(mc.machineIdentifier != null) {
-			server.machineIdentifier = mc.machineIdentifier;
-			SharedPreferences.Editor mPrefsEditor = mPrefs.edit();
-			mPrefsEditor.putString("Server", gson.toJson(server));
-			mPrefsEditor.commit();
-		}
-		if(searchDialog == null) {
-			searchDialog = new Dialog(context);
-		}
+		searchDialog = new Dialog(context);
 
 		searchDialog.setContentView(R.layout.search_popup);
-		searchDialog.setTitle("Searching for Plex Clients");
+		searchDialog.setTitle(context.getResources().getString(R.string.searching_for_plex_clients));
 
 		searchDialog.show();
-		PlexHttpClient.get(server, "/clients", new PlexHttpMediaContainerHandler() {
-			@Override
-			public void onSuccess(MediaContainer clientMC) {
-				// Exclude non-Plex Home Theater clients (pre 1.0.7)
-				Map<String, PlexClient> clients = new HashMap<String, PlexClient>();
-				for (int i = 0; i < clientMC.clients.size(); i++) {
-					if (!VoiceControlForPlexApplication.isVersionLessThan(clientMC.clients.get(i).version, VoiceControlForPlexApplication.MINIMUM_PHT_VERSION) || !clientMC.clients.get(i).product.equals("Plex Home Theater")) {
-						clients.put(clientMC.clients.get(i).name, clientMC.clients.get(i));
-					}
-				}
 
-				searchDialog.dismiss();
-				if (clients.size() == 0) {
-					AlertDialog.Builder builder = new AlertDialog.Builder(context);
-					builder.setTitle("No Plex Clients Found");
-					builder.setCancelable(false)
-									.setNeutralButton(R.string.ok, new DialogInterface.OnClickListener() {
-										public void onClick(DialogInterface dialog, int id) {
-											dialog.cancel();
-										}
-									});
-					AlertDialog d = builder.create();
-					d.show();
-				} else {
-					Logger.d("Clients: " + clients.size());
-					SharedPreferences.Editor mPrefsEditor = mPrefs.edit();
-					mPrefsEditor.putString(Preferences.SAVED_CLIENTS, gson.toJson(clients));
-					mPrefsEditor.commit();
-					showPlexClients(clients);
-				}
-			}
-
-			@Override
-			public void onFailure(Throwable error) {
-				searchDialog.dismiss();
-				feedback.e(context.getResources().getString(R.string.got_error), error.getMessage());
-			}
-		});
-	}
-
-	public void scanForClients() {
-		if(searchDialog == null) {
-			searchDialog = new Dialog(context);
-		}
-
-		searchDialog.setContentView(R.layout.search_popup);
-		searchDialog.setTitle("Searching for Plex Clients");
-
-		searchDialog.show();
 		Intent mServiceIntent = new Intent(context, GDMService.class);
-		mServiceIntent.putExtra("ORIGIN", "ScanForClients");
+		mServiceIntent.putExtra("port", 32412); // Port for clients
+		mServiceIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+		mServiceIntent.putExtra("ORIGIN", theClass.getSimpleName());
 		mServiceIntent.putExtra("class", theClass);
+		mServiceIntent.putExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE, "client");
 		context.startService(mServiceIntent);
 	}
 
 	public void showPlexClients(Map<String, PlexClient> clients) {
+		if(searchDialog != null)
+			searchDialog.dismiss();
 		if(serverSelectDialog == null) {
 			serverSelectDialog = new Dialog(context);
 		}
 		serverSelectDialog.setContentView(R.layout.server_select);
-		serverSelectDialog.setTitle("Select a Plex Client");
+		serverSelectDialog.setTitle(R.string.select_plex_client);
 		serverSelectDialog.show();
 
 		final ListView serverListView = (ListView)serverSelectDialog.findViewById(R.id.serverListView);
