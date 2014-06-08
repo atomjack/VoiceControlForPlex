@@ -184,7 +184,6 @@ public class PlexSearchService extends Service {
 		shows = new ArrayList<PlexDirectory>();
 
 		Gson gson = new Gson();
-		Logger.d("default server json: %s", mPrefs.getString("Server", ""));
 		final PlexServer defaultServer = gson.fromJson(mPrefs.getString("Server", ""), PlexServer.class);
 		if(specifiedServer != null && client != null && !specifiedServer.name.equals(getResources().getString(R.string.scan_all))) {
 			// got a specified server and client from a shortcut
@@ -799,7 +798,7 @@ public class PlexSearchService extends Service {
 			qs.add("address", video.server.activeConnection.address);
 			Logger.d("address: %s", video.server.activeConnection.address);
 
-			if(mPrefs.getBoolean("resume", false) || resumePlayback)
+			if((mPrefs.getBoolean("resume", false) || resumePlayback) && video.viewOffset != null)
 				qs.add("viewOffset", video.viewOffset);
 			if(transientToken != null)
 				qs.add("token", transientToken);
@@ -1529,7 +1528,7 @@ public class PlexSearchService extends Service {
 		qs.add("address", track.server.activeConnection.address);
 		if(album != null)
 			qs.add("containerKey", album.key);
-		if(mPrefs.getBoolean("resume", false) || resumePlayback)
+		if((mPrefs.getBoolean("resume", false) || resumePlayback) && track.viewOffset != null)
 			qs.add("viewOffset", track.viewOffset);
 		qs.add(PlexHeaders.XPlexTargetClientIdentifier, client.machineIdentifier);
 		String url = String.format("http://%s:%s/player/playback/playMedia?%s", client.address, client.port, qs);

@@ -793,13 +793,28 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 					}
 				} else if(intent.getStringExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE).equals("client")) {
 					ArrayList<PlexClient> clients = intent.getParcelableArrayListExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLIENTS);
-					VoiceControlForPlexApplication.clients = new HashMap<String, PlexClient>();
-					for(PlexClient c : clients) {
-						VoiceControlForPlexApplication.clients.put(c.name, c);
+					if(clients != null) {
+						VoiceControlForPlexApplication.clients = new HashMap<String, PlexClient>();
+						for (PlexClient c : clients) {
+							VoiceControlForPlexApplication.clients.put(c.name, c);
+						}
+						mPrefsEditor.putString(Preferences.SAVED_CLIENTS, gson.toJson(VoiceControlForPlexApplication.clients));
+						mPrefsEditor.commit();
+						localScan.showPlexClients(VoiceControlForPlexApplication.clients);
+					} else {
+						if (searchDialog != null)
+							searchDialog.hide();
+						AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+						builder.setTitle(R.string.no_clients_found);
+						builder.setCancelable(false)
+										.setNeutralButton(R.string.ok, new DialogInterface.OnClickListener() {
+											public void onClick(DialogInterface dialog, int id) {
+												dialog.cancel();
+											}
+										});
+						AlertDialog d = builder.create();
+						d.show();
 					}
-					mPrefsEditor.putString(Preferences.SAVED_CLIENTS, gson.toJson(VoiceControlForPlexApplication.clients));
-					mPrefsEditor.commit();
-					localScan.showPlexClients(VoiceControlForPlexApplication.clients);
 				}
 			} else if(origin.equals("ScanForClients")) {
 				// No default server specified, so we need to search all servers for all clients

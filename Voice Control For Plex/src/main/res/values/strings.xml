@@ -96,4 +96,5 @@
     <string name="searching_for_plex_clients">Searching for Plex Clients</string>
     <string name="select_plex_client">Select a Plex Client</string>
     <string name="no_servers_found">No Plex Servers Found</string>
+    <string name="no_clients_found">No Plex Clients Found</string>
 </resources>

@@ -4,6 +4,7 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 import com.atomjack.vcfp.Logger;
+import com.atomjack.vcfp.PlexHeaders;
 import com.atomjack.vcfp.ServerFindHandler;
 import com.atomjack.vcfp.ServerTestHandler;
 import com.loopj.android.http.AsyncHttpClient;
@@ -13,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.http.Header;
+import org.apache.http.message.BasicHeader;
 import org.simpleframework.xml.Root;
 
 @Root(strict=false)
@@ -162,7 +164,7 @@ public class PlexServer extends PlexDevice {
 				} else {
 					int newConnectionIndex = connectionIndex + 1;
 					// TODO: Fix this
-					if(connections.size() < newConnectionIndex)
+					if(connections.size() <= newConnectionIndex)
 						handler.onFailure();
 					else
 						findServerConnection(newConnectionIndex, handler);
@@ -176,6 +178,8 @@ public class PlexServer extends PlexDevice {
 		Logger.d("testServerConnection: fetching %s", connection.uri);
 		// Set timeout to 2 seconds, we don't want this to take too long
 		httpClient.setTimeout(2000);
+		if(accessToken != null)
+			httpClient.addHeader(PlexHeaders.XPlexToken, accessToken);
 		httpClient.get(connection.uri, new AsyncHttpResponseHandler() {
 			@Override
 			public void onSuccess(int statusCode, org.apache.http.Header[] headers, byte[] responseBody) {
