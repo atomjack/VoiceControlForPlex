@@ -10,6 +10,7 @@ import org.simpleframework.xml.Serializer;
 import org.simpleframework.xml.core.Persister;
 
 import android.app.AlertDialog;
+import android.app.Application;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
@@ -23,15 +24,18 @@ import com.atomjack.vcfp.model.PlexServer;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
 
-public class VoiceControlForPlexApplication
+public class VoiceControlForPlexApplication extends Application
 {
 	public final static String MINIMUM_PHT_VERSION = "1.0.7";
+
+	private static boolean nowPlayingVisible;
 
 	public final static class Intent {
 			public final static String GDMRECEIVE = "com.atomjack.vcfp.intent.gdmreceive";
 
 			public final static String EXTRA_SERVER = "com.atomjack.vcfp.intent.extra_server";
 			public final static String EXTRA_CLIENT = "com.atomjack.vcfp.intent.extra_client";
+			public final static String EXTRA_RESUME = "com.atomjack.vcfp.intent.extra_resume";
 
 			public final static String SCAN_TYPE = "com.atomjack.vcfp.intent.scan_type";
 			public final static String EXTRA_SERVERS = "com.atomjack.vcfp.intent.extra_servers";
@@ -147,5 +151,17 @@ public class VoiceControlForPlexApplication
 			}
 		});
 		usageDialog.show();
+	}
+
+	public static boolean isNowPlayingVisible() {
+		return nowPlayingVisible;
+	}
+
+	public static void nowPlayingResumed() {
+		nowPlayingVisible = true;
+	}
+
+	public static void nowPlayingPaused() {
+		nowPlayingVisible = false;
 	}
 }

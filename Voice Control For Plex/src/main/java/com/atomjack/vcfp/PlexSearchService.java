@@ -100,6 +100,7 @@ public class PlexSearchService extends Service {
 
 			queries = new ArrayList<String>();
 
+			resumePlayback = false;
 
 			specifiedServer = gson.fromJson(intent.getStringExtra(VoiceControlForPlexApplication.Intent.EXTRA_SERVER), PlexServer.class);
 			if(specifiedServer != null)
@@ -107,6 +108,8 @@ public class PlexSearchService extends Service {
 			PlexClient thisClient = gson.fromJson(intent.getStringExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLIENT), PlexClient.class);
 			if(thisClient != null)
 				client = thisClient;
+			if(intent.getBooleanExtra(VoiceControlForPlexApplication.Intent.EXTRA_RESUME, false))
+				resumePlayback = true;
 
 			if (intent.getExtras().getStringArrayList(RecognizerIntent.EXTRA_RESULTS) != null) {
 				Logger.d("internal query");
@@ -246,8 +249,8 @@ public class PlexSearchService extends Service {
 			serversScanned = 0;
 			clients = new ArrayList<PlexClient>();
 			for(PlexServer server : plexmediaServers.values()) {
-				Logger.d("ip: %s", server.address);
-				Logger.d("port: %s", server.port);
+				Logger.d("ip: %s", server.activeConnection.address);
+				Logger.d("port: %s", server.activeConnection.port);
 
 				PlexHttpClient.get(server, "/clients", new PlexHttpMediaContainerHandler() {
 					@Override
@@ -282,7 +285,7 @@ public class PlexSearchService extends Service {
 	private myRunnable handleVoiceSearch(boolean noChange) {
 		Logger.d("GOT QUERY: %s", queryText);
 
-		resumePlayback = false;
+//		resumePlayback = false;
 
 		Pattern p;
 		Matcher matcher;
@@ -592,12 +595,14 @@ public class PlexSearchService extends Service {
 
 	private void stopPlayback() {
 		adjustPlayback("stop", getResources().getString(R.string.playback_stopped));
-		Intent stopIntent = new Intent(this, NowPlayingActivity.class);
-		stopIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-		stopIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-		stopIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-		stopIntent.putExtra("finish", true);
-		startActivity(stopIntent);
+		if(VoiceControlForPlexApplication.isNowPlayingVisible()) {
+			Intent stopIntent = new Intent(this, NowPlayingActivity.class);
+			stopIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+			stopIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+			stopIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+			stopIntent.putExtra("finish", true);
+			startActivity(stopIntent);
+		}
 	}
 
 	private void seekTo(int hours, int minutes, int seconds) {
@@ -789,10 +794,10 @@ public class PlexSearchService extends Service {
 			Logger.d("machine id: %s", video.server.machineIdentifier);
 			qs.add("key", video.key);
 			Logger.d("key: %s", video.key);
-			qs.add("port", video.server.port);
-			Logger.d("port: %s", video.server.port);
-			qs.add("address", video.server.address);
-			Logger.d("address: %s", video.server.address);
+			qs.add("port", video.server.activeConnection.port);
+			Logger.d("port: %s", video.server.activeConnection.port);
+			qs.add("address", video.server.activeConnection.address);
+			Logger.d("address: %s", video.server.activeConnection.address);
 
 			if(mPrefs.getBoolean("resume", false) || resumePlayback)
 				qs.add("viewOffset", video.viewOffset);
@@ -1520,8 +1525,8 @@ public class PlexSearchService extends Service {
 	private void playTrack(final PlexTrack track, final PlexDirectory album) {
 		QueryString qs = new QueryString("machineIdentifier", track.server.machineIdentifier);
 		qs.add("key", track.key);
-		qs.add("port", track.server.port);
-		qs.add("address", track.server.address);
+		qs.add("port", track.server.activeConnection.port);
+		qs.add("address", track.server.activeConnection.address);
 		if(album != null)
 			qs.add("containerKey", album.key);
 		if(mPrefs.getBoolean("resume", false) || resumePlayback)

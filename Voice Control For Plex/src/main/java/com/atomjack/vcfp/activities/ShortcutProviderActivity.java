@@ -41,6 +41,8 @@ public class ShortcutProviderActivity extends Activity {
 	ConcurrentHashMap<String, PlexServer> servers;
 	HashMap<String, PlexClient> clients;
 
+	private boolean resume = false;
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -51,13 +53,15 @@ public class ShortcutProviderActivity extends Activity {
 
 		localScan = new LocalScan(this, ShortcutProviderActivity.class, null, new ScanHandler() {
 			@Override
-			public void onDeviceSelected(PlexDevice device) {
+			public void onDeviceSelected(PlexDevice device, boolean _resume) {
 				Logger.d("chose %s", device.name);
 				if(device instanceof PlexServer) {
 					server = (PlexServer)device;
-					localScan.showPlexClients(clients);
+					localScan.showPlexClients(clients, true);
 				} else if(device instanceof PlexClient) {
 					client = (PlexClient)device;
+					resume = _resume;
+					Logger.d("checked: %s", resume);
 					createShortcut(false);
 				}
 			}
@@ -83,7 +87,6 @@ public class ShortcutProviderActivity extends Activity {
 				public void onClick(DialogInterface dialog, int id) {
 					dialog.dismiss();
 					localScan.showPlexServers(servers);
-//					selectServer();
 				}
 			});
 		}
@@ -113,6 +116,7 @@ public class ShortcutProviderActivity extends Activity {
 			Logger.d("setting client to %s", client.name);
 			launchIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_SERVER, gson.toJson(server));
 			launchIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLIENT, gson.toJson(client));
+			launchIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_RESUME, resume);
 			String label = server.name.equals(client.name) ? server.name : (server.owned ? server.name : server.sourceTitle) + "/" + client.name;
 			sendIntent.putExtra(Intent.EXTRA_SHORTCUT_NAME, label);
 		} else
@@ -126,27 +130,6 @@ public class ShortcutProviderActivity extends Activity {
 
 		finish();
 	}
-	/*
-	@Override
-	public void onNewIntent(Intent intent) {
-		Logger.d("on new intent in ShortcutProvider");
-		Logger.d("Got " + VoiceControlForPlexApplication.getPlexMediaServers().size() + " servers");
-
-		Intent.ShortcutIconResource icon = Intent.ShortcutIconResource.fromContext(this, R.drawable.ic_launcher);
-
-		Intent sendIntent = new Intent();
-
-		Intent launchIntent = new Intent(this, ShortcutActivity.class);
-
-		sendIntent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, launchIntent);
-		sendIntent.putExtra(Intent.EXTRA_SHORTCUT_NAME, getResources().getString(R.string.app_name));
-		sendIntent.putExtra(Intent.EXTRA_SHORTCUT_ICON_RESOURCE, icon);
-
-		setResult(RESULT_OK, sendIntent);
-
-		finish();
-	}
-*/
 
 	@Override
 	protected void onDestroy() {

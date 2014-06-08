@@ -3,7 +3,6 @@ package com.atomjack.vcfp.adapters;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import android.app.Dialog;
 import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;

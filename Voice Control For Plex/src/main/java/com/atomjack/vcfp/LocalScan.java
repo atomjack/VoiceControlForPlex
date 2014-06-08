@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.CheckBox;
 import android.widget.ListView;
 
 import com.atomjack.vcfp.adapters.PlexListAdapter;
@@ -92,7 +93,7 @@ public class LocalScan {
 				Logger.d("Clicked position %d", position);
 				PlexServer s = (PlexServer)parentAdapter.getItemAtPosition(position);
 				serverSelectDialog.dismiss();
-				scanHandler.onDeviceSelected(s);
+				scanHandler.onDeviceSelected(s, false);
 			}
 		});
 	}
@@ -121,6 +122,10 @@ public class LocalScan {
 	}
 
 	public void showPlexClients(Map<String, PlexClient> clients) {
+		showPlexClients(clients, false);
+	}
+
+	public void showPlexClients(Map<String, PlexClient> clients, boolean showResume) {
 		if(searchDialog != null)
 			searchDialog.dismiss();
 		if(serverSelectDialog == null) {
@@ -129,6 +134,11 @@ public class LocalScan {
 		serverSelectDialog.setContentView(R.layout.server_select);
 		serverSelectDialog.setTitle(R.string.select_plex_client);
 		serverSelectDialog.show();
+
+		if(showResume) {
+			CheckBox resumeCheckbox = (CheckBox)serverSelectDialog.findViewById(R.id.serverListResume);
+			resumeCheckbox.setVisibility(View.VISIBLE);
+		}
 
 		final ListView serverListView = (ListView)serverSelectDialog.findViewById(R.id.serverListView);
 		final PlexListAdapter adapter = new PlexListAdapter(context, PlexListAdapter.TYPE_CLIENT);
@@ -141,7 +151,8 @@ public class LocalScan {
 															long id) {
 				PlexClient s = (PlexClient)parentAdapter.getItemAtPosition(position);
 				serverSelectDialog.dismiss();
-				scanHandler.onDeviceSelected(s);
+				CheckBox resumeCheckbox = (CheckBox)serverSelectDialog.findViewById(R.id.serverListResume);
+				scanHandler.onDeviceSelected(s, resumeCheckbox.isChecked());
 			}
 
 		});

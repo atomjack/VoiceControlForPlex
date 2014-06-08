@@ -167,6 +167,8 @@ public class NowPlayingActivity extends Activity {
 
 				try {
 
+					if(serverSocket == null)
+						return;
 					socket = serverSocket.accept();
 
 					Map<String, String> headers = new HashMap<String, String>();
@@ -254,12 +256,26 @@ public class NowPlayingActivity extends Activity {
 					unsubscribe(new Runnable() {
 						@Override
 						public void run() {
-							finish();
+							if(VoiceControlForPlexApplication.isNowPlayingVisible())
+								finish();
 						}
 					});
 				}
 			}
 		}
+	}
+
+	@Override
+	protected void onPause() {
+		super.onPause();
+		VoiceControlForPlexApplication.nowPlayingPaused();
+		Logger.d("now playing paused");
+	}
+
+	@Override
+	protected void onResume() {
+		super.onResume();
+		VoiceControlForPlexApplication.nowPlayingResumed();
 	}
 
 	private void subscribe() {

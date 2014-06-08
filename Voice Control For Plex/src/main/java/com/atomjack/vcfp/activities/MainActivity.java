@@ -154,7 +154,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
 		localScan = new LocalScan(this, MainActivity.class, mPrefs, new ScanHandler() {
 			@Override
-			public void onDeviceSelected(PlexDevice device) {
+			public void onDeviceSelected(PlexDevice device, boolean resume) {
 				if(device instanceof PlexServer)
 					setServer((PlexServer)device);
 				else if(device instanceof PlexClient)
@@ -467,6 +467,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 		// If the currently selected server is not local, reset it to scan all.
 		if(!server.local) {
 			server = new PlexServer(getString(R.string.scan_all));
+			saveSettings();
 			initMainWithServer();
 		}
 
