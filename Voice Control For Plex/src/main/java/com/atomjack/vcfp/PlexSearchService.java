@@ -26,7 +26,9 @@ import com.google.gson.Gson;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -42,10 +44,11 @@ public class PlexSearchService extends Service {
 	private Gson gson = new Gson();
 
 	private ConcurrentHashMap<String, PlexServer> plexmediaServers = new ConcurrentHashMap<String, PlexServer>();
-	private int serversScanned = 0;
+	private Map<String, PlexClient> clients;
+
 	private BroadcastReceiver gdmReceiver = new GDMReceiver();
 	private Intent mServiceIntent;
-	private List<PlexClient> clients;
+
 	private PlexClient client = null;
 	private PlexServer specifiedServer = null;
 	private int serversSearched = 0;
@@ -99,7 +102,7 @@ public class PlexSearchService extends Service {
 			client = null;
 
 			queries = new ArrayList<String>();
-
+			clients = (HashMap)VoiceControlForPlexApplication.clients;
 			resumePlayback = false;
 
 			specifiedServer = gson.fromJson(intent.getStringExtra(VoiceControlForPlexApplication.Intent.EXTRA_SERVER), PlexServer.class);
@@ -117,7 +120,8 @@ public class PlexSearchService extends Service {
 				ArrayList<String> voiceResults = intent.getExtras().getStringArrayList(RecognizerIntent.EXTRA_RESULTS);
 				for(String q : voiceResults) {
 					if(q.matches(getString(R.string.pattern_recognition))) {
-						queries.add(q);
+						if(!queries.contains(q.toLowerCase()))
+							queries.add(q.toLowerCase());
 					}
 				}
 				if(queries.size() == 0) {
@@ -178,6 +182,7 @@ public class PlexSearchService extends Service {
 
 	private void startup() {
 		queryText = queries.remove(0);
+
 		Logger.d("Starting up with query string: %s", queryText);
 		tracks = new ArrayList<PlexTrack>();
 		videos = new ArrayList<PlexVideo>();
@@ -232,49 +237,11 @@ public class PlexSearchService extends Service {
 	}
 
 	private void setClient() {
-		Pattern p = Pattern.compile(getString(R.string.pattern_on_client), Pattern.DOTALL);
-		Matcher matcher = p.matcher(queryText);
-		if(!matcher.find()) {
-			// Client not specified, so use default
-			Logger.d("Using default client since none specified in query: %s", client.name);
-			actionToDo = handleVoiceSearch();
-			if(actionToDo == null) {
-				startup();
-			} else
-				actionToDo.run();
-		} else {
-			// Get available clients
-			Logger.d("getting all available clients");
-			serversScanned = 0;
-			clients = new ArrayList<PlexClient>();
-			for(PlexServer server : plexmediaServers.values()) {
-				Logger.d("ip: %s", server.activeConnection.address);
-				Logger.d("port: %s", server.activeConnection.port);
-
-				PlexHttpClient.get(server, "/clients", new PlexHttpMediaContainerHandler() {
-					@Override
-					public void onSuccess(MediaContainer mc) {
-						serversScanned++;
-						Logger.d("Clients: %d", mc.clients.size());
-						for (int i = 0; i < mc.clients.size(); i++) {
-							clients.add(mc.clients.get(i));
-						}
-						if (serversScanned == plexmediaServers.size()) {
-							actionToDo = handleVoiceSearch();
-							if(actionToDo == null) {
-								startup();
-							} else
-								actionToDo.run();
-						}
-					}
-
-					@Override
-					public void onFailure(Throwable error) {
-						feedback.e(getResources().getString(R.string.got_error), error.getMessage());
-					}
-				});
-			}
-		}
+		actionToDo = handleVoiceSearch();
+		if(actionToDo == null) {
+			startup();
+		} else
+			actionToDo.run();
 	}
 
 	private myRunnable handleVoiceSearch() {
@@ -298,9 +265,10 @@ public class PlexSearchService extends Service {
 
 				Logger.d("Clients: %d", clients.size());
 				Logger.d("Specified client: %s", specifiedClient);
-				for (int i = 0; i < clients.size(); i++) {
-					if (clients.get(i).name.toLowerCase().equals(specifiedClient)) {
-						client = clients.get(i);
+				//for (int i = 0; i < clients.size(); i++) {
+				for(PlexClient c : clients.values()) {
+					if (c.name.toLowerCase().equals(specifiedClient)) {
+						client = c;
 						queryText = queryText.replaceAll(getString(R.string.pattern_on_client), "$1");
 						Logger.d("query text now %s", queryText);
 						break;
@@ -650,7 +618,7 @@ public class PlexSearchService extends Service {
 				@Override
 				public void onSuccess() {
 					server.movieSectionsSearched = 0;
-					Logger.d("Searching server: %s, %d sections", server.name, server.movieSections.size());
+					Logger.d("Searching server (for movies): %s, %d sections", server.name, server.movieSections.size());
 					if(server.movieSections.size() == 0) {
 						serversSearched++;
 						if(serversSearched == plexmediaServers.size()) {
@@ -686,6 +654,7 @@ public class PlexSearchService extends Service {
 
 							@Override
 							public void onFailure(Throwable error) {
+								error.printStackTrace();
 								feedback.e(getResources().getString(R.string.got_error), error.getMessage());
 							}
 						});
@@ -693,7 +662,7 @@ public class PlexSearchService extends Service {
 				}
 
 				@Override
-				public void onFailure() {
+				public void onFailure(int statusCode) {
 					serversSearched++;
 					if(serversSearched == plexmediaServers.size()) {
 						onMovieSearchFinished(queryTerm);
@@ -899,7 +868,7 @@ public class PlexSearchService extends Service {
 				}
 
 				@Override
-				public void onFailure() {
+				public void onFailure(int statusCode) {
 					serversSearched++;
 					if (serversSearched == plexmediaServers.size()) {
 						onFinishedNextEpisodeSearch(queryTerm, fallback);
@@ -984,6 +953,7 @@ public class PlexSearchService extends Service {
 
 							@Override
 							public void onFailure(Throwable error) {
+								error.printStackTrace();
 								feedback.e(getResources().getString(R.string.got_error), error.getMessage());
 							}
 						});
@@ -991,7 +961,7 @@ public class PlexSearchService extends Service {
 				}
 
 				@Override
-				public void onFailure() {
+				public void onFailure(int statusCode) {
 					serversSearched++;
 					if (serversSearched == plexmediaServers.size()) {
 						doLatestEpisode(queryTerm);
@@ -1114,7 +1084,7 @@ public class PlexSearchService extends Service {
 				}
 
 				@Override
-				public void onFailure() {
+				public void onFailure(int statusCode) {
 					serversSearched++;
 					if (serversSearched == plexmediaServers.size()) {
 						playSpecificEpisode(showSpecified);
@@ -1198,7 +1168,7 @@ public class PlexSearchService extends Service {
 				}
 
 				@Override
-				public void onFailure() {
+				public void onFailure(int statusCode) {
 					serversSearched++;
 					if (serversSearched == plexmediaServers.size()) {
 						doEpisodeSearch(queryTerm, season, episode);
@@ -1373,7 +1343,7 @@ public class PlexSearchService extends Service {
 				}
 
 				@Override
-				public void onFailure() {
+				public void onFailure(int statusCode) {
 					serversSearched++;
 					if(serversSearched == plexmediaServers.size()) {
 						if(albums.size() == 1) {
@@ -1469,7 +1439,7 @@ public class PlexSearchService extends Service {
 				}
 
 				@Override
-				public void onFailure() {
+				public void onFailure(int statusCode) {
 					serversSearched++;
 					if(serversSearched == plexmediaServers.size()) {
 						if(tracks.size() > 0) {

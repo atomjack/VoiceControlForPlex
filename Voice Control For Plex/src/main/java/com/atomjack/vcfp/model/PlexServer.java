@@ -156,16 +156,15 @@ public class PlexServer extends PlexDevice {
 		final Connection connection = connections.get(connectionIndex);
 		testServerConnection(connection, new ServerTestHandler() {
 			@Override
-			public void onFinish(boolean available) {
+			public void onFinish(int statusCode, boolean available) {
 				if(available) {
 					// This connection replied, so let's use it
 					activeConnection = connections.get(connectionIndex);
 					handler.onSuccess();
 				} else {
 					int newConnectionIndex = connectionIndex + 1;
-					// TODO: Fix this
 					if(connections.size() <= newConnectionIndex)
-						handler.onFailure();
+						handler.onFailure(statusCode);
 					else
 						findServerConnection(newConnectionIndex, handler);
 				}
@@ -175,22 +174,27 @@ public class PlexServer extends PlexDevice {
 
 	private void testServerConnection(final Connection connection, final ServerTestHandler handler) {
 		AsyncHttpClient httpClient = new AsyncHttpClient();
-		Logger.d("testServerConnection: fetching %s", connection.uri);
+
 		// Set timeout to 2 seconds, we don't want this to take too long
 		httpClient.setTimeout(2000);
+		String url = connection.uri;
 		if(accessToken != null)
-			httpClient.addHeader(PlexHeaders.XPlexToken, accessToken);
-		httpClient.get(connection.uri, new AsyncHttpResponseHandler() {
+			url += String.format("/?%s=%s", PlexHeaders.XPlexToken, accessToken);
+		Logger.d("testServerConnection: fetching %s", connection.uri);
+		httpClient.get(url, new AsyncHttpResponseHandler() {
 			@Override
 			public void onSuccess(int statusCode, org.apache.http.Header[] headers, byte[] responseBody) {
 				Logger.d("%s success", connection.uri);
-				handler.onFinish(true);
+				handler.onFinish(statusCode, true);
 			}
 
 			@Override
 			public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+				// unauthorized: 401
+				// timeout: 0
+				Logger.d("Status Code: %d", statusCode);
 				Logger.d("%s failed", connection.uri);
-				handler.onFinish(false);
+				handler.onFinish(statusCode, false);
 			}
 		});
 	}

@@ -99,8 +99,6 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
 	private Feedback feedback;
 
-	private Dialog searchDialog = null;
-
 	private FutureRunnable fetchPinTask;
 
 	private PlexServer server = null;
@@ -778,8 +776,6 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 					if (VoiceControlForPlexApplication.servers.size() > 0) {
 						localScan.showPlexServers();
 					} else {
-						if (searchDialog != null)
-							searchDialog.hide();
 						AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
 						builder.setTitle(R.string.no_servers_found);
 						builder.setCancelable(false)
@@ -802,8 +798,6 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 						mPrefsEditor.commit();
 						localScan.showPlexClients(VoiceControlForPlexApplication.clients);
 					} else {
-						if (searchDialog != null)
-							searchDialog.hide();
 						AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
 						builder.setTitle(R.string.no_clients_found);
 						builder.setCancelable(false)
@@ -816,9 +810,6 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 						d.show();
 					}
 				}
-			} else if(origin.equals("ScanForClients")) {
-				// No default server specified, so we need to search all servers for all clients
-				localScan.scanServersForClients();
 			}
 		}
 	}
