@@ -34,6 +34,7 @@ public class PlexClient extends PlexDevice {
 		parcel.writeString(version);
 		parcel.writeString(product);
 		parcel.writeString(address);
+		parcel.writeString(machineIdentifier);
 	}
 
 	public PlexClient(Parcel in) {
@@ -42,6 +43,7 @@ public class PlexClient extends PlexDevice {
 		version = in.readString();
 		product = in.readString();
 		address = in.readString();
+		machineIdentifier = in.readString();
 	}
 
 	public static final Parcelable.Creator<PlexClient> CREATOR = new Parcelable.Creator<PlexClient>() {

@@ -7,7 +7,7 @@ import org.simpleframework.xml.Root;
 public class Timeline {
 	@Attribute
 	public String state;
-	@Attribute
+	@Attribute(required=false)
 	public String time;
 	@Attribute
 	public String type;

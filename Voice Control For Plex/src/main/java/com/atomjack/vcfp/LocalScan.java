@@ -121,6 +121,11 @@ public class LocalScan {
 		context.startService(mServiceIntent);
 	}
 
+	public void hideSearchDialog() {
+		if(searchDialog != null)
+			searchDialog.dismiss();
+	}
+
 	public void showPlexClients(Map<String, PlexClient> clients) {
 		showPlexClients(clients, false);
 	}

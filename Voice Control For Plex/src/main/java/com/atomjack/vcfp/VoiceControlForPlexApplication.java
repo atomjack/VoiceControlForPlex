@@ -28,7 +28,7 @@ public class VoiceControlForPlexApplication extends Application
 {
 	public final static String MINIMUM_PHT_VERSION = "1.0.7";
 
-	private static boolean nowPlayingVisible;
+	private static boolean isApplicationVisible;
 
 	public final static class Intent {
 			public final static String GDMRECEIVE = "com.atomjack.vcfp.intent.gdmreceive";
@@ -82,20 +82,25 @@ public class VoiceControlForPlexApplication extends Application
 		}
 		if (!servers.containsKey(server.name)) {
 			try {
-				String url = String.format("http://%s:%s/library/sections/", server.address, server.port);
-				if(server.accessToken != null)
-					url += String.format("?%s=%s", PlexHeaders.XPlexToken, server.accessToken);
-				AsyncHttpClient httpClient = new AsyncHttpClient();
-				httpClient.get(url, new AsyncHttpResponseHandler() {
-						@Override
-						public void onSuccess(int statusCode, org.apache.http.Header[] headers, byte[] responseBody) {
+				server.findServerConnection(new ServerFindHandler() {
+					@Override
+					public void onSuccess() {
+						Logger.d("active connection: %s", server.activeConnection);
+						String url = String.format("http://%s:%s/library/sections/", server.activeConnection.address, server.activeConnection.port);
+						if(server.accessToken != null)
+							url += String.format("?%s=%s", PlexHeaders.XPlexToken, server.accessToken);
+						AsyncHttpClient httpClient = new AsyncHttpClient();
+						Logger.d("Fetching %s", url);
+						httpClient.get(url, new AsyncHttpResponseHandler() {
+							@Override
+							public void onSuccess(int statusCode, org.apache.http.Header[] headers, byte[] responseBody) {
 								MediaContainer mc = new MediaContainer();
 								try {
 									mc = serial.read(MediaContainer.class, new String(responseBody, "UTF-8"));
 								} catch (NotFoundException e) {
-										e.printStackTrace();
+									e.printStackTrace();
 								} catch (Exception e) {
-										e.printStackTrace();
+									e.printStackTrace();
 								}
 								for(int i=0;i<mc.directories.size();i++) {
 									if(mc.directories.get(i).type.equals("movie")) {
@@ -113,8 +118,16 @@ public class VoiceControlForPlexApplication extends Application
 									servers.put(server.name, server);
 									Logger.d("Added %s.", server.name);
 								}
-						}
+							}
+						});
+					}
+
+					@Override
+					public void onFailure(int statusCode) {
+						// TODO: Handle failure here
+					}
 				});
+
 
 			} catch (Exception e) {
 				Logger.e("Exception getting clients: %s", e.toString());
@@ -153,15 +166,15 @@ public class VoiceControlForPlexApplication extends Application
 		usageDialog.show();
 	}
 
-	public static boolean isNowPlayingVisible() {
-		return nowPlayingVisible;
+	public static boolean isApplicationVisible() {
+		return isApplicationVisible;
 	}
 
-	public static void nowPlayingResumed() {
-		nowPlayingVisible = true;
+	public static void applicationResumed() {
+		isApplicationVisible = true;
 	}
 
-	public static void nowPlayingPaused() {
-		nowPlayingVisible = false;
+	public static void applicationPaused() {
+		isApplicationVisible = false;
 	}
 }

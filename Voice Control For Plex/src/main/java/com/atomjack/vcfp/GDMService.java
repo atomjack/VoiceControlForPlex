@@ -31,7 +31,7 @@ public class GDMService extends IntentService {
 				int port = intent.getIntExtra("port", 32414); // Default port, for Plex Media Servers (Clients use 32412)
 				DatagramSocket socket = new DatagramSocket(32420);
 				socket.setBroadcast(true);
-				String data = "M-SEARCH * HTTP/1.0";
+				String data = "M-SEARCH * HTTP/1.1";
 				DatagramPacket packet = new DatagramPacket(data.getBytes(), data.length(), getBroadcastAddress(), port);
 				socket.send(packet);
 				Logger.i("Search Packet Broadcasted");

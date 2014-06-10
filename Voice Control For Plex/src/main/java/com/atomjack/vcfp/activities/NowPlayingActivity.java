@@ -49,6 +49,7 @@ public class NowPlayingActivity extends Activity {
 	private int commandId = 0;
 	private int subscriptionPort = 7777;
 	private boolean subscribed = false;
+	private boolean subscriptionHasStarted = false;
 	private ServerSocket serverSocket;
 	Thread serverThread = null;
 	Handler updateConversationHandler;
@@ -252,14 +253,17 @@ public class NowPlayingActivity extends Activity {
 			if(type != null) {
 				Timeline timeline = mc.getTimeline(type);
 				// If the playing media has stopped, unsubscribe then exit from this activity.
-				if(timeline.state.equals("stopped")) {
+				if(timeline.state.equals("stopped") && subscriptionHasStarted) {
 					unsubscribe(new Runnable() {
 						@Override
 						public void run() {
-							if(VoiceControlForPlexApplication.isNowPlayingVisible())
+							subscriptionHasStarted = false;
+							if(VoiceControlForPlexApplication.isApplicationVisible())
 								finish();
 						}
 					});
+				} else if(timeline.state.equals("playing")) {
+					subscriptionHasStarted = true;
 				}
 			}
 		}
@@ -268,14 +272,15 @@ public class NowPlayingActivity extends Activity {
 	@Override
 	protected void onPause() {
 		super.onPause();
-		VoiceControlForPlexApplication.nowPlayingPaused();
+		VoiceControlForPlexApplication.applicationPaused();
 		Logger.d("now playing paused");
 	}
 
 	@Override
 	protected void onResume() {
 		super.onResume();
-		VoiceControlForPlexApplication.nowPlayingResumed();
+		Logger.d("now playing resumed");
+		VoiceControlForPlexApplication.applicationResumed();
 	}
 
 	private void subscribe() {
@@ -325,7 +330,8 @@ public class NowPlayingActivity extends Activity {
 
 			@Override
 			public void onFailure(Throwable error) {
-
+				// TODO: Handle failure here?
+				Logger.d("failure unsubscribing");
 			}
 		});
 	}

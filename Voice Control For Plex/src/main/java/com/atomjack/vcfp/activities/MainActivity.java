@@ -798,6 +798,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 						mPrefsEditor.commit();
 						localScan.showPlexClients(VoiceControlForPlexApplication.clients);
 					} else {
+						localScan.hideSearchDialog();
 						AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
 						builder.setTitle(R.string.no_clients_found);
 						builder.setCancelable(false)
@@ -883,6 +884,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 	@Override
 	protected void onPause() {
 		super.onPause();
+		VoiceControlForPlexApplication.applicationPaused();
 		if(gdmReceiver != null) {
 			LocalBroadcastManager.getInstance(this).unregisterReceiver(gdmReceiver);
 		}
@@ -891,6 +893,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 	@Override
 	protected void onResume() {
 		super.onResume();
+		VoiceControlForPlexApplication.applicationResumed();
 		if(gdmReceiver != null) {
 			IntentFilter filters = new IntentFilter();
 			filters.addAction(GDMService.MSG_RECEIVED);

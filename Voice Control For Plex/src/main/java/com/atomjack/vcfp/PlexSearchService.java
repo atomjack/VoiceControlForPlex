@@ -562,7 +562,7 @@ public class PlexSearchService extends Service {
 
 	private void stopPlayback() {
 		adjustPlayback("stop", getResources().getString(R.string.playback_stopped));
-		if(VoiceControlForPlexApplication.isNowPlayingVisible()) {
+		if(VoiceControlForPlexApplication.isApplicationVisible()) {
 			Intent stopIntent = new Intent(this, NowPlayingActivity.class);
 			stopIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
 			stopIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
