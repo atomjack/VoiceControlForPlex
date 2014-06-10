@@ -120,6 +120,7 @@ public class PlexServer extends PlexDevice {
 		parcel.writeString(address);
 		parcel.writeString(accessToken);
 		parcel.writeTypedList(connections);
+		parcel.writeParcelable(activeConnection, i);
 	}
 
 	public PlexServer(Parcel in) {
@@ -131,6 +132,7 @@ public class PlexServer extends PlexDevice {
 		address = in.readString();
 		accessToken = in.readString();
 		in.readTypedList(connections, Connection.CREATOR);
+		activeConnection = in.readParcelable(Connection.class.getClassLoader());
 	}
 
 	public static final Parcelable.Creator<PlexServer> CREATOR = new Parcelable.Creator<PlexServer>() {
