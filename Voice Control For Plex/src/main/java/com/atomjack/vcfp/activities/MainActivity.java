@@ -348,12 +348,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 						feedback.e(getResources().getString(R.string.no_wifi_connection_message));
 						return;
 					}
-					if(server == null || server.owned)
-						localScan.searchForPlexClients();
-					else {
-						Logger.d("have %d clients", VoiceControlForPlexApplication.clients.size());
-						localScan.showPlexClients(VoiceControlForPlexApplication.clients);
-					}
+					localScan.searchForPlexClients();
 				} else if (holder.tag.equals(holder.TAG_FEEDBACK)) {
 					selectFeedback();
 				} else if (holder.tag.equals(holder.TAG_ERRORS)) {
