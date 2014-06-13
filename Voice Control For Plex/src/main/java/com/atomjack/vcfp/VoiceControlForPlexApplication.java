@@ -1,5 +1,6 @@
 package com.atomjack.vcfp;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -36,6 +37,8 @@ public class VoiceControlForPlexApplication extends Application
 			public final static String EXTRA_SERVER = "com.atomjack.vcfp.intent.extra_server";
 			public final static String EXTRA_CLIENT = "com.atomjack.vcfp.intent.extra_client";
 			public final static String EXTRA_RESUME = "com.atomjack.vcfp.intent.extra_resume";
+			public final static String EXTRA_SILENT = "com.atomjack.vcfp.intent.extra_silent";
+
 
 			public final static String SCAN_TYPE = "com.atomjack.vcfp.intent.scan_type";
 			public final static String EXTRA_SERVERS = "com.atomjack.vcfp.intent.extra_servers";
@@ -76,6 +79,10 @@ public class VoiceControlForPlexApplication extends Application
 	}
 
 	public static void addPlexServer(final PlexServer server) {
+		addPlexServer(server, null);
+	}
+
+	public static void addPlexServer(final PlexServer server, final Runnable onFinish) {
 		Logger.d("ADDING PLEX SERVER: %s, %s", server.name, server.address);
 		if(server.name.equals("") || server.address.equals("")) {
 			return;
@@ -102,6 +109,9 @@ public class VoiceControlForPlexApplication extends Application
 								} catch (Exception e) {
 									e.printStackTrace();
 								}
+								server.movieSections = new ArrayList<String>();
+								server.tvSections = new ArrayList<String>();
+								server.musicSections = new ArrayList<String>();
 								for(int i=0;i<mc.directories.size();i++) {
 									if(mc.directories.get(i).type.equals("movie")) {
 										server.addMovieSection(mc.directories.get(i).key);
@@ -114,10 +124,12 @@ public class VoiceControlForPlexApplication extends Application
 									}
 								}
 								Logger.d("%s has %d directories.", server.name, mc.directories != null ? mc.directories.size() : 0);
-								if(!server.name.equals("") && !server.address.equals("")) {
+								if(!server.name.equals("")) {
 									servers.put(server.name, server);
 									Logger.d("Added %s.", server.name);
 								}
+								if(onFinish != null)
+									onFinish.run();
 							}
 						});
 					}
@@ -125,6 +137,7 @@ public class VoiceControlForPlexApplication extends Application
 					@Override
 					public void onFailure(int statusCode) {
 						// TODO: Handle failure here
+						Logger.d("Failed to find connection for %s: %d", server.name, statusCode);
 					}
 				});
 

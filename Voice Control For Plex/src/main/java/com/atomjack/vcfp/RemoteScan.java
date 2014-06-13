@@ -15,7 +15,9 @@ import com.loopj.android.http.RequestParams;
 import org.simpleframework.xml.Serializer;
 import org.simpleframework.xml.core.Persister;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class RemoteScan {
@@ -35,6 +37,15 @@ public class RemoteScan {
 	}
 
 	public void refreshResources(String authToken, final RefreshResourcesResponseHandler responseHandler) {
+		refreshResources(authToken, responseHandler, false);
+	}
+
+	public void refreshResources(String authToken) {
+		refreshResources(authToken, null, true);
+	}
+
+
+	public void refreshResources(String authToken, final RefreshResourcesResponseHandler responseHandler, boolean silent) {
 		VoiceControlForPlexApplication.servers = new ConcurrentHashMap<String, PlexServer>();
 		VoiceControlForPlexApplication.clients = new HashMap<String, PlexClient>();
 		String url = String.format("https://plex.tv/pms/resources?%s=%s", PlexHeaders.XPlexToken, authToken);
@@ -53,15 +64,16 @@ public class RemoteScan {
 						e.printStackTrace();
 					}
 					Logger.d("got %d devices", mediaContainer.devices.size());
-					for(Device device : mediaContainer.devices) {
+
+					List<PlexServer> servers = new ArrayList<PlexServer>();
+					for(final Device device : mediaContainer.devices) {
 						if(device.lastSeenAt < System.currentTimeMillis()/1000 - (60*60*24))
 							continue;
 						if(device.provides.contains("server")) {
 
 							PlexServer server = PlexServer.fromDevice(device);
 							Logger.d("Device %s is a server, has %d connections", server.name, server.connections.size());
-							VoiceControlForPlexApplication.addPlexServer(server);
-
+							servers.add(server);
 						} else if(device.provides.contains("player")) {
 							Logger.d("Device %s is a player", device.name);
 							PlexClient client = PlexClient.fromDevice(device);
@@ -75,7 +87,26 @@ public class RemoteScan {
 					mPrefs.edit().putString(Preferences.SAVED_CLIENTS, gson.toJson(VoiceControlForPlexApplication.clients));
 					mPrefs.edit().commit();
 
-					responseHandler.onSuccess();
+					final int[] serversScanned = new int[1];
+					serversScanned[0] = 0;
+					final int numServers = servers.size();
+					for(final PlexServer server : servers) {
+						VoiceControlForPlexApplication.addPlexServer(server, new Runnable() {
+							@Override
+							public void run() {
+								Logger.d("Done scanning %s", server.name);
+								serversScanned[0]++;
+								Logger.d("%d out of %d servers scanned", serversScanned[0], numServers);
+								if(serversScanned[0] >= numServers && responseHandler != null)
+									responseHandler.onSuccess();
+							}
+						});
+					}
+
+
+
+
+
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -85,8 +116,8 @@ public class RemoteScan {
 			public void onFailure(int statusCode, org.apache.http.Header[] headers, byte[] responseBody, java.lang.Throwable error) {
 				Logger.d("Failure getting resources: %d", statusCode);
 				error.printStackTrace();
-				responseHandler.onFailure(statusCode);
-//				responseHandler.onFailure(error);
+				if(responseHandler != null)
+					responseHandler.onFailure(statusCode);
 			}
 		});
 	}

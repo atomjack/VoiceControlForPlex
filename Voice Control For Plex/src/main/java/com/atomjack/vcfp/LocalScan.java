@@ -45,22 +45,29 @@ public class LocalScan {
 	}
 
 	public void searchForPlexServers() {
+		searchForPlexServers(false);
+	}
+
+	public void searchForPlexServers(boolean silent) {
 		Logger.d("searchForPlexServers()");
 		if(!VoiceControlForPlexApplication.isWifiConnected(context)) {
 			VoiceControlForPlexApplication.showNoWifiDialog(context);
 			return;
 		}
 
-		searchDialog = new Dialog(context);
+		if(!silent) {
+			searchDialog = new Dialog(context);
 
-		searchDialog.setContentView(R.layout.search_popup);
-		searchDialog.setTitle(context.getResources().getString(R.string.searching_for_plex_servers));
+			searchDialog.setContentView(R.layout.search_popup);
+			searchDialog.setTitle(context.getResources().getString(R.string.searching_for_plex_servers));
 
-		searchDialog.show();
+			searchDialog.show();
+		}
 
 		Intent mServiceIntent = new Intent(context, GDMService.class);
 		mServiceIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
 		mServiceIntent.putExtra("ORIGIN", theClass.getSimpleName());
+		mServiceIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_SILENT, silent);
 		mServiceIntent.putExtra("class", theClass);
 		mServiceIntent.putExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE, "server");
 		context.startService(mServiceIntent);

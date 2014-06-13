@@ -66,6 +66,7 @@ public class GDMService extends IntentService {
 						listening = false;
 						Intent socketBroadcast = new Intent(GDMService.SOCKET_CLOSED);
 						socketBroadcast.putExtra("ORIGIN", origin);
+						socketBroadcast.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_SILENT, intent.getBooleanExtra(VoiceControlForPlexApplication.Intent.EXTRA_SILENT, false));
 						socketBroadcast.putExtra("class", intent.getSerializableExtra("class"));
 						socketBroadcast.putExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE, intent.getStringExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE));
 						if(queryText != null) {

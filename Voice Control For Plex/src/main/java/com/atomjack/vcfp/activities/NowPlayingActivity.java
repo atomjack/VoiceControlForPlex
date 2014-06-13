@@ -10,6 +10,7 @@ import android.widget.ImageView;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
+import com.atomjack.vcfp.BuildConfig;
 import com.atomjack.vcfp.Logger;
 import com.atomjack.vcfp.PlexHeaders;
 import com.atomjack.vcfp.QueryString;
@@ -23,6 +24,7 @@ import com.atomjack.vcfp.model.PlexVideo;
 import com.atomjack.vcfp.model.Timeline;
 import com.atomjack.vcfp.net.PlexHttpClient;
 import com.atomjack.vcfp.net.PlexHttpResponseHandler;
+import com.bugsense.trace.BugSenseHandler;
 
 import org.apache.http.Header;
 import org.apache.http.message.BasicHeader;
@@ -47,7 +49,7 @@ public class NowPlayingActivity extends Activity {
 	private PlexClient client = null;
 
 	private int commandId = 0;
-	private int subscriptionPort = 7777;
+	private int subscriptionPort = 59409;
 	private boolean subscribed = false;
 	private boolean subscriptionHasStarted = false;
 	private ServerSocket serverSocket;
@@ -64,7 +66,8 @@ public class NowPlayingActivity extends Activity {
 
 		mPrefs = getSharedPreferences(MainActivity.PREFS, MODE_PRIVATE);
 
-//		BugSenseHandler.initAndStartSession(NowPlayingActivity.this, MainActivity.BUGSENSE_APIKEY);
+		if(BuildConfig.USE_BUGSENSE)
+			BugSenseHandler.initAndStartSession(NowPlayingActivity.this, MainActivity.BUGSENSE_APIKEY);
 
 		setContentView(R.layout.play_media);
 
@@ -258,6 +261,14 @@ public class NowPlayingActivity extends Activity {
 						@Override
 						public void run() {
 							subscriptionHasStarted = false;
+							serverThread.interrupt();
+							try {
+								if (serverSocket != null) {
+									serverSocket.close();
+								}
+							} catch (Exception ex) {
+								ex.printStackTrace();
+							}
 							if(VoiceControlForPlexApplication.isApplicationVisible())
 								finish();
 						}
@@ -343,7 +354,12 @@ public class NowPlayingActivity extends Activity {
 			if(subscribed) {
 				unsubscribe();
 				serverThread.interrupt();
-				serverSocket.close();
+				if(serverSocket != null) {
+					serverSocket.close();
+					Logger.d("Closed serverSocket");
+				} else {
+					Logger.d("ServerSocket was null");
+				}
 			}
 		} catch(Exception ex) {
 			ex.printStackTrace();

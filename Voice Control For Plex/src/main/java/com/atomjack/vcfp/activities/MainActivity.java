@@ -112,6 +112,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 	private TextToSpeech tts;
 
 	Menu menu;
+	private Dialog searchDialog;
 
 	private String authToken;
 
@@ -315,12 +316,16 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 						return;
 					}
 					if(authToken != null) {
-						Logger.d("Logged in");
+						searchDialog = new Dialog(MainActivity.this);
+
+						searchDialog.setContentView(R.layout.search_popup);
+						searchDialog.setTitle(getResources().getString(R.string.searching_for_plex_servers));
+
+						searchDialog.show();
 						remoteScan.refreshResources(authToken, new RemoteScan.RefreshResourcesResponseHandler() {
 							@Override
 							public void onSuccess() {
-								Logger.d("server: %s", VoiceControlForPlexApplication.servers.get("callandor"));
-								localScan.searchForPlexServers();
+								localScan.searchForPlexServers(true);
 							}
 
 							@Override
@@ -580,6 +585,17 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 								public void run() {
 									feedback.m(R.string.logged_in);
 									switchLogin();
+									remoteScan.refreshResources(authToken, new RemoteScan.RefreshResourcesResponseHandler() {
+										@Override
+										public void onSuccess() {
+											feedback.t(R.string.servers_refreshed);
+										}
+
+										@Override
+										public void onFailure(int statusCode) {
+											feedback.e(R.string.remote_scan_error);
+										}
+									});
 								}
 							});
 							// We got the auth token, so cancel this task
@@ -773,6 +789,8 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
 					mPrefsEditor.putString(Preferences.SAVED_SERVERS, gson.toJson(VoiceControlForPlexApplication.servers));
 					mPrefsEditor.commit();
+					if(searchDialog != null)
+						searchDialog.dismiss();
 					if (VoiceControlForPlexApplication.servers.size() > 0) {
 						localScan.showPlexServers();
 					} else {

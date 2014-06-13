@@ -41,6 +41,13 @@ public class Connection implements Parcelable {
 	}
 
 
+	public String toString() {
+		String out = String.format("Address: %s", address);
+		out += String.format("Port: %s", port);
+		out += String.format("Protocol: %s", protocol);
+		return out;
+	}
+
 	@Attribute
 	public String uri;
 	public boolean local;
