@@ -401,9 +401,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 				checkIntent.setAction(TextToSpeech.Engine.ACTION_CHECK_TTS_DATA);
 				tts = new TextToSpeech(ctx, new TextToSpeech.OnInitListener() {
 					@Override
-					public void onInit(int i) {
-
-					}
+					public void onInit(int i) {}
 				});
 				String engine = tts.getDefaultEngine();
 				if (engine != null)
@@ -427,21 +425,6 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 		Intent intent = new Intent(this, ShortcutProviderActivity.class);
 
 		startActivityForResult(intent, RESULT_SHORTCUT_CREATED);
-
-//		startActivity(intent);
-		/*
-		Intent.ShortcutIconResource icon = Intent.ShortcutIconResource.fromContext(this, R.drawable.ic_launcher);
-
-		Intent launchIntent = new Intent(this, ShortcutActivity.class);
-
-		final Intent intent = new Intent();
-		intent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, launchIntent);
-		intent.putExtra(Intent.EXTRA_SHORTCUT_NAME, getString(R.string.app_name));
-		intent.putExtra(Intent.EXTRA_SHORTCUT_ICON_RESOURCE, Intent.ShortcutIconResource.fromContext(this, R.drawable.ic_launcher));
-		intent.setAction("com.android.launcher.action.INSTALL_SHORTCUT");
-
-		sendBroadcast(intent);
-		*/
 	}
 
 	public void showAbout(MenuItem item) {
@@ -506,10 +489,6 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 				feedback.e(R.string.login_error);
 			}
 		});
-
-		/*
-
-*/
 	}
 
 	private void switchLogin() {
