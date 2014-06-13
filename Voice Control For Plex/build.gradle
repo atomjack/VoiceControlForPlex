@@ -3,7 +3,7 @@ apply plugin: 'android'
 
 android {
     compileSdkVersion 19
-    buildToolsVersion '19.0.3'
+    buildToolsVersion '19.1.0'
 
     defaultConfig {
         minSdkVersion 14
@@ -27,6 +27,14 @@ android {
             debuggable false
             runProguard false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
+            buildConfigField "boolean", "USE_BUGSENSE", "true"
+        }
+        debug {
+            buildConfigField "boolean", "USE_BUGSENSE", "false"
+        }
+        beta {
+            signingConfig signingConfigs.debug
+            buildConfigField "boolean", "USE_BUGSENSE", "true"
         }
     }
     lintOptions {
