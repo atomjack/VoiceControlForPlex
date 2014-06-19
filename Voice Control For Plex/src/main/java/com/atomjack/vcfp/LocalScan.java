@@ -12,6 +12,7 @@ import android.widget.CheckBox;
 import android.widget.ListView;
 
 import com.atomjack.vcfp.adapters.PlexListAdapter;
+import com.atomjack.vcfp.model.CastClient;
 import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexServer;
@@ -151,6 +152,10 @@ public class LocalScan {
 			CheckBox resumeCheckbox = (CheckBox)serverSelectDialog.findViewById(R.id.serverListResume);
 			resumeCheckbox.setVisibility(View.VISIBLE);
 		}
+
+		// Add any chromecasts we've found
+		clients.putAll(VoiceControlForPlexApplication.castClients);
+
 
 		final ListView serverListView = (ListView)serverSelectDialog.findViewById(R.id.serverListView);
 		final PlexListAdapter adapter = new PlexListAdapter(context, PlexListAdapter.TYPE_CLIENT);
