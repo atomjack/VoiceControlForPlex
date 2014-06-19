@@ -149,8 +149,13 @@ public class PlexServer extends PlexDevice {
 		// If this server already has an active connection, just return it without trying it again.
 		if(activeConnection != null)
 			handler.onSuccess();
-		else
+		else {
+			// If this server has no connections, create one with the server's address and port.
+			// This can happen if a user was using the app before multiple connections were supported.
+			if(connections.size() == 0)
+				connections.add(new Connection("http", address, port));
 			findServerConnection(0, handler);
+		}
 	}
 
 	private void findServerConnection(final int connectionIndex, final ServerFindHandler handler) {
