@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog>
+    <release version="1.8.2" versioncode="17">
+        <change>Added Pin login.</change>
+        <change>Subscribe to player and exit from Now Playing screen if the player stops.</change>
+        <change>Improved local client discovery, including support for Roku and clients that have no local server.</change>
+        <change>Scan all of a Plex Media Server's connections to find one that works. This will enable viewing content from a server you own but are trying to view from remotely.</change>
+        <change>Bug fixes.</change>
+    </release>
     <release version="1.8.1" versioncode="16">
         <change>Added Pin login.</change>
         <change>Subscribe to player and exit from Now Playing screen if the player stops.</change>
