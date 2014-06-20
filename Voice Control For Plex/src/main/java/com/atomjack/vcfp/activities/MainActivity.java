@@ -348,6 +348,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 						feedback.e(getResources().getString(R.string.no_wifi_connection_message));
 						return;
 					}
+					VoiceControlForPlexApplication.clients = new HashMap<String, PlexClient>();
 					localScan.searchForPlexClients();
 				} else if (holder.tag.equals(holder.TAG_FEEDBACK)) {
 					selectFeedback();
@@ -717,9 +718,9 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 		usageDialog.setTitle(R.string.help_usage_button);
 		usageDialog.setMessage(R.string.help_usage);
 		usageDialog.setPositiveButton(R.string.got_it, new DialogInterface.OnClickListener() {
-					public void onClick(DialogInterface dialog, int id) {
-						dialog.dismiss();
-					}
+			public void onClick(DialogInterface dialog, int id) {
+				dialog.dismiss();
+			}
 		});
 		usageDialog.show();
 	}

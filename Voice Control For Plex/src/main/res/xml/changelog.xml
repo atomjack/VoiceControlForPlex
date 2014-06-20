@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog>
+    <release version="1.8.3" versioncode="18">
+        <change>Fixed a bug that sometimes prevented playback when a client is specified in the spoken query.</change>
+    </release>
     <release version="1.8.2" versioncode="17">
         <change>Added Pin login.</change>
         <change>Subscribe to player and exit from Now Playing screen if the player stops.</change>

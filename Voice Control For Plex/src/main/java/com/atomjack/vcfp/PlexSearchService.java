@@ -59,6 +59,8 @@ public class PlexSearchService extends Service {
 	private List<PlexTrack> tracks = new ArrayList<PlexTrack>();
 	private List<PlexDirectory> albums = new ArrayList<PlexDirectory>();
 
+	private boolean didClientScan = false;
+
 	private ArrayList<String> queries;
 	// Will be set to true after we scan for servers, so we don't have to do it again on the next query
 	private boolean didServerScan = false;
@@ -90,13 +92,25 @@ public class PlexSearchService extends Service {
 		}
 
 		if(intent.getAction() != null && intent.getAction().equals(VoiceControlForPlexApplication.Intent.GDMRECEIVE)) {
-			// We just scanned for servers and are returning from that, so set the servers we found
-			// and then figure out which client to play to
-			Logger.d("Got back from scanning for servers.");
-			videoPlayed = false;
-			plexmediaServers = VoiceControlForPlexApplication.servers;
-			didServerScan = true;
-			setClient();
+			if(intent.getStringExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE).equals("server")) {
+				// We just scanned for servers and are returning from that, so set the servers we found
+				// and then figure out which client to play to
+				Logger.d("Got back from scanning for servers.");
+				videoPlayed = false;
+				plexmediaServers = VoiceControlForPlexApplication.servers;
+				didServerScan = true;
+				setClient();
+			} else if(intent.getStringExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE).equals("client")) {
+				// Got back from client scan, so set didClientScan to true so we don't do this again, and save the clients we got, then continue
+				didClientScan = true;
+				ArrayList<PlexClient> cs = intent.getParcelableArrayListExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLIENTS);
+				VoiceControlForPlexApplication.clients = new HashMap<String, PlexClient>();
+				for(PlexClient c : cs) {
+					VoiceControlForPlexApplication.clients.put(c.name, c);
+				}
+				clients = (HashMap)VoiceControlForPlexApplication.clients;
+				startup();
+			}
 		} else {
 			queryText = null;
 			client = null;
@@ -182,6 +196,23 @@ public class PlexSearchService extends Service {
 
 	private void startup() {
 		queryText = queries.remove(0);
+
+		if(!didClientScan) {
+			if(queryText.matches(getString(R.string.pattern_on_client))) {
+				// A client was specified in the query, so let's scan for clients before proceeding.
+				// First, insert the query text back into the queries array, so we can use it after the scan is done.
+				queries.add(0, queryText);
+				Intent mServiceIntent = new Intent(this, GDMService.class);
+				mServiceIntent.putExtra("port", 32412); // Port for clients
+				mServiceIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+				mServiceIntent.putExtra("ORIGIN", PlexSearchService.class.getSimpleName());
+				mServiceIntent.putExtra("class", PlexSearchService.class);
+				mServiceIntent.putExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE, "client");
+				startService(mServiceIntent);
+				return;
+			}
+		}
+
 
 		Logger.d("Starting up with query string: %s", queryText);
 		tracks = new ArrayList<PlexTrack>();
