@@ -105,10 +105,6 @@ public class PlexSearchService extends Service {
 	// An instance of this interface will be returned by handleVoiceSearch when no server discovery is needed (e.g. pause/resume/stop playback or offset)
 	private interface stopRunnable extends myRunnable {}
 
-	private interface AfterTransientTokenRequest {
-		void success(String token);
-		void failure();
-	}
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		Logger.d("PlexSearch: onStartCommand");
@@ -123,6 +119,8 @@ public class PlexSearchService extends Service {
 			return Service.START_NOT_STICKY;
 		}
 
+		Logger.d("action: %s", intent.getAction());
+		Logger.d("scan type: %s", intent.getStringExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE));
 		if(intent.getAction() != null && intent.getAction().equals(VoiceControlForPlexApplication.Intent.GDMRECEIVE)) {
 			if(intent.getStringExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE).equals("server")) {
 				// We just scanned for servers and are returning from that, so set the servers we found
@@ -821,6 +819,7 @@ public class PlexSearchService extends Service {
 		if(video.server.owned)
 			playVideo(video, null);
 		else {
+			// TODO: switch this to the PlexServer method and verify
 			requestTransientAccessToken(video.server, new AfterTransientTokenRequest() {
 				@Override
 				public void success(String token) {
