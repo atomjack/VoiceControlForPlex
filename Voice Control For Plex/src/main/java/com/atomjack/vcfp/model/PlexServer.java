@@ -3,10 +3,13 @@ package com.atomjack.vcfp.model;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import com.atomjack.vcfp.AfterTransientTokenRequest;
 import com.atomjack.vcfp.Logger;
 import com.atomjack.vcfp.PlexHeaders;
 import com.atomjack.vcfp.ServerFindHandler;
 import com.atomjack.vcfp.ServerTestHandler;
+import com.atomjack.vcfp.net.PlexHttpClient;
+import com.atomjack.vcfp.net.PlexHttpMediaContainerHandler;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
 
@@ -201,6 +204,22 @@ public class PlexServer extends PlexDevice {
 				Logger.d("Status Code: %d", statusCode);
 				Logger.d("%s failed", connection.uri);
 				handler.onFinish(statusCode, false);
+			}
+		});
+	}
+
+	public void requestTransientAccessToken(final AfterTransientTokenRequest onFinish) {
+		String path = "/security/token?type=delegation&scope=all";
+		PlexHttpClient.get(this, path, new PlexHttpMediaContainerHandler() {
+			@Override
+			public void onSuccess(MediaContainer mediaContainer) {
+				onFinish.success(mediaContainer.token);
+			}
+
+			@Override
+			public void onFailure(Throwable error) {
+				error.printStackTrace();
+				onFinish.failure();
 			}
 		});
 	}

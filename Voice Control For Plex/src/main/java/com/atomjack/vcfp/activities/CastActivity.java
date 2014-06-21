@@ -9,7 +9,9 @@ import android.os.Handler;
 import android.support.v7.media.MediaRouter;
 import android.util.Log;
 
+import com.atomjack.vcfp.AfterTransientTokenRequest;
 import com.atomjack.vcfp.Logger;
+import com.atomjack.vcfp.PlexHeaders;
 import com.atomjack.vcfp.Preferences;
 import com.atomjack.vcfp.QueryString;
 import com.atomjack.vcfp.R;
@@ -74,30 +76,49 @@ public class CastActivity extends Activity {
 			castManager.addMiniController(miniController);
 
 
-			Logger.d("tag = %s", LogUtils.makeLogTag(BaseCastManager.class));
+			playingVideo.server.requestTransientAccessToken(new AfterTransientTokenRequest() {
+				@Override
+				public void success(String token) {
+					Logger.d("Got transient token: %s", token);
+					String url = getTranscodeUrl(playingVideo, token);
+//			url = "http://192.168.1.101:32400/video/:/transcode/universal/start?path=http%3A%2F%2F127.0.0.1%3A32400%2Flibrary%2Fmetadata%2F14&mediaIndex=0&partIndex=0&protocol=http&offset=0&fastSeek=1&directPlay=0&directStream=1&videoQuality=60&videoResolution=1024x768&maxVideoBitrate=2000&subtitleSize=100&audioBoost=100&session=v778c32skclkgldi&X-Plex-Client-Identifier=qhajaiikdxsthuxr&X-Plex-Product=Plex+Chromecast&X-Plex-Device=Chromecast&X-Plex-Platform=Chromecast&X-Plex-Platform-Version=1.0&X-Plex-Version=2.1.11&X-Plex-Device-Name=Chromecast&X-Plex-Token=transient-3938fefb-c3fa-4c9a-901a-65c13b4c05ea&X-Plex-Username=atomjack";
+					Logger.d("url: %s", url);
+					final MediaInfo mediaInfo = buildMediaInfo(
+									playingVideo.type.equals("movie") ? playingVideo.title : playingVideo.showTitle,
+									playingVideo.summary,
+									playingVideo.type.equals("movie") ? "" : playingVideo.title,
+									url,
+									playingVideo.getArtUri(),
+									playingVideo.getThumbUri()
+					);
 
-			String url = getTranscodeUrl(playingVideo);
-			Logger.d("url: %s", url);
-			MediaInfo mediaInfo = buildMediaInfo(
-							playingVideo.type.equals("movie") ? playingVideo.title : playingVideo.showTitle,
-							playingVideo.summary,
-							playingVideo.type.equals("movie") ? "" : playingVideo.title,
-							url,
-							playingVideo.getArtUri(),
-							playingVideo.getThumbUri()
-			);
+					final Handler handler = new Handler();
+					handler.postDelayed(new Runnable() {
+						@Override
+						public void run() {
+							try {
+								Logger.d("loading media");
+								castManager.loadMedia(mediaInfo, true, 0);
+							} catch(Exception ex) {
+								ex.printStackTrace();
+							}
+						}
+					}, 5000);
 
-			try {
-				Logger.d("loading media");
-				castManager.loadMedia(mediaInfo, true, 0);
-			} catch(Exception ex) {
-				ex.printStackTrace();
-			}
 
 //			castManager.startCastControllerActivity(this, mediaInfo, 0, true);
 
-			// TODO: Do this later
-			NowPlayingActivity.showNowPlaying(this, playingVideo, client);
+					// TODO: Do this later
+					NowPlayingActivity.showNowPlaying(CastActivity.this, playingVideo, client);
+				}
+
+				@Override
+				public void failure() {
+					// TODO: Handle this
+					Logger.d("Failed to get transient access token");
+				}
+			});
+
 
 
 
@@ -172,7 +193,7 @@ public class CastActivity extends Activity {
 						.build();
 	}
 
-	private String getTranscodeUrl(PlexVideo video) {
+	private String getTranscodeUrl(PlexVideo video, String transientToken) {
 		String url = video.server.activeConnection.uri;
 		url += "/video/:/transcode/universal/start?";
 		QueryString qs = new QueryString("path", String.format("http://127.0.0.1:32400%s", video.key));
@@ -190,9 +211,21 @@ public class CastActivity extends Activity {
 		qs.add("maxVideoBitrate", "2000");
 		qs.add("subtitleSize", "100");
 		qs.add("audioBoost", "100");
-		if(mPrefs.getString(Preferences.UUID, null) != null)
-			qs.add("session", mPrefs.getString(Preferences.UUID, null));
-//		qs.add(PlexHeaders.XPlexClientIdentifier)
+		qs.add("session", VoiceControlForPlexApplication.getUUID(mPrefs));
+		qs.add(PlexHeaders.XPlexClientIdentifier, VoiceControlForPlexApplication.getUUID(mPrefs));
+		qs.add(PlexHeaders.XPlexProduct, String.format("%s Chromecast", getString(R.string.app_name)));
+		qs.add(PlexHeaders.XPlexDevice, client.castDevice.getModelName());
+		qs.add(PlexHeaders.XPlexDeviceName, client.castDevice.getModelName());
+		qs.add(PlexHeaders.XPlexPlatform, client.castDevice.getModelName());
+		qs.add(PlexHeaders.XPlexToken, transientToken);
+		qs.add(PlexHeaders.XPlexPlatformVersion, "1.0");
+		try {
+			qs.add(PlexHeaders.XPlexVersion, getPackageManager().getPackageInfo(getPackageName(), 0).versionName);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+		// TODO: Fix this
+		qs.add(PlexHeaders.XPlexUsername, "atomjack");
 		return url + qs.toString();
 	}
 
