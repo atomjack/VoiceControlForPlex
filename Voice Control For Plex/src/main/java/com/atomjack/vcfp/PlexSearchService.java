@@ -261,6 +261,7 @@ public class PlexSearchService extends Service {
 				mServiceIntent.setAction(VoiceControlForPlexApplication.Intent.GDMRECEIVE);
 				mServiceIntent.putExtra("class", PlexSearchService.class);
 				mServiceIntent.putExtra("ORIGIN", "PlexSearch");
+				mServiceIntent.putExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE, "server");
 				startService(mServiceIntent);
 				feedback.m("Scanning for Plex Servers");
 			}
