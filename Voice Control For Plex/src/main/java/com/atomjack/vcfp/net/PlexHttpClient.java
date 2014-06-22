@@ -23,12 +23,14 @@ import com.loopj.android.http.BinaryHttpResponseHandler;
 import com.loopj.android.http.RequestParams;
 
 import org.apache.http.Header;
+import org.apache.http.message.BasicHeader;
 import org.simpleframework.xml.Serializer;
 import org.simpleframework.xml.core.Persister;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 
 public class PlexHttpClient
 {
@@ -135,9 +137,21 @@ public class PlexHttpClient
 		});
 	}
 
+	public static void signin(Context context, String authToken, Header[] headers, String contentType, final PlexHttpUserHandler responseHandler) {
+		signin(context, null, null, authToken, headers, contentType, responseHandler);
+	}
+
 	public static void signin(Context context, String username, String password, Header[] headers, String contentType, final PlexHttpUserHandler responseHandler) {
-		client.setBasicAuth(username, password);
-		client.post(context, "https://plex.tv/users/sign_in.xml", headers, new RequestParams(), contentType, new AsyncHttpResponseHandler() {
+		signin(context, username, password, null, headers, contentType, responseHandler);
+	}
+
+	public static void signin(Context context, String username, String password, String authToken, Header[] headers, String contentType, final PlexHttpUserHandler responseHandler) {
+		if(username != null && password != null)
+			client.setBasicAuth(username, password);
+		String url = "https://plex.tv/users/sign_in.xml";
+		if(authToken != null)
+			url += "?auth_token=" + authToken;
+		client.post(context, url, headers, new RequestParams(), contentType, new AsyncHttpResponseHandler() {
 			@Override
 			public void onSuccess(int statusCode, org.apache.http.Header[] headers, byte[] responseBody) {
 				Logger.d("signin success: %d", statusCode);

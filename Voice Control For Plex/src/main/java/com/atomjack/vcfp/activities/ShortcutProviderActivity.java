@@ -6,7 +6,6 @@ import android.content.BroadcastReceiver;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
 
@@ -67,12 +66,10 @@ public class ShortcutProviderActivity extends Activity {
 			}
 		});
 
-		SharedPreferences mPrefs = getSharedPreferences(MainActivity.PREFS, MODE_PRIVATE);
-
 		Type serverType = new TypeToken<ConcurrentHashMap<String, PlexServer>>(){}.getType();
 		Type clientType = new TypeToken<HashMap<String, PlexClient>>(){}.getType();
-		servers = gson.fromJson(mPrefs.getString(Preferences.SAVED_SERVERS, ""), serverType);
-		clients = gson.fromJson(mPrefs.getString(Preferences.SAVED_CLIENTS, ""), clientType);
+		servers = gson.fromJson(Preferences.get(Preferences.SAVED_SERVERS, ""), serverType);
+		clients = gson.fromJson(Preferences.get(Preferences.SAVED_CLIENTS, ""), clientType);
 
 		Logger.d("server: %s", servers);
 		boolean didScan = false;

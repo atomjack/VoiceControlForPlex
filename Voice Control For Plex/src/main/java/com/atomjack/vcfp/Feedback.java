@@ -8,15 +8,14 @@ import android.widget.Toast;
 import com.atomjack.vcfp.activities.MainActivity;
 
 public class Feedback implements TextToSpeech.OnInitListener {
-	private SharedPreferences mPrefs;
 	private TextToSpeech feedbackTts = null;
 	private TextToSpeech errorsTts = null;
 	private Context context;
 	private String feedbackQueue = null;
 	private String errorsQueue = null;
 
-	public Feedback(SharedPreferences prefs, Context ctx) {
-		mPrefs = prefs;
+
+	public Feedback(Context ctx) {
 		context = ctx;
 	}
 
@@ -24,9 +23,9 @@ public class Feedback implements TextToSpeech.OnInitListener {
 	public void onInit(int i) {
 		Logger.d("Feedback onInit");
 		if(errorsTts != null)
-			errorsTts.setLanguage(VoiceControlForPlexApplication.getVoiceLocale(mPrefs.getString(Preferences.ERRORS_VOICE, "Locale.US")));
+			errorsTts.setLanguage(VoiceControlForPlexApplication.getVoiceLocale(Preferences.get(Preferences.ERRORS_VOICE, "Locale.US")));
 		if(feedbackTts != null)
-			feedbackTts.setLanguage(VoiceControlForPlexApplication.getVoiceLocale(mPrefs.getString(Preferences.FEEDBACK_VOICE, "Locale.US")));
+			feedbackTts.setLanguage(VoiceControlForPlexApplication.getVoiceLocale(Preferences.get(Preferences.FEEDBACK_VOICE, "Locale.US")));
 
 		if(errorsQueue != null) {
 			feedback(errorsQueue, true);
@@ -81,7 +80,7 @@ public class Feedback implements TextToSpeech.OnInitListener {
 
 	private void feedback(String text, boolean errors, boolean forceToast) {
 
-		if(!forceToast && mPrefs.getInt(errors ? Preferences.ERRORS : Preferences.FEEDBACK, MainActivity.FEEDBACK_TOAST) == MainActivity.FEEDBACK_VOICE) {
+		if(!forceToast && Preferences.get(errors ? Preferences.ERRORS : Preferences.FEEDBACK, MainActivity.FEEDBACK_TOAST) == MainActivity.FEEDBACK_VOICE) {
 			TextToSpeech tts = errors ? errorsTts : feedbackTts;
 			if (tts == null) {
 				// This tts not set up yet, so initiate it and add the text to be spoken to the appropriate queue.

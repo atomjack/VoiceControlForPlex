@@ -39,14 +39,11 @@ public class CastActivity extends Activity {
 	private IVideoCastConsumer castConsumer;
 	private MiniController miniController;
 
-	private SharedPreferences mPrefs;
-
-
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		mPrefs = getSharedPreferences(MainActivity.PREFS, MODE_PRIVATE);
+		Preferences.setContext(this);
 
 		if(getIntent().getAction().equals(VoiceControlForPlexApplication.Intent.CAST_MEDIA)) {
 			playingVideo = getIntent().getParcelableExtra("video");
@@ -201,7 +198,7 @@ public class CastActivity extends Activity {
 		qs.add("partIndex", "0");
 		qs.add("protocol", "http");
 //		qs.add("offset")
-		if((mPrefs.getBoolean("resume", false) || resumePlayback) && video.viewOffset != null)
+		if((Preferences.get(Preferences.RESUME, false) || resumePlayback) && video.viewOffset != null)
 			qs.add("offset", video.viewOffset);
 		qs.add("fastSeek", "1");
 		qs.add("directPlay", "0");
@@ -211,8 +208,8 @@ public class CastActivity extends Activity {
 		qs.add("maxVideoBitrate", "2000");
 		qs.add("subtitleSize", "100");
 		qs.add("audioBoost", "100");
-		qs.add("session", VoiceControlForPlexApplication.getUUID(mPrefs));
-		qs.add(PlexHeaders.XPlexClientIdentifier, VoiceControlForPlexApplication.getUUID(mPrefs));
+		qs.add("session", Preferences.getUUID());
+		qs.add(PlexHeaders.XPlexClientIdentifier, Preferences.getUUID());
 		qs.add(PlexHeaders.XPlexProduct, String.format("%s Chromecast", getString(R.string.app_name)));
 		qs.add(PlexHeaders.XPlexDevice, client.castDevice.getModelName());
 		qs.add(PlexHeaders.XPlexDeviceName, client.castDevice.getModelName());
@@ -225,7 +222,7 @@ public class CastActivity extends Activity {
 			ex.printStackTrace();
 		}
 		// TODO: Fix this
-		qs.add(PlexHeaders.XPlexUsername, "atomjack");
+		qs.add(PlexHeaders.XPlexUsername, Preferences.get(Preferences.PLEX_USERNAME, ""));
 		return url + qs.toString();
 	}
 
