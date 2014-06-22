@@ -65,12 +65,14 @@ public class Connection implements Parcelable {
 		parcel.writeString(protocol);
 		parcel.writeString(address);
 		parcel.writeString(port);
+		parcel.writeString(uri);
 	}
 
 	public Connection(Parcel in) {
 		protocol = in.readString();
 		address = in.readString();
 		port = in.readString();
+		uri = in.readString();
 	}
 
 	public static final Parcelable.Creator<Connection> CREATOR = new Parcelable.Creator<Connection>() {

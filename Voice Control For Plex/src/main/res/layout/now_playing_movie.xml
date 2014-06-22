@@ -70,7 +70,15 @@
 		    android:layout_below="@+id/nowPlayingDuration"
 		    android:layout_marginTop="68dp"
 		    android:text="" />
-   
+
+        <com.google.sample.castcompanionlibrary.widgets.MiniController
+            android:id="@+id/miniController1"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:background="@drawable/shadow7"
+            android:visibility="gone" >
+        </com.google.sample.castcompanionlibrary.widgets.MiniController>
 	</RelativeLayout>
 
 

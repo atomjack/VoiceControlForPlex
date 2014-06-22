@@ -84,61 +84,73 @@ public class NowPlayingActivity extends Activity {
 			playingTrack = getIntent().getParcelableExtra("track");
 		}
 
+		if(getIntent().getAction().equals(VoiceControlForPlexApplication.Intent.CAST_MEDIA)) {
+			Logger.d("Casting %s", playingVideo.title);
+		}
+
 		if(client == null)
 			finish();
 
 		if(playingVideo != null) {
 			Logger.d("now playing %s", playingVideo.title);
-			if(playingVideo.type.equals("movie")) {
-				setContentView(R.layout.now_playing_movie);
-				TextView title = (TextView)findViewById(R.id.nowPlayingTitle);
-				title.setText(playingVideo.title);
-				TextView genre = (TextView)findViewById(R.id.nowPlayingGenre);
-				genre.setText(playingVideo.getGenres());
-				TextView year = (TextView)findViewById(R.id.nowPlayingYear);
-				year.setText(playingVideo.year);
-				TextView duration = (TextView)findViewById(R.id.nowPlayingDuration);
-				duration.setText(playingVideo.getDuration());
-				TextView summary = (TextView)findViewById(R.id.nowPlayingSummary);
-				summary.setText(playingVideo.summary);
-			} else {
-				setContentView(R.layout.now_playing_show);
+			showNowPlaying(this, playingVideo, client);
 
-				TextView showTitle = (TextView)findViewById(R.id.nowPlayingShowTitle);
-				showTitle.setText(playingVideo.showTitle);
-				TextView episodeTitle = (TextView)findViewById(R.id.nowPlayingEpisodeTitle);
-				episodeTitle.setText(playingVideo.title);
-				TextView year = (TextView)findViewById(R.id.nowPlayingYear);
-				year.setText(playingVideo.year);
-				TextView duration = (TextView)findViewById(R.id.nowPlayingDuration);
-				duration.setText(playingVideo.getDuration());
-				TextView summary = (TextView)findViewById(R.id.nowPlayingSummary);
-				summary.setText(playingVideo.summary);
-			}
-			TextView nowPlayingOnClient = (TextView)findViewById(R.id.nowPlayingOnClient);
-			nowPlayingOnClient.setText(getResources().getString(R.string.now_playing_on) + " " + client.name);
-
-			PlexHttpClient.setThumb(playingVideo, (ScrollView) findViewById(R.id.background));
 			startSubscription();
 		} else if(playingTrack != null) {
-
-			setContentView(R.layout.now_playing_music);
-
-			TextView artist = (TextView)findViewById(R.id.nowPlayingArtist);
-			artist.setText(playingTrack.artist);
-			TextView album = (TextView)findViewById(R.id.nowPlayingAlbum);
-			album.setText(playingTrack.album);
-			TextView title = (TextView)findViewById(R.id.nowPlayingTitle);
-			title.setText(playingTrack.title);
-
-			TextView nowPlayingOnClient = (TextView)findViewById(R.id.nowPlayingOnClient);
-			nowPlayingOnClient.setText(getResources().getString(R.string.now_playing_on) + " " + client.name);
-
-			PlexHttpClient.setThumb(playingTrack, (ImageView)findViewById(R.id.nowPlayingImage));
+			showNowPlaying(this, playingTrack, client);
 			startSubscription();
 		} else {
 			finish();
 		}
+	}
+
+	public static void showNowPlaying(Activity activity, PlexVideo video, PlexClient client) {
+		if(video.type.equals("movie")) {
+			activity.setContentView(R.layout.now_playing_movie);
+			TextView title = (TextView)activity.findViewById(R.id.nowPlayingTitle);
+			title.setText(video.title);
+			TextView genre = (TextView)activity.findViewById(R.id.nowPlayingGenre);
+			genre.setText(video.getGenres());
+			TextView year = (TextView)activity.findViewById(R.id.nowPlayingYear);
+			year.setText(video.year);
+			TextView duration = (TextView)activity.findViewById(R.id.nowPlayingDuration);
+			duration.setText(video.getDuration());
+			TextView summary = (TextView)activity.findViewById(R.id.nowPlayingSummary);
+			summary.setText(video.summary);
+		} else {
+			activity.setContentView(R.layout.now_playing_show);
+
+			TextView showTitle = (TextView)activity.findViewById(R.id.nowPlayingShowTitle);
+			showTitle.setText(video.showTitle);
+			TextView episodeTitle = (TextView)activity.findViewById(R.id.nowPlayingEpisodeTitle);
+			episodeTitle.setText(video.title);
+			TextView year = (TextView)activity.findViewById(R.id.nowPlayingYear);
+			year.setText(video.year);
+			TextView duration = (TextView)activity.findViewById(R.id.nowPlayingDuration);
+			duration.setText(video.getDuration());
+			TextView summary = (TextView)activity.findViewById(R.id.nowPlayingSummary);
+			summary.setText(video.summary);
+		}
+		TextView nowPlayingOnClient = (TextView)activity.findViewById(R.id.nowPlayingOnClient);
+		nowPlayingOnClient.setText(activity.getResources().getString(R.string.now_playing_on) + " " + client.name);
+
+		PlexHttpClient.setThumb(video, (ScrollView)activity.findViewById(R.id.background));
+	}
+
+	public static void showNowPlaying(Activity activity, PlexTrack track, PlexClient client) {
+		activity.setContentView(R.layout.now_playing_music);
+
+		TextView artist = (TextView)activity.findViewById(R.id.nowPlayingArtist);
+		artist.setText(track.artist);
+		TextView album = (TextView)activity.findViewById(R.id.nowPlayingAlbum);
+		album.setText(track.album);
+		TextView title = (TextView)activity.findViewById(R.id.nowPlayingTitle);
+		title.setText(track.title);
+
+		TextView nowPlayingOnClient = (TextView)activity.findViewById(R.id.nowPlayingOnClient);
+		nowPlayingOnClient.setText(activity.getResources().getString(R.string.now_playing_on) + " " + client.name);
+
+		PlexHttpClient.setThumb(track, (ImageView)activity.findViewById(R.id.nowPlayingImage));
 	}
 
 	private void startSubscription() {

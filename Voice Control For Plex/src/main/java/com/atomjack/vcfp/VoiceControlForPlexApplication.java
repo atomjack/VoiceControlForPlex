@@ -20,7 +20,6 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.support.v7.media.MediaRouter;
 
-import com.atomjack.vcfp.model.CastClient;
 import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexServer;
@@ -50,6 +49,8 @@ public class VoiceControlForPlexApplication extends Application
 
 			public final static String SHOWRESOURCE = "com.atomjack.vcfp.intent.SHOWRESOURCE";
 
+			public final static String CAST_MEDIA = "com.atomjack.vcfp.intent.CAST_MEDIA";
+			public final static String EXTRA_MEDIA = "com.atomjack.vcfp.intent.EXTRA_MEDIA";
 	};
 
 	public static ConcurrentHashMap<String, PlexServer> servers = new ConcurrentHashMap<String, PlexServer>();

@@ -51,7 +51,7 @@ public class ShortcutProviderActivity extends Activity {
 		String from = getIntent().getStringExtra("FROM");
 		Logger.d("from: %s", from);
 
-		localScan = new LocalScan(this, ShortcutProviderActivity.class, null, new ScanHandler() {
+		localScan = new LocalScan(this, ShortcutProviderActivity.class, new ScanHandler() {
 			@Override
 			public void onDeviceSelected(PlexDevice device, boolean _resume) {
 				Logger.d("chose %s", device.name);

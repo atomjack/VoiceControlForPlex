@@ -1,26 +1,17 @@
 package com.atomjack.vcfp;
 
-import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.CheckBox;
 import android.widget.ListView;
 
 import com.atomjack.vcfp.adapters.PlexListAdapter;
-import com.atomjack.vcfp.model.CastClient;
-import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexServer;
-import com.atomjack.vcfp.net.PlexHttpClient;
-import com.atomjack.vcfp.net.PlexHttpMediaContainerHandler;
-import com.google.gson.Gson;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -30,19 +21,11 @@ public class LocalScan {
 	private Dialog searchDialog;
 	private Dialog serverSelectDialog = null;
 	private ScanHandler scanHandler;
-	private SharedPreferences mPrefs;
-	private Gson gson = new Gson();
-	private Feedback feedback;
-	private int serversScanned = 0;
-	private Map<String, PlexClient> m_clients = new HashMap<String, PlexClient>();
-	private PlexServer server;
 
-	public LocalScan(Context ctx, Class cls, SharedPreferences prefs, ScanHandler handler) {
+	public LocalScan(Context ctx, Class cls, ScanHandler handler) {
 		context = ctx;
 		theClass = cls;
 		scanHandler = handler;
-		mPrefs = prefs;
-		feedback = new Feedback(mPrefs, context);
 	}
 
 	public void searchForPlexServers() {
