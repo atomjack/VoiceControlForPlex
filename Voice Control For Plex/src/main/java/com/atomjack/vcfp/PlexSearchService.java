@@ -53,8 +53,6 @@ import us.nineworlds.serenity.GDMReceiver;
 
 public class PlexSearchService extends Service {
 
-	public final static String PREFS = MainActivity.PREFS;
-	private SharedPreferences mPrefs;
 	private String queryText;
 	private Feedback feedback;
 	private Gson gsonRead = new GsonBuilder()
@@ -211,7 +209,7 @@ public class PlexSearchService extends Service {
 			}
 
 			if(client == null)
-				client = gsonRead.fromJson(mPrefs.getString(Preferences.CLIENT, ""), PlexClient.class);
+				client = gsonRead.fromJson(Preferences.get(Preferences.CLIENT, ""), PlexClient.class);
 
 			if(client == null) {
 				// No client set in options, and either none specified in the query or I just couldn't find it.
@@ -239,8 +237,8 @@ public class PlexSearchService extends Service {
 	public void onCreate() {
 		Logger.d("PlexSearch onCreate");
 		queryText = null;
-		mPrefs = getSharedPreferences(PREFS, MODE_PRIVATE);
-		feedback = new Feedback(mPrefs, this);
+		Preferences.setContext(this);
+		feedback = new Feedback(this);
 		if(gdmReceiver != null) {
 			IntentFilter filters = new IntentFilter();
 			filters.addAction(GDMService.MSG_RECEIVED);
@@ -282,7 +280,7 @@ public class PlexSearchService extends Service {
 		shows = new ArrayList<PlexDirectory>();
 
 		Gson gson = new Gson();
-		final PlexServer defaultServer = gson.fromJson(mPrefs.getString(Preferences.SERVER, ""), PlexServer.class);
+		final PlexServer defaultServer = gson.fromJson(Preferences.get(Preferences.SERVER, ""), PlexServer.class);
 		if(specifiedServer != null && client != null && !specifiedServer.name.equals(getResources().getString(R.string.scan_all))) {
 			// got a specified server and client from a shortcut
 			Logger.d("Got hardcoded server and client from shortcut");
@@ -895,7 +893,7 @@ public class PlexSearchService extends Service {
 			qs.add("address", video.server.activeConnection.address);
 			Logger.d("address: %s", video.server.activeConnection.address);
 
-			if((mPrefs.getBoolean("resume", false) || resumePlayback) && video.viewOffset != null)
+			if((Preferences.get(Preferences.RESUME, false) || resumePlayback) && video.viewOffset != null)
 				qs.add("viewOffset", video.viewOffset);
 			if(transientToken != null)
 				qs.add("token", transientToken);
@@ -1626,7 +1624,7 @@ public class PlexSearchService extends Service {
 		qs.add("address", track.server.activeConnection.address);
 		if(album != null)
 			qs.add("containerKey", album.key);
-		if((mPrefs.getBoolean("resume", false) || resumePlayback) && track.viewOffset != null)
+		if((Preferences.get(Preferences.RESUME, false) || resumePlayback) && track.viewOffset != null)
 			qs.add("viewOffset", track.viewOffset);
 		qs.add(PlexHeaders.XPlexTargetClientIdentifier, client.machineIdentifier);
 		String url = String.format("http://%s:%s/player/playback/playMedia?%s", client.address, client.port, qs);

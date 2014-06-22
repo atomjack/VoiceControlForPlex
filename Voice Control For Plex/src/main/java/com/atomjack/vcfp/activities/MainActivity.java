@@ -21,7 +21,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
@@ -77,13 +76,6 @@ import com.google.android.gms.cast.CastDevice;
 import com.google.android.gms.cast.CastMediaControlIntent;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonDeserializationContext;
-import com.google.gson.JsonDeserializer;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonPrimitive;
-import com.google.gson.JsonSerializationContext;
-import com.google.gson.JsonSerializer;
 import com.google.gson.reflect.TypeToken;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
@@ -95,7 +87,6 @@ import org.simpleframework.xml.Serializer;
 import org.simpleframework.xml.core.Persister;
 
 public class MainActivity extends Activity implements TextToSpeech.OnInitListener {
-	public final static String PREFS = "VoiceControlForPlexPrefs";
 
 	public final static int FEEDBACK_VOICE = 0;
 	public final static int FEEDBACK_TOAST = 1;
@@ -119,9 +110,6 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 	private PlexServer server = null;
 	private PlexClient client = null;
 
-	private SharedPreferences mPrefs;
-	private SharedPreferences.Editor mPrefsEditor;
-
 	private Gson gsonRead = new GsonBuilder()
 					.registerTypeAdapter(Uri.class, new UriDeserializer())
 					.create();
@@ -140,7 +128,6 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 	AlertDialog.Builder helpDialog;
 
 	private LocalScan localScan;
-	private RemoteScan remoteScan;
 
 	MediaRouter mMediaRouter;
 	MediaRouterCallback mMediaRouterCallback;
@@ -153,6 +140,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 		if(BuildConfig.USE_BUGSENSE)
 			BugSenseHandler.initAndStartSession(MainActivity.this, BUGSENSE_APIKEY);
 
+		Preferences.setContext(this);
 
 		final WhatsNewDialog whatsNewDialog = new WhatsNewDialog(this);
 		whatsNewDialog.show();
@@ -165,23 +153,20 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 		mMediaRouter.addCallback(mMediaRouteSelector, mMediaRouterCallback, MediaRouter.CALLBACK_FLAG_PERFORM_ACTIVE_SCAN);
 
 
-		mPrefs = getSharedPreferences(PREFS, MODE_PRIVATE);
-		mPrefsEditor = mPrefs.edit();
+		feedback = new Feedback(this);
 
-		feedback = new Feedback(mPrefs, this);
-
-		authToken = mPrefs.getString(Preferences.AUTHENTICATION_TOKEN, null);
+		authToken = Preferences.getString(Preferences.AUTHENTICATION_TOKEN);
 
 		Type clientType = new TypeToken<HashMap<String, PlexClient>>(){}.getType();
-		VoiceControlForPlexApplication.clients = gsonRead.fromJson(mPrefs.getString(Preferences.SAVED_CLIENTS, ""), clientType);
+		VoiceControlForPlexApplication.clients = gsonRead.fromJson(Preferences.get(Preferences.SAVED_CLIENTS, ""), clientType);
 
 		setContentView(R.layout.main);
 
-		server = gsonRead.fromJson(mPrefs.getString(Preferences.SERVER, ""), PlexServer.class);
+		server = gsonRead.fromJson(Preferences.get(Preferences.SERVER, ""), PlexServer.class);
 		if(server == null)
 			server = new PlexServer(getString(R.string.scan_all));
 
-		client = gsonRead.fromJson(mPrefs.getString(Preferences.CLIENT, ""), PlexClient.class);
+		client = gsonRead.fromJson(Preferences.get(Preferences.CLIENT, ""), PlexClient.class);
 
 		localScan = new LocalScan(this, MainActivity.class, new ScanHandler() {
 			@Override
@@ -192,7 +177,6 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 					setClient((PlexClient)device);
 			}
 		});
-		remoteScan = new RemoteScan(mPrefs);
 
 		initMainWithServer();
 	}
@@ -266,8 +250,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 	}
 
 	public void resumeChecked(View v) {
-		mPrefsEditor.putBoolean("resume", ((CheckBox)v).isChecked());
-		mPrefsEditor.commit();
+		Preferences.put("resume", ((CheckBox)v).isChecked());
 	}
 
 	@Override
@@ -325,8 +308,8 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 		MainSetting setting_data[] = new MainSetting[] {
 			new MainSetting(MainListAdapter.SettingHolder.TAG_SERVER, getResources().getString(R.string.stream_video_from_server), server.owned ? server.name : server.sourceTitle),
 			new MainSetting(MainListAdapter.SettingHolder.TAG_CLIENT, getResources().getString(R.string.to_the_client), client != null ? client.name : getResources().getString(R.string.not_set)),
-			new MainSetting(MainListAdapter.SettingHolder.TAG_FEEDBACK, getResources().getString(R.string.feedback), mPrefs.getInt(Preferences.FEEDBACK, FEEDBACK_TOAST) == FEEDBACK_VOICE ? getResources().getString(R.string.voice) : getResources().getString(R.string.toast)),
-			new MainSetting(MainListAdapter.SettingHolder.TAG_ERRORS, getResources().getString(R.string.errors), mPrefs.getInt(Preferences.ERRORS, FEEDBACK_TOAST) == FEEDBACK_VOICE ? getResources().getString(R.string.voice) : getResources().getString(R.string.toast))
+			new MainSetting(MainListAdapter.SettingHolder.TAG_FEEDBACK, getResources().getString(R.string.feedback), Preferences.get(Preferences.FEEDBACK, FEEDBACK_TOAST) == FEEDBACK_VOICE ? getResources().getString(R.string.voice) : getResources().getString(R.string.toast)),
+			new MainSetting(MainListAdapter.SettingHolder.TAG_ERRORS, getResources().getString(R.string.errors), Preferences.get(Preferences.ERRORS, FEEDBACK_TOAST) == FEEDBACK_VOICE ? getResources().getString(R.string.voice) : getResources().getString(R.string.toast))
 		};
 		
 		MainListAdapter adapter = new MainListAdapter(this, R.layout.main_setting_item_row, setting_data);
@@ -354,7 +337,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 						searchDialog.setTitle(getResources().getString(R.string.searching_for_plex_servers));
 
 						searchDialog.show();
-						remoteScan.refreshResources(authToken, new RemoteScan.RefreshResourcesResponseHandler() {
+						RemoteScan.refreshResources(authToken, new RemoteScan.RefreshResourcesResponseHandler() {
 							@Override
 							public void onSuccess() {
 								localScan.searchForPlexServers(true);
@@ -364,7 +347,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 							public void onFailure(int statusCode) {
 								if(statusCode == 401) {
 									authToken = null;
-									mPrefsEditor.remove(Preferences.AUTHENTICATION_TOKEN);
+									Preferences.remove(Preferences.AUTHENTICATION_TOKEN);
 									feedback.e(R.string.login_unauthorized);
 									switchLogin();
 								} else
@@ -391,7 +374,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 		});
 		
 		CheckBox resumeCheckbox = (CheckBox)findViewById(R.id.resumeCheckbox);
-		resumeCheckbox.setChecked(mPrefs.getBoolean("resume", false));
+		resumeCheckbox.setChecked(Preferences.get(Preferences.RESUME, false));
 	}
 	
 	public void settingRowHelpButtonClicked(View v) {
@@ -428,8 +411,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 		final MainActivity ctx = this;
 		builder.setPositiveButton(R.string.feedback_voice, new DialogInterface.OnClickListener() {
 			public void onClick(DialogInterface dialog, int id) {
-				mPrefsEditor.putInt(errors ? "errors" : "feedback", FEEDBACK_VOICE);
-				mPrefsEditor.commit();
+				Preferences.put(errors ? Preferences.ERRORS : Preferences.FEEDBACK, FEEDBACK_VOICE);
 				Intent checkIntent = new Intent();
 				checkIntent.setAction(TextToSpeech.Engine.ACTION_CHECK_TTS_DATA);
 				tts = new TextToSpeech(ctx, new TextToSpeech.OnInitListener() {
@@ -445,8 +427,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 			}
 		}).setNegativeButton(R.string.feedback_toast, new DialogInterface.OnClickListener() {
 			public void onClick(DialogInterface dialog, int id) {
-				mPrefsEditor.putInt(errors ? "errors" : "feedback", FEEDBACK_TOAST);
-				mPrefsEditor.commit();
+				Preferences.put(errors ? Preferences.ERRORS : Preferences.FEEDBACK, FEEDBACK_TOAST);
 				initMainWithServer();
 			}
 		});
@@ -475,7 +456,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 	}
 
 	public void logout(MenuItem item) {
-		mPrefsEditor.remove(Preferences.AUTHENTICATION_TOKEN);
+		Preferences.remove(Preferences.AUTHENTICATION_TOKEN);
 		authToken = null;
 
 		// If the currently selected server is not local, reset it to scan all.
@@ -491,8 +472,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 				VoiceControlForPlexApplication.servers.remove(s.name);
 		}
 
-		mPrefsEditor.putString(Preferences.SAVED_SERVERS, gsonWrite.toJson(VoiceControlForPlexApplication.servers));
-		mPrefsEditor.commit();
+		Preferences.put(Preferences.SAVED_SERVERS, gsonWrite.toJson(VoiceControlForPlexApplication.servers));
 		MenuItem loginItem = menu.findItem(R.id.menu_login);
 		loginItem.setVisible(true);
 		MenuItem logoutItem = menu.findItem(R.id.menu_logout);
@@ -583,8 +563,24 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 						}
 						if(pin.authToken != null) {
 							authToken = pin.authToken;
-							mPrefsEditor.putString(Preferences.AUTHENTICATION_TOKEN, authToken);
-							mPrefsEditor.commit();
+							Preferences.put(Preferences.AUTHENTICATION_TOKEN, authToken);
+							Header[] sheaders = {
+											new BasicHeader(com.atomjack.vcfp.PlexHeaders.XPlexClientPlatform, "Android"),
+											new BasicHeader(com.atomjack.vcfp.PlexHeaders.XPlexClientIdentifier, getUUID()),
+											new BasicHeader("Accept", "text/xml")
+							};
+							PlexHttpClient.signin(MainActivity.this, authToken, sheaders, "application/xml;charset=\"utf-8\"", new PlexHttpUserHandler() {
+								@Override
+								public void onSuccess(PlexUser user) {
+									Preferences.put(Preferences.PLEX_USERNAME, user.username);
+									Logger.d("Saved username %s", user.username);
+								}
+
+								@Override
+								public void onFailure(int statusCode, PlexError error) {
+
+								}
+							});
 							pinAlert.cancel();
 							Handler mainHandler = new Handler(context.getMainLooper());
 							mainHandler.post(new Runnable() {
@@ -592,7 +588,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 								public void run() {
 									feedback.m(R.string.logged_in);
 									switchLogin();
-									remoteScan.refreshResources(authToken, new RemoteScan.RefreshResourcesResponseHandler() {
+									RemoteScan.refreshResources(authToken, new RemoteScan.RefreshResourcesResponseHandler() {
 										@Override
 										public void onSuccess() {
 											feedback.t(R.string.servers_refreshed);
@@ -673,9 +669,9 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 				PlexHttpClient.signin(MainActivity.this, usernameInput.getText().toString(), passwordInput.getText().toString(), headers, "application/xml;charset=\"utf-8\"", new PlexHttpUserHandler() {
 					@Override
 					public void onSuccess(PlexUser user) {
-						mPrefsEditor.putString(Preferences.AUTHENTICATION_TOKEN, user.authenticationToken);
+						Preferences.put(Preferences.AUTHENTICATION_TOKEN, user.authenticationToken);
 						authToken = user.authenticationToken;
-						mPrefsEditor.commit();
+						Preferences.put(Preferences.PLEX_USERNAME, user.username);
 						feedback.m(R.string.logged_in);
 						MenuItem loginItem = menu.findItem(R.id.menu_login);
 						loginItem.setVisible(false);
@@ -699,11 +695,10 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 	}
 
 	public String getUUID() {
-		String uuid = mPrefs.getString(Preferences.UUID, null);
+		String uuid = Preferences.get(Preferences.UUID, null);
 		if(uuid == null) {
 			uuid = UUID.randomUUID().toString();
-			mPrefsEditor.putString(Preferences.UUID, uuid);
-			mPrefsEditor.commit();
+			Preferences.put(Preferences.UUID, uuid);
 		}
 		return uuid;
 	}
@@ -794,8 +789,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 				if(intent.getStringExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE).equals("server")) {
 					Logger.d("Got " + VoiceControlForPlexApplication.servers.size() + " servers");
 
-					mPrefsEditor.putString(Preferences.SAVED_SERVERS, gsonWrite.toJson(VoiceControlForPlexApplication.servers));
-					mPrefsEditor.commit();
+					Preferences.put(Preferences.SAVED_SERVERS, gsonWrite.toJson(VoiceControlForPlexApplication.servers));
 					if(searchDialog != null)
 						searchDialog.dismiss();
 					if (VoiceControlForPlexApplication.servers.size() > 0) {
@@ -819,8 +813,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 						for (PlexClient c : clients) {
 							VoiceControlForPlexApplication.clients.put(c.name, c);
 						}
-						mPrefsEditor.putString(Preferences.SAVED_CLIENTS, gsonWrite.toJson(VoiceControlForPlexApplication.clients));
-						mPrefsEditor.commit();
+						Preferences.put(Preferences.SAVED_CLIENTS, gsonWrite.toJson(VoiceControlForPlexApplication.clients));
 						localScan.showPlexClients(VoiceControlForPlexApplication.clients);
 					} else {
 						localScan.hideSearchDialog();
@@ -863,10 +856,9 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 	}
 	
 	private void saveSettings() {
-		mPrefsEditor.putString("Server", gsonWrite.toJson(server));
-		mPrefsEditor.putString("Client", gsonWrite.toJson(client));
-		mPrefsEditor.putBoolean("resume", mPrefs.getBoolean("resume", false));
-		mPrefsEditor.commit();
+		Preferences.put(Preferences.SERVER, gsonWrite.toJson(server));
+		Preferences.put(Preferences.CLIENT, gsonWrite.toJson(client));
+		Preferences.put(Preferences.RESUME, Preferences.get(Preferences.RESUME, false));
 	}
 	
 	@Override
@@ -955,7 +947,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
 			String blurb = "Server: " + (server != null ? server.name : getResources().getString(R.string.scan_all));
 			blurb += " | Client: " + (client != null ? client.name : "Not specified.");
-			if(mPrefs.getBoolean("resume", false))
+			if(Preferences.get(Preferences.RESUME, false))
 				blurb += " (resume)";
 
 
@@ -973,15 +965,14 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 				AlertDialog.Builder adb = new AlertDialog.Builder(this);
 				final CharSequence items[] = availableVoices.toArray(new CharSequence[availableVoices.size()]);
 				int selectedVoice = -1;
-				String v = mPrefs.getString(pref, "Locale.US");
+				String v = Preferences.get(pref, "Locale.US");
 				if (availableVoices.indexOf(v) > -1)
 					selectedVoice = availableVoices.indexOf(v);
 
 				adb.setSingleChoiceItems(items, selectedVoice, new DialogInterface.OnClickListener() {
 					@Override
 					public void onClick(DialogInterface d, int n) {
-						mPrefsEditor.putString(pref, items[n].toString());
-						mPrefsEditor.commit();
+						Preferences.put(pref, items[n].toString());
 						d.dismiss();
 					}
 				});
@@ -989,8 +980,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 				adb.setTitle(R.string.select_voice);
 				adb.show();
 			} else {
-				mPrefsEditor.putString(pref, "Locale.US");
-				mPrefsEditor.commit();
+				Preferences.put(pref, "Locale.US");
 			}
 		}
 	}

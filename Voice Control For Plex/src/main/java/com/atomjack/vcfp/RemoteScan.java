@@ -21,31 +21,26 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class RemoteScan {
-	private SharedPreferences mPrefs;
-	private Gson gson = new Gson();
+	private static Gson gson = new Gson();
 
 	private static AsyncHttpClient client = new AsyncHttpClient();
 	private static Serializer serial = new Persister();
-
-	public RemoteScan(SharedPreferences prefs) {
-		mPrefs = prefs;
-	}
 
 	public interface RefreshResourcesResponseHandler {
 		void onSuccess();
 		void onFailure(int statusCode);
 	}
 
-	public void refreshResources(String authToken, final RefreshResourcesResponseHandler responseHandler) {
+	public static void refreshResources(String authToken, final RefreshResourcesResponseHandler responseHandler) {
 		refreshResources(authToken, responseHandler, false);
 	}
 
-	public void refreshResources(String authToken) {
+	public static void refreshResources(String authToken) {
 		refreshResources(authToken, null, true);
 	}
 
 
-	public void refreshResources(String authToken, final RefreshResourcesResponseHandler responseHandler, boolean silent) {
+	public static void refreshResources(String authToken, final RefreshResourcesResponseHandler responseHandler, boolean silent) {
 		VoiceControlForPlexApplication.servers = new ConcurrentHashMap<String, PlexServer>();
 		VoiceControlForPlexApplication.clients = new HashMap<String, PlexClient>();
 		String url = String.format("https://plex.tv/pms/resources?%s=%s", PlexHeaders.XPlexToken, authToken);
@@ -84,8 +79,7 @@ public class RemoteScan {
 							}
 						}
  					}
-					mPrefs.edit().putString(Preferences.SAVED_CLIENTS, gson.toJson(VoiceControlForPlexApplication.clients));
-					mPrefs.edit().commit();
+					Preferences.put(Preferences.SAVED_CLIENTS, gson.toJson(VoiceControlForPlexApplication.clients));
 
 					final int[] serversScanned = new int[1];
 					serversScanned[0] = 0;

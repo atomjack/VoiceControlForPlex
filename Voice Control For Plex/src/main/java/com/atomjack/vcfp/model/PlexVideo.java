@@ -13,6 +13,11 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.text.TextUtils;
 
+import com.atomjack.vcfp.PlexHeaders;
+import com.atomjack.vcfp.QueryString;
+import com.atomjack.vcfp.R;
+import com.atomjack.vcfp.VoiceControlForPlexApplication;
+
 @Root(strict=false)
 public class PlexVideo implements Parcelable {
 	@Attribute

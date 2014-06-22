@@ -2,7 +2,6 @@ package com.atomjack.vcfp.activities;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.os.Bundle;
 import android.os.Handler;
@@ -13,6 +12,7 @@ import android.widget.TextView;
 import com.atomjack.vcfp.BuildConfig;
 import com.atomjack.vcfp.Logger;
 import com.atomjack.vcfp.PlexHeaders;
+import com.atomjack.vcfp.Preferences;
 import com.atomjack.vcfp.QueryString;
 import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
@@ -58,13 +58,11 @@ public class NowPlayingActivity extends Activity {
 
 	private static Serializer serial = new Persister();
 
-	private SharedPreferences mPrefs;
-
 	protected void onCreate(Bundle savedInstanceState) {
 		Logger.d("on create NowPlayingActivity");
 		super.onCreate(savedInstanceState);
 
-		mPrefs = getSharedPreferences(MainActivity.PREFS, MODE_PRIVATE);
+		Preferences.setContext(this);
 
 		if(BuildConfig.USE_BUGSENSE)
 			BugSenseHandler.initAndStartSession(NowPlayingActivity.this, MainActivity.BUGSENSE_APIKEY);
@@ -312,7 +310,7 @@ public class NowPlayingActivity extends Activity {
 		qs.add("protocol", "http");
 
 		Header[] headers = {
-			new BasicHeader(PlexHeaders.XPlexClientIdentifier, VoiceControlForPlexApplication.getUUID(mPrefs)),
+			new BasicHeader(PlexHeaders.XPlexClientIdentifier, Preferences.getUUID()),
 			new BasicHeader(PlexHeaders.XPlexDeviceName, getString(R.string.app_name))
 		};
 		PlexHttpClient.get(NowPlayingActivity.this, String.format("http://%s:%s/player/timeline/subscribe?%s", client.address, client.port, qs), headers, new PlexHttpResponseHandler() {
@@ -337,7 +335,7 @@ public class NowPlayingActivity extends Activity {
 	private void unsubscribe(final Runnable onFinish) {
 		QueryString qs = new QueryString("commandID", String.valueOf(commandId));
 		Header[] headers = {
-			new BasicHeader(PlexHeaders.XPlexClientIdentifier, VoiceControlForPlexApplication.getUUID(mPrefs)),
+			new BasicHeader(PlexHeaders.XPlexClientIdentifier, Preferences.getUUID()),
 			new BasicHeader(PlexHeaders.XPlexDeviceName, getString(R.string.app_name)),
 			new BasicHeader(PlexHeaders.XPlexTargetClientIdentifier, client.machineIdentifier)
 		};
