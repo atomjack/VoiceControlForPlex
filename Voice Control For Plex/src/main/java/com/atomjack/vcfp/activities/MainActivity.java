@@ -145,11 +145,11 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
 		setContentView(R.layout.main);
 
-		server = gson.fromJson(mPrefs.getString("Server", ""), PlexServer.class);
+		server = gson.fromJson(mPrefs.getString(Preferences.SERVER, ""), PlexServer.class);
 		if(server == null)
 			server = new PlexServer(getString(R.string.scan_all));
 
-		client = gson.fromJson(mPrefs.getString("Client", ""), PlexClient.class);
+		client = gson.fromJson(mPrefs.getString(Preferences.CLIENT, ""), PlexClient.class);
 
 		localScan = new LocalScan(this, MainActivity.class, mPrefs, new ScanHandler() {
 			@Override
@@ -293,8 +293,8 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 		MainSetting setting_data[] = new MainSetting[] {
 			new MainSetting(MainListAdapter.SettingHolder.TAG_SERVER, getResources().getString(R.string.stream_video_from_server), server.owned ? server.name : server.sourceTitle),
 			new MainSetting(MainListAdapter.SettingHolder.TAG_CLIENT, getResources().getString(R.string.to_the_client), client != null ? client.name : getResources().getString(R.string.not_set)),
-			new MainSetting(MainListAdapter.SettingHolder.TAG_FEEDBACK, getResources().getString(R.string.feedback), mPrefs.getInt("feedback", FEEDBACK_TOAST) == FEEDBACK_VOICE ? getResources().getString(R.string.voice) : getResources().getString(R.string.toast)),
-			new MainSetting(MainListAdapter.SettingHolder.TAG_ERRORS, getResources().getString(R.string.errors), mPrefs.getInt("errors", FEEDBACK_TOAST) == FEEDBACK_VOICE ? getResources().getString(R.string.voice) : getResources().getString(R.string.toast))
+			new MainSetting(MainListAdapter.SettingHolder.TAG_FEEDBACK, getResources().getString(R.string.feedback), mPrefs.getInt(Preferences.FEEDBACK, FEEDBACK_TOAST) == FEEDBACK_VOICE ? getResources().getString(R.string.voice) : getResources().getString(R.string.toast)),
+			new MainSetting(MainListAdapter.SettingHolder.TAG_ERRORS, getResources().getString(R.string.errors), mPrefs.getInt(Preferences.ERRORS, FEEDBACK_TOAST) == FEEDBACK_VOICE ? getResources().getString(R.string.voice) : getResources().getString(R.string.toast))
 		};
 		
 		MainListAdapter adapter = new MainListAdapter(this, R.layout.main_setting_item_row, setting_data);
@@ -832,9 +832,9 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 	
 	private void saveSettings() {
 		Gson gson = new Gson();
-		mPrefsEditor.putString("Server", gson.toJson(server));
-		mPrefsEditor.putString("Client", gson.toJson(client));
-		mPrefsEditor.putBoolean("resume", mPrefs.getBoolean("resume", false));
+		mPrefsEditor.putString(Preferences.SERVER, gson.toJson(server));
+		mPrefsEditor.putString(Preferences.CLIENT, gson.toJson(client));
+		mPrefsEditor.putBoolean(Preferences.RESUME, mPrefs.getBoolean("resume", false));
 		mPrefsEditor.commit();
 	}
 	

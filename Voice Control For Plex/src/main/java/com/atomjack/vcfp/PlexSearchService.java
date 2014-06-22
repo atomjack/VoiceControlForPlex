@@ -149,7 +149,7 @@ public class PlexSearchService extends Service {
 			}
 
 			if(client == null)
-				client = gson.fromJson(mPrefs.getString("Client", ""), PlexClient.class);
+				client = gson.fromJson(mPrefs.getString(Preferences.CLIENT, ""), PlexClient.class);
 
 			if(client == null) {
 				// No client set in options, and either none specified in the query or I just couldn't find it.
@@ -220,7 +220,7 @@ public class PlexSearchService extends Service {
 		shows = new ArrayList<PlexDirectory>();
 
 		Gson gson = new Gson();
-		final PlexServer defaultServer = gson.fromJson(mPrefs.getString("Server", ""), PlexServer.class);
+		final PlexServer defaultServer = gson.fromJson(mPrefs.getString(Preferences.SERVER, ""), PlexServer.class);
 		if(specifiedServer != null && client != null && !specifiedServer.name.equals(getResources().getString(R.string.scan_all))) {
 			// got a specified server and client from a shortcut
 			Logger.d("Got hardcoded server and client from shortcut");

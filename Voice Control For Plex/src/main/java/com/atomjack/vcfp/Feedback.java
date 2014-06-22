@@ -81,7 +81,7 @@ public class Feedback implements TextToSpeech.OnInitListener {
 
 	private void feedback(String text, boolean errors, boolean forceToast) {
 
-		if(!forceToast && mPrefs.getInt(errors ? "errors" : "feedback", MainActivity.FEEDBACK_TOAST) == MainActivity.FEEDBACK_VOICE) {
+		if(!forceToast && mPrefs.getInt(errors ? Preferences.ERRORS : Preferences.FEEDBACK, MainActivity.FEEDBACK_TOAST) == MainActivity.FEEDBACK_VOICE) {
 			TextToSpeech tts = errors ? errorsTts : feedbackTts;
 			if (tts == null) {
 				// This tts not set up yet, so initiate it and add the text to be spoken to the appropriate queue.
