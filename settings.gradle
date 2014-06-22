@@ -1,1 +1,1 @@
-include 'Voice Control For Plex'
+include 'Voice Control For Plex', ':CastCompanionLibrary-android'
