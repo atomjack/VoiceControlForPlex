@@ -5,9 +5,13 @@ import android.content.BroadcastReceiver;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.net.Uri;
+import android.os.Bundle;
 import android.os.IBinder;
 import android.speech.RecognizerIntent;
 import android.support.v4.content.LocalBroadcastManager;
+import android.support.v7.media.MediaRouteSelector;
+import android.support.v7.media.MediaRouter;
 
 import com.atomjack.vcfp.activities.MainActivity;
 import com.atomjack.vcfp.activities.NowPlayingActivity;
@@ -22,7 +26,18 @@ import com.atomjack.vcfp.net.PlexHttpClient;
 import com.atomjack.vcfp.net.PlexHttpMediaContainerHandler;
 import com.atomjack.vcfp.net.PlexHttpResponseHandler;
 import com.bugsense.trace.BugSenseHandler;
+import com.google.android.gms.cast.ApplicationMetadata;
+import com.google.android.gms.cast.Cast;
+import com.google.android.gms.cast.CastMediaControlIntent;
+import com.google.android.gms.cast.MediaInfo;
+import com.google.android.gms.cast.MediaMetadata;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.common.api.Status;
+import com.google.android.gms.common.images.WebImage;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -41,7 +56,13 @@ public class PlexSearchService extends Service {
 	private SharedPreferences mPrefs;
 	private String queryText;
 	private Feedback feedback;
-	private Gson gson = new Gson();
+	private Gson gsonRead = new GsonBuilder()
+					.registerTypeAdapter(Uri.class, new UriDeserializer())
+					.create();
+
+	private Gson gsonWrite = new GsonBuilder()
+					.registerTypeAdapter(Uri.class, new UriSerializer())
+					.create();
 
 	private ConcurrentHashMap<String, PlexServer> plexmediaServers = new ConcurrentHashMap<String, PlexServer>();
 	private Map<String, PlexClient> clients;
@@ -64,6 +85,16 @@ public class PlexSearchService extends Service {
 	private ArrayList<String> queries;
 	// Will be set to true after we scan for servers, so we don't have to do it again on the next query
 	private boolean didServerScan = false;
+
+	// Chromecast
+	MediaRouter mMediaRouter;
+	MediaRouterCallback mMediaRouterCallback;
+	MediaRouteSelector mMediaRouteSelector;
+	GoogleApiClient mApiClient;
+	boolean mWaitingForReconnect = false;
+	Cast.Listener mCastClientListener;
+	ConnectionCallbacks mConnectionCallbacks;
+
 
 	// Callbacks for when we figure out what action the user wishes to take.
 	private myRunnable actionToDo;
@@ -115,14 +146,46 @@ public class PlexSearchService extends Service {
 			queryText = null;
 			client = null;
 
+			mMediaRouter = MediaRouter.getInstance(getApplicationContext());
+			mMediaRouteSelector = new MediaRouteSelector.Builder()
+							.addControlCategory(CastMediaControlIntent.categoryForCast(MainActivity.CHROMECAST_APP_ID))
+							.build();
+			mMediaRouterCallback = new MediaRouterCallback();
+			mMediaRouter.addCallback(mMediaRouteSelector, mMediaRouterCallback, MediaRouter.CALLBACK_FLAG_PERFORM_ACTIVE_SCAN);
+
+			mConnectionCallbacks = new ConnectionCallbacks();
+
+			mCastClientListener = new Cast.Listener() {
+				@Override
+				public void onApplicationStatusChanged() {
+					if (mApiClient != null) {
+						Logger.d("onApplicationStatusChanged: "
+										+ Cast.CastApi.getApplicationStatus(mApiClient));
+					}
+				}
+
+				@Override
+				public void onVolumeChanged() {
+					if (mApiClient != null) {
+						Logger.d("onVolumeChanged: " + Cast.CastApi.getVolume(mApiClient));
+					}
+				}
+
+				@Override
+				public void onApplicationDisconnected(int errorCode) {
+					// TODO: Teardown?
+					//teardown();
+				}
+			};
+
 			queries = new ArrayList<String>();
 			clients = (HashMap)VoiceControlForPlexApplication.clients;
 			resumePlayback = false;
 
-			specifiedServer = gson.fromJson(intent.getStringExtra(VoiceControlForPlexApplication.Intent.EXTRA_SERVER), PlexServer.class);
+			specifiedServer = gsonRead.fromJson(intent.getStringExtra(VoiceControlForPlexApplication.Intent.EXTRA_SERVER), PlexServer.class);
 			if(specifiedServer != null)
 				Logger.d("specified server %s", specifiedServer);
-			PlexClient thisClient = gson.fromJson(intent.getStringExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLIENT), PlexClient.class);
+			PlexClient thisClient = gsonRead.fromJson(intent.getStringExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLIENT), PlexClient.class);
 			if(thisClient != null)
 				client = thisClient;
 			if(intent.getBooleanExtra(VoiceControlForPlexApplication.Intent.EXTRA_RESUME, false))
@@ -149,7 +212,7 @@ public class PlexSearchService extends Service {
 			}
 
 			if(client == null)
-				client = gson.fromJson(mPrefs.getString(Preferences.CLIENT, ""), PlexClient.class);
+				client = gsonRead.fromJson(mPrefs.getString(Preferences.CLIENT, ""), PlexClient.class);
 
 			if(client == null) {
 				// No client set in options, and either none specified in the query or I just couldn't find it.
@@ -787,8 +850,61 @@ public class PlexSearchService extends Service {
 		});
 	}
 
+	private String getTranscodeUrl(PlexVideo video) {
+		String url = video.server.activeConnection.uri;
+		url += "/video/:/transcode/universal/start?";
+		QueryString qs = new QueryString("path", String.format("http://127.0.0.1:32400%s", video.key));
+		qs.add("mediaIndex", "0");
+		qs.add("partIndex", "0");
+		qs.add("protocol", "http");
+//		qs.add("offset")
+		if((mPrefs.getBoolean("resume", false) || resumePlayback) && video.viewOffset != null)
+			qs.add("offset", video.viewOffset);
+		qs.add("fastSeek", "1");
+		qs.add("directPlay", "0");
+		qs.add("directStream", "1");
+		qs.add("videoQuality", "60");
+		qs.add("videoResolution", "1024x768");
+		qs.add("maxVideoBitrate", "2000");
+		qs.add("subtitleSize", "100");
+		qs.add("audioBoost", "100");
+		if(mPrefs.getString(Preferences.UUID, null) != null)
+			qs.add("session", mPrefs.getString(Preferences.UUID, null));
+//		qs.add(PlexHeaders.XPlexClientIdentifier)
+		return url + qs.toString();
+	}
+
 	private void playVideo(final PlexVideo video, String transientToken) {
 		Logger.d("Playing video: %s", video.title);
+		Logger.d("Client: %s", client);
+		if(client.isCastClient) {
+			Logger.d("cast device: %s", client.castDevice);
+
+			String url = getTranscodeUrl(video);
+			MediaInfo mediaInfo = buildMediaInfo(
+				video.type.equals("movie") ? video.title : video.showTitle,
+				video.summary,
+				video.type.equals("movie") ? "" : video.title,
+				url,
+				video.art,
+				video.thumb
+			);
+
+
+
+			Cast.CastOptions.Builder apiOptionsBuilder = Cast.CastOptions
+							.builder(client.castDevice, mCastClientListener);
+			mApiClient = new GoogleApiClient.Builder(this)
+							.addApi(Cast.API, apiOptionsBuilder.build())
+							.addConnectionCallbacks(mConnectionCallbacks)
+							.addOnConnectionFailedListener(mConnectionFailedListener)
+							.build();
+			mApiClient.connect();
+
+
+
+			return;
+		}
 		try {
 			QueryString qs = new QueryString("machineIdentifier", video.server.machineIdentifier);
 			Logger.d("machine id: %s", video.server.machineIdentifier);
@@ -1567,5 +1683,89 @@ public class PlexSearchService extends Service {
 		nowPlayingIntent.putExtra("client", client);
 		nowPlayingIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 		startActivity(nowPlayingIntent);
+	}
+
+	private class MediaRouterCallback extends MediaRouter.Callback {
+		@Override
+
+		public void onRouteAdded(MediaRouter router, MediaRouter.RouteInfo route)
+		{
+			Logger.d("onRouteAdded: %s", route);
+		}
+		@Override
+		public void onRouteSelected(MediaRouter router, MediaRouter.RouteInfo route) {
+			Logger.d("onRouteSelected: %s", route);
+//			MainActivity.this.onRouteSelected(route);
+		}
+		@Override
+		public void onRouteUnselected(MediaRouter router, MediaRouter.RouteInfo route) {
+			Logger.d("onRouteUnselected: %s", route);
+//			MainActivity.this.onRouteUnselected(route);
+		}
+	}
+
+
+	private class ConnectionCallbacks implements
+					GoogleApiClient.ConnectionCallbacks {
+		@Override
+		public void onConnected(Bundle connectionHint) {
+			if (mWaitingForReconnect) {
+				mWaitingForReconnect = false;
+				reconnectChannels();
+			} else {
+				try {
+					Cast.CastApi.launchApplication(mApiClient, MainActivity.CHROMECAST_APP_ID, false)
+									.setResultCallback(
+													new ResultCallback<Cast.ApplicationConnectionResult>() {
+														@Override
+														public void onResult(Cast.ApplicationConnectionResult result) {
+															Status status = result.getStatus();
+															if (status.isSuccess()) {
+																ApplicationMetadata applicationMetadata =
+																				result.getApplicationMetadata();
+																String sessionId = result.getSessionId();
+																String applicationStatus = result.getApplicationStatus();
+																boolean wasLaunched = result.getWasLaunched();
+//																...
+															} else {
+																//teardown();
+															}
+														}
+													});
+
+				} catch (Exception e) {
+					Logger.d("Failed to launch application", e);
+				}
+			}
+		}
+
+		@Override
+		public void onConnectionSuspended(int cause) {
+			mWaitingForReconnect = true;
+		}
+	}
+
+	private class ConnectionFailedListener implements
+					GoogleApiClient.OnConnectionFailedListener {
+		@Override
+		public void onConnectionFailed(ConnectionResult result) {
+			teardown();
+		}
+	}
+
+	private static MediaInfo buildMediaInfo(String title, String summary, String episodeName, String url, String imgUrl, String bigImageUrl) {
+		MediaMetadata movieMetadata = new MediaMetadata(MediaMetadata.MEDIA_TYPE_MOVIE);
+
+		movieMetadata.putString(MediaMetadata.KEY_SUBTITLE, summary);
+		movieMetadata.putString(MediaMetadata.KEY_TITLE, title);
+		movieMetadata.putString(MediaMetadata.KEY_STUDIO, episodeName);
+		movieMetadata.addImage(new WebImage(Uri.parse(imgUrl)));
+		movieMetadata.addImage(new WebImage(Uri.parse(bigImageUrl)));
+
+		return new MediaInfo.Builder(url)
+						.setStreamType(MediaInfo.STREAM_TYPE_BUFFERED)
+						.setContentType("video/mp4")
+						.setMetadata(movieMetadata)
+						.build();
 	}
 }

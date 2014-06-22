@@ -32,6 +32,8 @@ public class PlexVideo implements Parcelable {
 	@Attribute(required=false)
 	public String thumb;
 	@Attribute(required=false)
+	public String art;
+	@Attribute(required=false)
 	public String type;
 	@Attribute(required=false)
 	public String year;
@@ -91,6 +93,7 @@ public class PlexVideo implements Parcelable {
 		out.writeString(grandparentTitle);
 		out.writeString(grandparentThumb);
 		out.writeString(thumb);
+		out.writeString(art);
 		out.writeString(type);
 		out.writeString(year);
 		out.writeString(duration);
@@ -110,6 +113,7 @@ public class PlexVideo implements Parcelable {
 		grandparentTitle = in.readString();
 		grandparentThumb = in.readString();
 		thumb = in.readString();
+		art = in.readString();
 		type = in.readString();
 		year = in.readString();
 		duration = in.readString();

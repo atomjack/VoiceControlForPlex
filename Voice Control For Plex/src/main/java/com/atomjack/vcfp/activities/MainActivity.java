@@ -31,6 +31,8 @@ import android.os.Environment;
 import android.os.Handler;
 import android.speech.tts.TextToSpeech;
 import android.support.v4.content.LocalBroadcastManager;
+import android.support.v7.media.MediaRouteSelector;
+import android.support.v7.media.MediaRouter;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -50,6 +52,8 @@ import com.atomjack.vcfp.GDMService;
 import com.atomjack.vcfp.LocalScan;
 import com.atomjack.vcfp.Logger;
 import com.atomjack.vcfp.PlexHeaders;
+import com.atomjack.vcfp.UriDeserializer;
+import com.atomjack.vcfp.UriSerializer;
 import com.atomjack.vcfp.adapters.MainListAdapter;
 import com.atomjack.vcfp.Preferences;
 import com.atomjack.vcfp.R;
@@ -69,7 +73,17 @@ import com.atomjack.vcfp.net.PlexHttpUserHandler;
 import com.atomjack.vcfp.net.PlexPinResponseHandler;
 import com.bugsense.trace.BugSenseHandler;
 import com.cubeactive.martin.inscription.WhatsNewDialog;
+import com.google.android.gms.cast.CastDevice;
+import com.google.android.gms.cast.CastMediaControlIntent;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonPrimitive;
+import com.google.gson.JsonSerializationContext;
+import com.google.gson.JsonSerializer;
 import com.google.gson.reflect.TypeToken;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
@@ -87,6 +101,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 	public final static int FEEDBACK_TOAST = 1;
 
 	public final static String BUGSENSE_APIKEY = "879458d0";
+	public final static String CHROMECAST_APP_ID = "713B411C";
 
 	private final static int RESULT_VOICE_FEEDBACK_SELECTED = 0;
 	private final static int RESULT_TASKER_PROJECT_IMPORTED = 1;
@@ -107,7 +122,13 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 	private SharedPreferences mPrefs;
 	private SharedPreferences.Editor mPrefsEditor;
 
-	private Gson gson = new Gson();
+	private Gson gsonRead = new GsonBuilder()
+					.registerTypeAdapter(Uri.class, new UriDeserializer())
+					.create();
+
+	private Gson gsonWrite = new GsonBuilder()
+					.registerTypeAdapter(Uri.class, new UriSerializer())
+					.create();
 
 	private TextToSpeech tts;
 
@@ -121,6 +142,10 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 	private LocalScan localScan;
 	private RemoteScan remoteScan;
 
+	MediaRouter mMediaRouter;
+	MediaRouterCallback mMediaRouterCallback;
+	MediaRouteSelector mMediaRouteSelector;
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -131,31 +156,38 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
 		final WhatsNewDialog whatsNewDialog = new WhatsNewDialog(this);
 		whatsNewDialog.show();
-		
+
+		mMediaRouter = MediaRouter.getInstance(getApplicationContext());
+		mMediaRouteSelector = new MediaRouteSelector.Builder()
+						.addControlCategory(CastMediaControlIntent.categoryForCast(MainActivity.CHROMECAST_APP_ID))
+						.build();
+		mMediaRouterCallback = new MediaRouterCallback();
+		mMediaRouter.addCallback(mMediaRouteSelector, mMediaRouterCallback, MediaRouter.CALLBACK_FLAG_PERFORM_ACTIVE_SCAN);
+
+
 		mPrefs = getSharedPreferences(PREFS, MODE_PRIVATE);
 		mPrefsEditor = mPrefs.edit();
-		Gson gson = new Gson();
 
 		feedback = new Feedback(mPrefs, this);
 
 		authToken = mPrefs.getString(Preferences.AUTHENTICATION_TOKEN, null);
 
 		Type clientType = new TypeToken<HashMap<String, PlexClient>>(){}.getType();
-		VoiceControlForPlexApplication.clients = gson.fromJson(mPrefs.getString(Preferences.SAVED_CLIENTS, ""), clientType);
+		VoiceControlForPlexApplication.clients = gsonRead.fromJson(mPrefs.getString(Preferences.SAVED_CLIENTS, ""), clientType);
 
 		setContentView(R.layout.main);
 
-		server = gson.fromJson(mPrefs.getString(Preferences.SERVER, ""), PlexServer.class);
+		server = gsonRead.fromJson(mPrefs.getString(Preferences.SERVER, ""), PlexServer.class);
 		if(server == null)
 			server = new PlexServer(getString(R.string.scan_all));
 
-		client = gson.fromJson(mPrefs.getString(Preferences.CLIENT, ""), PlexClient.class);
+		client = gsonRead.fromJson(mPrefs.getString(Preferences.CLIENT, ""), PlexClient.class);
 
 		localScan = new LocalScan(this, MainActivity.class, mPrefs, new ScanHandler() {
 			@Override
 			public void onDeviceSelected(PlexDevice device, boolean resume) {
 				if(device instanceof PlexServer)
-					setServer((PlexServer)device);
+					setServer((PlexServer) device);
 				else if(device instanceof PlexClient)
 					setClient((PlexClient)device);
 			}
@@ -459,7 +491,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 				VoiceControlForPlexApplication.servers.remove(s.name);
 		}
 
-		mPrefsEditor.putString(Preferences.SAVED_SERVERS, gson.toJson(VoiceControlForPlexApplication.servers));
+		mPrefsEditor.putString(Preferences.SAVED_SERVERS, gsonWrite.toJson(VoiceControlForPlexApplication.servers));
 		mPrefsEditor.commit();
 		MenuItem loginItem = menu.findItem(R.id.menu_login);
 		loginItem.setVisible(true);
@@ -762,7 +794,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 				if(intent.getStringExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE).equals("server")) {
 					Logger.d("Got " + VoiceControlForPlexApplication.servers.size() + " servers");
 
-					mPrefsEditor.putString(Preferences.SAVED_SERVERS, gson.toJson(VoiceControlForPlexApplication.servers));
+					mPrefsEditor.putString(Preferences.SAVED_SERVERS, gsonWrite.toJson(VoiceControlForPlexApplication.servers));
 					mPrefsEditor.commit();
 					if (VoiceControlForPlexApplication.servers.size() > 0) {
 						localScan.showPlexServers();
@@ -786,7 +818,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 						for (PlexClient c : clients) {
 							VoiceControlForPlexApplication.clients.put(c.name, c);
 						}
-						mPrefsEditor.putString(Preferences.SAVED_CLIENTS, gson.toJson(VoiceControlForPlexApplication.clients));
+						mPrefsEditor.putString(Preferences.SAVED_CLIENTS, gsonWrite.toJson(VoiceControlForPlexApplication.clients));
 						mPrefsEditor.commit();
 						localScan.showPlexClients(VoiceControlForPlexApplication.clients);
 					} else {
@@ -824,25 +856,29 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 	
 	private void setClient(PlexClient _client) {
 		client = _client;
-		Logger.d("Selected client: " + client.name);
+		Logger.d("Selected client: %s", client);
 		saveSettings();
 		initMainWithServer();
 	}
 	
 	private void saveSettings() {
-		Gson gson = new Gson();
-		mPrefsEditor.putString(Preferences.SERVER, gson.toJson(server));
-		mPrefsEditor.putString(Preferences.CLIENT, gson.toJson(client));
-		mPrefsEditor.putBoolean(Preferences.RESUME, mPrefs.getBoolean("resume", false));
+		mPrefsEditor.putString("Server", gsonWrite.toJson(server));
+		mPrefsEditor.putString("Client", gsonWrite.toJson(client));
+		mPrefsEditor.putBoolean("resume", mPrefs.getBoolean("resume", false));
 		mPrefsEditor.commit();
 	}
 	
 	@Override
 	public boolean onCreateOptionsMenu(Menu _menu) {
-		super.onCreateOptionsMenu(menu);
 		// Inflate the menu; this adds items to the action bar if it is present.
 		getMenuInflater().inflate(R.menu.menu_main, _menu);
 		menu = _menu;
+
+//		MenuItem mediaRouteMenuItem = menu.findItem(R.id.media_route_menu_item);
+//		MediaRouteActionProvider mediaRouteActionProvider =
+//						(MediaRouteActionProvider) MenuItemCompat.getActionProvider(mediaRouteMenuItem);
+//		mediaRouteActionProvider.setRouteSelector(mMediaRouteSelector);
+
 		if(authToken != null) {
 			menu.findItem(R.id.menu_login).setVisible(false);
 			menu.findItem(R.id.menu_logout).setVisible(true);
@@ -859,7 +895,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 				_menu.findItem(R.id.menu_install_autovoice).setVisible(true);
 			}
 		}
-		return true;
+		return super.onCreateOptionsMenu(menu);
 	}
 
 	@Override
@@ -875,17 +911,25 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
 	@Override
 	protected void onPause() {
-		super.onPause();
+		if (isFinishing()) {
+			mMediaRouter.removeCallback(mMediaRouterCallback);
+		}
 		VoiceControlForPlexApplication.applicationPaused();
 		if(gdmReceiver != null) {
 			LocalBroadcastManager.getInstance(this).unregisterReceiver(gdmReceiver);
 		}
+		super.onPause();
 	}
 
 	@Override
 	protected void onResume() {
+		Logger.d("MainActivity onResume");
 		super.onResume();
 		VoiceControlForPlexApplication.applicationResumed();
+
+//		mMediaRouter.addCallback(mMediaRouteSelector, mMediaRouterCallback,
+//						MediaRouter.CALLBACK_FLAG_PERFORM_ACTIVE_SCAN);
+
 		if(gdmReceiver != null) {
 			IntentFilter filters = new IntentFilter();
 			filters.addAction(GDMService.MSG_RECEIVED);
@@ -949,6 +993,43 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 			}
 		}
 	}
+
+	private class MediaRouterCallback extends MediaRouter.Callback {
+		@Override
+
+		public void onRouteAdded(MediaRouter router, MediaRouter.RouteInfo route)
+		{
+			Logger.d("onRouteAdded: %s", route);
+			if(!VoiceControlForPlexApplication.castClients.containsKey(route.getName())) {
+				PlexClient client = new PlexClient();
+				client.isCastClient = true;
+				client.name = route.getName();
+				client.product = route.getDescription();
+				client.castDevice = CastDevice.getFromBundle(route.getExtras());
+				VoiceControlForPlexApplication.castClients.put(client.name, client);
+			}
+			/*
+			//attempt to autoconnect to chromecast
+			if(mSelectedDevice == null
+							&& route.supportsControlCategory(CastMediaControlIntent.categoryForCast(MainActivity.this.CHROMECAST_APP_ID)))
+			{
+				MainActivity.this.onRouteSelected(route);
+			}
+			*/
+		}
+		@Override
+		public void onRouteSelected(MediaRouter router, MediaRouter.RouteInfo route) {
+			Logger.d("onRouteSelected: %s", route);
+//			MainActivity.this.onRouteSelected(route);
+		}
+		@Override
+		public void onRouteUnselected(MediaRouter router, MediaRouter.RouteInfo route) {
+			Logger.d("onRouteUnselected: %s", route);
+//			MainActivity.this.onRouteUnselected(route);
+		}
+	}
+
+
 }
 
 

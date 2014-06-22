@@ -18,10 +18,13 @@ import android.content.SharedPreferences;
 import android.content.res.Resources.NotFoundException;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.support.v7.media.MediaRouter;
 
+import com.atomjack.vcfp.model.CastClient;
 import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexServer;
+import com.google.android.gms.cast.CastDevice;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
 
@@ -51,6 +54,8 @@ public class VoiceControlForPlexApplication extends Application
 
 	public static ConcurrentHashMap<String, PlexServer> servers = new ConcurrentHashMap<String, PlexServer>();
 	public static Map<String, PlexClient> clients = new HashMap<String, PlexClient>();
+
+	public static Map<String, PlexClient> castClients = new HashMap<String, PlexClient>();
 
 	private static Serializer serial = new Persister();
 

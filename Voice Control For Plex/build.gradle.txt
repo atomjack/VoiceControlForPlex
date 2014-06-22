@@ -49,6 +49,9 @@ dependencies {
     compile 'com.google.code.gson:gson:2.2.+'
     compile 'com.android.support:support-v4:+'
     compile 'com.github.codechimp-org.apprater:library:1.0.+'
+    compile 'com.google.android.gms:play-services:4.4.52'
+    compile 'com.android.support:appcompat-v7:19.1.+'
+    compile 'com.android.support:mediarouter-v7:19.1.+'
 }
 
 gradle.taskGraph.whenReady { taskGraph ->

@@ -2,12 +2,18 @@ package com.atomjack.vcfp.model;
 
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.support.v7.media.MediaRouter;
+
+import com.google.android.gms.cast.CastDevice;
 
 import org.simpleframework.xml.Attribute;
 import org.simpleframework.xml.Root;
 
 @Root(name="Server", strict=false)
 public class PlexClient extends PlexDevice {
+	public boolean isCastClient = false;
+	public CastDevice castDevice;
+
 	public PlexClient() {
 
 	}
@@ -35,6 +41,8 @@ public class PlexClient extends PlexDevice {
 		parcel.writeString(product);
 		parcel.writeString(address);
 		parcel.writeString(machineIdentifier);
+		parcel.writeInt(isCastClient ? 1 : 0);
+		parcel.writeParcelable(castDevice, i);
 	}
 
 	public PlexClient(Parcel in) {
@@ -44,6 +52,8 @@ public class PlexClient extends PlexDevice {
 		product = in.readString();
 		address = in.readString();
 		machineIdentifier = in.readString();
+		isCastClient = in.readInt() == 1;
+		castDevice = in.readParcelable(CastDevice.class.getClassLoader());
 	}
 
 	public static final Parcelable.Creator<PlexClient> CREATOR = new Parcelable.Creator<PlexClient>() {
