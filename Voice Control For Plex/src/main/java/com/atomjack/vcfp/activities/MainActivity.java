@@ -183,7 +183,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
 		client = gsonRead.fromJson(mPrefs.getString(Preferences.CLIENT, ""), PlexClient.class);
 
-		localScan = new LocalScan(this, MainActivity.class, mPrefs, new ScanHandler() {
+		localScan = new LocalScan(this, MainActivity.class, new ScanHandler() {
 			@Override
 			public void onDeviceSelected(PlexDevice device, boolean resume) {
 				if(device instanceof PlexServer)

@@ -85,6 +85,15 @@ public class PlexVideo implements Parcelable {
 		}
 	}
 
+	public String getArtUri() {
+		String uri = String.format("%s%s", server.activeConnection.uri, art);
+		return uri;
+	}
+
+	public String getThumbUri() {
+		return String.format("%s%s", server.activeConnection.uri, thumb);
+	}
+
 	public void writeToParcel(Parcel out, int flags) {
 		out.writeString(key);
 		out.writeString(title);

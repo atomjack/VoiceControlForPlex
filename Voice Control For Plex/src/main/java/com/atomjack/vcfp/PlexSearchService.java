@@ -13,6 +13,7 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.media.MediaRouteSelector;
 import android.support.v7.media.MediaRouter;
 
+import com.atomjack.vcfp.activities.CastActivity;
 import com.atomjack.vcfp.activities.MainActivity;
 import com.atomjack.vcfp.activities.NowPlayingActivity;
 import com.atomjack.vcfp.model.MediaContainer;
@@ -850,45 +851,25 @@ public class PlexSearchService extends Service {
 		});
 	}
 
-	private String getTranscodeUrl(PlexVideo video) {
-		String url = video.server.activeConnection.uri;
-		url += "/video/:/transcode/universal/start?";
-		QueryString qs = new QueryString("path", String.format("http://127.0.0.1:32400%s", video.key));
-		qs.add("mediaIndex", "0");
-		qs.add("partIndex", "0");
-		qs.add("protocol", "http");
-//		qs.add("offset")
-		if((mPrefs.getBoolean("resume", false) || resumePlayback) && video.viewOffset != null)
-			qs.add("offset", video.viewOffset);
-		qs.add("fastSeek", "1");
-		qs.add("directPlay", "0");
-		qs.add("directStream", "1");
-		qs.add("videoQuality", "60");
-		qs.add("videoResolution", "1024x768");
-		qs.add("maxVideoBitrate", "2000");
-		qs.add("subtitleSize", "100");
-		qs.add("audioBoost", "100");
-		if(mPrefs.getString(Preferences.UUID, null) != null)
-			qs.add("session", mPrefs.getString(Preferences.UUID, null));
-//		qs.add(PlexHeaders.XPlexClientIdentifier)
-		return url + qs.toString();
-	}
-
 	private void playVideo(final PlexVideo video, String transientToken) {
 		Logger.d("Playing video: %s", video.title);
 		Logger.d("Client: %s", client);
 		if(client.isCastClient) {
+
+			Logger.d("active connection: %s", video.server.activeConnection);
+			Intent sendIntent = new Intent(this, CastActivity.class);
+			sendIntent.setAction(VoiceControlForPlexApplication.Intent.CAST_MEDIA);
+			sendIntent.putExtra("video", video);
+			sendIntent.putExtra("client", client);
+			sendIntent.putExtra("resume", resumePlayback);
+			sendIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+			startActivity(sendIntent);
+			/*
+
+
 			Logger.d("cast device: %s", client.castDevice);
 
-			String url = getTranscodeUrl(video);
-			MediaInfo mediaInfo = buildMediaInfo(
-				video.type.equals("movie") ? video.title : video.showTitle,
-				video.summary,
-				video.type.equals("movie") ? "" : video.title,
-				url,
-				video.art,
-				video.thumb
-			);
+
 
 
 
@@ -897,11 +878,11 @@ public class PlexSearchService extends Service {
 			mApiClient = new GoogleApiClient.Builder(this)
 							.addApi(Cast.API, apiOptionsBuilder.build())
 							.addConnectionCallbacks(mConnectionCallbacks)
-							.addOnConnectionFailedListener(mConnectionFailedListener)
+//							.addOnConnectionFailedListener(mConnectionFailedListener)
 							.build();
 			mApiClient.connect();
 
-
+			*/
 
 			return;
 		}
@@ -1711,7 +1692,8 @@ public class PlexSearchService extends Service {
 		public void onConnected(Bundle connectionHint) {
 			if (mWaitingForReconnect) {
 				mWaitingForReconnect = false;
-				reconnectChannels();
+				// TODO: uhhh
+				//reconnectChannels();
 			} else {
 				try {
 					Cast.CastApi.launchApplication(mApiClient, MainActivity.CHROMECAST_APP_ID, false)
@@ -1749,23 +1731,10 @@ public class PlexSearchService extends Service {
 					GoogleApiClient.OnConnectionFailedListener {
 		@Override
 		public void onConnectionFailed(ConnectionResult result) {
-			teardown();
+			// TODO: uhhh
+			//teardown();
 		}
 	}
 
-	private static MediaInfo buildMediaInfo(String title, String summary, String episodeName, String url, String imgUrl, String bigImageUrl) {
-		MediaMetadata movieMetadata = new MediaMetadata(MediaMetadata.MEDIA_TYPE_MOVIE);
 
-		movieMetadata.putString(MediaMetadata.KEY_SUBTITLE, summary);
-		movieMetadata.putString(MediaMetadata.KEY_TITLE, title);
-		movieMetadata.putString(MediaMetadata.KEY_STUDIO, episodeName);
-		movieMetadata.addImage(new WebImage(Uri.parse(imgUrl)));
-		movieMetadata.addImage(new WebImage(Uri.parse(bigImageUrl)));
-
-		return new MediaInfo.Builder(url)
-						.setStreamType(MediaInfo.STREAM_TYPE_BUFFERED)
-						.setContentType("video/mp4")
-						.setMetadata(movieMetadata)
-						.build();
-	}
 }
