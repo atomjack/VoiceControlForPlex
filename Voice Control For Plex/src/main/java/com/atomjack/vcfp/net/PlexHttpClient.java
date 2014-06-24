@@ -5,6 +5,7 @@ import android.content.res.Resources;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
 import android.widget.ScrollView;
 
 import com.atomjack.vcfp.Logger;
@@ -105,19 +106,20 @@ public class PlexHttpClient
 				} catch (Exception e) {
 					Logger.e("Exception parsing response: %s", e.toString());
 				}
-				responseHandler.onSuccess(r);
+				if(responseHandler != null)
+					responseHandler.onSuccess(r);
 			}
 
 			@Override
 			public void onFailure(int statusCode, org.apache.http.Header[] headers, byte[] responseBody, java.lang.Throwable error) {
-				responseHandler.onFailure(error);
+				if(responseHandler != null)
+					responseHandler.onFailure(error);
 			}
 		});
 	}
 
 	public static void getPinCode(Context context, Header[] headers, final PlexPinResponseHandler responseHandler) {
-		client.post(context, "https://plex.tv:443/pins.xml", headers, new RequestParams(), "text/xml", new AsyncHttpResponseHandler()
-		{
+		client.post(context, "https://plex.tv:443/pins.xml", headers, new RequestParams(), "text/xml", new AsyncHttpResponseHandler() {
 			@Override
 			public void onSuccess(int statusCode, org.apache.http.Header[] headers, byte[] responseBody) {
 
@@ -180,7 +182,8 @@ public class PlexHttpClient
 		});
 	}
 
-	public static void setThumb(PlexTrack track, final ImageView imageView) {
+	@SuppressWarnings("deprecation")
+	public static void setThumb(PlexTrack track, final RelativeLayout layout) {
     if(track.thumb != null && !track.thumb.equals("")) {
       try {
 				String url = String.format("http://%s:%s%s", track.server.address, track.server.port, track.thumb);
@@ -199,7 +202,10 @@ public class PlexHttpClient
             }
             Drawable d = Drawable.createFromStream(is, "thumb");
             d.setAlpha(80);
-            imageView.setImageDrawable(d);
+						if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
+							layout.setBackground(d);
+						else
+							layout.setBackgroundDrawable(d);
           }
         });
       } catch(Exception e) {
@@ -209,7 +215,7 @@ public class PlexHttpClient
   }
 
 	@SuppressWarnings("deprecation")
-  public static void setThumb(PlexVideo video, final ScrollView layout) {
+  public static void setThumb(PlexVideo video, final RelativeLayout layout) {
     if(!video.thumb.equals("")) {
       try {
 				String url = String.format("http://%s:%s%s", video.server.activeConnection.address, video.server.activeConnection.port, video.thumb);

@@ -4,10 +4,17 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.v7.media.MediaRouter;
 
+import com.atomjack.vcfp.Logger;
+import com.atomjack.vcfp.R;
+import com.atomjack.vcfp.net.PlexHttpClient;
+import com.atomjack.vcfp.net.PlexHttpResponseHandler;
 import com.google.android.gms.cast.CastDevice;
 
 import org.simpleframework.xml.Attribute;
 import org.simpleframework.xml.Root;
+
+import java.util.ArrayList;
+import java.util.Arrays;
 
 @Root(name="Server", strict=false)
 public class PlexClient extends PlexDevice {
@@ -65,4 +72,33 @@ public class PlexClient extends PlexDevice {
 			return new PlexClient[size];
 		}
 	};
+
+	public void seekTo(int offset, PlexHttpResponseHandler responseHandler) {
+		String url = String.format("http://%s:%s/player/playback/seekTo?offset=%s", address, port, offset);
+		PlexHttpClient.get(url, responseHandler);
+	}
+
+	public void pause(PlexHttpResponseHandler responseHandler) {
+		adjustPlayback("pause", responseHandler);
+	}
+
+	public void stop(PlexHttpResponseHandler responseHandler) {
+		adjustPlayback("stop", responseHandler);
+	}
+
+	public void play(PlexHttpResponseHandler responseHandler) {
+		adjustPlayback("play", responseHandler);
+	}
+
+	private void adjustPlayback(String which, PlexHttpResponseHandler responseHandler) {
+		ArrayList<String> validModes = new ArrayList<String>(Arrays.asList("pause", "play", "stop"));
+		if(validModes.indexOf(which) == -1)
+			return;
+		try {
+			String url = String.format("http://%s:%s/player/playback/%s", address, port, which);
+			PlexHttpClient.get(url, responseHandler);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
 }

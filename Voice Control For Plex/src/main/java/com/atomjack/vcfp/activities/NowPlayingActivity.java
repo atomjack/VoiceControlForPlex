@@ -5,11 +5,14 @@ import android.content.Intent;
 import android.content.res.Resources;
 import android.os.Bundle;
 import android.os.Handler;
-import android.widget.ImageView;
-import android.widget.ScrollView;
+import android.view.View;
+import android.widget.ImageButton;
+import android.widget.RelativeLayout;
+import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.atomjack.vcfp.BuildConfig;
+import com.atomjack.vcfp.Feedback;
 import com.atomjack.vcfp.Logger;
 import com.atomjack.vcfp.PlexHeaders;
 import com.atomjack.vcfp.Preferences;
@@ -43,7 +46,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class NowPlayingActivity extends Activity {
+public class NowPlayingActivity extends Activity implements SeekBar.OnSeekBarChangeListener {
 	private PlexVideo playingVideo; // The video currently playing
 	private PlexTrack playingTrack; // The track currently playing
 	private PlexClient client = null;
@@ -56,6 +59,21 @@ public class NowPlayingActivity extends Activity {
 	Thread serverThread = null;
 	Handler updateConversationHandler;
 
+	private SeekBar seekBar;
+	private boolean isSeeking = false;
+	private int position = -1;
+
+	ImageButton playPauseButton;
+
+	PlayerState state = PlayerState.STOPPED;
+	enum PlayerState {
+		PLAYING,
+		STOPPED,
+		PAUSED
+	};
+
+	private Feedback feedback;
+
 	private static Serializer serial = new Persister();
 
 	protected void onCreate(Bundle savedInstanceState) {
@@ -63,6 +81,10 @@ public class NowPlayingActivity extends Activity {
 		super.onCreate(savedInstanceState);
 
 		Preferences.setContext(this);
+		state = PlayerState.STOPPED;
+
+		feedback = new Feedback(this);
+
 
 		if(BuildConfig.USE_BUGSENSE)
 			BugSenseHandler.initAndStartSession(NowPlayingActivity.this, MainActivity.BUGSENSE_APIKEY);
@@ -82,20 +104,24 @@ public class NowPlayingActivity extends Activity {
 			playingTrack = getIntent().getParcelableExtra("track");
 		}
 
-		if(getIntent().getAction().equals(VoiceControlForPlexApplication.Intent.CAST_MEDIA)) {
-			Logger.d("Casting %s", playingVideo.title);
-		}
-
 		if(client == null)
 			finish();
 
 		if(playingVideo != null) {
+			state = PlayerState.PLAYING;
 			Logger.d("now playing %s", playingVideo.title);
 			showNowPlaying(this, playingVideo, client);
-
+			playPauseButton = (ImageButton)findViewById(R.id.playPauseButton);
+			seekBar = (SeekBar)findViewById(R.id.seekBar);
+			seekBar.setOnSeekBarChangeListener(this);
+			Logger.d("Setting duration to %s", playingVideo.duration);
+			seekBar.setProgress(0);
+			seekBar.setMax(Integer.parseInt(playingVideo.duration));
 			startSubscription();
 		} else if(playingTrack != null) {
+			state = PlayerState.PLAYING;
 			showNowPlaying(this, playingTrack, client);
+			playPauseButton = (ImageButton)findViewById(R.id.playPauseButton);
 			startSubscription();
 		} else {
 			finish();
@@ -132,7 +158,7 @@ public class NowPlayingActivity extends Activity {
 		TextView nowPlayingOnClient = (TextView)activity.findViewById(R.id.nowPlayingOnClient);
 		nowPlayingOnClient.setText(activity.getResources().getString(R.string.now_playing_on) + " " + client.name);
 
-		PlexHttpClient.setThumb(video, (ScrollView)activity.findViewById(R.id.background));
+		PlexHttpClient.setThumb(video, (RelativeLayout)activity.findViewById(R.id.background));
 	}
 
 	public static void showNowPlaying(Activity activity, PlexTrack track, PlexClient client) {
@@ -148,7 +174,85 @@ public class NowPlayingActivity extends Activity {
 		TextView nowPlayingOnClient = (TextView)activity.findViewById(R.id.nowPlayingOnClient);
 		nowPlayingOnClient.setText(activity.getResources().getString(R.string.now_playing_on) + " " + client.name);
 
-		PlexHttpClient.setThumb(track, (ImageView)activity.findViewById(R.id.nowPlayingImage));
+		PlexHttpClient.setThumb(track, (RelativeLayout)activity.findViewById(R.id.nowPlayingImage));
+	}
+
+	private void setState(PlayerState newState) {
+		state = newState;
+		if(state == PlayerState.PAUSED) {
+			playPauseButton.setImageResource(R.drawable.button_play);
+		} else if(state == PlayerState.PLAYING) {
+			playPauseButton.setImageResource(R.drawable.button_pause);
+		}
+	}
+
+	public void doPlayPause(View v) {
+		Logger.d("play pause clicked");
+		if(state == PlayerState.PLAYING) {
+			client.pause(new PlexHttpResponseHandler() {
+				@Override
+				public void onSuccess(PlexResponse response) {
+					setState(PlayerState.PAUSED);
+				}
+
+				@Override
+				public void onFailure(Throwable error) {
+					// TODO: Handle this
+				}
+			});
+		} else if(state == PlayerState.PAUSED) {
+			client.play(new PlexHttpResponseHandler() {
+				@Override
+				public void onSuccess(PlexResponse response) {
+					setState(PlayerState.PLAYING);
+				}
+
+				@Override
+				public void onFailure(Throwable error) {
+					// TODO: Handle this
+				}
+			});
+		}
+	}
+
+	public void doRewind(View v) {
+		if(position > -1) {
+			client.seekTo(position - 15000, new PlexHttpResponseHandler() {
+				@Override
+				public void onSuccess(PlexResponse response) {
+
+				}
+
+				@Override
+				public void onFailure(Throwable error) {
+
+				}
+			});
+		}
+	}
+
+	public void doForward(View v) {
+		if(position > -1) {
+			client.seekTo(position + 30000, new PlexHttpResponseHandler() {
+				@Override
+				public void onSuccess(PlexResponse response) {
+
+				}
+
+				@Override
+				public void onFailure(Throwable error) {
+
+				}
+			});
+		}
+	}
+
+	public void doStop(View v) {
+		client.stop(null);
+	}
+
+	public void doMic(View v) {
+
 	}
 
 	private void startSubscription() {
@@ -209,10 +313,21 @@ public class NowPlayingActivity extends Activity {
 						requestContent.append((char) reader.read());
 					}
 
+					/*
+					    <Timeline address="192.168.1.101" audioStreamID="158"
+					    containerKey="/library/metadata/14"
+					    controllable="playPause,stop,shuffle,repeat,volume,stepBack,stepForward,seekTo,subtitleStream,audioStream"
+					    duration="9266976" guid="com.plexapp.agents.imdb://tt0090605?lang=en"
+					    key="/library/metadata/14" location="fullScreenVideo"
+					    machineIdentifier="a667225557b46d69d2d037fbd42c9a639928780c" mute="0" playQueueItemID="14"
+					    port="32400" protocol="http" ratingKey="14" repeat="0" seekRange="0-9266976" shuffle="0"
+					    state="playing" subtitleStreamID="-1" time="4087" type="video" volume="1" />
+					 */
 
 					String xml = requestContent.toString();
 					MediaContainer mediaContainer = new MediaContainer();
 
+//					Logger.d("xml: %s", xml);
 					try {
 						mediaContainer = serial.read(MediaContainer.class, xml);
 					} catch (Resources.NotFoundException e) {
@@ -265,6 +380,13 @@ public class NowPlayingActivity extends Activity {
 				type = "music";
 			if(type != null) {
 				Timeline timeline = mc.getTimeline(type);
+				position = timeline.time;
+				if(timeline.state.equals("stopped"))
+					state = PlayerState.STOPPED;
+				else if(timeline.state.equals("playing"))
+					setState(PlayerState.PLAYING);
+				else if(timeline.state.equals("paused"))
+					setState(PlayerState.PAUSED);
 				// If the playing media has stopped, unsubscribe then exit from this activity.
 				if(timeline.state.equals("stopped") && subscriptionHasStarted) {
 					unsubscribe(new Runnable() {
@@ -284,6 +406,8 @@ public class NowPlayingActivity extends Activity {
 						}
 					});
 				} else if(timeline.state.equals("playing")) {
+					if(!isSeeking)
+						seekBar.setProgress(timeline.time);
 					subscriptionHasStarted = true;
 				}
 			}
@@ -399,5 +523,31 @@ public class NowPlayingActivity extends Activity {
 		super.onNewIntent(intent);
 		if(intent.getExtras().getBoolean("finish") == true)
 			finish();
+	}
+
+	@Override
+	public void onStartTrackingTouch(SeekBar seekBar) {
+		isSeeking = true;
+	}
+
+	@Override
+	public void onStopTrackingTouch(SeekBar _seekBar) {
+		client.seekTo(_seekBar.getProgress(), new PlexHttpResponseHandler() {
+			@Override
+			public void onSuccess(PlexResponse response) {
+				isSeeking = false;
+			}
+
+			@Override
+			public void onFailure(Throwable error) {
+				isSeeking = false;
+				feedback.e(String.format(getString(R.string.error_seeking), error.getMessage()));
+			}
+		});
+
+	}
+
+	@Override
+	public void onProgressChanged(SeekBar seekBar, int progress, boolean b) {
 	}
 }

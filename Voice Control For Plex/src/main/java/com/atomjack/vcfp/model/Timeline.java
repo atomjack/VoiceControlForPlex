@@ -8,12 +8,14 @@ public class Timeline {
 	@Attribute
 	public String state;
 	@Attribute(required=false)
-	public String time;
-	@Attribute
+	public int time;
+	@Attribute(required=false)
 	public String type;
+	@Attribute(required=false)
+	public int duration;
 
 	public String getTime() {
-		int seconds = Integer.parseInt(time) / 1000;
+		int seconds = time / 1000;
 		int hours = seconds / 3600;
 		int minutes = (seconds % 3600) / 60;
 		seconds = seconds % 60;

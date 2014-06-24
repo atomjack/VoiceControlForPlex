@@ -610,38 +610,37 @@ public class PlexSearchService extends Service {
 		ArrayList<String> validModes = new ArrayList<String>(Arrays.asList("pause", "play", "stop"));
 		if(validModes.indexOf(which) == -1)
 			return;
-		try {
-			Logger.d("Host: %s", client.address);
-			Logger.d("Port: %s", client.port);
-			String url = String.format("http://%s:%s/player/playback/%s", client.address, client.port, which);
-			PlexHttpClient.get(url, new PlexHttpResponseHandler()
-			{
-				@Override
-				public void onSuccess(PlexResponse r)
-				{
-					Boolean passed = true;
-					if(r.code != null) {
-						if(!r.code.equals("200")) {
-							passed = false;
-						}
-					}
-					Logger.d("Playback response: %s", r.code);
-					if(passed) {
-						feedback.m(onFinish);
-					} else {
-						feedback.e(getResources().getString(R.string.http_status_code_error), r.code);
-					}
-				}
 
-				@Override
-				public void onFailure(Throwable error) {
-					feedback.e(getResources().getString(R.string.got_error), error.getMessage());
+		PlexHttpResponseHandler responseHandler = new PlexHttpResponseHandler()
+		{
+			@Override
+			public void onSuccess(PlexResponse r)
+			{
+				Boolean passed = true;
+				if(r.code != null) {
+					if(!r.code.equals("200")) {
+						passed = false;
+					}
 				}
-			});
-		} catch (Exception e) {
-			Logger.e("Exception trying to play video: %s", e.toString());
-			e.printStackTrace();
-		}
+				Logger.d("Playback response: %s", r.code);
+				if(passed) {
+					feedback.m(onFinish);
+				} else {
+					feedback.e(getResources().getString(R.string.http_status_code_error), r.code);
+				}
+			}
+
+			@Override
+			public void onFailure(Throwable error) {
+				feedback.e(getResources().getString(R.string.got_error), error.getMessage());
+			}
+		};
+		if(which.equals("pause"))
+			client.pause(responseHandler);
+		else if(which.equals("play"))
+			client.play(responseHandler);
+		else if(which.equals("stop"))
+			client.stop(responseHandler);
 	}
 
 	private void pausePlayback() {
@@ -669,36 +668,28 @@ public class PlexSearchService extends Service {
 		int offset = 1000*((hours*60*60)+(minutes*60)+seconds);
 		Logger.d("offset: %d milliseconds", offset);
 
-		try {
-			Logger.d("Host: %s", client.address);
-			Logger.d("Port: %s", client.port);
-			String url = String.format("http://%s:%s/player/playback/seekTo?offset=%s", client.address, client.port, offset);
-			PlexHttpClient.get(url, new PlexHttpResponseHandler()
+		client.seekTo(offset, new PlexHttpResponseHandler()
+		{
+			@Override
+			public void onSuccess(PlexResponse r)
 			{
-				@Override
-				public void onSuccess(PlexResponse r)
-				{
-					Boolean passed = true;
-					if(r.code != null) {
-						if(!r.code.equals("200")) {
-							passed = false;
-						}
-					}
-					Logger.d("Playback response: %s", r.code);
-					if(!passed) {
-						feedback.e(getResources().getString(R.string.http_status_code_error), r.code);
+				Boolean passed = true;
+				if(r.code != null) {
+					if(!r.code.equals("200")) {
+						passed = false;
 					}
 				}
+				Logger.d("Playback response: %s", r.code);
+				if(!passed) {
+					feedback.e(getResources().getString(R.string.http_status_code_error), r.code);
+				}
+			}
 
-				@Override
-				public void onFailure(Throwable error) {
-					feedback.e(getResources().getString(R.string.got_error), error.getMessage());
-				}
-			});
-		} catch (Exception e) {
-			Logger.e("Exception trying to play video: %s", e.toString());
-			e.printStackTrace();
-		}
+			@Override
+			public void onFailure(Throwable error) {
+				feedback.e(getResources().getString(R.string.got_error), error.getMessage());
+			}
+		});
 	}
 
 	private void doMovieSearch(final String queryTerm) {

@@ -15,10 +15,12 @@ import com.atomjack.vcfp.PlexHeaders;
 import com.atomjack.vcfp.Preferences;
 import com.atomjack.vcfp.QueryString;
 import com.atomjack.vcfp.R;
+import com.atomjack.vcfp.VCFPCastConsumer;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexTrack;
 import com.atomjack.vcfp.model.PlexVideo;
+import com.google.android.gms.cast.ApplicationMetadata;
 import com.google.android.gms.cast.MediaInfo;
 import com.google.android.gms.cast.MediaMetadata;
 import com.google.android.gms.common.images.WebImage;
@@ -29,14 +31,14 @@ import com.google.sample.castcompanionlibrary.cast.callbacks.VideoCastConsumerIm
 import com.google.sample.castcompanionlibrary.utils.LogUtils;
 import com.google.sample.castcompanionlibrary.widgets.MiniController;
 
-public class CastActivity extends Activity {
+public class CastActivity extends NowPlayingActivity {
 	private PlexVideo playingVideo; // The video currently playing
 	private PlexTrack playingTrack; // The track currently playing
 	private PlexClient client = null;
 
 	private boolean resumePlayback;
 	private static VideoCastManager castManager = null;
-	private IVideoCastConsumer castConsumer;
+	private VCFPCastConsumer castConsumer;
 	private MiniController miniController;
 
 	@Override
@@ -58,9 +60,6 @@ public class CastActivity extends Activity {
 
 			setCastConsumer();
 
-
-
-
 			if(castManager == null) {
 				castManager = getCastManager(this);
 				castManager.addVideoCastConsumer(castConsumer);
@@ -72,60 +71,66 @@ public class CastActivity extends Activity {
 			miniController = (MiniController) findViewById(R.id.miniController1);
 			castManager.addMiniController(miniController);
 
+			NowPlayingActivity.showNowPlaying(CastActivity.this, playingVideo, client);
 
-			playingVideo.server.requestTransientAccessToken(new AfterTransientTokenRequest() {
-				@Override
-				public void success(String token) {
-					Logger.d("Got transient token: %s", token);
-					String url = getTranscodeUrl(playingVideo, token);
-//			url = "http://192.168.1.101:32400/video/:/transcode/universal/start?path=http%3A%2F%2F127.0.0.1%3A32400%2Flibrary%2Fmetadata%2F14&mediaIndex=0&partIndex=0&protocol=http&offset=0&fastSeek=1&directPlay=0&directStream=1&videoQuality=60&videoResolution=1024x768&maxVideoBitrate=2000&subtitleSize=100&audioBoost=100&session=v778c32skclkgldi&X-Plex-Client-Identifier=qhajaiikdxsthuxr&X-Plex-Product=Plex+Chromecast&X-Plex-Device=Chromecast&X-Plex-Platform=Chromecast&X-Plex-Platform-Version=1.0&X-Plex-Version=2.1.11&X-Plex-Device-Name=Chromecast&X-Plex-Token=transient-3938fefb-c3fa-4c9a-901a-65c13b4c05ea&X-Plex-Username=atomjack";
-					Logger.d("url: %s", url);
-					final MediaInfo mediaInfo = buildMediaInfo(
-									playingVideo.type.equals("movie") ? playingVideo.title : playingVideo.showTitle,
-									playingVideo.summary,
-									playingVideo.type.equals("movie") ? "" : playingVideo.title,
-									url,
-									playingVideo.getArtUri(),
-									playingVideo.getThumbUri()
-					);
+			if(Preferences.getString(Preferences.PLEX_USERNAME) != null) {
+				playingVideo.server.requestTransientAccessToken(new AfterTransientTokenRequest() {
+					@Override
+					public void success(String token) {
+						Logger.d("Got transient token: %s", token);
+						beginPlayback(token);
+					}
 
-					final Handler handler = new Handler();
-					handler.postDelayed(new Runnable() {
-						@Override
-						public void run() {
-							try {
-								Logger.d("loading media");
-								castManager.loadMedia(mediaInfo, true, 0);
-							} catch(Exception ex) {
-								ex.printStackTrace();
-							}
-						}
-					}, 5000);
-
-
-//			castManager.startCastControllerActivity(this, mediaInfo, 0, true);
-
-					// TODO: Do this later
-					NowPlayingActivity.showNowPlaying(CastActivity.this, playingVideo, client);
-				}
-
-				@Override
-				public void failure() {
-					// TODO: Handle this
-					Logger.d("Failed to get transient access token");
-				}
-			});
-
-
-
-
+					@Override
+					public void failure() {
+						Logger.d("Failed to get transient access token");
+						// Failed to get an access token, so let's try without one
+						beginPlayback(null);
+					}
+				});
+			} else {
+				beginPlayback(null);
+			}
 		} else {
 			// TODO: Something here
 		}
 	}
 
+	private void beginPlayback(String token) {
+		String url = getTranscodeUrl(playingVideo, token);
+		Logger.d("url: %s", url);
+		final MediaInfo mediaInfo = buildMediaInfo(
+			playingVideo.type.equals("movie") ? playingVideo.title : playingVideo.showTitle,
+			playingVideo.summary,
+			playingVideo.type.equals("movie") ? "" : playingVideo.title,
+			url,
+			playingVideo.getArtUri(),
+			playingVideo.getThumbUri()
+		);
+
+		castConsumer.setOnConnected(new Runnable() {
+			@Override
+			public void run() {
+				try {
+					Logger.d("loading media");
+					castManager.loadMedia(mediaInfo, true, 0);
+
+				} catch(Exception ex) {
+					ex.printStackTrace();
+				}
+			}
+		});
+	}
+
 	private void setCastConsumer() {
-		castConsumer = new VideoCastConsumerImpl() {
+		castConsumer = new VCFPCastConsumer() {
+			private boolean launched = false;
+			private Runnable onConnectedRunnable;
+
+			@Override
+			public void setOnConnected(Runnable runnable) {
+				onConnectedRunnable = runnable;
+			}
 
 			@Override
 			public void onFailed(int resourceId, int statusCode) {
@@ -137,6 +142,21 @@ public class CastActivity extends Activity {
 				Logger.d("onConnectionSuspended() was called with cause: " + cause);
 //					com.google.sample.cast.refplayer.utils.Utils.
 //									showToast(VideoBrowserActivity.this, R.string.connection_temp_lost);
+			}
+
+			@Override
+			public void onApplicationConnected(ApplicationMetadata appMetadata,
+																				 String sessionId, boolean wasLaunched) {
+				Logger.d("onApplicationConnected()");
+				Logger.d("metadata: %s", appMetadata);
+				Logger.d("sessionid: %s", sessionId);
+				Logger.d("was launched: %s", wasLaunched);
+				if(!launched || true) {
+					launched = true;
+					if(onConnectedRunnable != null)
+						onConnectedRunnable.run();
+				}
+
 			}
 
 			@Override
@@ -199,7 +219,7 @@ public class CastActivity extends Activity {
 		qs.add("protocol", "http");
 //		qs.add("offset")
 		if((Preferences.get(Preferences.RESUME, false) || resumePlayback) && video.viewOffset != null)
-			qs.add("offset", video.viewOffset);
+			qs.add("offset", Integer.toString(Integer.parseInt(video.viewOffset) / 1000));
 		qs.add("fastSeek", "1");
 		qs.add("directPlay", "0");
 		qs.add("directStream", "1");
@@ -214,7 +234,8 @@ public class CastActivity extends Activity {
 		qs.add(PlexHeaders.XPlexDevice, client.castDevice.getModelName());
 		qs.add(PlexHeaders.XPlexDeviceName, client.castDevice.getModelName());
 		qs.add(PlexHeaders.XPlexPlatform, client.castDevice.getModelName());
-		qs.add(PlexHeaders.XPlexToken, transientToken);
+		if(transientToken != null)
+			qs.add(PlexHeaders.XPlexToken, transientToken);
 		qs.add(PlexHeaders.XPlexPlatformVersion, "1.0");
 		try {
 			qs.add(PlexHeaders.XPlexVersion, getPackageManager().getPackageInfo(getPackageName(), 0).versionName);
@@ -222,7 +243,8 @@ public class CastActivity extends Activity {
 			ex.printStackTrace();
 		}
 		// TODO: Fix this
-		qs.add(PlexHeaders.XPlexUsername, Preferences.get(Preferences.PLEX_USERNAME, ""));
+		if(Preferences.getString(Preferences.PLEX_USERNAME) != null)
+			qs.add(PlexHeaders.XPlexUsername, Preferences.getString(Preferences.PLEX_USERNAME));
 		return url + qs.toString();
 	}
 

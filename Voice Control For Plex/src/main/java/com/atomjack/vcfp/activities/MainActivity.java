@@ -457,6 +457,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
 	public void logout(MenuItem item) {
 		Preferences.remove(Preferences.AUTHENTICATION_TOKEN);
+		Preferences.remove(Preferences.PLEX_USERNAME);
 		authToken = null;
 
 		// If the currently selected server is not local, reset it to scan all.
