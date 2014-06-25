@@ -930,7 +930,7 @@ public class PlexSearchService extends Service {
 
 	private void showPlayingVideo(PlexVideo video) {
 		Intent nowPlayingIntent = new Intent(this, NowPlayingActivity.class);
-		nowPlayingIntent.putExtra("video", video);
+		nowPlayingIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_MEDIA, video);
 		nowPlayingIntent.putExtra("client", client);
 		nowPlayingIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 		startActivity(nowPlayingIntent);
@@ -1648,7 +1648,7 @@ public class PlexSearchService extends Service {
 
 	private void showPlayingTrack(PlexTrack track) {
 		Intent nowPlayingIntent = new Intent(this, NowPlayingActivity.class);
-		nowPlayingIntent.putExtra("track", track);
+		nowPlayingIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_MEDIA, track);
 		nowPlayingIntent.putExtra("client", client);
 		nowPlayingIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 		startActivity(nowPlayingIntent);

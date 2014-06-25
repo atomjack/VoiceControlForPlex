@@ -87,42 +87,25 @@ public class NowPlayingActivity extends PlayerActivity {
 
 		if(savedInstanceState != null) {
 			Logger.d("found saved instance state");
-			playingVideo = savedInstanceState.getParcelable("video");
-			playingTrack = savedInstanceState.getParcelable("track");
+			playingMedia = savedInstanceState.getParcelable(VoiceControlForPlexApplication.Intent.EXTRA_MEDIA);
 			client = savedInstanceState.getParcelable("client");
 		} else {
-			playingVideo = getIntent().getParcelableExtra("video");
+			playingMedia = getIntent().getParcelableExtra(VoiceControlForPlexApplication.Intent.EXTRA_MEDIA);
 			client = getIntent().getParcelableExtra("client");
-			playingTrack = getIntent().getParcelableExtra("track");
 		}
 
-		if(client == null)
+		if(client == null || playingMedia == null)
 			finish();
 
-		if(playingVideo != null) {
-			state = PlayerState.PLAYING;
-			Logger.d("now playing %s", playingVideo.title);
-			showNowPlaying(playingVideo, client);
-			seekBar = (SeekBar)findViewById(R.id.seekBar);
-			seekBar.setOnSeekBarChangeListener(this);
-			Logger.d("Setting duration to %s", playingVideo.duration);
-			seekBar.setProgress(0);
-			seekBar.setMax(playingVideo.duration);
-			startSubscription();
-		} else if(playingTrack != null) {
-			state = PlayerState.PLAYING;
-			showNowPlaying(playingTrack, client);
-
-			seekBar = (SeekBar)findViewById(R.id.seekBar);
-			seekBar.setOnSeekBarChangeListener(this);
-			Logger.d("Setting duration to %s", playingTrack.duration);
-			seekBar.setProgress(0);
-			seekBar.setMax(playingTrack.duration);
-
-			startSubscription();
-		} else {
-			finish();
-		}
+		state = PlayerState.PLAYING;
+		showNowPlaying(playingMedia, client);
+		seekBar = (SeekBar)findViewById(R.id.seekBar);
+		seekBar.setOnSeekBarChangeListener(this);
+		seekBar.setProgress(0);
+		seekBar.setMax(playingMedia.duration);
+		setCurrentTimeDisplay(getOffset(playingMedia));
+		durationDisplay.setText(VoiceControlForPlexApplication.secondsToTimecode(playingMedia.duration / 1000));
+		startSubscription();
 	}
 
 
@@ -319,9 +302,9 @@ public class NowPlayingActivity extends PlayerActivity {
 		@Override
 		public void run() {
 			String type = null;
-			if(playingVideo != null)
+			if(playingMedia instanceof PlexVideo)
 				type = "video";
-			else if(playingTrack != null)
+			else if(playingMedia instanceof PlexTrack)
 				type = "music";
 			if(type != null) {
 				Timeline timeline = mc.getTimeline(type);
@@ -457,9 +440,8 @@ public class NowPlayingActivity extends PlayerActivity {
 	protected void onSaveInstanceState(Bundle outState) {
 		super.onSaveInstanceState(outState);
 		Logger.d("Saving instance state");
-		outState.putParcelable("video", playingVideo);
+		outState.putParcelable(VoiceControlForPlexApplication.Intent.EXTRA_MEDIA, playingMedia);
 		outState.putParcelable("client", client);
-		outState.putParcelable("track", playingTrack);
 	}
 
 	@Override
@@ -468,11 +450,6 @@ public class NowPlayingActivity extends PlayerActivity {
 		super.onNewIntent(intent);
 		if(intent.getExtras().getBoolean("finish") == true)
 			finish();
-	}
-
-	@Override
-	public void onStartTrackingTouch(SeekBar seekBar) {
-		isSeeking = true;
 	}
 
 	@Override
@@ -490,9 +467,5 @@ public class NowPlayingActivity extends PlayerActivity {
 			}
 		});
 
-	}
-
-	@Override
-	public void onProgressChanged(SeekBar seekBar, int progress, boolean b) {
 	}
 }

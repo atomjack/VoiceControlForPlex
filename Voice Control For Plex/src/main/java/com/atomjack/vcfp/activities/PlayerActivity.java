@@ -30,9 +30,7 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 
 public class PlayerActivity extends Activity implements SeekBar.OnSeekBarChangeListener {
-	protected PlexVideo playingVideo; // The video currently playing
-	protected PlexTrack playingTrack; // The track currently playing
-	protected PlexMedia playingMedia;
+	protected PlexMedia playingMedia; // The video or music that is playing
 	protected PlexClient client = null;
 	protected boolean resumePlayback;
 	protected ImageButton playPauseButton;
@@ -51,11 +49,7 @@ public class PlayerActivity extends Activity implements SeekBar.OnSeekBarChangeL
 		Intent serviceIntent = new Intent(getApplicationContext(), PlexSearchService.class);
 		Gson gson = new Gson();
 
-		PlexServer server = null;
-		if(playingVideo != null)
-			server = playingVideo.server;
-		else if(playingTrack != null)
-			server = playingVideo.server;
+		PlexServer server = playingMedia.server;
 
 		Logger.d("server: %s", server);
 		if(server != null) {
@@ -83,6 +77,17 @@ public class PlayerActivity extends Activity implements SeekBar.OnSeekBarChangeL
 		playPauseButton = (ImageButton)findViewById(R.id.playPauseButton);
 		currentTimeDisplay = (TextView)findViewById(R.id.currentTimeView);
 		durationDisplay = (TextView)findViewById(R.id.durationView);
+	}
+
+	protected void setCurrentTimeDisplay(long seconds) {
+		currentTimeDisplay.setText(VoiceControlForPlexApplication.secondsToTimecode(seconds));
+	}
+
+	protected int getOffset(PlexMedia media) {
+		if((Preferences.get(Preferences.RESUME, false) || resumePlayback) && media.viewOffset != null)
+			return Integer.parseInt(media.viewOffset) / 1000;
+		else
+			return 0;
 	}
 
 	public void showNowPlaying(PlexMedia media, PlexClient client) {
@@ -144,11 +149,13 @@ public class PlayerActivity extends Activity implements SeekBar.OnSeekBarChangeL
 	}
 
 	@Override
-	public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
+	public void onProgressChanged(SeekBar seekBar, int progress, boolean b) {
+		setCurrentTimeDisplay(progress / 1000);
 	}
 
 	@Override
 	public void onStartTrackingTouch(SeekBar seekBar) {
+		isSeeking = true;
 	}
 
 	@Override
