@@ -16,10 +16,14 @@ import android.content.DialogInterface;
 import android.content.res.Resources.NotFoundException;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.net.Uri;
+import android.text.TextUtils;
 
 import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexServer;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
 
@@ -28,6 +32,14 @@ public class VoiceControlForPlexApplication extends Application
 	public final static String MINIMUM_PHT_VERSION = "1.0.7";
 
 	private static boolean isApplicationVisible;
+
+	public static Gson gsonRead = new GsonBuilder()
+					.registerTypeAdapter(Uri.class, new UriDeserializer())
+					.create();
+
+	public static Gson gsonWrite = new GsonBuilder()
+					.registerTypeAdapter(Uri.class, new UriSerializer())
+					.create();
 
 	public final static class Intent {
 			public final static String GDMRECEIVE = "com.atomjack.vcfp.intent.gdmreceive";
@@ -118,6 +130,13 @@ public class VoiceControlForPlexApplication extends Application
 								Logger.d("%s has %d directories.", server.name, mc.directories != null ? mc.directories.size() : 0);
 								if(!server.name.equals("")) {
 									servers.put(server.name, server);
+
+									// Finally, if this server is the current default server, save it in preferences so the access token gets transferred
+									PlexServer defaultServer = gsonRead.fromJson(Preferences.get(Preferences.SERVER, ""), PlexServer.class);
+									if(server.machineIdentifier.equals(defaultServer.machineIdentifier)) {
+										Preferences.put(Preferences.SERVER, gsonWrite.toJson(server));
+									}
+
 									Logger.d("Added %s.", server.name);
 								}
 								if(onFinish != null)
@@ -125,6 +144,7 @@ public class VoiceControlForPlexApplication extends Application
 							}
 						});
 					}
+					// transient-b3f60648-ed79-45bf-8c86-3293527796b9
 
 					@Override
 					public void onFailure(int statusCode) {
@@ -140,9 +160,10 @@ public class VoiceControlForPlexApplication extends Application
 		} else {
 			// Copy over the sections from the locally found server. We'll want to include the Connections that belong to the server that come from plex.tv
 			PlexServer thatServer = servers.get(server.name);
-			server.musicSections = thatServer.musicSections;
-			server.movieSections = thatServer.movieSections;
-			server.tvSections = thatServer.tvSections;
+			thatServer.musicSections = server.musicSections;
+			thatServer.movieSections = server.movieSections;
+			thatServer.tvSections = server.tvSections;
+			thatServer.accessToken = server.accessToken;
 			servers.put(thatServer.name, thatServer);
 			Logger.d("%s already added.", thatServer.name);
 		}
@@ -181,5 +202,28 @@ public class VoiceControlForPlexApplication extends Application
 
 	public static void applicationPaused() {
 		isApplicationVisible = false;
+	}
+
+	public static String secondsToTimecode(double _seconds) {
+		ArrayList<String> timecode = new ArrayList<String>();
+		double hours, minutes, seconds = 0;
+		hours = Math.floor(_seconds/3600);
+		minutes = Math.floor((_seconds - (hours * 3600)) / 60);
+		seconds = Math.floor(_seconds - (hours * 3600) - (minutes * 60));
+		if(hours > 0)
+			timecode.add(twoDigitsInt((int)hours));
+		timecode.add(twoDigitsInt((int)minutes));
+		timecode.add(twoDigitsInt((int)seconds));
+		return TextUtils.join(":", timecode);
+	}
+
+	private static String twoDigitsInt( int pValue )
+	{
+		if ( pValue == 0 )
+			return "00";
+		if ( pValue < 10 )
+			return "0" + pValue;
+
+		return String.valueOf( pValue );
 	}
 }

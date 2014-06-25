@@ -52,5 +52,17 @@
         android:layout_marginLeft="14dp"
         android:text="@string/now_playing_on"
         android:textColor="@color/white" />
-
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true" >
+        <SeekBar
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/seekBar"
+            android:layout_alignParentBottom="true"/>
+        <include layout="@layout/playback" />
+    </LinearLayout>
 </RelativeLayout>

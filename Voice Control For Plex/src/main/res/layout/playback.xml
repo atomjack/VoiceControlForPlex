@@ -3,7 +3,16 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:orientation="horizontal"
               android:layout_width="match_parent"
-              android:layout_height="match_parent" android:gravity="center_horizontal">
+              android:layout_height="match_parent">
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:text="00:00"
+        android:id="@+id/currentTimeView"
+        android:gravity="center_vertical"
+        android:paddingTop="35sp"
+        android:paddingLeft="15sp"/>
     <ImageButton
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -39,4 +48,11 @@
         android:onClick="doMic"
         android:id="@+id/micButton" android:src="@drawable/button_microphone"
         android:paddingLeft="5sp" android:paddingRight="5sp" android:paddingTop="5sp"/>
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:text="00:00"
+        android:id="@+id/durationView"
+        android:paddingTop="35sp"/>
 </LinearLayout>

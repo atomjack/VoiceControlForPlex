@@ -1,13 +1,11 @@
 package com.atomjack.vcfp.activities;
 
-import android.app.Activity;
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
 import android.support.v7.media.MediaRouter;
-import android.util.Log;
+import android.view.View;
+import android.widget.SeekBar;
 
 import com.atomjack.vcfp.AfterTransientTokenRequest;
 import com.atomjack.vcfp.Logger;
@@ -17,29 +15,38 @@ import com.atomjack.vcfp.QueryString;
 import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.VCFPCastConsumer;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
-import com.atomjack.vcfp.model.PlexClient;
+import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexTrack;
 import com.atomjack.vcfp.model.PlexVideo;
 import com.google.android.gms.cast.ApplicationMetadata;
 import com.google.android.gms.cast.MediaInfo;
 import com.google.android.gms.cast.MediaMetadata;
+import com.google.android.gms.cast.MediaStatus;
 import com.google.android.gms.common.images.WebImage;
-import com.google.sample.castcompanionlibrary.cast.BaseCastManager;
 import com.google.sample.castcompanionlibrary.cast.VideoCastManager;
-import com.google.sample.castcompanionlibrary.cast.callbacks.IVideoCastConsumer;
-import com.google.sample.castcompanionlibrary.cast.callbacks.VideoCastConsumerImpl;
-import com.google.sample.castcompanionlibrary.utils.LogUtils;
 import com.google.sample.castcompanionlibrary.widgets.MiniController;
 
-public class CastActivity extends NowPlayingActivity {
-	private PlexVideo playingVideo; // The video currently playing
-	private PlexTrack playingTrack; // The track currently playing
-	private PlexClient client = null;
+import org.json.JSONObject;
 
-	private boolean resumePlayback;
+import java.util.Timer;
+import java.util.TimerTask;
+
+public class CastActivity extends PlayerActivity {
 	private static VideoCastManager castManager = null;
 	private VCFPCastConsumer castConsumer;
 	private MiniController miniController;
+
+	protected MediaInfo remoteMediaInformation;
+
+	private Timer durationTimer;
+
+	private int currentState = MediaStatus.PLAYER_STATE_UNKNOWN;
+
+	private String transientToken;
+
+	// This gets set to true when we do a seek, so after we receive a message from the receiver that
+	// we have stopped, we'll resume with the new offset.
+	private boolean seekDone = false;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -48,15 +55,20 @@ public class CastActivity extends NowPlayingActivity {
 		Preferences.setContext(this);
 
 		if(getIntent().getAction().equals(VoiceControlForPlexApplication.Intent.CAST_MEDIA)) {
-			playingVideo = getIntent().getParcelableExtra("video");
+			PlexVideo video = getIntent().getParcelableExtra("video");
 			client = getIntent().getParcelableExtra("client");
-			playingTrack = getIntent().getParcelableExtra("track");
+			PlexTrack track = getIntent().getParcelableExtra("track");
 
+			if(video != null)
+				playingMedia = video;
+			else if(track != null)
+				playingMedia = track;
+			else {
+				// TODO: something here
+			}
 			resumePlayback = getIntent().getBooleanExtra("resume", false);
 
-			Logger.d("Casting %s", playingVideo.title);
-
-			setContentView(R.layout.now_playing_movie);
+			Logger.d("Casting %s", playingMedia.title);
 
 			setCastConsumer();
 
@@ -71,61 +83,175 @@ public class CastActivity extends NowPlayingActivity {
 			miniController = (MiniController) findViewById(R.id.miniController1);
 			castManager.addMiniController(miniController);
 
-			NowPlayingActivity.showNowPlaying(CastActivity.this, playingVideo, client);
+			showNowPlaying(playingMedia, client);
 
-			if(Preferences.getString(Preferences.PLEX_USERNAME) != null) {
-				playingVideo.server.requestTransientAccessToken(new AfterTransientTokenRequest() {
+
+			seekBar = (SeekBar)findViewById(R.id.seekBar);
+			seekBar.setOnSeekBarChangeListener(this);
+			Logger.d("setting progress to %d", getOffset(playingMedia));
+			seekBar.setMax(playingMedia.duration);
+			seekBar.setProgress(getOffset(playingMedia)*1000);
+
+			setCurrentTimeDisplay(getOffset(playingMedia));
+			durationDisplay.setText(VoiceControlForPlexApplication.secondsToTimecode(playingMedia.duration / 1000));
+
+			currentState = castManager.getPlaybackStatus();
+			if (Preferences.getString(Preferences.PLEX_USERNAME) != null) {
+				playingMedia.server.requestTransientAccessToken(new AfterTransientTokenRequest() {
 					@Override
 					public void success(String token) {
 						Logger.d("Got transient token: %s", token);
-						beginPlayback(token);
+						transientToken = token;
+						beginPlayback();
 					}
 
 					@Override
 					public void failure() {
 						Logger.d("Failed to get transient access token");
 						// Failed to get an access token, so let's try without one
-						beginPlayback(null);
+						beginPlayback();
 					}
 				});
 			} else {
-				beginPlayback(null);
+				beginPlayback();
 			}
 		} else {
 			// TODO: Something here
 		}
 	}
 
-	private void beginPlayback(String token) {
-		String url = getTranscodeUrl(playingVideo, token);
-		Logger.d("url: %s", url);
-		final MediaInfo mediaInfo = buildMediaInfo(
-			playingVideo.type.equals("movie") ? playingVideo.title : playingVideo.showTitle,
-			playingVideo.summary,
-			playingVideo.type.equals("movie") ? "" : playingVideo.title,
+	private MediaInfo getMediaInfo(String url) {
+		MediaInfo mediaInfo = buildMediaInfo(
+			playingMedia.getTitle(),
+			playingMedia.getSummary(),
+			playingMedia.getEpisodeTitle(),
 			url,
-			playingVideo.getArtUri(),
-			playingVideo.getThumbUri()
+			playingMedia.getArtUri(),
+			playingMedia.getThumbUri(),
+			playingMedia.duration,
+			getOffset(playingMedia)
 		);
+		return mediaInfo;
+	}
 
-		castConsumer.setOnConnected(new Runnable() {
+	private void beginPlayback() {
+		String url = getTranscodeUrl(playingMedia, transientToken);
+		Logger.d("url: %s", url);
+		Logger.d("duration: %s", playingMedia.duration);
+		final MediaInfo mediaInfo = getMediaInfo(url);
+
+		Logger.d("offset is %d", getOffset(playingMedia));
+		if(castManager.isConnected()) {
+			try {
+				castManager.loadMedia(mediaInfo, true, getOffset(playingMedia) * 1000);
+			} catch (Exception ex) {}
+		} else {
+			castConsumer.setOnConnected(new Runnable() {
+				@Override
+				public void run() {
+					try {
+						Logger.d("loading media");
+						castManager.loadMedia(mediaInfo, true, getOffset(playingMedia) * 1000);
+//						startDurationTimer();
+					} catch (Exception ex) {
+						ex.printStackTrace();
+					}
+				}
+			});
+		}
+	}
+
+	private void stopDurationTimer() {
+		if(durationTimer != null)
+			durationTimer.cancel();
+	}
+
+	private void startDurationTimer() {
+		durationTimer = new Timer();
+		durationTimer.scheduleAtFixedRate(new TimerTask() {
 			@Override
 			public void run() {
 				try {
-					Logger.d("loading media");
-					castManager.loadMedia(mediaInfo, true, 0);
+					if(!isSeeking) {
+						final long position = castManager.getCurrentMediaPosition();
+//					Logger.d("position: %d", position);
+						seekBar.setProgress((int) position);
+						runOnUiThread(new Runnable() {
+							@Override
+							public void run() {
+								setCurrentTimeDisplay(position/1000);
+							}
+						});
 
-				} catch(Exception ex) {
+//					Logger.d("Progress now %d", seekBar.getProgress());
+					}
+				} catch (Exception ex) {
+					// silent
 					ex.printStackTrace();
 				}
 			}
-		});
+		}, 1000, 1000);
+	}
+
+	private void setCurrentTimeDisplay(long seconds) {
+		currentTimeDisplay.setText(VoiceControlForPlexApplication.secondsToTimecode(seconds));
 	}
 
 	private void setCastConsumer() {
 		castConsumer = new VCFPCastConsumer() {
 			private boolean launched = false;
 			private Runnable onConnectedRunnable;
+
+			@Override
+			public void onRemoteMediaPlayerMetadataUpdated() {
+				super.onRemoteMediaPlayerMetadataUpdated();
+
+			}
+
+			@Override
+			public void onRemoteMediaPlayerStatusUpdated() {
+				super.onRemoteMediaPlayerStatusUpdated();
+				Logger.d("onRemoteMediaPlayerStatusUpdated");
+				try {
+					remoteMediaInformation = castManager.getRemoteMediaInformation();
+					MediaMetadata metadata = remoteMediaInformation.getMetadata();
+					int lastState = currentState;
+					currentState = castManager.getPlaybackStatus();
+
+
+					Logger.d("currentState: %d", currentState);
+
+
+					if(currentState == MediaStatus.PLAYER_STATE_IDLE) {
+						Logger.d("idle reason: %d", castManager.getIdleReason());
+
+						// If we stopped because a seek was done, resume playback at the new offset.
+						if(seekDone) {
+							seekDone = false;
+							Logger.d("resuming playback with an offset of %s", playingMedia.viewOffset);
+							beginPlayback();
+						} else {
+							if (durationTimer != null)
+								stopDurationTimer();
+							finish();
+						}
+					} else if(currentState == MediaStatus.PLAYER_STATE_PAUSED) {
+						setState(MediaStatus.PLAYER_STATE_PAUSED);
+						stopDurationTimer();
+					} else if(currentState == MediaStatus.PLAYER_STATE_PLAYING) {
+						setState(MediaStatus.PLAYER_STATE_PLAYING);
+						startDurationTimer();
+					}
+
+
+
+
+//					Logger.d("metadata: %s", metadata);
+				} catch (Exception ex) {
+					// silent
+					ex.printStackTrace();
+				}
+			}
 
 			@Override
 			public void setOnConnected(Runnable runnable) {
@@ -194,32 +320,50 @@ public class CastActivity extends NowPlayingActivity {
 		return castManager;
 	}
 
-	private static MediaInfo buildMediaInfo(String title, String summary, String episodeName, String url, String imgUrl, String bigImageUrl) {
+	private static MediaInfo buildMediaInfo(String title, String summary, String episodeName,
+				String url, String imgUrl, String bigImageUrl, int duration, int offset) {
 		MediaMetadata movieMetadata = new MediaMetadata(MediaMetadata.MEDIA_TYPE_MOVIE);
 
-		movieMetadata.putString(MediaMetadata.KEY_SUBTITLE, summary);
-		movieMetadata.putString(MediaMetadata.KEY_TITLE, title);
-		movieMetadata.putString(MediaMetadata.KEY_STUDIO, episodeName);
+//		movieMetadata.putString(MediaMetadata.KEY_SUBTITLE, summary);
+//		movieMetadata.putString(MediaMetadata.KEY_TITLE, title);
+//		movieMetadata.putString(MediaMetadata.KEY_STUDIO, episodeName);
 		movieMetadata.addImage(new WebImage(Uri.parse(imgUrl)));
 		movieMetadata.addImage(new WebImage(Uri.parse(bigImageUrl)));
 
+		JSONObject customData = new JSONObject();
+		try {
+			customData.put("duration", duration/1000);
+			customData.put("position", offset);
+
+			customData.put("title", title);
+			customData.put("summary", summary);
+			customData.put("episodeName", episodeName);
+
+		} catch(Exception ex) {}
 		return new MediaInfo.Builder(url)
 						.setStreamType(MediaInfo.STREAM_TYPE_BUFFERED)
+						.setStreamDuration((long)duration)
+						.setCustomData(customData)
 						.setContentType("video/mp4")
 						.setMetadata(movieMetadata)
 						.build();
 	}
 
-	private String getTranscodeUrl(PlexVideo video, String transientToken) {
-		String url = video.server.activeConnection.uri;
+	private int getOffset(PlexMedia media) {
+		if((Preferences.get(Preferences.RESUME, false) || resumePlayback) && media.viewOffset != null)
+			return Integer.parseInt(media.viewOffset) / 1000;
+		else
+			return 0;
+	}
+
+	private String getTranscodeUrl(PlexMedia media, String transientToken) {
+		String url = media.server.activeConnection.uri;
 		url += "/video/:/transcode/universal/start?";
-		QueryString qs = new QueryString("path", String.format("http://127.0.0.1:32400%s", video.key));
+		QueryString qs = new QueryString("path", String.format("http://127.0.0.1:32400%s", media.key));
 		qs.add("mediaIndex", "0");
 		qs.add("partIndex", "0");
 		qs.add("protocol", "http");
-//		qs.add("offset")
-		if((Preferences.get(Preferences.RESUME, false) || resumePlayback) && video.viewOffset != null)
-			qs.add("offset", Integer.toString(Integer.parseInt(video.viewOffset) / 1000));
+		qs.add("offset", Integer.toString(getOffset(media)));
 		qs.add("fastSeek", "1");
 		qs.add("directPlay", "0");
 		qs.add("directStream", "1");
@@ -250,7 +394,7 @@ public class CastActivity extends NowPlayingActivity {
 
 	@Override
 	protected void onResume() {
-		Logger.d("onResume() was called");
+		Logger.d("CastActivity onResume");
 		castManager = getCastManager(this);
 		if (null != castManager) {
 			castManager.addVideoCastConsumer(castConsumer);
@@ -270,11 +414,74 @@ public class CastActivity extends NowPlayingActivity {
 	@Override
 	protected void onDestroy() {
 		Logger.d("onDestroy is called");
+		stopDurationTimer();
 		if (null != castManager) {
-//			mMini.removeOnMiniControllerChangedListener(castManager);
-//			castManager.removeMiniController(mMini);
+			if(miniController != null) {
+				miniController.removeOnMiniControllerChangedListener(castManager);
+				castManager.removeMiniController(miniController);
+			}
 			castManager.clearContext(this);
 		}
 		super.onDestroy();
+	}
+
+	public void doPlayPause(View v) {
+		try {
+			if(currentState ==  MediaStatus.PLAYER_STATE_PAUSED) {
+				castManager.play();
+			} else if(currentState ==  MediaStatus.PLAYER_STATE_PLAYING) {
+				castManager.pause();
+			}
+		} catch (Exception ex) {}
+	}
+
+	public void doRewind(View v) {
+
+	}
+
+	public void doForward(View v) {
+	}
+
+	public void doStop(View v) {
+		try {
+			castManager.stop();
+			stopDurationTimer();
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+	}
+
+	@Override
+	public void onStartTrackingTouch(SeekBar _seekBar) {
+		isSeeking = true;
+
+	}
+
+	@Override
+	public void onStopTrackingTouch(SeekBar _seekBar) {
+		Logger.d("stopped changing progress");
+		try {
+			seekDone = true;
+			playingMedia.viewOffset = Integer.toString(_seekBar.getProgress());
+			stopDurationTimer();
+			castManager.stop();
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+		isSeeking = false;
+	}
+
+	@Override
+	public void onProgressChanged(SeekBar seekBar, int progress, boolean b) {
+		setCurrentTimeDisplay(progress / 1000);
+	}
+
+	private void setState(int newState) {
+		currentState = newState;
+		if(currentState ==  MediaStatus.PLAYER_STATE_PAUSED) {
+			playPauseButton.setImageResource(R.drawable.button_play);
+		} else if(currentState ==  MediaStatus.PLAYER_STATE_PLAYING) {
+			playPauseButton.setImageResource(R.drawable.button_pause);
+		}
 	}
 }

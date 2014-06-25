@@ -19,23 +19,10 @@ import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 
 @Root(strict=false)
-public class PlexVideo implements Parcelable {
-	@Attribute
-	public String key;
-	@Attribute
-	public String title;
-	@Attribute(required=false)
-	public String viewOffset;
+public class PlexVideo extends PlexMedia {
 	@Attribute(required=false)
 	public String index;
-	@Attribute(required=false)
-	public String grandparentTitle;
-	@Attribute(required=false)
-	public PlexServer server;
-	@Attribute(required=false)
-	public String grandparentThumb;
-	@Attribute(required=false)
-	public String thumb;
+
 	@Attribute(required=false)
 	public String art;
 	@Attribute(required=false)
@@ -44,8 +31,7 @@ public class PlexVideo implements Parcelable {
 	public String year;
 	@ElementList(required=false, inline=true, entry="Genre")
 	public ArrayList<Genre> genre;
-	@Attribute(required=false)
-	public String duration;
+
 	@Attribute(required=false)
 	public String summary;
   @Attribute(required=false)
@@ -60,6 +46,21 @@ public class PlexVideo implements Parcelable {
     }
   }
 	public String showTitle;
+
+	@Override
+	public String getTitle() {
+		return type.equals("movie") ? title : showTitle;
+	}
+
+	@Override
+	public String getEpisodeTitle() {
+		return type.equals("show") ? title : "";
+	}
+
+	@Override
+	public String getSummary() {
+		return summary;
+	}
 
 	public PlexVideo() {
 		super();
@@ -79,24 +80,19 @@ public class PlexVideo implements Parcelable {
 	}
 
 	public String getDuration() {
-		if(duration == null)
-			return "";
-		if(TimeUnit.MILLISECONDS.toHours(Long.parseLong(duration)) > 0) {
-		return String.format("%d hr %d min", 
-				TimeUnit.MILLISECONDS.toHours(Long.parseLong(duration)),
-				TimeUnit.MILLISECONDS.toMinutes(Long.parseLong(duration)) - TimeUnit.HOURS.toMinutes(TimeUnit.MILLISECONDS.toHours(Long.parseLong(duration))));
+		if(TimeUnit.MILLISECONDS.toHours((long)duration) > 0) {
+		return String.format("%d hr %d min",
+				TimeUnit.MILLISECONDS.toHours((long)duration),
+				TimeUnit.MILLISECONDS.toMinutes((long)duration) - TimeUnit.HOURS.toMinutes(TimeUnit.MILLISECONDS.toHours((long)duration)));
 		} else {
-			return String.format("%d min", TimeUnit.MILLISECONDS.toMinutes(Long.parseLong(duration)));
+			return String.format("%d min", TimeUnit.MILLISECONDS.toMinutes((long)duration));
 		}
 	}
 
+	@Override
 	public String getArtUri() {
 		String uri = String.format("%s%s", server.activeConnection.uri, art);
 		return uri;
-	}
-
-	public String getThumbUri() {
-		return String.format("%s%s", server.activeConnection.uri, thumb);
 	}
 
 	public void writeToParcel(Parcel out, int flags) {
@@ -110,7 +106,7 @@ public class PlexVideo implements Parcelable {
 		out.writeString(art);
 		out.writeString(type);
 		out.writeString(year);
-		out.writeString(duration);
+		out.writeInt(duration);
 		out.writeString(summary);
 		out.writeString(originallyAvailableAt);
 		out.writeString(showTitle);
@@ -130,7 +126,7 @@ public class PlexVideo implements Parcelable {
 		art = in.readString();
 		type = in.readString();
 		year = in.readString();
-		duration = in.readString();
+		duration = in.readInt();
 		summary = in.readString();
 		originallyAvailableAt = in.readString();
 		showTitle = in.readString();
