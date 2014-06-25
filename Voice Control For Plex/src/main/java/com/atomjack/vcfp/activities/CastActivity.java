@@ -193,10 +193,6 @@ public class CastActivity extends PlayerActivity {
 		}, 1000, 1000);
 	}
 
-	private void setCurrentTimeDisplay(long seconds) {
-		currentTimeDisplay.setText(VoiceControlForPlexApplication.secondsToTimecode(seconds));
-	}
-
 	private void setCastConsumer() {
 		castConsumer = new VCFPCastConsumer() {
 			private boolean launched = false;
@@ -349,13 +345,6 @@ public class CastActivity extends PlayerActivity {
 						.build();
 	}
 
-	private int getOffset(PlexMedia media) {
-		if((Preferences.get(Preferences.RESUME, false) || resumePlayback) && media.viewOffset != null)
-			return Integer.parseInt(media.viewOffset) / 1000;
-		else
-			return 0;
-	}
-
 	private String getTranscodeUrl(PlexMedia media, String transientToken) {
 		String url = media.server.activeConnection.uri;
 		url += "/video/:/transcode/universal/start?";
@@ -452,12 +441,6 @@ public class CastActivity extends PlayerActivity {
 	}
 
 	@Override
-	public void onStartTrackingTouch(SeekBar _seekBar) {
-		isSeeking = true;
-
-	}
-
-	@Override
 	public void onStopTrackingTouch(SeekBar _seekBar) {
 		Logger.d("stopped changing progress");
 		try {
@@ -469,11 +452,6 @@ public class CastActivity extends PlayerActivity {
 			ex.printStackTrace();
 		}
 		isSeeking = false;
-	}
-
-	@Override
-	public void onProgressChanged(SeekBar seekBar, int progress, boolean b) {
-		setCurrentTimeDisplay(progress / 1000);
 	}
 
 	private void setState(int newState) {
