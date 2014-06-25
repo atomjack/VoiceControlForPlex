@@ -46,11 +46,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class NowPlayingActivity extends Activity implements SeekBar.OnSeekBarChangeListener {
-	private PlexVideo playingVideo; // The video currently playing
-	private PlexTrack playingTrack; // The track currently playing
-	private PlexClient client = null;
-
+public class NowPlayingActivity extends PlayerActivity {
 	private int commandId = 0;
 	private int subscriptionPort = 59409;
 	private boolean subscribed = false;
@@ -59,11 +55,7 @@ public class NowPlayingActivity extends Activity implements SeekBar.OnSeekBarCha
 	Thread serverThread = null;
 	Handler updateConversationHandler;
 
-	private SeekBar seekBar;
-	private boolean isSeeking = false;
 	private int position = -1;
-
-	ImageButton playPauseButton;
 
 	PlayerState state = PlayerState.STOPPED;
 	enum PlayerState {
@@ -110,72 +102,29 @@ public class NowPlayingActivity extends Activity implements SeekBar.OnSeekBarCha
 		if(playingVideo != null) {
 			state = PlayerState.PLAYING;
 			Logger.d("now playing %s", playingVideo.title);
-			showNowPlaying(this, playingVideo, client);
-			playPauseButton = (ImageButton)findViewById(R.id.playPauseButton);
+			showNowPlaying(playingVideo, client);
 			seekBar = (SeekBar)findViewById(R.id.seekBar);
 			seekBar.setOnSeekBarChangeListener(this);
 			Logger.d("Setting duration to %s", playingVideo.duration);
 			seekBar.setProgress(0);
-			seekBar.setMax(Integer.parseInt(playingVideo.duration));
+			seekBar.setMax(playingVideo.duration);
 			startSubscription();
 		} else if(playingTrack != null) {
 			state = PlayerState.PLAYING;
-			showNowPlaying(this, playingTrack, client);
-			playPauseButton = (ImageButton)findViewById(R.id.playPauseButton);
+			showNowPlaying(playingTrack, client);
+
+			seekBar = (SeekBar)findViewById(R.id.seekBar);
+			seekBar.setOnSeekBarChangeListener(this);
+			Logger.d("Setting duration to %s", playingTrack.duration);
+			seekBar.setProgress(0);
+			seekBar.setMax(playingTrack.duration);
+
 			startSubscription();
 		} else {
 			finish();
 		}
 	}
 
-	public static void showNowPlaying(Activity activity, PlexVideo video, PlexClient client) {
-		if(video.type.equals("movie")) {
-			activity.setContentView(R.layout.now_playing_movie);
-			TextView title = (TextView)activity.findViewById(R.id.nowPlayingTitle);
-			title.setText(video.title);
-			TextView genre = (TextView)activity.findViewById(R.id.nowPlayingGenre);
-			genre.setText(video.getGenres());
-			TextView year = (TextView)activity.findViewById(R.id.nowPlayingYear);
-			year.setText(video.year);
-			TextView duration = (TextView)activity.findViewById(R.id.nowPlayingDuration);
-			duration.setText(video.getDuration());
-			TextView summary = (TextView)activity.findViewById(R.id.nowPlayingSummary);
-			summary.setText(video.summary);
-		} else {
-			activity.setContentView(R.layout.now_playing_show);
-
-			TextView showTitle = (TextView)activity.findViewById(R.id.nowPlayingShowTitle);
-			showTitle.setText(video.showTitle);
-			TextView episodeTitle = (TextView)activity.findViewById(R.id.nowPlayingEpisodeTitle);
-			episodeTitle.setText(video.title);
-			TextView year = (TextView)activity.findViewById(R.id.nowPlayingYear);
-			year.setText(video.year);
-			TextView duration = (TextView)activity.findViewById(R.id.nowPlayingDuration);
-			duration.setText(video.getDuration());
-			TextView summary = (TextView)activity.findViewById(R.id.nowPlayingSummary);
-			summary.setText(video.summary);
-		}
-		TextView nowPlayingOnClient = (TextView)activity.findViewById(R.id.nowPlayingOnClient);
-		nowPlayingOnClient.setText(activity.getResources().getString(R.string.now_playing_on) + " " + client.name);
-
-		PlexHttpClient.setThumb(video, (RelativeLayout)activity.findViewById(R.id.background));
-	}
-
-	public static void showNowPlaying(Activity activity, PlexTrack track, PlexClient client) {
-		activity.setContentView(R.layout.now_playing_music);
-
-		TextView artist = (TextView)activity.findViewById(R.id.nowPlayingArtist);
-		artist.setText(track.artist);
-		TextView album = (TextView)activity.findViewById(R.id.nowPlayingAlbum);
-		album.setText(track.album);
-		TextView title = (TextView)activity.findViewById(R.id.nowPlayingTitle);
-		title.setText(track.title);
-
-		TextView nowPlayingOnClient = (TextView)activity.findViewById(R.id.nowPlayingOnClient);
-		nowPlayingOnClient.setText(activity.getResources().getString(R.string.now_playing_on) + " " + client.name);
-
-		PlexHttpClient.setThumb(track, (RelativeLayout)activity.findViewById(R.id.nowPlayingImage));
-	}
 
 	private void setState(PlayerState newState) {
 		state = newState;
@@ -249,10 +198,6 @@ public class NowPlayingActivity extends Activity implements SeekBar.OnSeekBarCha
 
 	public void doStop(View v) {
 		client.stop(null);
-	}
-
-	public void doMic(View v) {
-
 	}
 
 	private void startSubscription() {

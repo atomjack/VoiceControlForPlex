@@ -92,7 +92,9 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 	public final static int FEEDBACK_TOAST = 1;
 
 	public final static String BUGSENSE_APIKEY = "879458d0";
-	public final static String CHROMECAST_APP_ID = "713B411C";
+//	public final static String CHROMECAST_APP_ID = "713B411C"; // styled media receiver
+	public final static String CHROMECAST_APP_ID = "11B8EAA3"; // custom
+
 
 	private final static int RESULT_VOICE_FEEDBACK_SELECTED = 0;
 	private final static int RESULT_TASKER_PROJECT_IMPORTED = 1;
@@ -515,23 +517,23 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 		alertDialogBuilder.setTitle(R.string.pin_title);
 		alertDialogBuilder.setMessage(String.format(getString(R.string.pin_message), pin.code));
 		alertDialogBuilder
-						.setCancelable(false)
-						.setNegativeButton("Cancel",
-										new DialogInterface.OnClickListener() {
-											public void onClick(DialogInterface dialog, int id) {
-												dialog.cancel();
-												fetchPinTask.getFuture().cancel(false);
-											}
-										}
-						)
-						.setNeutralButton("Manual", new DialogInterface.OnClickListener() {
-							@Override
-							public void onClick(final DialogInterface dialog, int id) {
-								dialog.dismiss();
-								fetchPinTask.getFuture().cancel(false);
-								showManualLogin();
-							}
-						});
+			.setCancelable(false)
+			.setNegativeButton("Cancel",
+				new DialogInterface.OnClickListener() {
+					public void onClick(DialogInterface dialog, int id) {
+						dialog.cancel();
+						fetchPinTask.getFuture().cancel(false);
+					}
+				}
+			)
+			.setNeutralButton("Manual", new DialogInterface.OnClickListener() {
+				@Override
+				public void onClick(final DialogInterface dialog, int id) {
+				dialog.dismiss();
+				fetchPinTask.getFuture().cancel(false);
+				showManualLogin();
+				}
+			});
 
 
 		// create and show an alert dialog

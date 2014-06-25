@@ -53,6 +53,7 @@ public class PlexHttpClient
         try {
           MediaContainer mediaContainer = new MediaContainer();
 
+					Logger.d("response: %s", new String(responseBody));
           try {
             mediaContainer = serial.read(MediaContainer.class, new String(responseBody, "UTF-8"));
           } catch (Resources.NotFoundException e) {
@@ -183,7 +184,7 @@ public class PlexHttpClient
 	}
 
 	@SuppressWarnings("deprecation")
-	public static void setThumb(PlexTrack track, final RelativeLayout layout) {
+	public static void setThumb(PlexTrack track, final ImageView layout) {
     if(track.thumb != null && !track.thumb.equals("")) {
       try {
 				String url = String.format("http://%s:%s%s", track.server.address, track.server.port, track.thumb);
