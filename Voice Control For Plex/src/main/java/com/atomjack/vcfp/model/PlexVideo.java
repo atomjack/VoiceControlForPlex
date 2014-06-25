@@ -72,6 +72,8 @@ public class PlexVideo implements Parcelable {
 	}
 
 	public String getDuration() {
+		if(duration == null)
+			return "";
 		if(TimeUnit.MILLISECONDS.toHours(Long.parseLong(duration)) > 0) {
 		return String.format("%d hr %d min", 
 				TimeUnit.MILLISECONDS.toHours(Long.parseLong(duration)),
