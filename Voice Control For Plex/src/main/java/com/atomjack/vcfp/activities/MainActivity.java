@@ -87,6 +87,7 @@ import org.simpleframework.xml.Serializer;
 import org.simpleframework.xml.core.Persister;
 
 public class MainActivity extends Activity implements TextToSpeech.OnInitListener {
+
 	public final static int FEEDBACK_VOICE = 0;
 	public final static int FEEDBACK_TOAST = 1;
 
