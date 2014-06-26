@@ -764,11 +764,10 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
 					mPrefsEditor.putString(Preferences.SAVED_SERVERS, gson.toJson(VoiceControlForPlexApplication.servers));
 					mPrefsEditor.commit();
-					if(searchDialog != null)
-						searchDialog.dismiss();
 					if (VoiceControlForPlexApplication.servers.size() > 0) {
 						localScan.showPlexServers();
 					} else {
+						localScan.hideSearchDialog();
 						AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
 						builder.setTitle(R.string.no_servers_found);
 						builder.setCancelable(false)
