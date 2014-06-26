@@ -87,7 +87,6 @@ import org.simpleframework.xml.Serializer;
 import org.simpleframework.xml.core.Persister;
 
 public class MainActivity extends Activity implements TextToSpeech.OnInitListener {
-
 	public final static int FEEDBACK_VOICE = 0;
 	public final static int FEEDBACK_TOAST = 1;
 
@@ -149,8 +148,8 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
 		mMediaRouter = MediaRouter.getInstance(getApplicationContext());
 		mMediaRouteSelector = new MediaRouteSelector.Builder()
-						.addControlCategory(CastMediaControlIntent.categoryForCast(MainActivity.CHROMECAST_APP_ID))
-						.build();
+			.addControlCategory(CastMediaControlIntent.categoryForCast(MainActivity.CHROMECAST_APP_ID))
+			.build();
 		mMediaRouterCallback = new MediaRouterCallback();
 		mMediaRouter.addCallback(mMediaRouteSelector, mMediaRouterCallback, MediaRouter.CALLBACK_FLAG_PERFORM_ACTIVE_SCAN);
 
@@ -445,15 +444,15 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
 	public void showAbout(MenuItem item) {
 		AlertDialog.Builder alertDialog = new AlertDialog.Builder(MainActivity.this)
-						.setTitle(R.string.app_name)
-						.setMessage(R.string.about_text);
+			.setTitle(R.string.app_name)
+			.setMessage(R.string.about_text);
 
 		alertDialog.show();
 	}
 
 	public void donate(MenuItem item) {
 		Intent intent = new Intent(Intent.ACTION_VIEW,
-						Uri.parse("https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=UJF9QY9QELERG"));
+			Uri.parse("https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=UJF9QY9QELERG"));
 		startActivity(intent);
 	}
 
@@ -633,26 +632,26 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 		final EditText usernameInput = (EditText) promptView.findViewById(R.id.usernameInput);
 		final EditText passwordInput = (EditText) promptView.findViewById(R.id.passwordInput);
 		alertDialogBuilder
-						.setCancelable(true)
-						.setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
-							@Override
-							public void onClick(final DialogInterface dialog, int id) {
-							}
-						})
-						.setNeutralButton(R.string.button_pin, new DialogInterface.OnClickListener() {
-							@Override
-							public void onClick(final DialogInterface dialog, int id) {
-								dialog.dismiss();
-								showLogin();
-							}
-						})
-						.setNegativeButton(R.string.cancel,
-										new DialogInterface.OnClickListener() {
-											public void onClick(DialogInterface dialog, int id) {
-												dialog.cancel();
-											}
-										}
-						);
+			.setCancelable(true)
+			.setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+				@Override
+				public void onClick(final DialogInterface dialog, int id) {
+				}
+			})
+			.setNeutralButton(R.string.button_pin, new DialogInterface.OnClickListener() {
+				@Override
+				public void onClick(final DialogInterface dialog, int id) {
+				dialog.dismiss();
+				showLogin();
+				}
+			})
+			.setNegativeButton(R.string.cancel,
+				new DialogInterface.OnClickListener() {
+					public void onClick(DialogInterface dialog, int id) {
+						dialog.cancel();
+					}
+				}
+			);
 
 
 		// create an alert dialog
@@ -665,9 +664,9 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 			@Override
 			public void onClick(View view) {
 				Header[] headers = {
-								new BasicHeader(com.atomjack.vcfp.PlexHeaders.XPlexClientPlatform, "Android"),
-								new BasicHeader(com.atomjack.vcfp.PlexHeaders.XPlexClientIdentifier, getUUID()),
-								new BasicHeader("Accept", "text/xml")
+					new BasicHeader(com.atomjack.vcfp.PlexHeaders.XPlexClientPlatform, "Android"),
+					new BasicHeader(com.atomjack.vcfp.PlexHeaders.XPlexClientIdentifier, getUUID()),
+					new BasicHeader("Accept", "text/xml")
 				};
 				PlexHttpClient.signin(MainActivity.this, usernameInput.getText().toString(), passwordInput.getText().toString(), headers, "application/xml;charset=\"utf-8\"", new PlexHttpUserHandler() {
 					@Override
@@ -800,11 +799,11 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 						AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
 						builder.setTitle(R.string.no_servers_found);
 						builder.setCancelable(false)
-										.setNeutralButton(R.string.ok, new DialogInterface.OnClickListener() {
-											public void onClick(DialogInterface dialog, int id) {
-												dialog.cancel();
-											}
-										});
+							.setNeutralButton(R.string.ok, new DialogInterface.OnClickListener() {
+								public void onClick(DialogInterface dialog, int id) {
+									dialog.cancel();
+								}
+							});
 						AlertDialog d = builder.create();
 						d.show();
 					}
@@ -822,11 +821,11 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 						AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
 						builder.setTitle(R.string.no_clients_found);
 						builder.setCancelable(false)
-										.setNeutralButton(R.string.ok, new DialogInterface.OnClickListener() {
-											public void onClick(DialogInterface dialog, int id) {
-												dialog.cancel();
-											}
-										});
+							.setNeutralButton(R.string.ok, new DialogInterface.OnClickListener() {
+								public void onClick(DialogInterface dialog, int id) {
+									dialog.cancel();
+								}
+							});
 						AlertDialog d = builder.create();
 						d.show();
 					}
@@ -1001,14 +1000,6 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 				client.castDevice = CastDevice.getFromBundle(route.getExtras());
 				VoiceControlForPlexApplication.castClients.put(client.name, client);
 			}
-			/*
-			//attempt to autoconnect to chromecast
-			if(mSelectedDevice == null
-							&& route.supportsControlCategory(CastMediaControlIntent.categoryForCast(MainActivity.this.CHROMECAST_APP_ID)))
-			{
-				MainActivity.this.onRouteSelected(route);
-			}
-			*/
 		}
 		@Override
 		public void onRouteSelected(MediaRouter router, MediaRouter.RouteInfo route) {
@@ -1021,8 +1012,6 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 //			MainActivity.this.onRouteUnselected(route);
 		}
 	}
-
-
 }
 
 
