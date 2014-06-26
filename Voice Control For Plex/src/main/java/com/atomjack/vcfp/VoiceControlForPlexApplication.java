@@ -133,7 +133,7 @@ public class VoiceControlForPlexApplication extends Application
 
 									// Finally, if this server is the current default server, save it in preferences so the access token gets transferred
 									PlexServer defaultServer = gsonRead.fromJson(Preferences.get(Preferences.SERVER, ""), PlexServer.class);
-									if(server.machineIdentifier.equals(defaultServer.machineIdentifier)) {
+									if(defaultServer != null && server.machineIdentifier.equals(defaultServer.machineIdentifier)) {
 										Preferences.put(Preferences.SERVER, gsonWrite.toJson(server));
 									}
 
