@@ -44,15 +44,12 @@ import android.widget.EditText;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 
-import com.atomjack.vcfp.BuildConfig;
 import com.atomjack.vcfp.Feedback;
 import com.atomjack.vcfp.FutureRunnable;
 import com.atomjack.vcfp.GDMService;
 import com.atomjack.vcfp.LocalScan;
 import com.atomjack.vcfp.Logger;
 import com.atomjack.vcfp.PlexHeaders;
-import com.atomjack.vcfp.UriDeserializer;
-import com.atomjack.vcfp.UriSerializer;
 import com.atomjack.vcfp.adapters.MainListAdapter;
 import com.atomjack.vcfp.Preferences;
 import com.atomjack.vcfp.R;
@@ -70,12 +67,9 @@ import com.atomjack.vcfp.model.PlexUser;
 import com.atomjack.vcfp.net.PlexHttpClient;
 import com.atomjack.vcfp.net.PlexHttpUserHandler;
 import com.atomjack.vcfp.net.PlexPinResponseHandler;
-import com.bugsense.trace.BugSenseHandler;
 import com.cubeactive.martin.inscription.WhatsNewDialog;
 import com.google.android.gms.cast.CastDevice;
 import com.google.android.gms.cast.CastMediaControlIntent;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
@@ -86,12 +80,11 @@ import org.apache.http.message.BasicHeader;
 import org.simpleframework.xml.Serializer;
 import org.simpleframework.xml.core.Persister;
 
-public class MainActivity extends Activity implements TextToSpeech.OnInitListener {
+public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitListener {
 
 	public final static int FEEDBACK_VOICE = 0;
 	public final static int FEEDBACK_TOAST = 1;
 
-	public final static String BUGSENSE_APIKEY = "879458d0";
 //	public final static String CHROMECAST_APP_ID = "713B411C"; // styled media receiver
 	public final static String CHROMECAST_APP_ID = "11B8EAA3"; // custom
 
@@ -112,24 +105,14 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 	private PlexServer server = null;
 	private PlexClient client = null;
 
-	private Gson gsonRead = new GsonBuilder()
-					.registerTypeAdapter(Uri.class, new UriDeserializer())
-					.create();
 
-	private Gson gsonWrite = new GsonBuilder()
-					.registerTypeAdapter(Uri.class, new UriSerializer())
-					.create();
 
 	private TextToSpeech tts;
-
-	Menu menu;
 	private Dialog searchDialog;
 
 	private String authToken;
 
 	AlertDialog.Builder helpDialog;
-
-	private LocalScan localScan;
 
 	MediaRouter mMediaRouter;
 	MediaRouterCallback mMediaRouterCallback;
@@ -138,9 +121,6 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-
-		if(BuildConfig.USE_BUGSENSE)
-			BugSenseHandler.initAndStartSession(MainActivity.this, BUGSENSE_APIKEY);
 
 		Preferences.setContext(this);
 
@@ -252,7 +232,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 	}
 
 	public void resumeChecked(View v) {
-		Preferences.put("resume", ((CheckBox)v).isChecked());
+		Preferences.put("resume", ((CheckBox) v).isChecked());
 	}
 
 	@Override
@@ -647,11 +627,11 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 				}
 			})
 			.setNegativeButton(R.string.cancel,
-				new DialogInterface.OnClickListener() {
-					public void onClick(DialogInterface dialog, int id) {
-						dialog.cancel();
-					}
-				}
+							new DialogInterface.OnClickListener() {
+								public void onClick(DialogInterface dialog, int id) {
+									dialog.cancel();
+								}
+							}
 			);
 
 
@@ -665,9 +645,9 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 			@Override
 			public void onClick(View view) {
 				Header[] headers = {
-					new BasicHeader(com.atomjack.vcfp.PlexHeaders.XPlexClientPlatform, "Android"),
-					new BasicHeader(com.atomjack.vcfp.PlexHeaders.XPlexClientIdentifier, getUUID()),
-					new BasicHeader("Accept", "text/xml")
+								new BasicHeader(com.atomjack.vcfp.PlexHeaders.XPlexClientPlatform, "Android"),
+								new BasicHeader(com.atomjack.vcfp.PlexHeaders.XPlexClientIdentifier, getUUID()),
+								new BasicHeader("Accept", "text/xml")
 				};
 				PlexHttpClient.signin(MainActivity.this, usernameInput.getText().toString(), passwordInput.getText().toString(), headers, "application/xml;charset=\"utf-8\"", new PlexHttpUserHandler() {
 					@Override
@@ -781,10 +761,8 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 	}
 
 	@Override
-	public void onNewIntent(Intent intent) {
-		Logger.d("ON NEW INTENT IN MAINACTIVITY");
+	protected void onNewIntent(Intent intent) {
 		String from = intent.getStringExtra("FROM");
-		Logger.d("From: %s", from);
 		if(intent.getAction().equals(VoiceControlForPlexApplication.Intent.GDMRECEIVE)) {
 			Logger.d("Origin: " + intent.getStringExtra("ORIGIN"));
 			String origin = intent.getStringExtra("ORIGIN") == null ? "" : intent.getStringExtra("ORIGIN");
@@ -833,8 +811,9 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 				}
 			}
 		}
+		super.onNewIntent(intent);
 	}
-	
+
 
 
 	private void setServer(PlexServer _server) {
@@ -865,18 +844,10 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 	
 	@Override
 	public boolean onCreateOptionsMenu(Menu _menu) {
-		// Inflate the menu; this adds items to the action bar if it is present.
-		getMenuInflater().inflate(R.menu.menu_main, _menu);
-		menu = _menu;
-
-//		MenuItem mediaRouteMenuItem = menu.findItem(R.id.media_route_menu_item);
-//		MediaRouteActionProvider mediaRouteActionProvider =
-//						(MediaRouteActionProvider) MenuItemCompat.getActionProvider(mediaRouteMenuItem);
-//		mediaRouteActionProvider.setRouteSelector(mMediaRouteSelector);
 
 		if(authToken != null) {
-			menu.findItem(R.id.menu_login).setVisible(false);
-			menu.findItem(R.id.menu_logout).setVisible(true);
+			_menu.findItem(R.id.menu_login).setVisible(false);
+			_menu.findItem(R.id.menu_logout).setVisible(true);
 		}
 		if (!hasValidAutoVoice() && !hasValidUtter()) {
 			_menu.findItem(R.id.menu_tasker_import).setVisible(false);
@@ -890,14 +861,20 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 				_menu.findItem(R.id.menu_install_autovoice).setVisible(true);
 			}
 		}
-		return super.onCreateOptionsMenu(menu);
+		return super.onCreateOptionsMenu(_menu);
 	}
+
+
+
+
 
 	@Override
 	protected void onDestroy() {
+		Logger.d("MainActivity onDestroy");
 		if(gdmReceiver != null) {
 			LocalBroadcastManager.getInstance(this).unregisterReceiver(gdmReceiver);
 		}
+
 		feedback.destroy();
 		if(tts != null)
 			tts.shutdown();
@@ -913,6 +890,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 		if(gdmReceiver != null) {
 			LocalBroadcastManager.getInstance(this).unregisterReceiver(gdmReceiver);
 		}
+
 		super.onPause();
 	}
 
@@ -921,9 +899,6 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 		Logger.d("MainActivity onResume");
 		super.onResume();
 		VoiceControlForPlexApplication.applicationResumed();
-
-//		mMediaRouter.addCallback(mMediaRouteSelector, mMediaRouterCallback,
-//						MediaRouter.CALLBACK_FLAG_PERFORM_ACTIVE_SCAN);
 
 		if(gdmReceiver != null) {
 			IntentFilter filters = new IntentFilter();

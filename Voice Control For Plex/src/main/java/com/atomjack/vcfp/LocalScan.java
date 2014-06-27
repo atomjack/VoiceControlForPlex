@@ -122,6 +122,10 @@ public class LocalScan {
 	}
 
 	public void showPlexClients(Map<String, PlexClient> clients, boolean showResume) {
+		showPlexClients(clients, showResume, null);
+	}
+
+	public void showPlexClients(Map<String, PlexClient> clients, boolean showResume, final ScanHandler onFinish) {
 		if(searchDialog != null)
 			searchDialog.dismiss();
 		if(serverSelectDialog == null) {
@@ -152,7 +156,10 @@ public class LocalScan {
 				PlexClient s = (PlexClient)parentAdapter.getItemAtPosition(position);
 				serverSelectDialog.dismiss();
 				CheckBox resumeCheckbox = (CheckBox)serverSelectDialog.findViewById(R.id.serverListResume);
-				scanHandler.onDeviceSelected(s, resumeCheckbox.isChecked());
+				if(onFinish == null)
+					scanHandler.onDeviceSelected(s, resumeCheckbox.isChecked());
+				else
+					onFinish.onDeviceSelected(s, resumeCheckbox.isChecked());
 			}
 
 		});

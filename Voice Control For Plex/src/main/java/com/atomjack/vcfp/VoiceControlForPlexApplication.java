@@ -59,6 +59,7 @@ public class VoiceControlForPlexApplication extends Application
 
 			public final static String CAST_MEDIA = "com.atomjack.vcfp.intent.CAST_MEDIA";
 			public final static String EXTRA_MEDIA = "com.atomjack.vcfp.intent.EXTRA_MEDIA";
+			public final static String EXTRA_CLASS = "com.atomjack.vcfp.intent.EXTRA_CLASS";
 	};
 
 	public static ConcurrentHashMap<String, PlexServer> servers = new ConcurrentHashMap<String, PlexServer>();

@@ -1,6 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<menu xmlns:android="http://schemas.android.com/apk/res/android" >
-    <item android:id="@+id/menu_about" 
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+      xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item android:id="@+id/action_cast"
+          android:icon="@drawable/mr_ic_media_route_holo_dark"
+          android:title="Cast"
+          android:actionProviderClass="com.atomjack.vcfp.ClientConnectActionProvider"
+          app:showAsAction="always" />
+    <item android:id="@+id/menu_about"
         android:title="@string/menu_about"
         android:onClick="showAbout">
     </item>

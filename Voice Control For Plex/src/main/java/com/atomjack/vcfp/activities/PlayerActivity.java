@@ -1,6 +1,5 @@
 package com.atomjack.vcfp.activities;
 
-import android.app.Activity;
 import android.app.PendingIntent;
 import android.content.Intent;
 import android.net.Uri;
@@ -29,7 +28,7 @@ import com.google.gson.Gson;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
-public class PlayerActivity extends Activity implements SeekBar.OnSeekBarChangeListener {
+public class PlayerActivity extends VCFPActivity implements SeekBar.OnSeekBarChangeListener {
 	protected PlexMedia playingMedia; // The video or music that is playing
 	protected PlexClient client = null;
 	protected boolean resumePlayback;

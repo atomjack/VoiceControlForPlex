@@ -1,10 +1,15 @@
 package com.atomjack.vcfp.model;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+
 import org.simpleframework.xml.Attribute;
 import org.simpleframework.xml.Root;
 
+import java.io.Serializable;
+
 @Root(strict=false)
-public class Timeline {
+public class Timeline implements Parcelable {
 	@Attribute
 	public String state;
 	@Attribute(required=false)
@@ -13,6 +18,14 @@ public class Timeline {
 	public String type;
 	@Attribute(required=false)
 	public int duration;
+	@Attribute(required=false)
+	public String key;
+	@Attribute(required=false)
+	public String machineIdentifier; // id of server
+
+	public Timeline() {
+
+	}
 
 	public String getTime() {
 		int seconds = time / 1000;
@@ -22,4 +35,39 @@ public class Timeline {
 
 		return String.format("%d:%d:%d", hours, minutes, seconds);
 	}
+
+	@Override
+	public int describeContents() {
+		return 0;
+	}
+
+	@Override
+	public void writeToParcel(Parcel parcel, int i) {
+		parcel.writeString(state);
+		parcel.writeInt(time);
+		parcel.writeString(type);
+		parcel.writeInt(duration);
+		parcel.writeString(key);
+		parcel.writeString(machineIdentifier);
+	}
+
+	public Timeline(Parcel in) {
+		state = in.readString();
+		time = in.readInt();
+		type = in.readString();
+		duration = in.readInt();
+		key = in.readString();
+		machineIdentifier = in.readString();
+	}
+
+	public static final Parcelable.Creator<Timeline> CREATOR = new Parcelable.Creator<Timeline>() {
+		public Timeline createFromParcel(Parcel in) {
+			return new Timeline(in);
+		}
+
+		public Timeline[] newArray(int size) {
+			return new Timeline[size];
+		}
+	};
+
 }

@@ -2,11 +2,12 @@ package com.atomjack.vcfp.net;
 
 import android.content.Context;
 import android.content.res.Resources;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
-import android.widget.ScrollView;
 
 import com.atomjack.vcfp.Logger;
 import com.atomjack.vcfp.PlexHeaders;
@@ -24,19 +25,25 @@ import com.loopj.android.http.BinaryHttpResponseHandler;
 import com.loopj.android.http.RequestParams;
 
 import org.apache.http.Header;
-import org.apache.http.message.BasicHeader;
 import org.simpleframework.xml.Serializer;
 import org.simpleframework.xml.core.Persister;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
 
 public class PlexHttpClient
 {
   private static AsyncHttpClient client = new AsyncHttpClient();
   private static Serializer serial = new Persister();
+
+	public static void get(PlexServer server, String path, final BinaryHttpResponseHandler responseHandler) {
+		String url = String.format("%s%s", server.activeConnection.uri, path);
+		if(server.accessToken != null)
+			url += String.format("%s%s=%s", (url.contains("?") ? "&" : "?"), PlexHeaders.XPlexToken, server.accessToken);
+		Logger.d("url: %s", url);
+		client.get(url, responseHandler);
+	}
 
 	public static void get(PlexServer server, String path, final PlexHttpMediaContainerHandler responseHandler) {
 		if(server.activeConnection == null) {
@@ -53,7 +60,6 @@ public class PlexHttpClient
         try {
           MediaContainer mediaContainer = new MediaContainer();
 
-					Logger.d("response: %s", new String(responseBody));
           try {
             mediaContainer = serial.read(MediaContainer.class, new String(responseBody, "UTF-8"));
           } catch (Resources.NotFoundException e) {

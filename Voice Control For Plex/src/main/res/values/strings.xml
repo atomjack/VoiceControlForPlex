@@ -99,4 +99,6 @@
     <string name="no_clients_found">No Plex Clients Found.</string>
     <string name="servers_refreshed">Servers refreshed.</string>
     <string name="error_seeking">Sorry, there was an error seeking: %s.</string>
+    <string name="connected_to">Connected To</string>
+    <string name="disconnect">Disconnect</string>
 </resources>

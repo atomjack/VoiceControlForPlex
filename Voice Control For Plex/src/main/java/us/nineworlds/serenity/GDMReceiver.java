@@ -14,6 +14,7 @@ import android.content.Intent;
 import com.atomjack.vcfp.GDMService;
 import com.atomjack.vcfp.Logger;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
+import com.atomjack.vcfp.activities.VCFPActivity;
 import com.atomjack.vcfp.model.Connection;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexServer;
@@ -61,7 +62,7 @@ public class GDMReceiver extends BroadcastReceiver {
 			// Send the reply back to whichever class called for it.
 			Class theClass = (Class)intent.getSerializableExtra("class");
 			Intent i = new Intent(context, theClass);
-			Logger.d("ORIGIN: %s", intent.getStringExtra("ORIGIN"));
+			Logger.d("(gdm) ORIGIN: %s", intent.getStringExtra("ORIGIN"));
 			i.setAction(VoiceControlForPlexApplication.Intent.GDMRECEIVE);
 			i.putExtra("FROM", "GDMReceiver");
 			i.putExtra("ORIGIN", intent.getStringExtra("ORIGIN"));
@@ -69,7 +70,6 @@ public class GDMReceiver extends BroadcastReceiver {
 			i.putExtra(VoiceControlForPlexApplication.Intent.SHOWRESOURCE, intent.getBooleanExtra(VoiceControlForPlexApplication.Intent.SHOWRESOURCE, false));
 
 			String scanType = intent.getStringExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE);
-			Logger.d("SCAN TYPE: %s", scanType);
 			if(clients.size() > 0 && scanType.equals("client"))
 				i.putParcelableArrayListExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLIENTS, clients);
 
@@ -80,7 +80,8 @@ public class GDMReceiver extends BroadcastReceiver {
 			i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 			if(theClass.getSuperclass() == Service.class) {
 				context.startService(i);
-			} else if(theClass.getSuperclass() == Activity.class) {
+			} else if(theClass.getSuperclass() == VCFPActivity.class) {
+				Logger.d("Sending to activity");
 				context.startActivity(i);
 			}
 		}

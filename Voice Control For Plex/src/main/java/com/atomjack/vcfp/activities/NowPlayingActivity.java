@@ -1,15 +1,11 @@
 package com.atomjack.vcfp.activities;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.content.res.Resources;
 import android.os.Bundle;
 import android.os.Handler;
 import android.view.View;
-import android.widget.ImageButton;
-import android.widget.RelativeLayout;
 import android.widget.SeekBar;
-import android.widget.TextView;
 
 import com.atomjack.vcfp.BuildConfig;
 import com.atomjack.vcfp.Feedback;
@@ -20,7 +16,6 @@ import com.atomjack.vcfp.QueryString;
 import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.model.MediaContainer;
-import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexResponse;
 import com.atomjack.vcfp.model.PlexTrack;
 import com.atomjack.vcfp.model.PlexVideo;

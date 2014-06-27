@@ -154,7 +154,9 @@ public class PlexVideo extends PlexMedia {
 class Genre implements Parcelable {
 	@Attribute
 	public String tag;
-	
+	@Attribute(required=false)
+	public int id;
+
 	@Override
 	public String toString() {
 		return tag;
@@ -166,10 +168,12 @@ class Genre implements Parcelable {
 
 	protected Genre(Parcel in) {
 		tag = in.readString();
+		id = in.readInt();
 	}
 
 	public void writeToParcel(Parcel out, int flags) {
 		out.writeString(tag);
+		out.writeInt(id);
 	}
 
 	public int describeContents() {
