@@ -19,12 +19,15 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.RemoteViews;
 
 import com.atomjack.vcfp.BuildConfig;
 import com.atomjack.vcfp.LocalScan;
 import com.atomjack.vcfp.Logger;
+import com.atomjack.vcfp.PlayerState;
 import com.atomjack.vcfp.PlexSubscriptionReceiver;
 import com.atomjack.vcfp.PlexSubscriptionService;
+import com.atomjack.vcfp.Preferences;
 import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.ScanHandler;
 import com.atomjack.vcfp.ServerFindHandler;
@@ -43,12 +46,16 @@ import com.atomjack.vcfp.net.PlexHttpMediaContainerHandler;
 import com.bugsense.trace.BugSenseHandler;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class VCFPActivity extends ActionBarActivity {
 	protected PlexMedia nowPlayingMedia;
@@ -63,7 +70,9 @@ public class VCFPActivity extends ActionBarActivity {
 
 	protected LocalScan localScan;
 
-	int mNotificationId = 001;
+	protected PlayerState mCurrentState = PlayerState.STOPPED;
+
+	int mNotificationId = 0;
 	NotificationManager mNotifyMgr;
 
 	protected Gson gsonRead = new GsonBuilder()
@@ -82,6 +91,10 @@ public class VCFPActivity extends ActionBarActivity {
 			BugSenseHandler.initAndStartSession(getApplicationContext(), BUGSENSE_APIKEY);
 
 		mNotifyMgr = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+
+		Preferences.setContext(getApplicationContext());
+		Type serverType = new TypeToken<ConcurrentHashMap<String, PlexServer>>(){}.getType();
+		VoiceControlForPlexApplication.servers = gsonRead.fromJson(Preferences.get(Preferences.SAVED_SERVERS, ""), serverType);
 	}
 
 	@Override
@@ -98,31 +111,52 @@ public class VCFPActivity extends ActionBarActivity {
 			nowPlayingMedia = null;
 			mNotifyMgr.cancel(mNotificationId);
 		} else if(intent.getAction().equals(PlexSubscriptionService.ACTION_MESSAGE)) {
+			Logger.d("got message");
 			ArrayList<Timeline> timelines = intent.getParcelableArrayListExtra(PlexSubscriptionService.EXTRA_TIMELINES);
 			if(timelines != null) {
 				for (Timeline t : timelines) {
 					if (t.type.equals("video")) {
-						if(!t.state.equals("stopped")) {
-							Logger.d("found non stopped media: %s", t.key);
-							if(nowPlayingMedia == null) {
-								Logger.d("nowplayingmedia is null");
-								// Get this media's info
-								PlexServer server = null;
-								Logger.d("HAve %d servers", VoiceControlForPlexApplication.servers.size());
-								for(PlexServer s : VoiceControlForPlexApplication.servers.values()) {
-									if(s.machineIdentifier.equals(t.machineIdentifier)) {
-										server = s;
-										break;
-									}
+						if(!t.state.equals("stopped") && nowPlayingMedia== null) {
+							// Get this media's info
+							PlexServer server = null;
+							for(PlexServer s : VoiceControlForPlexApplication.servers.values()) {
+								if(s.machineIdentifier.equals(t.machineIdentifier)) {
+									server = s;
+									break;
 								}
-								if(server == null) {
-									// TODO: Scan servers for this server, then get playing media
-									Logger.d("server is null");
-								} else {
-									getPlayingMedia(server, t);
-								}
+							}
+							if(server == null) {
+								// TODO: Scan servers for this server, then get playing media
+								Logger.d("server is null");
 							} else {
-								// TODO: now playing media has been defined.
+								getPlayingMedia(server, t);
+							}
+						}
+
+						if(nowPlayingMedia != null) {
+							if(t.key != null && t.key.equals(nowPlayingMedia.key)) {
+								// Found an update for the currently playing media
+								PlayerState newState = PlayerState.getState(t.state);
+								if(newState != mCurrentState) {
+									if(newState == PlayerState.PLAYING) {
+										Logger.d("client is now playing");
+										if(mCurrentState == PlayerState.STOPPED) {
+											// We're already subscribed and the client has started playing
+
+
+										}
+
+
+
+									} else if(newState == PlayerState.PAUSED) {
+										Logger.d("client is now paused");
+									} else if(newState == PlayerState.STOPPED) {
+										Logger.d("client is now stopped");
+										mNotifyMgr.cancel(mNotificationId);
+										nowPlayingMedia = null;
+									}
+									mCurrentState = newState;
+								}
 							}
 						}
 					}
@@ -133,7 +167,6 @@ public class VCFPActivity extends ActionBarActivity {
 	}
 
 	private void getPlayingMedia(final PlexServer server, final Timeline timeline) {
-		final Handler handler = new Handler();
 		server.findServerConnection(new ServerFindHandler() {
 			@Override
 			public void onSuccess() {
@@ -147,18 +180,24 @@ public class VCFPActivity extends ActionBarActivity {
 							@Override
 							public void onSuccess(final Bitmap bitmap) {
 								Logger.d("got bitmap");
-								handler.post(new Runnable() {
-									@Override
-									public void run() {
-										NotificationCompat.Builder mBuilder =
-											new NotificationCompat.Builder(getApplicationContext())
-												.setLargeIcon(bitmap)
-												.setSmallIcon(R.drawable.ic_launcher)
-												.setContentTitle(nowPlayingMedia.title)
-												.setContentText(String.format("Playing on: %s", subscribedClient.name));
-										mNotifyMgr.notify(mNotificationId, mBuilder.build());
-									}
-								});
+
+								RemoteViews remoteViews = new RemoteViews(getPackageName(), R.layout.now_playing_notification);
+
+								NotificationCompat.Builder mBuilder =
+									new NotificationCompat.Builder(getApplicationContext())
+										.setSmallIcon(R.drawable.ic_launcher)
+										.setAutoCancel(false)
+										.setContent(remoteViews);
+
+								remoteViews.setImageViewBitmap(R.id.thumb, bitmap);
+	//								remoteViews.setImageViewResource(R.id.rewindButton, R.drawable.button_rewind);
+	//								remoteViews.setImageViewResource(R.id.playPauseView, R.drawable.button_pause);
+
+								remoteViews.setTextViewText(R.id.title, nowPlayingMedia.title);
+								remoteViews.setTextViewText(R.id.playingOn, String.format("Playing on: %s", subscribedClient.name));
+//										.setContentTitle(nowPlayingMedia.title)
+//										.setContentText(String.format("Playing on: %s", subscribedClient.name));
+								mNotifyMgr.notify(mNotificationId, mBuilder.build());
 
 							}
 						});

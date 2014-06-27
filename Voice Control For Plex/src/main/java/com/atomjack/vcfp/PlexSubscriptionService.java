@@ -31,6 +31,8 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -47,6 +49,9 @@ public class PlexSubscriptionService extends Service {
 	public static final String EXTRA_CLASS = "com.atomjack.vcfp.extra_class";
 	public static final String EXTRA_CLIENT = "com.atomjack.vcfp.extra_client";
 	public static final String EXTRA_TIMELINES = "com.atomjack.vcfp.extra_timelines";
+
+	private static final int SUBSCRIBE_INTERVAL = 30000; // Send subscribe message every 30 seconds to keep us alive
+	private Handler handler = new Handler();
 
 	PlexClient mClient; // the client we are subscribing to
 	private Gson gsonWrite = new GsonBuilder()
@@ -92,8 +97,6 @@ public class PlexSubscriptionService extends Service {
 				if(!subscribed) {
 					startSubscription(subscriber);
 				}
-
-				// TODO: Send intent back notifying the requesting activity that we are subscribed
 			} else {
 				Logger.d("mClient is not null");
 				// TODO: Handle another activity
@@ -183,11 +186,16 @@ public class PlexSubscriptionService extends Service {
 				commandId++;
 				subscribed = true;
 
-				// Send the Activity that initiated this subscription a message that we are subscribed.
-				Intent intent = new Intent(ACTION_BROADCAST);
-				intent.setAction(ACTION_SUBSCRIBED);
-				intent.putExtra(EXTRA_CLASS, subscriber);
-				LocalBroadcastManager.getInstance(PlexSubscriptionService.this).sendBroadcast(intent);
+				if(subscriber != null) {
+					// Send the Activity that initiated this subscription a message that we are subscribed.
+					Intent intent = new Intent(ACTION_BROADCAST);
+					intent.setAction(ACTION_SUBSCRIBED);
+					intent.putExtra(EXTRA_CLASS, subscriber);
+					LocalBroadcastManager.getInstance(PlexSubscriptionService.this).sendBroadcast(intent);
+
+					// Start periodic re-subscription
+					handler.postDelayed(subscriptionReup, SUBSCRIBE_INTERVAL);
+				}
 			}
 
 			@Override
@@ -197,6 +205,15 @@ public class PlexSubscriptionService extends Service {
 		});
 	}
 
+	private Runnable subscriptionReup = new Runnable() {
+		@Override
+		public void run() {
+			if(subscribed) {
+				subscribe(null);
+				handler.postDelayed(subscriptionReup, SUBSCRIBE_INTERVAL);
+			}
+		}
+	};
 	class ServerThread implements Runnable {
 		Runnable onReady;
 
@@ -272,29 +289,43 @@ public class PlexSubscriptionService extends Service {
 					}
 					onMessage(headers, mediaContainer);
 
-					// Send a response
-					String response = "Failure: 200 OK";
-					PrintStream output = new PrintStream(socket.getOutputStream());
-					output.flush();
-					output.println("HTTP/1.1 200 OK");
-					output.println("Content-Type: text/plain; charset=UTF-8");
-					output.println("Access-Control-Allow-Origin: *");
-					output.println("Access-Control-Max-Age: 1209600");
-					output.println("");
-					output.println(response);
 
-					output.close();
+					sendResponse(socket);
+
 					reader.close();
 				} catch (Exception e) {
 					e.printStackTrace();
 				} finally {
 					try {
-						if(socket != null)
+						if(socket != null) {
 							socket.close();
+						}
 					} catch (Exception ex) {
 						ex.printStackTrace();
 					}
 				}
+			}
+		}
+	}
+
+	private void sendResponse(Socket socket) {
+		if(socket != null && !socket.isClosed()) {
+			try {
+				Logger.d("Sending response");
+				// Send a response
+				String response = "Failure: 200 OK";
+				PrintStream output = new PrintStream(socket.getOutputStream());
+				output.flush();
+				output.println("HTTP/1.1 200 OK");
+				output.println("Content-Type: text/plain; charset=UTF-8");
+				output.println("Access-Control-Allow-Origin: *");
+				output.println("Access-Control-Max-Age: 1209600");
+				output.println("");
+				output.println(response);
+
+				output.close();
+			} catch (Exception ex) {
+				ex.printStackTrace();
 			}
 		}
 	}
