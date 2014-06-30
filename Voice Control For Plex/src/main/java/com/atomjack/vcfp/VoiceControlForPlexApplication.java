@@ -92,82 +92,73 @@ public class VoiceControlForPlexApplication extends Application
 		if(server.name.equals("") || server.address.equals("")) {
 			return;
 		}
-		if (!servers.containsKey(server.name)) {
-			try {
-				server.findServerConnection(new ServerFindHandler() {
-					@Override
-					public void onSuccess() {
-						Logger.d("active connection: %s", server.activeConnection);
-						String url = String.format("http://%s:%s/library/sections/", server.activeConnection.address, server.activeConnection.port);
-						if(server.accessToken != null)
-							url += String.format("?%s=%s", PlexHeaders.XPlexToken, server.accessToken);
-						AsyncHttpClient httpClient = new AsyncHttpClient();
-						Logger.d("Fetching %s", url);
-						httpClient.get(url, new AsyncHttpResponseHandler() {
-							@Override
-							public void onSuccess(int statusCode, org.apache.http.Header[] headers, byte[] responseBody) {
-								MediaContainer mc = new MediaContainer();
-								try {
-									mc = serial.read(MediaContainer.class, new String(responseBody, "UTF-8"));
-								} catch (NotFoundException e) {
-									e.printStackTrace();
-								} catch (Exception e) {
-									e.printStackTrace();
-								}
-								server.movieSections = new ArrayList<String>();
-								server.tvSections = new ArrayList<String>();
-								server.musicSections = new ArrayList<String>();
-								for(int i=0;i<mc.directories.size();i++) {
-									if(mc.directories.get(i).type.equals("movie")) {
-										server.addMovieSection(mc.directories.get(i).key);
-									}
-									if(mc.directories.get(i).type.equals("show")) {
-										server.addTvSection(mc.directories.get(i).key);
-									}
-									if(mc.directories.get(i).type.equals("artist")) {
-										server.addMusicSection(mc.directories.get(i).key);
-									}
-								}
-								Logger.d("%s has %d directories.", server.name, mc.directories != null ? mc.directories.size() : 0);
-								if(!server.name.equals("")) {
-									servers.put(server.name, server);
+    try {
+      server.findServerConnection(new ServerFindHandler() {
+        @Override
+        public void onSuccess() {
+          Logger.d("active connection: %s", server.activeConnection);
+          String url = String.format("http://%s:%s/library/sections/", server.activeConnection.address, server.activeConnection.port);
+          if(server.accessToken != null)
+            url += String.format("?%s=%s", PlexHeaders.XPlexToken, server.accessToken);
+          AsyncHttpClient httpClient = new AsyncHttpClient();
+          Logger.d("Fetching %s", url);
+          httpClient.get(url, new AsyncHttpResponseHandler() {
+            @Override
+            public void onSuccess(int statusCode, org.apache.http.Header[] headers, byte[] responseBody) {
+            MediaContainer mc = new MediaContainer();
+            try {
+              mc = serial.read(MediaContainer.class, new String(responseBody, "UTF-8"));
+            } catch (NotFoundException e) {
+              e.printStackTrace();
+            } catch (Exception e) {
+              e.printStackTrace();
+            }
+            server.movieSections = new ArrayList<String>();
+            server.tvSections = new ArrayList<String>();
+            server.musicSections = new ArrayList<String>();
+            for(int i=0;i<mc.directories.size();i++) {
+              if(mc.directories.get(i).type.equals("movie")) {
+                server.addMovieSection(mc.directories.get(i).key);
+              }
+              if(mc.directories.get(i).type.equals("show")) {
+                server.addTvSection(mc.directories.get(i).key);
+              }
+              if(mc.directories.get(i).type.equals("artist")) {
+                server.addMusicSection(mc.directories.get(i).key);
+              }
+            }
+            Logger.d("%s has %d directories.", server.name, mc.directories != null ? mc.directories.size() : 0);
+            if(!server.name.equals("")) {
+              servers.put(server.name, server);
 
-									// Finally, if this server is the current default server, save it in preferences so the access token gets transferred
-									PlexServer defaultServer = gsonRead.fromJson(Preferences.get(Preferences.SERVER, ""), PlexServer.class);
-									if(defaultServer != null && server.machineIdentifier.equals(defaultServer.machineIdentifier)) {
-										Preferences.put(Preferences.SERVER, gsonWrite.toJson(server));
-									}
+              // Finally, if this server is the current default server, save it in preferences so the access token gets transferred
+              PlexServer defaultServer = gsonRead.fromJson(Preferences.get(Preferences.SERVER, ""), PlexServer.class);
+              if(defaultServer != null && server.machineIdentifier.equals(defaultServer.machineIdentifier)) {
+                Preferences.put(Preferences.SERVER, gsonWrite.toJson(server));
+              }
 
-									Logger.d("Added %s.", server.name);
-								}
-								if(onFinish != null)
-									onFinish.run();
-							}
-						});
-					}
-					// transient-b3f60648-ed79-45bf-8c86-3293527796b9
+              Logger.d("Added %s.", server.name);
+            }
+            if(onFinish != null)
+              onFinish.run();
+            }
+          });
+        }
 
-					@Override
-					public void onFailure(int statusCode) {
-						// TODO: Handle failure here
-						Logger.d("Failed to find connection for %s: %d", server.name, statusCode);
-					}
-				});
+        @Override
+        public void onFailure(int statusCode) {
+          Logger.d("Failed to find connection for %s: %d", server.name, statusCode);
+            if(onFinish != null)
+              onFinish.run();
+        }
+      });
 
 
-			} catch (Exception e) {
-				Logger.e("Exception getting clients: %s", e.toString());
-			}
-		} else {
-			// Copy over the sections from the locally found server. We'll want to include the Connections that belong to the server that come from plex.tv
-			PlexServer thatServer = servers.get(server.name);
-			thatServer.musicSections = server.musicSections;
-			thatServer.movieSections = server.movieSections;
-			thatServer.tvSections = server.tvSections;
-			thatServer.accessToken = server.accessToken;
-			servers.put(thatServer.name, thatServer);
-			Logger.d("%s already added.", thatServer.name);
-		}
+    } catch (Exception e) {
+      Logger.e("Exception getting clients: %s", e.toString());
+      if(onFinish != null)
+        onFinish.run();
+    }
 	}
 
 	public static boolean isVersionLessThan(String v1, String v2) {

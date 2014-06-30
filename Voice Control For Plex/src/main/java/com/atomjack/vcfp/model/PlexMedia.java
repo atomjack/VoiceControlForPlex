@@ -21,7 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 @Root(strict=false)
-public class PlexMedia implements Parcelable {
+public abstract class PlexMedia implements Parcelable {
 	@Attribute
 	public String key;
 	@Attribute

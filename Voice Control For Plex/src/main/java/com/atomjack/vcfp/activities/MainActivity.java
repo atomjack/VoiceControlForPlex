@@ -769,7 +769,8 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 			if(origin.equals("MainActivity")) {
 				if(intent.getStringExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE).equals("server")) {
 					Logger.d("Got " + VoiceControlForPlexApplication.servers.size() + " servers");
-
+          if(searchDialog != null)
+            searchDialog.cancel();
 					Preferences.put(Preferences.SAVED_SERVERS, gsonWrite.toJson(VoiceControlForPlexApplication.servers));
 					if (VoiceControlForPlexApplication.servers.size() > 0) {
 						localScan.showPlexServers();
@@ -777,8 +778,7 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 						localScan.hideSearchDialog();
 						AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
 						builder.setTitle(R.string.no_servers_found);
-						builder.setCancelable(false)
-							.setNeutralButton(R.string.ok, new DialogInterface.OnClickListener() {
+						builder.setCancelable(false).setNeutralButton(R.string.ok, new DialogInterface.OnClickListener() {
 								public void onClick(DialogInterface dialog, int id) {
 									dialog.cancel();
 								}
@@ -844,6 +844,9 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 	
 	@Override
 	public boolean onCreateOptionsMenu(Menu _menu) {
+    super.onCreateOptionsMenu(_menu);
+    getMenuInflater().inflate(R.menu.menu_main, _menu);
+		menu = _menu;
 
 		if(authToken != null) {
 			_menu.findItem(R.id.menu_login).setVisible(false);
@@ -861,7 +864,7 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 				_menu.findItem(R.id.menu_install_autovoice).setVisible(true);
 			}
 		}
-		return super.onCreateOptionsMenu(_menu);
+	    return true;
 	}
 
 

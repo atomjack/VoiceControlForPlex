@@ -57,7 +57,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class VCFPActivity extends ActionBarActivity {
+public abstract class VCFPActivity extends ActionBarActivity {
 	protected PlexMedia nowPlayingMedia;
 	protected boolean subscribed = false;
 	protected boolean subscribing = false;
@@ -230,15 +230,6 @@ public class VCFPActivity extends ActionBarActivity {
 			e.printStackTrace();
 			return null;
 		}
-	}
-
-	@Override
-	public boolean onCreateOptionsMenu(Menu _menu) {
-		// Inflate the menu; this adds items to the action bar if it is present.
-		getMenuInflater().inflate(R.menu.menu_main, _menu);
-		menu = _menu;
-
-		return super.onCreateOptionsMenu(menu);
 	}
 
 	@Override

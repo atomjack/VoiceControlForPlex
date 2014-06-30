@@ -88,11 +88,11 @@ public class RemoteScan {
 						VoiceControlForPlexApplication.addPlexServer(server, new Runnable() {
 							@Override
 							public void run() {
-								Logger.d("Done scanning %s", server.name);
-								serversScanned[0]++;
-								Logger.d("%d out of %d servers scanned", serversScanned[0], numServers);
-								if(serversScanned[0] >= numServers && responseHandler != null)
-									responseHandler.onSuccess();
+              Logger.d("Done scanning %s", server.name);
+              serversScanned[0]++;
+              Logger.d("%d out of %d servers scanned", serversScanned[0], numServers);
+              if(serversScanned[0] >= numServers && responseHandler != null)
+                responseHandler.onSuccess();
 							}
 						});
 					}
@@ -102,7 +102,8 @@ public class RemoteScan {
 
 
 				} catch (Exception e) {
-					e.printStackTrace();
+          if(responseHandler != null)
+            responseHandler.onFailure(0);
 				}
 			}
 

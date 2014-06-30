@@ -31,8 +31,6 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -176,8 +174,8 @@ public class PlexSubscriptionService extends Service {
 		qs.add("protocol", "http");
 
 		Header[] headers = {
-						new BasicHeader(PlexHeaders.XPlexClientIdentifier, Preferences.getUUID()),
-						new BasicHeader(PlexHeaders.XPlexDeviceName, getString(R.string.app_name))
+      new BasicHeader(PlexHeaders.XPlexClientIdentifier, Preferences.getUUID()),
+      new BasicHeader(PlexHeaders.XPlexDeviceName, getString(R.string.app_name))
 		};
 		PlexHttpClient.get(getApplicationContext(), String.format("http://%s:%s/player/timeline/subscribe?%s", mClient.address, mClient.port, qs), headers, new PlexHttpResponseHandler() {
 			@Override
@@ -186,6 +184,7 @@ public class PlexSubscriptionService extends Service {
 				commandId++;
 				subscribed = true;
 
+        // If the subscriber is null, this is being called as part of the subscription heartbeat
 				if(subscriber != null) {
 					// Send the Activity that initiated this subscription a message that we are subscribed.
 					Intent intent = new Intent(ACTION_BROADCAST);
@@ -193,8 +192,8 @@ public class PlexSubscriptionService extends Service {
 					intent.putExtra(EXTRA_CLASS, subscriber);
 					LocalBroadcastManager.getInstance(PlexSubscriptionService.this).sendBroadcast(intent);
 
-					// Start periodic re-subscription
-					handler.postDelayed(subscriptionReup, SUBSCRIBE_INTERVAL);
+					// Start the heartbeat subscription (so the server knows we're still here)
+					handler.postDelayed(subscriptionHeartbeat, SUBSCRIBE_INTERVAL);
 				}
 			}
 
@@ -205,12 +204,12 @@ public class PlexSubscriptionService extends Service {
 		});
 	}
 
-	private Runnable subscriptionReup = new Runnable() {
+	private Runnable subscriptionHeartbeat = new Runnable() {
 		@Override
 		public void run() {
 			if(subscribed) {
 				subscribe(null);
-				handler.postDelayed(subscriptionReup, SUBSCRIBE_INTERVAL);
+				handler.postDelayed(subscriptionHeartbeat, SUBSCRIBE_INTERVAL);
 			}
 		}
 	};
