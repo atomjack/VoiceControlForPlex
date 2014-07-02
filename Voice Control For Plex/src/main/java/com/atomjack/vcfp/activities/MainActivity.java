@@ -105,8 +105,6 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 	private PlexServer server = null;
 	private PlexClient client = null;
 
-
-
 	private TextToSpeech tts;
 	private Dialog searchDialog;
 
@@ -293,9 +291,9 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 			new MainSetting(MainListAdapter.SettingHolder.TAG_FEEDBACK, getResources().getString(R.string.feedback), Preferences.get(Preferences.FEEDBACK, FEEDBACK_TOAST) == FEEDBACK_VOICE ? getResources().getString(R.string.voice) : getResources().getString(R.string.toast)),
 			new MainSetting(MainListAdapter.SettingHolder.TAG_ERRORS, getResources().getString(R.string.errors), Preferences.get(Preferences.ERRORS, FEEDBACK_TOAST) == FEEDBACK_VOICE ? getResources().getString(R.string.voice) : getResources().getString(R.string.toast))
 		};
-		
+
 		MainListAdapter adapter = new MainListAdapter(this, R.layout.main_setting_item_row, setting_data);
-		
+
 		ListView settingsList = (ListView)findViewById(R.id.settingsList);
 		settingsList.setFooterDividersEnabled(true);
 		settingsList.addFooterView(new View(settingsList.getContext()));
@@ -354,11 +352,11 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 				}
 			}
 		});
-		
+
 		CheckBox resumeCheckbox = (CheckBox)findViewById(R.id.resumeCheckbox);
 		resumeCheckbox.setChecked(Preferences.get(Preferences.RESUME, false));
 	}
-	
+
 	public void settingRowHelpButtonClicked(View v) {
 		String helpButtonClicked = v.getTag().toString();
 		if(helpDialog == null) {
@@ -722,7 +720,7 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 
 
 	}
-	
+
 	public void showUsageExamples(View v) {
 		AlertDialog.Builder usageDialog = new AlertDialog.Builder(MainActivity.this);
 		usageDialog.setTitle(R.string.help_usage_button);
@@ -826,27 +824,30 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 		} else {
 			initMainWithServer();
 		}
-		
+
 	}
-	
+
 	private void setClient(PlexClient _client) {
 		client = _client;
 		Logger.d("Selected client: %s", client);
 		saveSettings();
 		initMainWithServer();
 	}
-	
+
 	private void saveSettings() {
 		Preferences.put(Preferences.SERVER, gsonWrite.toJson(server));
 		Preferences.put(Preferences.CLIENT, gsonWrite.toJson(client));
 		Preferences.put(Preferences.RESUME, Preferences.get(Preferences.RESUME, false));
 	}
-	
+
 	@Override
 	public boolean onCreateOptionsMenu(Menu _menu) {
     super.onCreateOptionsMenu(_menu);
     getMenuInflater().inflate(R.menu.menu_main, _menu);
 		menu = _menu;
+
+    if(plexSubscription.isSubscribed())
+      onSubscribed();
 
 		if(authToken != null) {
 			_menu.findItem(R.id.menu_login).setVisible(false);
@@ -864,7 +865,7 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 				_menu.findItem(R.id.menu_install_autovoice).setVisible(true);
 			}
 		}
-	    return true;
+    return true;
 	}
 
 
@@ -884,8 +885,10 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 		super.onDestroy();
 	}
 
+
 	@Override
 	protected void onPause() {
+    Logger.d("MainActivity onPause");
 		if (isFinishing()) {
 			mMediaRouter.removeCallback(mMediaRouterCallback);
 		}
@@ -893,15 +896,15 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 		if(gdmReceiver != null) {
 			LocalBroadcastManager.getInstance(this).unregisterReceiver(gdmReceiver);
 		}
-
 		super.onPause();
 	}
 
 	@Override
 	protected void onResume() {
-		Logger.d("MainActivity onResume");
+//		Logger.d("MainActivity onResume");
 		super.onResume();
 		VoiceControlForPlexApplication.applicationResumed();
+    plexSubscription.setListener(this);
 
 		if(gdmReceiver != null) {
 			IntentFilter filters = new IntentFilter();

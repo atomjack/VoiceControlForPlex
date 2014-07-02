@@ -60,15 +60,15 @@ public class CastActivity extends PlayerActivity {
 			PlexTrack track = getIntent().getParcelableExtra("track");
 
 			if(video != null)
-				playingMedia = video;
+				nowPlayingMedia = video;
 			else if(track != null)
-				playingMedia = track;
+				nowPlayingMedia = track;
 			else {
 				// TODO: something here
 			}
 			resumePlayback = getIntent().getBooleanExtra("resume", false);
 
-			Logger.d("Casting %s", playingMedia.title);
+			Logger.d("Casting %s", nowPlayingMedia.title);
 
 			setCastConsumer();
 
@@ -83,21 +83,21 @@ public class CastActivity extends PlayerActivity {
 			miniController = (MiniController) findViewById(R.id.miniController1);
 			castManager.addMiniController(miniController);
 
-			showNowPlaying(playingMedia, client);
+			showNowPlaying(nowPlayingMedia, client);
 
 
 			seekBar = (SeekBar)findViewById(R.id.seekBar);
 			seekBar.setOnSeekBarChangeListener(this);
-			Logger.d("setting progress to %d", getOffset(playingMedia));
-			seekBar.setMax(playingMedia.duration);
-			seekBar.setProgress(getOffset(playingMedia)*1000);
+			Logger.d("setting progress to %d", getOffset(nowPlayingMedia));
+			seekBar.setMax(nowPlayingMedia.duration);
+			seekBar.setProgress(getOffset(nowPlayingMedia)*1000);
 
-			setCurrentTimeDisplay(getOffset(playingMedia));
-			durationDisplay.setText(VoiceControlForPlexApplication.secondsToTimecode(playingMedia.duration / 1000));
+			setCurrentTimeDisplay(getOffset(nowPlayingMedia));
+			durationDisplay.setText(VoiceControlForPlexApplication.secondsToTimecode(nowPlayingMedia.duration / 1000));
 
 			currentState = castManager.getPlaybackStatus();
 			if (Preferences.getString(Preferences.PLEX_USERNAME) != null) {
-				playingMedia.server.requestTransientAccessToken(new AfterTransientTokenRequest() {
+				nowPlayingMedia.server.requestTransientAccessToken(new AfterTransientTokenRequest() {
 					@Override
 					public void success(String token) {
 						Logger.d("Got transient token: %s", token);
@@ -122,28 +122,28 @@ public class CastActivity extends PlayerActivity {
 
 	private MediaInfo getMediaInfo(String url) {
 		MediaInfo mediaInfo = buildMediaInfo(
-			playingMedia.getTitle(),
-			playingMedia.getSummary(),
-			playingMedia.getEpisodeTitle(),
+			nowPlayingMedia.getTitle(),
+			nowPlayingMedia.getSummary(),
+			nowPlayingMedia.getEpisodeTitle(),
 			url,
-			playingMedia.getArtUri(),
-			playingMedia.getThumbUri(),
-			playingMedia.duration,
-			getOffset(playingMedia)
+			nowPlayingMedia.getArtUri(),
+			nowPlayingMedia.getThumbUri(),
+			nowPlayingMedia.duration,
+			getOffset(nowPlayingMedia)
 		);
 		return mediaInfo;
 	}
 
 	private void beginPlayback() {
-		String url = getTranscodeUrl(playingMedia, transientToken);
+		String url = getTranscodeUrl(nowPlayingMedia, transientToken);
 		Logger.d("url: %s", url);
-		Logger.d("duration: %s", playingMedia.duration);
+		Logger.d("duration: %s", nowPlayingMedia.duration);
 		final MediaInfo mediaInfo = getMediaInfo(url);
 
-		Logger.d("offset is %d", getOffset(playingMedia));
+		Logger.d("offset is %d", getOffset(nowPlayingMedia));
 		if(castManager.isConnected()) {
 			try {
-				castManager.loadMedia(mediaInfo, true, getOffset(playingMedia) * 1000);
+				castManager.loadMedia(mediaInfo, true, getOffset(nowPlayingMedia) * 1000);
 			} catch (Exception ex) {}
 		} else {
 			castConsumer.setOnConnected(new Runnable() {
@@ -151,7 +151,7 @@ public class CastActivity extends PlayerActivity {
 				public void run() {
 					try {
 						Logger.d("loading media");
-						castManager.loadMedia(mediaInfo, true, getOffset(playingMedia) * 1000);
+						castManager.loadMedia(mediaInfo, true, getOffset(nowPlayingMedia) * 1000);
 //						startDurationTimer();
 					} catch (Exception ex) {
 						ex.printStackTrace();
@@ -224,7 +224,7 @@ public class CastActivity extends PlayerActivity {
 						// If we stopped because a seek was done, resume playback at the new offset.
 						if(seekDone) {
 							seekDone = false;
-							Logger.d("resuming playback with an offset of %s", playingMedia.viewOffset);
+							Logger.d("resuming playback with an offset of %s", nowPlayingMedia.viewOffset);
 							beginPlayback();
 						} else {
 							if (durationTimer != null)
@@ -445,7 +445,7 @@ public class CastActivity extends PlayerActivity {
 		Logger.d("stopped changing progress");
 		try {
 			seekDone = true;
-			playingMedia.viewOffset = Integer.toString(_seekBar.getProgress());
+			nowPlayingMedia.viewOffset = Integer.toString(_seekBar.getProgress());
 			stopDurationTimer();
 			castManager.stop();
 		} catch (Exception ex) {

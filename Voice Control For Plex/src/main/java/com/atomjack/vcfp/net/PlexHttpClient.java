@@ -81,26 +81,54 @@ public class PlexHttpClient
     });
   }
 
-	public static void get(Context context, String url, Header[] headers, final PlexHttpResponseHandler responseHandler) {
-		Logger.d("Fetching %s", url);
-		client.get(context, url, headers, new RequestParams(), new AsyncHttpResponseHandler() {
-			@Override
-			public void onSuccess(int statusCode, org.apache.http.Header[] headers, byte[] responseBody) {
-				PlexResponse r = new PlexResponse();
-				try {
-					r = serial.read(PlexResponse.class, new String(responseBody, "UTF-8"));
-				} catch (Exception e) {
-					Logger.e("Exception parsing response: %s", e.toString());
-				}
-				responseHandler.onSuccess(r);
-			}
+  public static void get(Context context, String url, Header[] headers, final PlexHttpResponseHandler responseHandler) {
+    Logger.d("Fetching %s", url);
+    client.get(context, url, headers, new RequestParams(), new AsyncHttpResponseHandler() {
+      @Override
+      public void onSuccess(int statusCode, org.apache.http.Header[] headers, byte[] responseBody) {
+        PlexResponse r = new PlexResponse();
+        try {
+          r = serial.read(PlexResponse.class, new String(responseBody, "UTF-8"));
+        } catch (Exception e) {
+          Logger.e("Exception parsing response: %s", e.toString());
+        }
+        if(responseHandler != null)
+          responseHandler.onSuccess(r);
+      }
 
-			@Override
-			public void onFailure(int statusCode, org.apache.http.Header[] headers, byte[] responseBody, java.lang.Throwable error) {
-				responseHandler.onFailure(error);
-			}
-		});
-	}
+      @Override
+      public void onFailure(int statusCode, org.apache.http.Header[] headers, byte[] responseBody, java.lang.Throwable error) {
+        if(responseHandler != null)
+          responseHandler.onFailure(error);
+      }
+    });
+  }
+
+  public static void get(Context context, String url, Header[] headers, final PlexHttpMediaContainerHandler responseHandler) {
+    Logger.d("Fetching %s", url);
+    client.get(context, url, headers, new RequestParams(), new AsyncHttpResponseHandler() {
+      @Override
+      public void onSuccess(int statusCode, org.apache.http.Header[] headers, byte[] responseBody) {
+        MediaContainer mediaContainer = new MediaContainer();
+
+        try {
+          mediaContainer = serial.read(MediaContainer.class, new String(responseBody, "UTF-8"));
+        } catch (Resources.NotFoundException e) {
+          e.printStackTrace();
+        } catch (Exception e) {
+          e.printStackTrace();
+        }
+
+        responseHandler.onSuccess(mediaContainer);
+      }
+
+      @Override
+      public void onFailure(int statusCode, org.apache.http.Header[] headers, byte[] responseBody, java.lang.Throwable error) {
+        if(responseHandler != null)
+          responseHandler.onFailure(error);
+      }
+    });
+  }
 
 	public static void get(String url, final PlexHttpResponseHandler responseHandler) {
 		Logger.d("Fetching %s", url);

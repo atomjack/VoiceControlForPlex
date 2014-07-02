@@ -13,7 +13,7 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.atomjack.vcfp.Logger;
-import com.atomjack.vcfp.PlexSearchService;
+import com.atomjack.vcfp.services.PlexSearchService;
 import com.atomjack.vcfp.Preferences;
 import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
@@ -28,8 +28,7 @@ import com.google.gson.Gson;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
-public class PlayerActivity extends VCFPActivity implements SeekBar.OnSeekBarChangeListener {
-	protected PlexMedia playingMedia; // The video or music that is playing
+public abstract class PlayerActivity extends VCFPActivity implements SeekBar.OnSeekBarChangeListener {
 	protected PlexClient client = null;
 	protected boolean resumePlayback;
 	protected ImageButton playPauseButton;
@@ -48,7 +47,7 @@ public class PlayerActivity extends VCFPActivity implements SeekBar.OnSeekBarCha
 		Intent serviceIntent = new Intent(getApplicationContext(), PlexSearchService.class);
 		Gson gson = new Gson();
 
-		PlexServer server = playingMedia.server;
+		PlexServer server = nowPlayingMedia.server;
 
 		Logger.d("server: %s", server);
 		if(server != null) {

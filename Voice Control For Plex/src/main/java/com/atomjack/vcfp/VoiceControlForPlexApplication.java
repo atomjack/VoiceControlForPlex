@@ -59,7 +59,8 @@ public class VoiceControlForPlexApplication extends Application
 
 			public final static String CAST_MEDIA = "com.atomjack.vcfp.intent.CAST_MEDIA";
 			public final static String EXTRA_MEDIA = "com.atomjack.vcfp.intent.EXTRA_MEDIA";
-			public final static String EXTRA_CLASS = "com.atomjack.vcfp.intent.EXTRA_CLASS";
+      public final static String EXTRA_CLASS = "com.atomjack.vcfp.intent.EXTRA_CLASS";
+      public final static String SUBSCRIBED = "com.atomjack.vcfp.intent.SUBSCRIBED";
 	};
 
 	public static ConcurrentHashMap<String, PlexServer> servers = new ConcurrentHashMap<String, PlexServer>();
@@ -83,7 +84,19 @@ public class VoiceControlForPlexApplication extends Application
 		return l;
 	}
 
-	public static void addPlexServer(final PlexServer server) {
+  @Override
+  public void onCreate() {
+    super.onCreate();
+    initSingletons();
+  }
+
+  protected void initSingletons()
+  {
+    // Initialize the instance of MySingleton
+//    VCFPSingleton.initInstance();
+  }
+
+  public static void addPlexServer(final PlexServer server) {
 		addPlexServer(server, null);
 	}
 

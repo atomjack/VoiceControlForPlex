@@ -37,7 +37,7 @@
                 <action android:name="com.twofortyfouram.locale.intent.action.EDIT_SETTING" />
             </intent-filter>
         </activity>
-        <service android:name=".PlexSearchService"
+        <service android:name=".services.PlexSearchService"
                   android:label="Plex Search">
         </service>
         <activity
@@ -110,7 +110,7 @@
             </intent-filter>
         </activity>
         <service
-            android:name=".PlexSubscriptionService"
+            android:name=".services.PlexControlService"
             android:exported="false"/>
 
     </application>

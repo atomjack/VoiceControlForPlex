@@ -57,4 +57,12 @@ public class MediaContainer {
 		}
 		return null;
 	}
+
+  public Timeline getActiveTimeline() {
+    for(Timeline t : timelines) {
+      if(!t.state.equals("stopped"))
+        return t;
+    }
+    return null;
+  }
 }

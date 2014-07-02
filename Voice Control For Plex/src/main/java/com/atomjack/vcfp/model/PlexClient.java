@@ -5,11 +5,15 @@ import android.os.Parcelable;
 import android.support.v7.media.MediaRouter;
 
 import com.atomjack.vcfp.Logger;
+import com.atomjack.vcfp.PlexHeaders;
+import com.atomjack.vcfp.Preferences;
 import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.net.PlexHttpClient;
 import com.atomjack.vcfp.net.PlexHttpResponseHandler;
 import com.google.android.gms.cast.CastDevice;
 
+import org.apache.http.Header;
+import org.apache.http.message.BasicHeader;
 import org.simpleframework.xml.Attribute;
 import org.simpleframework.xml.Root;
 

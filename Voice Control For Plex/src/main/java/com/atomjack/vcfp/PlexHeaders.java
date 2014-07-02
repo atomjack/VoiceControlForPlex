@@ -12,5 +12,6 @@ public class PlexHeaders {
 	public static final String XPlexPlatformVersion = "X-Plex-Platform-Version";
 	public static final String XPlexVersion = "X-Plex-Version";
 	public static final String XPlexUsername = "X-Plex-Username";
+  public static final String commandID = "commandID";
 
 }

@@ -1,10 +1,9 @@
-package com.atomjack.vcfp;
+package com.atomjack.vcfp.services;
 
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -13,6 +12,20 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.media.MediaRouteSelector;
 import android.support.v7.media.MediaRouter;
 
+import com.atomjack.vcfp.AfterTransientTokenRequest;
+import com.atomjack.vcfp.BuildConfig;
+import com.atomjack.vcfp.Feedback;
+import com.atomjack.vcfp.GDMService;
+import com.atomjack.vcfp.Logger;
+import com.atomjack.vcfp.PlexHeaders;
+import com.atomjack.vcfp.Preferences;
+import com.atomjack.vcfp.QueryString;
+import com.atomjack.vcfp.R;
+import com.atomjack.vcfp.ServerFindHandler;
+import com.atomjack.vcfp.UriDeserializer;
+import com.atomjack.vcfp.UriSerializer;
+import com.atomjack.vcfp.Utils;
+import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.activities.CastActivity;
 import com.atomjack.vcfp.activities.MainActivity;
 import com.atomjack.vcfp.activities.NowPlayingActivity;
@@ -30,13 +43,10 @@ import com.bugsense.trace.BugSenseHandler;
 import com.google.android.gms.cast.ApplicationMetadata;
 import com.google.android.gms.cast.Cast;
 import com.google.android.gms.cast.CastMediaControlIntent;
-import com.google.android.gms.cast.MediaInfo;
-import com.google.android.gms.cast.MediaMetadata;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
-import com.google.android.gms.common.images.WebImage;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 

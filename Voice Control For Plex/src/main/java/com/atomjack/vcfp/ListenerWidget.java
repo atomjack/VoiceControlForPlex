@@ -10,6 +10,8 @@ import android.net.Uri;
 import android.speech.RecognizerIntent;
 import android.widget.RemoteViews;
 
+import com.atomjack.vcfp.services.PlexSearchService;
+
 import java.math.BigInteger;
 import java.security.SecureRandom;
 

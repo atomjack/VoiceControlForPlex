@@ -7,8 +7,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.speech.RecognizerIntent;
 
-import com.atomjack.vcfp.Logger;
-import com.atomjack.vcfp.PlexSearchService;
+import com.atomjack.vcfp.services.PlexSearchService;
 import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.model.Connection;
