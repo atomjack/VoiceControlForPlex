@@ -9,7 +9,7 @@ adding translations, please do not modify (.*), $1, ([0-9]+), etc.
     a quite complicated regular expression. Plugging it into https://www.debuggex.com/ should help you figure out how
     it is constructed.
     -->
-    <item name="pattern_recognition" type="string">^(((watch|resume watching|listen to|watch movie) (.+)( on (.+))?)|((offset|timecode) (.+)( on (.+))?)|((pause|stop|resume) playback( on (.+))?))$</item>
+    <item name="pattern_recognition" type="string">^(((watch|resume watching|listen to|watch movie) (.+)( on (.+))?)|((offset|timecode) (.+)( on (.+))?)|((pause|stop|resume) playback( on (.+))?))|(connect to (.+)|disconnect)$</item>
 
     <item name="pattern_on_client" type="string">(.+) on (.+)$</item>
     <item name="pattern_resume_watching" type="string">^resume watching (.+)</item>
@@ -21,6 +21,8 @@ adding translations, please do not modify (.*), $1, ([0-9]+), etc.
     <item name="pattern_watch_next_episode_of_show" type="string">watch the next episode of (.+)</item>
     <item name="pattern_watch_latest_episode_of_show" type="string">watch( the)? latest episode of (.+)</item>
     <item name="pattern_watch_show_episode_named" type="string">watch (.+) episode (.+)</item>
+    <item name="pattern_connect_to" type="string">^connect to (.+)</item>
+    <item name="pattern_disconnect" type="string">^disconnect$</item>
     <item name="pattern_watch2" type="string">watch (.+)</item>
 
     <!--

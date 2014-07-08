@@ -42,7 +42,7 @@ public class RemoteScan {
 
 	public static void refreshResources(String authToken, final RefreshResourcesResponseHandler responseHandler, boolean silent) {
 		VoiceControlForPlexApplication.servers = new ConcurrentHashMap<String, PlexServer>();
-		VoiceControlForPlexApplication.clients = new HashMap<String, PlexClient>();
+//		VoiceControlForPlexApplication.clients = new HashMap<String, PlexClient>();
 		String url = String.format("https://plex.tv/pms/resources?%s=%s", PlexHeaders.XPlexToken, authToken);
 		Logger.d("Fetching %s", url);
 		client.get(url, new RequestParams(), new AsyncHttpResponseHandler() {
@@ -71,15 +71,15 @@ public class RemoteScan {
 							servers.add(server);
 						} else if(device.provides.contains("player")) {
 							Logger.d("Device %s is a player", device.name);
-							PlexClient client = PlexClient.fromDevice(device);
-							if(VoiceControlForPlexApplication.clients == null)
-								VoiceControlForPlexApplication.clients = new HashMap<String, PlexClient>();
-							if(!VoiceControlForPlexApplication.clients.containsKey(client.name)) {
-								VoiceControlForPlexApplication.clients.put(client.name, client);
-							}
+//							PlexClient mClient = PlexClient.fromDevice(device);
+//							if(VoiceControlForPlexApplication.clients == null)
+//								VoiceControlForPlexApplication.clients = new HashMap<String, PlexClient>();
+//							if(!VoiceControlForPlexApplication.clients.containsKey(mClient.name)) {
+//								VoiceControlForPlexApplication.clients.put(mClient.name, mClient);
+//							}
 						}
  					}
-					Preferences.put(Preferences.SAVED_CLIENTS, gson.toJson(VoiceControlForPlexApplication.clients));
+//					Preferences.put(Preferences.SAVED_CLIENTS, gson.toJson(VoiceControlForPlexApplication.clients));
 
 					final int[] serversScanned = new int[1];
 					serversScanned[0] = 0;

@@ -16,7 +16,7 @@ import android.support.v4.content.LocalBroadcastManager;
 public class GDMService extends IntentService {
     public static final String MSG_RECEIVED = ".GDMService.MESSAGE_RECEIVED";
     public static final String SOCKET_CLOSED = ".GDMService.SOCKET_CLOSED";
-
+    public static final String PORT = ".GDMService.PORT";
 
     public GDMService() {
         super("GDMService");
@@ -27,8 +27,7 @@ public class GDMService extends IntentService {
 			try
 			{
 				String origin = intent.getStringExtra("ORIGIN") == null ? "" : intent.getStringExtra("ORIGIN");
-				String queryText = intent.getStringExtra("queryText");
-				int port = intent.getIntExtra("port", 32414); // Default port, for Plex Media Servers (Clients use 32412)
+				int port = intent.getIntExtra(PORT, 32414); // Default port, for Plex Media Servers (Clients use 32412)
 				DatagramSocket socket = new DatagramSocket(32420);
 				socket.setBroadcast(true);
 				String data = "M-SEARCH * HTTP/1.1";
@@ -69,9 +68,6 @@ public class GDMService extends IntentService {
 						socketBroadcast.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_SILENT, intent.getBooleanExtra(VoiceControlForPlexApplication.Intent.EXTRA_SILENT, false));
 						socketBroadcast.putExtra("class", intent.getSerializableExtra("class"));
 						socketBroadcast.putExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE, intent.getStringExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE));
-						if(queryText != null) {
-							socketBroadcast.putExtra("queryText", queryText);
-						}
 						LocalBroadcastManager.getInstance(this).sendBroadcast(socketBroadcast);
 					}
 				}

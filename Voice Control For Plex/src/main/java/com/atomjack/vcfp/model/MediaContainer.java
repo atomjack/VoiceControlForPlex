@@ -48,6 +48,9 @@ public class MediaContainer {
 	@ElementList(required=false, inline=true, entry="Timeline")
 	public List<Timeline> timelines;
 
+  @Attribute(required=false)
+  public String art;
+
 	public Timeline getTimeline(String type) {
 		if(timelines != null) {
 			for (Timeline t : timelines) {

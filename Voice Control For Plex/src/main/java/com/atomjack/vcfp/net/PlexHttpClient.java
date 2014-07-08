@@ -1,9 +1,7 @@
 package com.atomjack.vcfp.net;
 
-import android.content.Context;
+import android.content.res.Configuration;
 import android.content.res.Resources;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.widget.ImageView;
@@ -25,10 +23,17 @@ import com.loopj.android.http.BinaryHttpResponseHandler;
 import com.loopj.android.http.RequestParams;
 
 import org.apache.http.Header;
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.StatusLine;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
 import org.simpleframework.xml.Serializer;
 import org.simpleframework.xml.core.Persister;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -36,6 +41,10 @@ public class PlexHttpClient
 {
   private static AsyncHttpClient client = new AsyncHttpClient();
   private static Serializer serial = new Persister();
+
+  public static AsyncHttpClient getClient() {
+    return client;
+  }
 
 	public static void get(PlexServer server, String path, final BinaryHttpResponseHandler responseHandler) {
 		String url = String.format("%s%s", server.activeConnection.uri, path);
@@ -81,11 +90,14 @@ public class PlexHttpClient
     });
   }
 
-  public static void get(Context context, String url, Header[] headers, final PlexHttpResponseHandler responseHandler) {
+  public static void get(String url, final Header[] theseHeaders, final PlexHttpResponseHandler responseHandler) {
     Logger.d("Fetching %s", url);
-    client.get(context, url, headers, new RequestParams(), new AsyncHttpResponseHandler() {
+    addHeaders(theseHeaders);
+    client.get(url, new RequestParams(), new AsyncHttpResponseHandler() {
       @Override
       public void onSuccess(int statusCode, org.apache.http.Header[] headers, byte[] responseBody) {
+        // Remove the headers we just added
+        removeHeaders(theseHeaders);
         PlexResponse r = new PlexResponse();
         try {
           r = serial.read(PlexResponse.class, new String(responseBody, "UTF-8"));
@@ -98,17 +110,32 @@ public class PlexHttpClient
 
       @Override
       public void onFailure(int statusCode, org.apache.http.Header[] headers, byte[] responseBody, java.lang.Throwable error) {
+        removeHeaders(theseHeaders);
         if(responseHandler != null)
           responseHandler.onFailure(error);
       }
     });
   }
 
-  public static void get(Context context, String url, Header[] headers, final PlexHttpMediaContainerHandler responseHandler) {
+  private static void addHeaders(Header[] headers) {
+    for(Header header : headers) {
+      client.addHeader(header.getName(), header.getValue());
+    }
+  }
+
+  private static void removeHeaders(Header[] headers) {
+    for(Header header : headers) {
+      client.removeHeader(header.getName());
+    }
+  }
+
+  public static void get(String url, final Header[] theseHeaders, final PlexHttpMediaContainerHandler responseHandler) {
     Logger.d("Fetching %s", url);
-    client.get(context, url, headers, new RequestParams(), new AsyncHttpResponseHandler() {
+    addHeaders(theseHeaders);
+    client.get(url, new RequestParams(), new AsyncHttpResponseHandler() {
       @Override
       public void onSuccess(int statusCode, org.apache.http.Header[] headers, byte[] responseBody) {
+        removeHeaders(theseHeaders);
         MediaContainer mediaContainer = new MediaContainer();
 
         try {
@@ -124,6 +151,7 @@ public class PlexHttpClient
 
       @Override
       public void onFailure(int statusCode, org.apache.http.Header[] headers, byte[] responseBody, java.lang.Throwable error) {
+        removeHeaders(theseHeaders);
         if(responseHandler != null)
           responseHandler.onFailure(error);
       }
@@ -153,10 +181,12 @@ public class PlexHttpClient
 		});
 	}
 
-	public static void getPinCode(Context context, Header[] headers, final PlexPinResponseHandler responseHandler) {
-		client.post(context, "https://plex.tv:443/pins.xml", headers, new RequestParams(), "text/xml", new AsyncHttpResponseHandler() {
+	public static void getPinCode(final Header[] theseHeaders, final PlexPinResponseHandler responseHandler) {
+    addHeaders(theseHeaders);
+		client.post("https://plex.tv:443/pins.xml", new RequestParams(), new AsyncHttpResponseHandler() {
 			@Override
 			public void onSuccess(int statusCode, org.apache.http.Header[] headers, byte[] responseBody) {
+        removeHeaders(theseHeaders);
 
 				Pin pin = new Pin();
 				try {
@@ -169,28 +199,31 @@ public class PlexHttpClient
 
 			@Override
 			public void onFailure(int statusCode, org.apache.http.Header[] headers, byte[] responseBody, java.lang.Throwable error) {
+        removeHeaders(theseHeaders);
 				responseHandler.onFailure(error);
 			}
 		});
 	}
 
-	public static void signin(Context context, String authToken, Header[] headers, String contentType, final PlexHttpUserHandler responseHandler) {
-		signin(context, null, null, authToken, headers, contentType, responseHandler);
+	public static void signin(String authToken, Header[] headers, final PlexHttpUserHandler responseHandler) {
+		signin(null, null, authToken, headers, responseHandler);
 	}
 
-	public static void signin(Context context, String username, String password, Header[] headers, String contentType, final PlexHttpUserHandler responseHandler) {
-		signin(context, username, password, null, headers, contentType, responseHandler);
+	public static void signin(String username, String password, Header[] headers, final PlexHttpUserHandler responseHandler) {
+		signin(username, password, null, headers, responseHandler);
 	}
 
-	public static void signin(Context context, String username, String password, String authToken, Header[] headers, String contentType, final PlexHttpUserHandler responseHandler) {
+	public static void signin(String username, String password, String authToken, final Header[] theseHeaders, final PlexHttpUserHandler responseHandler) {
 		if(username != null && password != null)
 			client.setBasicAuth(username, password);
 		String url = "https://plex.tv/users/sign_in.xml";
 		if(authToken != null)
 			url += "?auth_token=" + authToken;
-		client.post(context, url, headers, new RequestParams(), contentType, new AsyncHttpResponseHandler() {
+    addHeaders(theseHeaders);
+		client.post(url, new RequestParams(), new AsyncHttpResponseHandler() {
 			@Override
 			public void onSuccess(int statusCode, org.apache.http.Header[] headers, byte[] responseBody) {
+        removeHeaders(theseHeaders);
 				Logger.d("signin success: %d", statusCode);
 				PlexUser u = new PlexUser();
 				try {
@@ -203,6 +236,7 @@ public class PlexHttpClient
 
 			@Override
 			public void onFailure(int statusCode, org.apache.http.Header[] headers, byte[] responseBody, java.lang.Throwable error) {
+        removeHeaders(theseHeaders);
 				if(responseBody != null)
 					Logger.d("body: %s", new String(responseBody));
 				PlexError er = new PlexError();
@@ -217,68 +251,54 @@ public class PlexHttpClient
 		});
 	}
 
-	@SuppressWarnings("deprecation")
-	public static void setThumb(PlexTrack track, final ImageView layout) {
-    if(track.thumb != null && !track.thumb.equals("")) {
-      try {
-				String url = String.format("http://%s:%s%s", track.server.address, track.server.port, track.thumb);
-				if(track.server.accessToken != null)
-					url += String.format("?%s=%s", PlexHeaders.XPlexToken, track.server.accessToken);
-        Logger.d("Fetching thumb: %s", url);
-        AsyncHttpClient httpClient = new AsyncHttpClient();
-        httpClient.get(url, new BinaryHttpResponseHandler() {
-          @Override
-          public void onSuccess(byte[] imageData) {
-            InputStream is  = new ByteArrayInputStream(imageData);
-            try {
-              is.reset();
-            } catch (IOException e) {
-              e.printStackTrace();
-            }
-            Drawable d = Drawable.createFromStream(is, "thumb");
-            d.setAlpha(80);
-						if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
-							layout.setBackground(d);
-						else
-							layout.setBackgroundDrawable(d);
-          }
-        });
-      } catch(Exception e) {
-        e.printStackTrace();
-      }
+  public static PlexResponse getSync(String url) {
+    String body = getSyncBody(url, null);
+    PlexResponse r;
+    try {
+      r = serial.read(PlexResponse.class, body);
+    } catch (Exception e) {
+      Logger.e("Exception parsing response: %s", e.toString());
+      return null;
     }
+    return r;
   }
 
-	@SuppressWarnings("deprecation")
-  public static void setThumb(PlexVideo video, final RelativeLayout layout) {
-    if(!video.thumb.equals("")) {
-      try {
-				String url = String.format("http://%s:%s%s", video.server.activeConnection.address, video.server.activeConnection.port, video.thumb);
-				if(video.server.accessToken != null)
-					url += String.format("?%s=%s", PlexHeaders.XPlexToken, video.server.accessToken);
-        Logger.d("Fetching Video Thumb: %s", url);
-        AsyncHttpClient httpClient = new AsyncHttpClient();
-        httpClient.get(url, new BinaryHttpResponseHandler() {
-          @Override
-          public void onSuccess(byte[] imageData) {
-            InputStream is  = new ByteArrayInputStream(imageData);
-            try {
-              is.reset();
-            } catch (IOException e) {
-              e.printStackTrace();
-            }
-            Drawable d = Drawable.createFromStream(is, "thumb");
-            d.setAlpha(80);
-						if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
-							layout.setBackground(d);
-						else
-							layout.setBackgroundDrawable(d);
-          }
-        });
-      } catch(Exception e) {
-        e.printStackTrace();
-      }
+  public static MediaContainer getSync(String url, Header[] headers) {
+    String body = getSyncBody(url, headers);
+    MediaContainer mc;
+    try {
+      mc = serial.read(MediaContainer.class, body);
+    } catch (Exception e) {
+      Logger.e("Exception parsing response: %s", e.toString());
+      return null;
     }
+    return mc;
+  }
+
+  public static String getSyncBody(String url, Header[] headers) {
+    try {
+      HttpClient httpclient = new DefaultHttpClient();
+      HttpGet get = new HttpGet(url);
+      if(headers != null) {
+        get.setHeaders(headers);
+      }
+      HttpResponse response = httpclient.execute(get);
+      StatusLine statusLine = response.getStatusLine();
+      if (statusLine.getStatusCode() == HttpStatus.SC_OK) {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        response.getEntity().writeTo(out);
+        out.close();
+        String body = out.toString();
+        return body;
+      } else {
+        //Closes the connection.
+        response.getEntity().getContent().close();
+        throw new IOException(statusLine.getReasonPhrase());
+      }
+    } catch (Exception ex) {
+      ex.printStackTrace();
+    }
+    return null;
   }
 }
 

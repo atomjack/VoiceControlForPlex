@@ -82,17 +82,17 @@ public class PlexClient extends PlexDevice {
 		PlexHttpClient.get(url, responseHandler);
 	}
 
-	public void pause(PlexHttpResponseHandler responseHandler) {
-		adjustPlayback("pause", responseHandler);
-	}
+  public void pause(PlexHttpResponseHandler responseHandler) {
+    adjustPlayback("pause", responseHandler);
+  }
 
-	public void stop(PlexHttpResponseHandler responseHandler) {
-		adjustPlayback("stop", responseHandler);
-	}
+  public void stop(PlexHttpResponseHandler responseHandler) {
+    adjustPlayback("stop", responseHandler);
+  }
 
-	public void play(PlexHttpResponseHandler responseHandler) {
-		adjustPlayback("play", responseHandler);
-	}
+  public void play(PlexHttpResponseHandler responseHandler) {
+    adjustPlayback("play", responseHandler);
+  }
 
 	private void adjustPlayback(String which, PlexHttpResponseHandler responseHandler) {
 		ArrayList<String> validModes = new ArrayList<String>(Arrays.asList("pause", "play", "stop"));
@@ -105,4 +105,33 @@ public class PlexClient extends PlexDevice {
 			e.printStackTrace();
 		}
 	}
+
+  public PlexResponse pause() {
+    return adjustPlayback("pause");
+//    adjustPlayback("pause", responseHandler);
+  }
+
+  public PlexResponse stop() {
+    return adjustPlayback("stop");
+  }
+
+  public PlexResponse play() {
+    return adjustPlayback("play");
+  }
+
+  public PlexResponse seekTo(int offset) {
+    String url = String.format("http://%s:%s/player/playback/seekTo?offset=%s", address, port, offset);
+    return PlexHttpClient.getSync(url);
+  }
+
+  private PlexResponse adjustPlayback(String which) {
+    try {
+      String url = String.format("http://%s:%s/player/playback/%s", address, port, which);
+      PlexResponse r = PlexHttpClient.getSync(url);
+      return r;
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+    return null;
+  }
 }

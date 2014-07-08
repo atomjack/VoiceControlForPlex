@@ -3,9 +3,12 @@ package com.atomjack.vcfp;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.speech.tts.TextToSpeech;
+import android.speech.tts.UtteranceProgressListener;
 import android.widget.Toast;
 
 import com.atomjack.vcfp.activities.MainActivity;
+
+import java.util.HashMap;
 
 public class Feedback implements TextToSpeech.OnInitListener {
 	private TextToSpeech feedbackTts = null;
@@ -14,10 +17,13 @@ public class Feedback implements TextToSpeech.OnInitListener {
 	private String feedbackQueue = null;
 	private String errorsQueue = null;
 
+  private Runnable onFinish = null;
 
 	public Feedback(Context ctx) {
 		context = ctx;
 	}
+  private HashMap<String, String> map = new HashMap<String, String>();
+  private int utteranceId = 0;
 
 	@Override
 	public void onInit(int i) {
@@ -35,6 +41,7 @@ public class Feedback implements TextToSpeech.OnInitListener {
 			feedback(feedbackQueue, true);
 			feedbackQueue = null;
 		}
+
 	}
 
 	public void destroy() {
@@ -54,9 +61,19 @@ public class Feedback implements TextToSpeech.OnInitListener {
 		e(text);
 	}
 
-	public void m(String text) {
-		feedback(text, false);
-	}
+  public void m(String text, Runnable _onFinish) {
+    onFinish = _onFinish;
+    feedback(text, false);
+  }
+
+  public void m(int id, Runnable _onFinish) {
+    onFinish = _onFinish;
+    feedback(context.getString(id), false);
+  }
+
+  public void m(String text) {
+    feedback(text, false);
+  }
 
 	public void m(int id) {
 		feedback(context.getString(id), false);
@@ -88,12 +105,15 @@ public class Feedback implements TextToSpeech.OnInitListener {
 				if (errors) {
 					errorsTts = new TextToSpeech(context, this);
 					errorsQueue = text;
+          errorsTts.setOnUtteranceProgressListener(utteranceProgressListener);
 				} else {
 					feedbackTts = new TextToSpeech(context, this);
 					feedbackQueue = text;
+          feedbackTts.setOnUtteranceProgressListener(utteranceProgressListener);
 				}
 			} else {
-				tts.speak(text, TextToSpeech.QUEUE_FLUSH, null);
+        map.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, Integer.toString(utteranceId++));
+				tts.speak(text, TextToSpeech.QUEUE_FLUSH, map);
 				if (errors)
 					errorsQueue = null;
 				else
@@ -101,6 +121,29 @@ public class Feedback implements TextToSpeech.OnInitListener {
 			}
 		} else {
 			Toast.makeText(context, text, Toast.LENGTH_SHORT).show();
+      if(onFinish != null)
+        onFinish.run();
+      onFinish = null;
 		}
 	}
+
+  private UtteranceProgressListener utteranceProgressListener = new UtteranceProgressListener() {
+    @Override
+    public void onStart(String s) {
+
+    }
+
+    @Override
+    public void onDone(String s) {
+      if(onFinish != null)
+        onFinish.run();
+      onFinish = null;
+    }
+
+    @Override
+    public void onError(String s) {
+
+    }
+  };
+
 }

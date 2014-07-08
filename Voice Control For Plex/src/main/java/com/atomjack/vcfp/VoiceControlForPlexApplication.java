@@ -1,5 +1,7 @@
 package com.atomjack.vcfp;
 
+import java.math.BigInteger;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
@@ -11,17 +13,26 @@ import org.simpleframework.xml.core.Persister;
 
 import android.app.AlertDialog;
 import android.app.Application;
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.res.Resources.NotFoundException;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
+import android.support.v4.app.NotificationCompat;
 import android.text.TextUtils;
 
+import com.atomjack.vcfp.activities.NowPlayingActivity;
 import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.PlexClient;
+import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexServer;
+import com.atomjack.vcfp.model.PlexStream;
+import com.atomjack.vcfp.services.PlexControlService;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.loopj.android.http.AsyncHttpClient;
@@ -32,6 +43,8 @@ public class VoiceControlForPlexApplication extends Application
 	public final static String MINIMUM_PHT_VERSION = "1.0.7";
 
 	private static boolean isApplicationVisible;
+
+  private static int nowPlayingNotificationId = 0;
 
 	public static Gson gsonRead = new GsonBuilder()
 					.registerTypeAdapter(Uri.class, new UriDeserializer())
@@ -50,7 +63,9 @@ public class VoiceControlForPlexApplication extends Application
 			public final static String EXTRA_SILENT = "com.atomjack.vcfp.intent.extra_silent";
 
 
-			public final static String SCAN_TYPE = "com.atomjack.vcfp.intent.scan_type";
+      public final static String SCAN_TYPE = "com.atomjack.vcfp.intent.scan_type";
+      public final static String SCAN_TYPE_CLIENT = "com.atomjack.vcfp.intent.scan_type_client";
+      public final static String SCAN_TYPE_SERVER = "com.atomjack.vcfp.intent.scan_type_server";
 			public final static String EXTRA_SERVERS = "com.atomjack.vcfp.intent.extra_servers";
 			public final static String EXTRA_CLIENTS = "com.atomjack.vcfp.intent.extra_clients";
 			public final static String ARGUMENTS = "com.atomjack.vcfp.intent.ARGUMENTS";
@@ -61,6 +76,8 @@ public class VoiceControlForPlexApplication extends Application
 			public final static String EXTRA_MEDIA = "com.atomjack.vcfp.intent.EXTRA_MEDIA";
       public final static String EXTRA_CLASS = "com.atomjack.vcfp.intent.EXTRA_CLASS";
       public final static String SUBSCRIBED = "com.atomjack.vcfp.intent.SUBSCRIBED";
+
+      public final static String EXTRA_QUERYTEXT = "com.atomjack.vcfp.intent.EXTRA_QUERYTEXT";
 	};
 
 	public static ConcurrentHashMap<String, PlexServer> servers = new ConcurrentHashMap<String, PlexServer>();
@@ -218,7 +235,7 @@ public class VoiceControlForPlexApplication extends Application
 		if(hours > 0)
 			timecode.add(twoDigitsInt((int)hours));
 		timecode.add(twoDigitsInt((int)minutes));
-		timecode.add(twoDigitsInt((int)seconds));
+		timecode.add(twoDigitsInt((int) seconds));
 		return TextUtils.join(":", timecode);
 	}
 
@@ -231,4 +248,64 @@ public class VoiceControlForPlexApplication extends Application
 
 		return String.valueOf( pValue );
 	}
+
+  public static String generateRandomString() {
+    SecureRandom random = new SecureRandom();
+    return new BigInteger(130, random).toString(32).substring(0, 12);
+  }
+
+  public static void setNotification(Context context, PlexClient client, PlayerState currentState, PlexMedia media) {
+    Logger.d("Setting notification, client: %s", client);
+    if(client != null) {
+      NotificationManager mNotifyMgr = (NotificationManager) context.getSystemService(NOTIFICATION_SERVICE);
+      android.content.Intent rewindIntent = new android.content.Intent(context, PlexControlService.class);
+      rewindIntent.setAction(PlexControlService.ACTION_REWIND);
+      rewindIntent.putExtra(PlexControlService.CLIENT, client);
+      rewindIntent.putExtra(PlexControlService.MEDIA, media);
+      PendingIntent piRewind = PendingIntent.getService(context, 0, rewindIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+      android.content.Intent playPauseIntent = new android.content.Intent(context, PlexControlService.class);
+      int playPauseButton;
+      String playPauseAction;
+      if (currentState == PlayerState.PLAYING) {
+        playPauseButton = R.drawable.button_pause;
+        playPauseAction = PlexControlService.ACTION_PAUSE;
+      } else {
+        playPauseButton = R.drawable.button_play;
+        playPauseAction = PlexControlService.ACTION_PLAY;
+      }
+      playPauseIntent.setAction(playPauseAction);
+      playPauseIntent.putExtra(PlexControlService.CLIENT, client);
+      playPauseIntent.putExtra(PlexControlService.MEDIA, media);
+      PendingIntent piPlayPause = PendingIntent.getService(context, 0, playPauseIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+      android.content.Intent nowPlayingIntent = new android.content.Intent(context, NowPlayingActivity.class);
+      nowPlayingIntent.setFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK |
+              android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK);
+      nowPlayingIntent.putExtra(Intent.EXTRA_MEDIA, media);
+      nowPlayingIntent.putExtra(Intent.EXTRA_CLIENT, client);
+      PendingIntent piNowPlaying = PendingIntent.getActivity(context, 0, nowPlayingIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+      try {
+        NotificationCompat.Builder mBuilder =
+                new NotificationCompat.Builder(context)
+                        .setSmallIcon(R.drawable.ic_launcher)
+                        .setAutoCancel(false)
+                        .setOngoing(true)
+                        .setOnlyAlertOnce(true)
+                        .setContentTitle(media.title)
+                        .setContentText(String.format(context.getString(R.string.playing_on), client.name))
+                        .addAction(R.drawable.button_rewind, context.getString(R.string.rewind), piRewind)
+                        .addAction(playPauseButton, context.getString(currentState != PlayerState.PAUSED ? R.string.pause : R.string.play), piPlayPause)
+                        .setContentIntent(piNowPlaying)
+                        .setDefaults(Notification.DEFAULT_ALL);
+        Notification n = mBuilder.build();
+        // Disable notification sound
+        n.defaults = 0;
+        mNotifyMgr.notify(nowPlayingNotificationId, n);
+      } catch (Exception ex) {
+        ex.printStackTrace();
+      }
+    }
+  }
 }

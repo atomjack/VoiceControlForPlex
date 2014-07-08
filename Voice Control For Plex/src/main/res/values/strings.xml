@@ -46,7 +46,7 @@
     <string name="nothing_to_play">Sorry, I couldn\'t find anything to play.</string>
     <string name="http_status_code_error">Sorry, but I got an error, HTTP status code: %s</string>
     <string name="got_error">Sorry, but I got an error: %s</string>
-    <string name="client_not_found">Sorry, you didn\'t specify a client in the main settings, or I couldn\'t find it.</string>
+    <string name="client_not_specified">Sorry, you didn\'t specify a client in the main settings, or I couldn\'t find it.</string>
     <string name="found_more_than_one_album">I found more than one matching album. Please specify artist.</string>
     <string name="couldnt_find_album">Sorry, I couldn\'t find an album to play.</string>
     <string name="couldnt_find_track">Sorry, I couldn\'t find a track to play.</string>
@@ -101,4 +101,11 @@
     <string name="error_seeking">Sorry, there was an error seeking: %s.</string>
     <string name="connected_to">Connected To</string>
     <string name="disconnect">Disconnect</string>
+    <string name="play">Play</string>
+    <string name="pause">Pause</string>
+    <string name="rewind">Rewind</string>
+    <string name="playing_on">Playing on %s</string>
+    <string name="client_not_found">Sorry, I couldn\'t find the client you specified.</string>
+    <string name="connected_to2">Connected to %s.</string>
+    <string name="disconnected">Disconnected</string>
 </resources>

@@ -47,9 +47,6 @@ public class ShortcutProviderActivity extends Activity {
 		super.onCreate(savedInstanceState);
 		Logger.d("ShortcutProviderActivity onCreate");
 
-		String from = getIntent().getStringExtra("FROM");
-		Logger.d("from: %s", from);
-
 		localScan = new LocalScan(this, ShortcutProviderActivity.class, new ScanHandler() {
 			@Override
 			public void onDeviceSelected(PlexDevice device, boolean _resume) {
@@ -110,7 +107,7 @@ public class ShortcutProviderActivity extends Activity {
 
 		Intent launchIntent = new Intent(this, ShortcutActivity.class);
 		if(!use_current) {
-			Logger.d("setting client to %s", client.name);
+			Logger.d("setting mClient to %s", client.name);
 			launchIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_SERVER, gson.toJson(server));
 			launchIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLIENT, gson.toJson(client));
 			launchIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_RESUME, resume);

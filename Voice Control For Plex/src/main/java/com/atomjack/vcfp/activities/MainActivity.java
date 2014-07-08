@@ -93,12 +93,10 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 	private final static int RESULT_TASKER_PROJECT_IMPORTED = 1;
 	private final static int RESULT_SHORTCUT_CREATED = 2;
 
-	private BroadcastReceiver gdmReceiver = new GDMReceiver();
+	private BroadcastReceiver gdmReceiver;
 
 	private ArrayList<String> availableVoices;
 	private boolean settingErrorFeedback = false;
-
-	private Feedback feedback;
 
 	private FutureRunnable fetchPinTask;
 
@@ -122,6 +120,8 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 
 		Preferences.setContext(this);
 
+    gdmReceiver = new GDMReceiver();
+
 		final WhatsNewDialog whatsNewDialog = new WhatsNewDialog(this);
 		whatsNewDialog.show();
 
@@ -132,8 +132,6 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 		mMediaRouterCallback = new MediaRouterCallback();
 		mMediaRouter.addCallback(mMediaRouteSelector, mMediaRouterCallback, MediaRouter.CALLBACK_FLAG_PERFORM_ACTIVE_SCAN);
 
-
-		feedback = new Feedback(this);
 
 		authToken = Preferences.getString(Preferences.AUTHENTICATION_TOKEN);
 
@@ -366,7 +364,7 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 
 		if(helpButtonClicked.equals("server")) {
 			helpDialog.setMessage(R.string.help_server);
-		} else if(helpButtonClicked.equals("client")) {
+		} else if(helpButtonClicked.equals("mClient")) {
 			helpDialog.setMessage(R.string.help_client);
 		} else if(helpButtonClicked.equals("feedback")) {
 			helpDialog.setMessage(R.string.help_feedback);
@@ -471,7 +469,7 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 			new BasicHeader(PlexHeaders.XPlexClientIdentifier, getUUID())
 		};
 
-		PlexHttpClient.getPinCode(MainActivity.this, headers, new PlexPinResponseHandler() {
+		PlexHttpClient.getPinCode(headers, new PlexPinResponseHandler() {
 			@Override
 			public void onSuccess(Pin pin) {
 				showPin(pin);
@@ -550,7 +548,7 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 											new BasicHeader(com.atomjack.vcfp.PlexHeaders.XPlexClientIdentifier, getUUID()),
 											new BasicHeader("Accept", "text/xml")
 							};
-							PlexHttpClient.signin(MainActivity.this, authToken, sheaders, "application/xml;charset=\"utf-8\"", new PlexHttpUserHandler() {
+							PlexHttpClient.signin(authToken, sheaders, new PlexHttpUserHandler() {
 								@Override
 								public void onSuccess(PlexUser user) {
 									Preferences.put(Preferences.PLEX_USERNAME, user.username);
@@ -647,7 +645,7 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 								new BasicHeader(com.atomjack.vcfp.PlexHeaders.XPlexClientIdentifier, getUUID()),
 								new BasicHeader("Accept", "text/xml")
 				};
-				PlexHttpClient.signin(MainActivity.this, usernameInput.getText().toString(), passwordInput.getText().toString(), headers, "application/xml;charset=\"utf-8\"", new PlexHttpUserHandler() {
+				PlexHttpClient.signin(usernameInput.getText().toString(), passwordInput.getText().toString(), headers, new PlexHttpUserHandler() {
 					@Override
 					public void onSuccess(PlexUser user) {
 						Preferences.put(Preferences.AUTHENTICATION_TOKEN, user.authenticationToken);
@@ -760,12 +758,13 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 
 	@Override
 	protected void onNewIntent(Intent intent) {
-		String from = intent.getStringExtra("FROM");
+    Logger.d("MainActivity onNewIntent: %s", intent.getAction());
+
 		if(intent.getAction().equals(VoiceControlForPlexApplication.Intent.GDMRECEIVE)) {
 			Logger.d("Origin: " + intent.getStringExtra("ORIGIN"));
 			String origin = intent.getStringExtra("ORIGIN") == null ? "" : intent.getStringExtra("ORIGIN");
 			if(origin.equals("MainActivity")) {
-				if(intent.getStringExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE).equals("server")) {
+				if(intent.getStringExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE).equals(VoiceControlForPlexApplication.Intent.SCAN_TYPE_SERVER)) {
 					Logger.d("Got " + VoiceControlForPlexApplication.servers.size() + " servers");
           if(searchDialog != null)
             searchDialog.cancel();
@@ -784,7 +783,7 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 						AlertDialog d = builder.create();
 						d.show();
 					}
-				} else if(intent.getStringExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE).equals("client")) {
+				} else if(intent.getStringExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE).equals(VoiceControlForPlexApplication.Intent.SCAN_TYPE_CLIENT)) {
 					ArrayList<PlexClient> clients = intent.getParcelableArrayListExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLIENTS);
 					if(clients != null) {
 						VoiceControlForPlexApplication.clients = new HashMap<String, PlexClient>();
@@ -829,7 +828,7 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 
 	private void setClient(PlexClient _client) {
 		client = _client;
-		Logger.d("Selected client: %s", client);
+		Logger.d("Selected mClient: %s", client);
 		saveSettings();
 		initMainWithServer();
 	}
@@ -846,8 +845,8 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
     getMenuInflater().inflate(R.menu.menu_main, _menu);
 		menu = _menu;
 
-    if(plexSubscription.isSubscribed())
-      onSubscribed();
+    if(plexSubscription.isSubscribed() || castPlayerManager.isSubscribed())
+      setCastIconActive();
 
 		if(authToken != null) {
 			_menu.findItem(R.id.menu_login).setVisible(false);
@@ -903,16 +902,16 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 	protected void onResume() {
 //		Logger.d("MainActivity onResume");
 		super.onResume();
+    if(gdmReceiver != null) {
+      IntentFilter filters = new IntentFilter();
+      filters.addAction(GDMService.MSG_RECEIVED);
+      filters.addAction(GDMService.SOCKET_CLOSED);
+      LocalBroadcastManager.getInstance(this).registerReceiver(gdmReceiver,
+              filters);
+    }
 		VoiceControlForPlexApplication.applicationResumed();
     plexSubscription.setListener(this);
-
-		if(gdmReceiver != null) {
-			IntentFilter filters = new IntentFilter();
-			filters.addAction(GDMService.MSG_RECEIVED);
-			filters.addAction(GDMService.SOCKET_CLOSED);
-			LocalBroadcastManager.getInstance(this).registerReceiver(gdmReceiver,
-				filters);
-		}
+    castPlayerManager.setListener(this);
 	}
 
 	@Override

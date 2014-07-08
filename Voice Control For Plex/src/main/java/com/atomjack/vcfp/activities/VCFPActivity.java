@@ -1,27 +1,32 @@
 package com.atomjack.vcfp.activities;
 
 import android.app.AlertDialog;
-import android.app.Notification;
 import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.content.DialogInterface;
-import android.content.Intent;
+import android.content.pm.PackageInfo;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.drawable.AnimationDrawable;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
-import android.support.v4.app.NotificationCompat;
+import android.os.Handler;
 import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.ImageView;
+import android.widget.RelativeLayout;
 
 import com.atomjack.vcfp.BuildConfig;
+import com.atomjack.vcfp.CastPlayerManager;
+import com.atomjack.vcfp.Feedback;
 import com.atomjack.vcfp.LocalScan;
 import com.atomjack.vcfp.Logger;
 import com.atomjack.vcfp.PlayerState;
+import com.atomjack.vcfp.PlexHeaders;
 import com.atomjack.vcfp.PlexSubscription;
 import com.atomjack.vcfp.VCFPSingleton;
-import com.atomjack.vcfp.services.PlexControlService;
 import com.atomjack.vcfp.Preferences;
 import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.ScanHandler;
@@ -35,6 +40,7 @@ import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexDevice;
 import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexServer;
+import com.atomjack.vcfp.model.PlexVideo;
 import com.atomjack.vcfp.model.Timeline;
 import com.atomjack.vcfp.net.PlexHttpClient;
 import com.atomjack.vcfp.net.PlexHttpMediaContainerHandler;
@@ -42,27 +48,34 @@ import com.bugsense.trace.BugSenseHandler;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
+import com.loopj.android.http.BinaryHttpResponseHandler;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Type;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
-public abstract class VCFPActivity extends ActionBarActivity implements PlexSubscription.Listener {
+import cz.fhucho.android.util.SimpleDiskCache;
+
+public abstract class VCFPActivity extends ActionBarActivity implements PlexSubscription.Listener, CastPlayerManager.Listener {
 	protected PlexMedia nowPlayingMedia;
 	protected boolean subscribed = false;
 	protected boolean subscribing = false;
-	protected PlexClient subscribedClient;
+	protected PlexClient mClient;
 
   protected VoiceControlForPlexApplication app;
 
 	public final static String BUGSENSE_APIKEY = "879458d0";
 	protected Menu menu;
 
-//  protected PlexSubscription plexSubscription;
+  protected Handler mHandler;
 
 	protected LocalScan localScan;
 
   protected PlexSubscription plexSubscription;
+  protected CastPlayerManager castPlayerManager;
 
 	protected PlayerState mCurrentState = PlayerState.STOPPED;
   protected int position = -1;
@@ -78,22 +91,43 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
 					.registerTypeAdapter(Uri.class, new UriSerializer())
 					.create();
 
-	@Override
+  protected Feedback feedback;
+
+  SimpleDiskCache mSimpleDiskCache;
+
+
+  @Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-    app = (VoiceControlForPlexApplication)getApplication();
-    plexSubscription = VCFPSingleton.getInstance().getPlexSubscription();
-    if(plexSubscription.isSubscribed())
-      subscribedClient = plexSubscription.mClient;
+    Preferences.setContext(getApplicationContext());
 
+    mSimpleDiskCache = VCFPSingleton.getInstance().getSimpleDiskCache(this);
+
+
+    app = (VoiceControlForPlexApplication)getApplication();
+    feedback = new Feedback(this);
+
+    plexSubscription = VCFPSingleton.getInstance().getPlexSubscription();
+    if(plexSubscription.isSubscribed()) {
+      Logger.d("VCFPActivity setting client to %s", plexSubscription.mClient);
+      mClient = plexSubscription.mClient;
+    } else {
+      Logger.d("Not subscribed: %s", plexSubscription.mClient);
+    }
+
+    castPlayerManager = VCFPSingleton.getInstance().getCastPlayerManager(this);
+    if(castPlayerManager.isSubscribed())
+      mClient = castPlayerManager.mClient;
 
 		if(BuildConfig.USE_BUGSENSE)
 			BugSenseHandler.initAndStartSession(getApplicationContext(), BUGSENSE_APIKEY);
 
 		mNotifyMgr = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 
-		Preferences.setContext(getApplicationContext());
+    mHandler = new Handler();
+
+
 		Type serverType = new TypeToken<ConcurrentHashMap<String, PlexServer>>(){}.getType();
 		VoiceControlForPlexApplication.servers = gsonRead.fromJson(Preferences.get(Preferences.SAVED_SERVERS, ""), serverType);
 
@@ -101,78 +135,6 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
 //    plexSubscription = getIntent().getParcelableExtra(VoiceControlForPlexApplication.Intent.EXTRA_SUBSCRIPTION);
 //    if(plexSubscription == null)
 //      plexSubscription = new PlexSubscription();
-	}
-
-	@Override
-	protected void onNewIntent(Intent intent) {
-    /*
-		if(intent.getAction().equals(PlexSubscription.ACTION_SUBSCRIBED)) {
-			MenuItem castIcon = menu.findItem(R.id.action_cast);
-			castIcon.setIcon(R.drawable.mr_ic_media_route_on_holo_dark);
-			subscribed = true;
-			subscribing = false;
-		} else if(intent.getAction().equals(PlexSubscription.ACTION_UNSUBSCRIBED)) {
-			MenuItem castIcon = menu.findItem(R.id.action_cast);
-			castIcon.setIcon(R.drawable.mr_ic_media_route_holo_dark);
-			subscribed = false;
-			nowPlayingMedia = null;
-			mNotifyMgr.cancel(mNotificationId);
-		} else if(intent.getAction().equals(PlexSubscription.ACTION_MESSAGE)) {
-//			Logger.d("VCFP got message");
-			ArrayList<Timeline> timelines = intent.getParcelableArrayListExtra(PlexSubscription.EXTRA_TIMELINES);
-			if(timelines != null) {
-				for (Timeline t : timelines) {
-          // TODO: Handle music too
-					if (t.type.equals("video")) {
-						if(!t.state.equals("stopped") && nowPlayingMedia == null) {
-							// Get this media's info
-							PlexServer server = null;
-							for(PlexServer s : VoiceControlForPlexApplication.servers.values()) {
-								if(s.machineIdentifier.equals(t.machineIdentifier)) {
-									server = s;
-									break;
-								}
-							}
-							if(server == null) {
-								// TODO: Scan servers for this server, then get playing media
-								Logger.d("server is null");
-							} else {
-                getPlayingMedia(server, t);
-							}
-						}
-
-						if(nowPlayingMedia != null) {
-							if(t.key != null && t.key.equals(nowPlayingMedia.key)) {
-								// Found an update for the currently playing media
-								PlayerState newState = PlayerState.getState(t.state);
-								if(newState != mCurrentState) {
-									if(newState == PlayerState.PLAYING) {
-										Logger.d("client is now playing");
-										if(mCurrentState == PlayerState.STOPPED) {
-											// We're already subscribed and the client has started playing
-                      // TODO: Continue this
-										}
-									} else if(newState == PlayerState.PAUSED) {
-										Logger.d("client is now paused");
-									} else if(newState == PlayerState.STOPPED) {
-										Logger.d("client is now stopped");
-										mNotifyMgr.cancel(mNotificationId);
-										nowPlayingMedia = null;
-									}
-									mCurrentState = newState;
-//                  if(mCurrentState != PlayerState.STOPPED)
-//                    setNotification();
-								}
-							}
-              position = t.time;
-						}
-            onSubscriptionMessage(t);
-					}
-				}
-			}
-		}
-		*/
-		super.onNewIntent(intent);
 	}
 
   protected void onSubscriptionMessage(Timeline timeline) {
@@ -185,7 +147,13 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
 				PlexHttpClient.get(server, timeline.key, new PlexHttpMediaContainerHandler() {
 					@Override
 					public void onSuccess(MediaContainer mediaContainer) {
-						nowPlayingMedia = mediaContainer.videos.get(0);
+            if(timeline.type.equals("video"))
+						  nowPlayingMedia = mediaContainer.videos.get(0);
+            else if(timeline.type.equals("music"))
+              nowPlayingMedia = mediaContainer.tracks.get(0);
+            else {
+              // TODO: Handle failure
+            }
 						nowPlayingMedia.server = server;
 						Logger.d("We're watching %s", nowPlayingMedia.title);
 						nowPlayingMedia.getThumb(64, 64, new BitmapHandler() {
@@ -196,8 +164,9 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
 //                NotificationCompat.Action rewindAction =
 
 
-                setNotification();
-
+                //setNotification();
+                Logger.d("getPlayingMedia setting notification with %s", nowPlayingMedia);
+                VoiceControlForPlexApplication.setNotification(getApplicationContext(), mClient, mCurrentState, nowPlayingMedia);
 
 							}
 						});
@@ -217,76 +186,33 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
 		});
 	}
 
-  private void setNotification() {
-    Logger.d("Setting notification");
-    if(subscribedClient != null) {
-      Intent rewindIntent = new Intent(this, PlexControlService.class);
-      rewindIntent.setAction(PlexControlService.ACTION_REWIND);
-      rewindIntent.putExtra(PlexControlService.CLIENT, subscribedClient);
-      PendingIntent piRewind = PendingIntent.getService(this, 0, rewindIntent, 0);
-
-      Intent playPauseIntent = new Intent(this, PlexControlService.class);
-      int playPauseButton;
-      String playPauseAction;
-      if (mCurrentState == PlayerState.PLAYING) {
-        playPauseButton = R.drawable.button_pause;
-        playPauseAction = PlexControlService.ACTION_PAUSE;
-      } else {
-        playPauseButton = R.drawable.button_play;
-        playPauseAction = PlexControlService.ACTION_PLAY;
-      }
-      playPauseIntent.setAction(playPauseAction);
-      playPauseIntent.putExtra(PlexControlService.CLIENT, subscribedClient);
-      PendingIntent piPlayPause = PendingIntent.getService(this, 0, playPauseIntent, 0);
-
-      Intent nowPlayingIntent = new Intent(this, NowPlayingActivity.class);
-      nowPlayingIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK |
-              Intent.FLAG_ACTIVITY_CLEAR_TASK);
-      nowPlayingIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_MEDIA, nowPlayingMedia);
-      nowPlayingIntent.putExtra("client", subscribedClient);
-      PendingIntent piNowPlaying = PendingIntent.getActivity(this, 0, nowPlayingIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-
-      try {
-        NotificationCompat.Builder mBuilder =
-          new NotificationCompat.Builder(this)
-            .setSmallIcon(R.drawable.ic_launcher)
-            .setAutoCancel(false)
-            .setOngoing(true)
-            .setOnlyAlertOnce(true)
-            .setContentTitle(nowPlayingMedia.title)
-            .setContentText(String.format("Playing on: %s", subscribedClient.name))
-            .addAction(R.drawable.button_rewind, "rewind", piRewind)
-            .addAction(playPauseButton, "play", piPlayPause)
-            .setContentIntent(piNowPlaying)
-            .setDefaults(Notification.DEFAULT_ALL);
-        Notification n = mBuilder.build();
-        // Disable notification sound
-        n.defaults = 0;
-        mNotifyMgr.notify(mNotificationId, n);
-      } catch (Exception ex) {
-        ex.printStackTrace();
-      }
-    }
+  private boolean isSubscribed() {
+    return plexSubscription.isSubscribed() || castPlayerManager.isSubscribed();
   }
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		switch (item.getItemId()) {
 			case R.id.action_cast:
-				if(!subscribed && !subscribing) {
+        Logger.d("subscribed: %s", subscribed);
+        Logger.d("subscribing: %s", subscribing);
+				if(!isSubscribed() && !subscribing) {
 					subscribing = true;
 					localScan.showPlexClients(VoiceControlForPlexApplication.clients, false, onClientChosen);
 				} else if(!subscribing) {
 					AlertDialog.Builder subscribeDialog = new AlertDialog.Builder(this)
 						.setTitle(R.string.connected_to)
-						.setMessage(subscribedClient.name)
+						.setMessage(mClient.name)
 						.setNegativeButton(R.string.disconnect, new DialogInterface.OnClickListener() {
-							@Override
-							public void onClick(DialogInterface dialogInterface, int i) {
-                plexSubscription.unsubscribe();
+              @Override
+              public void onClick(DialogInterface dialogInterface, int i) {
+                if(mClient.isCastClient)
+                  castPlayerManager.unsubscribe();
+                else
+                  plexSubscription.unsubscribe();
                 dialogInterface.dismiss();
-							}
-						});
+              }
+            });
 					subscribeDialog.show();
 				}
 				break;
@@ -300,38 +226,46 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
 	protected ScanHandler onClientChosen = new ScanHandler() {
 		@Override
 		public void onDeviceSelected(PlexDevice device, boolean resume) {
-			PlexClient clientSelected = (PlexClient)device;
+      subscribing = false;
+      if(device != null) {
+        PlexClient clientSelected = (PlexClient) device;
 
-			// Start animating the action bar icon
-			final MenuItem castIcon = menu.findItem(R.id.action_cast);
-			castIcon.setIcon(R.drawable.mr_ic_media_route_connecting_holo_dark);
-			AnimationDrawable ad = (AnimationDrawable) castIcon.getIcon();
-			ad.start();
+        // Start animating the action bar icon
+        final MenuItem castIcon = menu.findItem(R.id.action_cast);
+        castIcon.setIcon(R.drawable.mr_ic_media_route_connecting_holo_dark);
+        AnimationDrawable ad = (AnimationDrawable) castIcon.getIcon();
+        ad.start();
 
-			subscribedClient = clientSelected;
-      plexSubscription.startSubscription(subscribedClient);
-//			Intent subscribeIntent = new Intent(getApplicationContext(), PlexSubscriptionService.class);
-//			subscribeIntent.setAction(PlexSubscriptionService.ACTION_SUBSCRIBE);
-//			subscribeIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLIENT, gsonRead.toJson(clientSelected));
-//			subscribeIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLASS, MainActivity.class);
-//			startService(subscribeIntent);
+        mClient = clientSelected;
+        if (mClient.isCastClient) {
+
+          castPlayerManager.subscribe(mClient);
+        } else
+          plexSubscription.startSubscription(mClient);
+      }
 		}
 	};
+
+  protected void castSubscribe() {}
 
 	@Override
 	protected void onDestroy() {
 		super.onDestroy();
+    plexSubscription.removeListener(this);
 	}
 
 	@Override
 	protected void onPause() {
 		super.onPause();
-    plexSubscription.setListener(null);
 	}
 
 	@Override
 	protected void onResume() {
 		super.onResume();
+    if(!plexSubscription.isSubscribed() && !castPlayerManager.isSubscribed())
+      subscribed = false;
+    else
+      subscribed = true;
 	}
 
   @Override
@@ -340,15 +274,46 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
     Logger.d("Saving instance state");
 //    outState.putBoolean(VoiceControlForPlexApplication.Intent.SUBSCRIBED, subscribed);
 //    outState.putParcelable(VoiceControlForPlexApplication.Intent.EXTRA_MEDIA, nowPlayingMedia);
-//    outState.putParcelable("client", client);
+//    outState.putParcelable("mClient", mClient);
   }
 
   @Override
-  public void onSubscribed() {
+  public void onSubscribed(PlexClient _client) {
+    Logger.d("VCFPActivity: onSubscribed: %s", _client);
+    mClient = _client;
+    try {
+      setCastIconActive();
+      subscribed = true;
+      subscribing = false;
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+    feedback.m(String.format(getString(R.string.connected_to2), mClient.name));
+  }
+
+  protected void setCastIconActive() {
     MenuItem castIcon = menu.findItem(R.id.action_cast);
     castIcon.setIcon(R.drawable.mr_ic_media_route_on_holo_dark);
-    subscribed = true;
-    subscribing = false;
+  }
+
+  @Override
+  public void onCastConnected(PlexClient _client) {
+    onSubscribed(_client);
+  }
+
+  @Override
+  public void onCastDisconnected() {
+    onUnsubscribed();
+  }
+
+  @Override
+  public void onCastPlayerStateChanged(int status) {
+
+  }
+
+  @Override
+  public void onCastPlayerTimeUpdate(int seconds) {
+
   }
 
   @Override
@@ -357,7 +322,7 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
     if(timelines != null) {
       for (Timeline t : timelines) {
         // TODO: Handle music too
-        if (t.type.equals("video")) {
+        if (t.key != null) {
           if(!t.state.equals("stopped") && nowPlayingMedia == null) {
             // Get this media's info
             PlexServer server = null;
@@ -379,23 +344,26 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
             if(t.key != null && t.key.equals(nowPlayingMedia.key)) {
               // Found an update for the currently playing media
               PlayerState newState = PlayerState.getState(t.state);
+              nowPlayingMedia.viewOffset = Integer.toString(t.time);
               if(newState != mCurrentState) {
                 if(newState == PlayerState.PLAYING) {
-                  Logger.d("client is now playing");
+                  Logger.d("mClient is now playing");
                   if(mCurrentState == PlayerState.STOPPED) {
-                    // We're already subscribed and the client has started playing
+                    // We're already subscribed and the mClient has started playing
                     // TODO: Continue this
                   }
                 } else if(newState == PlayerState.PAUSED) {
-                  Logger.d("client is now paused");
+                  Logger.d("mClient is now paused");
                 } else if(newState == PlayerState.STOPPED) {
-                  Logger.d("client is now stopped");
+                  Logger.d("mClient is now stopped");
                   mNotifyMgr.cancel(mNotificationId);
                   nowPlayingMedia = null;
                 }
                 mCurrentState = newState;
-                if(mCurrentState != PlayerState.STOPPED)
-                  setNotification();
+                if(mCurrentState != PlayerState.STOPPED) {
+                  Logger.d("onMessageReceived setting notification with %s", mCurrentState);
+                  VoiceControlForPlexApplication.setNotification(getApplicationContext(), mClient, mCurrentState, nowPlayingMedia);
+                }
               }
             }
             position = t.time;
@@ -405,6 +373,8 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
         }
       }
     }
+
+
   }
 
   @Override
@@ -415,5 +385,126 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
     subscribed = false;
     nowPlayingMedia = null;
     mNotifyMgr.cancel(mNotificationId);
+    feedback.m(R.string.disconnected);
+  }
+
+  private void getThumb(final String thumb, final PlexMedia media) {
+    String url = String.format("http://%s:%s%s", media.server.activeConnection.address, media.server.activeConnection.port, thumb);
+    if(media.server.accessToken != null)
+      url += String.format("?%s=%s", PlexHeaders.XPlexToken, media.server.accessToken);
+
+    Logger.d("Fetching Video Thumb: %s", url);
+    PlexHttpClient.getClient().get(url, new BinaryHttpResponseHandler() {
+      @Override
+      public void onSuccess(byte[] imageData) {
+        InputStream is = new ByteArrayInputStream(imageData);
+
+        try {
+          is.reset();
+        } catch (IOException e) {
+          e.printStackTrace();
+        }
+
+        try {
+          mSimpleDiskCache.put(String.format("%s/%s", media.server.machineIdentifier, thumb), is);
+        } catch (Exception ex) {
+          ex.printStackTrace();
+        }
+        setThumb(is);
+      }
+    });
+  }
+
+  @SuppressWarnings("deprecation")
+  private void setThumb(InputStream is) {
+    Logger.d("Setting thumb: %s", is);
+    final RelativeLayout layout = (RelativeLayout)findViewById(R.id.background);
+
+    try {
+      is.reset();
+    } catch (IOException e) {
+    }
+
+    Drawable d = Drawable.createFromStream(is, "thumb");
+    Logger.d("d: %s", d);
+    d.setAlpha(80);
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
+      layout.setBackground(d);
+    else
+      layout.setBackgroundDrawable(d);
+  }
+
+  public void setThumb(PlexMedia media, int orientation) {
+    if(!media.thumb.equals("")) {
+      String thumb = media.thumb;
+      if(media instanceof PlexVideo) {
+        PlexVideo video = (PlexVideo)media;
+        thumb = video.type.equals("movie") ? video.thumb : video.grandparentThumb;
+        Logger.d("orientation: %s, type: %s", orientation, video.type);
+        if(orientation == Configuration.ORIENTATION_LANDSCAPE) {
+          if(video.type.equals("movie"))
+            thumb = video.art;
+          else if(video.type.equals("episode")) {
+            thumb = video.thumb;
+          }
+        }
+      }
+
+
+      Logger.d("thumb: %s", thumb);
+
+      SimpleDiskCache.InputStreamEntry thumbEntry = null;
+      try {
+        thumbEntry = mSimpleDiskCache.getInputStream(String.format("%s/%s", media.server.machineIdentifier, thumb));
+      } catch (Exception ex) {}
+      if(thumbEntry != null) {
+        Logger.d("Using cached thumb");
+        setThumb(thumbEntry.getInputStream());
+      } else {
+        Logger.d("Downloading thumb");
+        getThumb(thumb, media);
+      }
+    }
+  }
+
+
+  public static void setThumb(PlexVideo video, int orientation, final RelativeLayout layout) {
+    if(!video.thumb.equals("")) {
+      try {
+        String thumb = video.type.equals("movie") ? video.thumb : video.grandparentThumb;
+        Logger.d("orientation: %s, type: %s", orientation, video.type);
+        if(orientation == Configuration.ORIENTATION_LANDSCAPE) {
+          if(video.type.equals("movie"))
+            thumb = video.art;
+          else if(video.type.equals("episode")) {
+            thumb = video.thumb;
+          }
+        }
+
+        String url = String.format("http://%s:%s%s", video.server.activeConnection.address, video.server.activeConnection.port, thumb);
+        if(video.server.accessToken != null)
+          url += String.format("?%s=%s", PlexHeaders.XPlexToken, video.server.accessToken);
+        Logger.d("Fetching Video Thumb: %s", url);
+        PlexHttpClient.getClient().get(url, new BinaryHttpResponseHandler() {
+          @Override
+          public void onSuccess(byte[] imageData) {
+            InputStream is = new ByteArrayInputStream(imageData);
+            try {
+              is.reset();
+            } catch (IOException e) {
+              e.printStackTrace();
+            }
+            Drawable d = Drawable.createFromStream(is, "thumb");
+            d.setAlpha(80);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
+              layout.setBackground(d);
+            else
+              layout.setBackgroundDrawable(d);
+          }
+        });
+      } catch(Exception e) {
+        e.printStackTrace();
+      }
+    }
   }
 }

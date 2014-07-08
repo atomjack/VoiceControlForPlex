@@ -16,7 +16,7 @@
     <uses-permission android:name="com.android.vending.BILLING" />
 
     <uses-sdk
-        android:minSdkVersion="14"
+        android:minSdkVersion="15"
         android:targetSdkVersion="19" />
 
     <application
@@ -63,6 +63,9 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
+        <activity android:name=".activities.SubscriptionActivity"
+                  android:theme="@style/Theme.Transparent">
+         </activity>
         <activity android:name=".activities.ShortcutActivity"
                   android:theme="@android:style/Theme.NoDisplay"
                   android:launchMode="singleInstance">

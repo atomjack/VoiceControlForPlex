@@ -36,6 +36,7 @@ public class PlexTrack extends PlexMedia {
 		out.writeString(viewOffset);
 		out.writeString(artist);
 		out.writeString(album);
+    out.writeInt(duration);
 		out.writeParcelable(server, i);
 	}
 
@@ -49,6 +50,7 @@ public class PlexTrack extends PlexMedia {
 		viewOffset = in.readString();
 		artist = in.readString();
 		album = in.readString();
+    duration = in.readInt();
 		server = in.readParcelable(PlexServer.class.getClassLoader());
 	}
 

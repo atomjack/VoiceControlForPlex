@@ -2,6 +2,7 @@ package com.atomjack.vcfp;
 
 import android.app.Dialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.view.View;
 import android.widget.AdapterView;
@@ -53,7 +54,7 @@ public class LocalScan {
 		mServiceIntent.putExtra("ORIGIN", theClass.getSimpleName());
 		mServiceIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_SILENT, silent);
 		mServiceIntent.putExtra("class", theClass);
-		mServiceIntent.putExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE, "server");
+		mServiceIntent.putExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE, VoiceControlForPlexApplication.Intent.SCAN_TYPE_SERVER);
 		context.startService(mServiceIntent);
 	}
 
@@ -104,11 +105,11 @@ public class LocalScan {
 		searchDialog.show();
 
 		Intent mServiceIntent = new Intent(context, GDMService.class);
-		mServiceIntent.putExtra("port", 32412); // Port for clients
+		mServiceIntent.putExtra(GDMService.PORT, 32412); // Port for clients
 		mServiceIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
 		mServiceIntent.putExtra("ORIGIN", theClass.getSimpleName());
 		mServiceIntent.putExtra("class", theClass);
-		mServiceIntent.putExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE, "client");
+		mServiceIntent.putExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE, VoiceControlForPlexApplication.Intent.SCAN_TYPE_CLIENT);
 		context.startService(mServiceIntent);
 	}
 
@@ -126,42 +127,51 @@ public class LocalScan {
 	}
 
 	public void showPlexClients(Map<String, PlexClient> clients, boolean showResume, final ScanHandler onFinish) {
-		if(searchDialog != null)
-			searchDialog.dismiss();
-		if(serverSelectDialog == null) {
-			serverSelectDialog = new Dialog(context);
-		}
-		serverSelectDialog.setContentView(R.layout.server_select);
-		serverSelectDialog.setTitle(R.string.select_plex_client);
-		serverSelectDialog.show();
+    if (searchDialog != null)
+      searchDialog.dismiss();
+    if (serverSelectDialog == null) {
+      serverSelectDialog = new Dialog(context);
+    }
+    serverSelectDialog.setContentView(R.layout.server_select);
+    serverSelectDialog.setTitle(R.string.select_plex_client);
+    serverSelectDialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
+      @Override
+      public void onCancel(DialogInterface dialogInterface) {
+        if (onFinish == null)
+          scanHandler.onDeviceSelected(null, false);
+        else
+          onFinish.onDeviceSelected(null, false);
+      }
+    });
+    serverSelectDialog.show();
 
-		if(showResume) {
-			CheckBox resumeCheckbox = (CheckBox)serverSelectDialog.findViewById(R.id.serverListResume);
-			resumeCheckbox.setVisibility(View.VISIBLE);
-		}
+    if (showResume) {
+      CheckBox resumeCheckbox = (CheckBox) serverSelectDialog.findViewById(R.id.serverListResume);
+      resumeCheckbox.setVisibility(View.VISIBLE);
+    }
 
-		// Add any chromecasts we've found
-		clients.putAll(VoiceControlForPlexApplication.castClients);
+    // Add any chromecasts we've found
+    clients.putAll(VoiceControlForPlexApplication.castClients);
 
 
-		final ListView serverListView = (ListView)serverSelectDialog.findViewById(R.id.serverListView);
-		final PlexListAdapter adapter = new PlexListAdapter(context, PlexListAdapter.TYPE_CLIENT);
-		adapter.setClients(clients);
-		serverListView.setAdapter(adapter);
-		serverListView.setOnItemClickListener(new ListView.OnItemClickListener() {
+    final ListView serverListView = (ListView) serverSelectDialog.findViewById(R.id.serverListView);
+    final PlexListAdapter adapter = new PlexListAdapter(context, PlexListAdapter.TYPE_CLIENT);
+    adapter.setClients(clients);
+    serverListView.setAdapter(adapter);
+    serverListView.setOnItemClickListener(new ListView.OnItemClickListener() {
 
-			@Override
-			public void onItemClick(AdapterView<?> parentAdapter, View view, int position,
-															long id) {
-				PlexClient s = (PlexClient)parentAdapter.getItemAtPosition(position);
-				serverSelectDialog.dismiss();
-				CheckBox resumeCheckbox = (CheckBox)serverSelectDialog.findViewById(R.id.serverListResume);
-				if(onFinish == null)
-					scanHandler.onDeviceSelected(s, resumeCheckbox.isChecked());
-				else
-					onFinish.onDeviceSelected(s, resumeCheckbox.isChecked());
-			}
+      @Override
+      public void onItemClick(AdapterView<?> parentAdapter, View view, int position,
+                              long id) {
+        PlexClient s = (PlexClient) parentAdapter.getItemAtPosition(position);
+        serverSelectDialog.dismiss();
+        CheckBox resumeCheckbox = (CheckBox) serverSelectDialog.findViewById(R.id.serverListResume);
+        if (onFinish == null)
+          scanHandler.onDeviceSelected(s, resumeCheckbox.isChecked());
+        else
+          onFinish.onDeviceSelected(s, resumeCheckbox.isChecked());
+      }
 
-		});
-	}
+    });
+  }
 }

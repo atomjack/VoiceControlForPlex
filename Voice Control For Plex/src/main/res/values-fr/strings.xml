@@ -46,7 +46,7 @@
     <string name="nothing_to_play">Désolé, impossible de trouver de contenu à lire.</string>
     <string name="http_status_code_error">Désolé, une erreur HTTP est survenue. Code: %s</string>
     <string name="got_error">Désolé, une erreur est survenue: %s</string>
-    <string name="client_not_found">Désolé, vous n\'avez pas spécifié de client dans les paramètres ou il est introuvable.</string>
+    <string name="client_not_specified">Désolé, vous n\'avez pas spécifié de client dans les paramètres ou il est introuvable.</string>
     <string name="found_more_than_one_album">Plus d\'un album correspond, veuillez spécifier l\'artiste.</string>
     <string name="couldnt_find_album">Désolé, impossible de trouver un album à lire.</string>
     <string name="couldnt_find_track">Désolé, impossible de trouver une piste à lire.</string>

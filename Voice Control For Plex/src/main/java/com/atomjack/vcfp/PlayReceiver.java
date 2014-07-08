@@ -22,7 +22,7 @@ public class PlayReceiver extends BroadcastReceiver
 			queryText = queryText.toLowerCase();
 			Intent sendIntent = new Intent(context, PlexSearchService.class);
 			sendIntent.setAction("com.atomjack.vcfp.intent.ACTION_SEARCH");
-			sendIntent.putExtra("queryText", queryText);
+			sendIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_QUERYTEXT, queryText);
 			sendIntent.putExtra("ORIGIN", "Tasker");
 			sendIntent.addFlags(Intent.FLAG_FROM_BACKGROUND);
 			sendIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);

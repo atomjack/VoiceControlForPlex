@@ -1,19 +1,14 @@
 package com.atomjack.vcfp;
 
-import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
 import android.os.Handler;
-import android.os.Parcel;
-import android.os.Parcelable;
 import android.support.v4.content.LocalBroadcastManager;
 
 import com.atomjack.vcfp.activities.VCFPActivity;
 import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexResponse;
-import com.atomjack.vcfp.model.Timeline;
 import com.atomjack.vcfp.net.PlexHttpClient;
 import com.atomjack.vcfp.net.PlexHttpResponseHandler;
 
@@ -28,7 +23,7 @@ import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
+import java.net.SocketException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -54,7 +49,10 @@ public class PlexSubscription {
 
   private static Serializer serial = new Persister();
 
-  public PlexClient mClient; // the client we are subscribing to
+  public PlexClient mClient; // the mClient we are subscribing to
+
+  private String uuid;
+  private String appName;
 
   private VCFPActivity listener;
   private VCFPActivity notificationListener; // This will be the listener but will not be reset, and will be used for changing the notification
@@ -62,22 +60,33 @@ public class PlexSubscription {
   private int commandId = 0;
   private int subscriptionPort = 59409;
   private boolean subscribed = false;
-  private boolean subscriptionHasStarted = false;
   private ServerSocket serverSocket;
   Thread serverThread = null;
   Handler updateConversationHandler;
 
-  private Handler handler = new Handler();
+  private Handler mHandler;
 
   public PlexSubscription() {
+    mHandler = new Handler();
+    Logger.d("Setting uuid to %s", Preferences.getUUID());
+    uuid = Preferences.getUUID();
   }
 
   public void setListener(VCFPActivity _listener) {
     if(_listener != null)
       Logger.d("Setting listener to %s", _listener.getClass().getSimpleName());
     listener = _listener;
-    if(_listener != null)
+    if(_listener != null) {
+      appName = _listener.getString(R.string.app_name);
       notificationListener = _listener;
+    }
+  }
+
+  public void removeListener(VCFPActivity _listener) {
+    if(listener == _listener) {
+      Logger.d("removing listener");
+      listener = null;
+    }
   }
 
   public VCFPActivity getListener() {
@@ -85,7 +94,7 @@ public class PlexSubscription {
   }
 
   public boolean isSubscribed() {
-    return subscribed;
+    return subscribed && mClient != null;
   }
 
   class ServerThread implements Runnable {
@@ -94,6 +103,19 @@ public class PlexSubscription {
     private void onReady(Runnable runme) {
       onReady = runme;
     }
+
+    private Runnable onSocketReady = new Runnable() {
+      @Override
+      public void run() {
+        boolean closed = serverSocket.isClosed();
+
+        if(!closed) {
+          onReady.run();
+        } else {
+          new Handler().postDelayed(onSocketReady, 1000);
+        }
+      }
+    };
 
     public void run() {
       Logger.d("starting serverthread");
@@ -105,13 +127,15 @@ public class PlexSubscription {
       }
 
       Logger.d("running");
-      if(onReady != null)
-        onReady.run();
+      onSocketReady.run();
+      if(onReady != null) {
+//        onReady.run();
+      }
 
-//			while (!Thread.currentThread().isInterrupted()) {
-      while(true) {
+			while (!Thread.currentThread().isInterrupted()) {
+//      while(true) {
         try {
-          if(serverSocket == null)
+          if (serverSocket == null)
             return;
           socket = serverSocket.accept();
 
@@ -120,22 +144,19 @@ public class PlexSubscription {
           Pattern p = Pattern.compile("^([^:]+): (.+)$");
           Matcher matcher;
           BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-          while ((line = reader.readLine()) != null)
-          {
+          while ((line = reader.readLine()) != null) {
             matcher = p.matcher(line);
-            if(matcher.find()) {
+            if (matcher.find()) {
               headers.put(matcher.group(1), matcher.group(2));
             }
-            if(line.equals(""))
-            {
+            if (line.equals("")) {
               break; // and don't get the next line!
             }
           }
           int contentLength = Integer.parseInt(headers.get("Content-Length"));
 
           StringBuilder requestContent = new StringBuilder();
-          for (int i = 0; i < contentLength; i++)
-          {
+          for (int i = 0; i < contentLength; i++) {
             requestContent.append((char) reader.read());
           }
 
@@ -162,8 +183,7 @@ public class PlexSubscription {
             e.printStackTrace();
           }
 
-          // TODO: Do something with mediaContainer
-          onMessage(headers, mediaContainer);
+          onMessage(mediaContainer);
 
 
           // Send a response
@@ -179,6 +199,11 @@ public class PlexSubscription {
 
           output.close();
           reader.close();
+        } catch (SocketException se) {
+          if(se.getMessage().equals("Socket closed")) {
+            updateConversationHandler = null;
+          }
+//          se.printStackTrace();
         } catch (Exception e) {
           e.printStackTrace();
         } finally {
@@ -208,39 +233,43 @@ public class PlexSubscription {
       }
     });
 
-
     serverThread = new Thread(thread);
     serverThread.start();
   }
 
   public void subscribe(PlexClient client) {
-    subscribe(client, false);
+    Logger.d("PlexSubscription subscribe: %s, handler is null: %s", client, updateConversationHandler == null);
+    if(updateConversationHandler == null)
+      startSubscription(client);
+    else
+      subscribe(client, false);
   }
 
   public void subscribe(PlexClient client, final boolean isHeartbeat) {
-    if(listener == null) {
-      Logger.d("listener is null");
+    if(client == null)
       return;
-    }
     mClient = client;
+    Logger.d("subscribe, mClient now %s", mClient);
     QueryString qs = new QueryString("port", String.valueOf(subscriptionPort));
     qs.add("commandID", String.valueOf(commandId));
     qs.add("protocol", "http");
 
+    Logger.d("uuid: %s", uuid);
     Header[] headers = {
-      new BasicHeader(PlexHeaders.XPlexClientIdentifier, Preferences.getUUID()),
-      new BasicHeader(PlexHeaders.XPlexDeviceName, listener.getString(R.string.app_name))
+      new BasicHeader(PlexHeaders.XPlexClientIdentifier, uuid),
+      new BasicHeader(PlexHeaders.XPlexDeviceName, appName)
     };
-    PlexHttpClient.get(listener, String.format("http://%s:%s/player/timeline/subscribe?%s", mClient.address, mClient.port, qs), headers, new PlexHttpResponseHandler() {
+    PlexHttpClient.get(String.format("http://%s:%s/player/timeline/subscribe?%s", mClient.address, mClient.port, qs), headers, new PlexHttpResponseHandler() {
       @Override
       public void onSuccess(PlexResponse response) {
-        Logger.d("PlexSubscription: Subscribed");
+        Logger.d("PlexSubscription: Subscribed: %s", response.status);
         commandId++;
         subscribed = true;
 
         if (!isHeartbeat) {
           // Start the heartbeat subscription (so the server knows we're still here)
-          handler.postDelayed(subscriptionHeartbeat, SUBSCRIBE_INTERVAL);
+          mHandler.removeCallbacks(subscriptionHeartbeat);
+          mHandler.postDelayed(subscriptionHeartbeat, SUBSCRIBE_INTERVAL);
           onSubscribed();
         }
       }
@@ -253,11 +282,21 @@ public class PlexSubscription {
   }
 
   private void onSubscribed() {
-    handler.post(new Runnable() {
+    mHandler.post(new Runnable() {
       @Override
       public void run() {
-        if(listener != null)
-          listener.onSubscribed();
+        Logger.d("PlexSubscription onSubscribed, client: %s, listener: %s", mClient, listener);
+        if (listener != null && mClient != null) {
+          listener.onSubscribed(mClient);
+          Logger.d("Sending broadcast");
+//          Intent subscribedBroadcast = new Intent(listener, listener.getClass());
+//          subscribedBroadcast.setAction(ACTION_SUBSCRIBED);
+//          subscribedBroadcast.putExtra(EXTRA_CLIENT, mClient);
+//          listener.startActivity(subscribedBroadcast);
+          Intent subscribedBroadcast = new Intent(ACTION_SUBSCRIBED);
+          subscribedBroadcast.putExtra(EXTRA_CLIENT, mClient);
+          LocalBroadcastManager.getInstance(listener).sendBroadcast(subscribedBroadcast);
+        }
       }
     });
   }
@@ -268,7 +307,7 @@ public class PlexSubscription {
       if(subscribed) {
         Logger.d("Sending heartbeat");
         subscribe(mClient, true);
-        handler.postDelayed(subscriptionHeartbeat, SUBSCRIBE_INTERVAL);
+        mHandler.postDelayed(subscriptionHeartbeat, SUBSCRIBE_INTERVAL);
       } else {
         Logger.d("stopping subscription heartbeat because we are not subscribed anymore");
       }
@@ -283,11 +322,11 @@ public class PlexSubscription {
       QueryString qs = new QueryString("commandID", String.valueOf(commandId));
       Logger.d("mClient: %s", mClient);
       Header[] headers = {
-        new BasicHeader(PlexHeaders.XPlexClientIdentifier, Preferences.getUUID()),
+        new BasicHeader(PlexHeaders.XPlexClientIdentifier, uuid),
         new BasicHeader(PlexHeaders.XPlexDeviceName, listener.getString(R.string.app_name)),
         new BasicHeader(PlexHeaders.XPlexTargetClientIdentifier, mClient.machineIdentifier)
       };
-      PlexHttpClient.get(listener, String.format("http://%s:%s/player/timeline/unsubscribe?%s", mClient.address, mClient.port, qs), headers, new PlexHttpResponseHandler() {
+      PlexHttpClient.get(String.format("http://%s:%s/player/timeline/unsubscribe?%s", mClient.address, mClient.port, qs), headers, new PlexHttpResponseHandler() {
         @Override
         public void onSuccess(PlexResponse response) {
           Logger.d("Unsubscribed");
@@ -310,6 +349,7 @@ public class PlexSubscription {
         public void onFailure(Throwable error) {
           // TODO: Handle failure here?
           Logger.d("failure unsubscribing");
+          onUnsubscribed();
         }
       });
 //      if(onFinish != null)
@@ -319,12 +359,11 @@ public class PlexSubscription {
 //    }
   }
 
-  private void onMessage(final Map<String, String> headers, final MediaContainer mc) {
-    handler.post(new Runnable() {
+  private void onMessage(final MediaContainer mc) {
+    mHandler.post(new Runnable() {
       @Override
       public void run() {
-        if(listener != null) {
-//          Logger.d("sending message from PlexSubscription");
+        if (listener != null) {
           listener.onMessageReceived(mc);
         } else {
           notificationListener.onMessageReceived(mc);
@@ -334,18 +373,18 @@ public class PlexSubscription {
   }
 
   private void onUnsubscribed() {
-    handler.post(new Runnable() {
+    mHandler.post(new Runnable() {
       @Override
       public void run() {
-        if(listener != null)
+        if (listener != null)
           listener.onUnsubscribed();
       }
     });
   }
 
   public interface Listener {
-    void onSubscribed();
+    void onSubscribed(PlexClient client);
     void onUnsubscribed();
     void onMessageReceived(MediaContainer mc);
-  }
+  };
 }

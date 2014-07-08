@@ -29,7 +29,6 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 
 public abstract class PlayerActivity extends VCFPActivity implements SeekBar.OnSeekBarChangeListener {
-	protected PlexClient client = null;
 	protected boolean resumePlayback;
 	protected ImageButton playPauseButton;
 	protected boolean isSeeking = false;
@@ -53,7 +52,7 @@ public abstract class PlayerActivity extends VCFPActivity implements SeekBar.OnS
 		if(server != null) {
 
 			serviceIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_SERVER, gson.toJson(server));
-			serviceIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLIENT, gson.toJson(client));
+			serviceIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLIENT, gson.toJson(mClient));
 			serviceIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_RESUME, resumePlayback);
 
 			SecureRandom random = new SecureRandom();
@@ -125,11 +124,11 @@ public abstract class PlayerActivity extends VCFPActivity implements SeekBar.OnS
 		TextView nowPlayingOnClient = (TextView)findViewById(R.id.nowPlayingOnClient);
 		nowPlayingOnClient.setText(getResources().getString(R.string.now_playing_on) + " " + client.name);
 
-		PlexHttpClient.setThumb(video, (RelativeLayout) findViewById(R.id.background));
+    setThumb(video, getResources().getConfiguration().orientation);
 		attachUIElements();
 	}
 
-	public void showNowPlaying(PlexTrack track, PlexClient client) {
+  public void showNowPlaying(PlexTrack track, PlexClient client) {
 		setContentView(R.layout.now_playing_music);
 
 		TextView artist = (TextView)findViewById(R.id.nowPlayingArtist);
@@ -142,7 +141,7 @@ public abstract class PlayerActivity extends VCFPActivity implements SeekBar.OnS
 		TextView nowPlayingOnClient = (TextView)findViewById(R.id.nowPlayingOnClient);
 		nowPlayingOnClient.setText(getResources().getString(R.string.now_playing_on) + " " + client.name);
 
-		PlexHttpClient.setThumb(track, (ImageView)findViewById(R.id.nowPlayingImage));
+		setThumb(track, getResources().getConfiguration().orientation);
 		attachUIElements();
 	}
 

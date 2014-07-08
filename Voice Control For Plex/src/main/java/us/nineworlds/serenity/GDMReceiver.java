@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import android.app.Activity;
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -64,13 +63,11 @@ public class GDMReceiver extends BroadcastReceiver {
 			Intent i = new Intent(context, theClass);
 			Logger.d("(gdm) ORIGIN: %s", intent.getStringExtra("ORIGIN"));
 			i.setAction(VoiceControlForPlexApplication.Intent.GDMRECEIVE);
-			i.putExtra("FROM", "GDMReceiver");
 			i.putExtra("ORIGIN", intent.getStringExtra("ORIGIN"));
-			i.putExtra("queryText", intent.getStringExtra("queryText"));
 			i.putExtra(VoiceControlForPlexApplication.Intent.SHOWRESOURCE, intent.getBooleanExtra(VoiceControlForPlexApplication.Intent.SHOWRESOURCE, false));
 
 			String scanType = intent.getStringExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE);
-			if(clients.size() > 0 && scanType.equals("client"))
+			if(clients.size() > 0 && scanType.equals(VoiceControlForPlexApplication.Intent.SCAN_TYPE_CLIENT))
 				i.putParcelableArrayListExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLIENTS, clients);
 
 			i.putExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE, intent.getStringExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE));
