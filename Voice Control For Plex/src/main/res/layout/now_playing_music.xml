@@ -6,8 +6,10 @@
     
     <ImageView
         android:id="@+id/nowPlayingImage"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:scaleType="fitCenter"
+        android:adjustViewBounds="true"
         android:layout_centerInParent="true"
         android:tileMode="repeat"
         android:layout_alignParentTop="true"
@@ -20,6 +22,7 @@
         android:layout_alignLeft="@+id/nowPlayingArtist"
         android:layout_alignParentRight="true"
         android:layout_centerVertical="true"
+        style="@style/showShadow"
         android:textSize="20sp" />
 
     <TextView
@@ -30,6 +33,7 @@
         android:layout_alignParentRight="true"
         android:layout_below="@+id/nowPlayingAlbum"
         android:layout_marginTop="18dp"
+        style="@style/showShadow"
         android:textSize="18sp" />
 
     <TextView
@@ -40,6 +44,7 @@
         android:layout_alignLeft="@+id/nowPlayingOnClient"
         android:layout_alignParentRight="true"
         android:layout_marginBottom="26dp"
+        style="@style/showShadow"
         android:textSize="24sp" />
 
     <TextView
@@ -51,6 +56,7 @@
         android:layout_marginBottom="28dp"
         android:layout_marginLeft="14dp"
         android:text="@string/now_playing_on"
+        style="@style/showShadow"
         android:textColor="@color/white" />
     <LinearLayout
         android:layout_width="fill_parent"

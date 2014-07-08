@@ -87,63 +87,53 @@ public abstract class PlayerActivity extends VCFPActivity implements SeekBar.OnS
 			return 0;
 	}
 
-	public void showNowPlaying(PlexMedia media, PlexClient client) {
-		if(media instanceof PlexVideo)
-			showNowPlaying((PlexVideo)media, client);
-		else if(media instanceof PlexTrack)
-			showNowPlaying((PlexTrack)media, client);
-	}
+  public void showNowPlaying() {
+    if (nowPlayingMedia instanceof PlexVideo) {
+      PlexVideo video = (PlexVideo)nowPlayingMedia;
+      if(video.type.equals("movie")) {
+        setContentView(R.layout.now_playing_movie);
 
-	public void showNowPlaying(PlexVideo video, PlexClient client) {
-		if(video.type.equals("movie")) {
-			setContentView(R.layout.now_playing_movie);
+        TextView title = (TextView)findViewById(R.id.nowPlayingTitle);
+        title.setText(video.title);
+        TextView genre = (TextView)findViewById(R.id.nowPlayingGenre);
+        genre.setText(video.getGenres());
+        TextView year = (TextView)findViewById(R.id.nowPlayingYear);
+        year.setText(video.year);
+        TextView duration = (TextView)findViewById(R.id.nowPlayingDuration);
+        duration.setText(video.getDuration());
+        TextView summary = (TextView)findViewById(R.id.nowPlayingSummary);
+        summary.setText(video.summary);
+      } else {
+        setContentView(R.layout.now_playing_show);
+        TextView showTitle = (TextView)findViewById(R.id.nowPlayingShowTitle);
+        showTitle.setText(video.grandparentTitle);
+        TextView episodeTitle = (TextView)findViewById(R.id.nowPlayingEpisodeTitle);
+        episodeTitle.setText(video.title);
+        TextView year = (TextView)findViewById(R.id.nowPlayingYear);
+        year.setText(video.year);
+        TextView duration = (TextView)findViewById(R.id.nowPlayingDuration);
+        duration.setText(video.getDuration());
+        TextView summary = (TextView)findViewById(R.id.nowPlayingSummary);
+        summary.setText(video.summary);
+      }
 
-			TextView title = (TextView)findViewById(R.id.nowPlayingTitle);
-			title.setText(video.title);
-			TextView genre = (TextView)findViewById(R.id.nowPlayingGenre);
-			genre.setText(video.getGenres());
-			TextView year = (TextView)findViewById(R.id.nowPlayingYear);
-			year.setText(video.year);
-			TextView duration = (TextView)findViewById(R.id.nowPlayingDuration);
-			duration.setText(video.getDuration());
-			TextView summary = (TextView)findViewById(R.id.nowPlayingSummary);
-			summary.setText(video.summary);
-		} else {
-			setContentView(R.layout.now_playing_show);
-			TextView showTitle = (TextView)findViewById(R.id.nowPlayingShowTitle);
-			showTitle.setText(video.showTitle);
-			TextView episodeTitle = (TextView)findViewById(R.id.nowPlayingEpisodeTitle);
-			episodeTitle.setText(video.title);
-			TextView year = (TextView)findViewById(R.id.nowPlayingYear);
-			year.setText(video.year);
-			TextView duration = (TextView)findViewById(R.id.nowPlayingDuration);
-			duration.setText(video.getDuration());
-			TextView summary = (TextView)findViewById(R.id.nowPlayingSummary);
-			summary.setText(video.summary);
-		}
-		TextView nowPlayingOnClient = (TextView)findViewById(R.id.nowPlayingOnClient);
-		nowPlayingOnClient.setText(getResources().getString(R.string.now_playing_on) + " " + client.name);
+    } else if (nowPlayingMedia instanceof PlexTrack) {
+      PlexTrack track = (PlexTrack)nowPlayingMedia;
+      setContentView(R.layout.now_playing_music);
 
-    setThumb(video, getResources().getConfiguration().orientation);
-		attachUIElements();
-	}
+      TextView artist = (TextView)findViewById(R.id.nowPlayingArtist);
+      artist.setText(track.artist);
+      TextView album = (TextView)findViewById(R.id.nowPlayingAlbum);
+      album.setText(track.album);
+      TextView title = (TextView)findViewById(R.id.nowPlayingTitle);
+      title.setText(track.title);
+    }
+    TextView nowPlayingOnClient = (TextView)findViewById(R.id.nowPlayingOnClient);
+    nowPlayingOnClient.setText(getResources().getString(R.string.now_playing_on) + " " + mClient.name);
 
-  public void showNowPlaying(PlexTrack track, PlexClient client) {
-		setContentView(R.layout.now_playing_music);
-
-		TextView artist = (TextView)findViewById(R.id.nowPlayingArtist);
-		artist.setText(track.artist);
-		TextView album = (TextView)findViewById(R.id.nowPlayingAlbum);
-		album.setText(track.album);
-		TextView title = (TextView)findViewById(R.id.nowPlayingTitle);
-		title.setText(track.title);
-
-		TextView nowPlayingOnClient = (TextView)findViewById(R.id.nowPlayingOnClient);
-		nowPlayingOnClient.setText(getResources().getString(R.string.now_playing_on) + " " + client.name);
-
-		setThumb(track, getResources().getConfiguration().orientation);
-		attachUIElements();
-	}
+    setThumb();
+    attachUIElements();
+  }
 
 	@Override
 	public void onProgressChanged(SeekBar seekBar, int progress, boolean b) {

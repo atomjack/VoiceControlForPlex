@@ -21,4 +21,6 @@ public class PlexDirectory {
   public String parentKey;
   @Attribute(required=false)
   public PlexServer server;
+  @Attribute(required=false)
+  public String art;
 }

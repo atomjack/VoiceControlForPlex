@@ -121,6 +121,7 @@ public class PlexServer extends PlexDevice {
 		parcel.writeString(product);
 		parcel.writeString(address);
 		parcel.writeString(accessToken);
+    parcel.writeString(machineIdentifier);
 		parcel.writeTypedList(connections);
 		parcel.writeParcelable(activeConnection, i);
 	}
@@ -133,6 +134,7 @@ public class PlexServer extends PlexDevice {
 		product = in.readString();
 		address = in.readString();
 		accessToken = in.readString();
+    machineIdentifier = in.readString();
 		in.readTypedList(connections, Connection.CREATOR);
 		activeConnection = in.readParcelable(Connection.class.getClassLoader());
 	}

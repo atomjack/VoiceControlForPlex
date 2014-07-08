@@ -32,6 +32,8 @@ public abstract class PlexMedia implements Parcelable {
   public String ratingKey;
 	@Attribute
 	public String title;
+  @Attribute(required=false)
+  public String art;
 	@Attribute(required=false)
 	public String viewOffset = "0";
 	@Attribute(required=false)
@@ -67,9 +69,10 @@ public abstract class PlexMedia implements Parcelable {
     return VoiceControlForPlexApplication.secondsToTimecode(duration/1000);
   }
 
-	public String getArtUri() {
-		return "";
-	}
+  public String getArtUri() {
+    String uri = String.format("%s%s", server.activeConnection.uri, art);
+    return uri;
+  }
 
 	public String getThumbUri() {
 		return String.format("%s%s", server.activeConnection.uri, thumb);
@@ -169,6 +172,7 @@ public abstract class PlexMedia implements Parcelable {
     out.writeString(grandparentTitle);
     out.writeString(grandparentThumb);
     out.writeString(thumb);
+    out.writeString(art);
     out.writeInt(duration);
     out.writeString(ratingKey);
     out.writeParcelable(server, flags);
@@ -181,8 +185,14 @@ public abstract class PlexMedia implements Parcelable {
     grandparentTitle = in.readString();
     grandparentThumb = in.readString();
     thumb = in.readString();
+    art = in.readString();
     duration = in.readInt();
     ratingKey = in.readString();
     server = in.readParcelable(PlexServer.class.getClassLoader());
   }
+
+  public String getCacheKey(String which) {
+    return String.format("%s%s", server.machineIdentifier, which);
+  }
+
 }

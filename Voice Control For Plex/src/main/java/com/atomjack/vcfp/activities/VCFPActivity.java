@@ -15,6 +15,7 @@ import android.os.Handler;
 import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 
@@ -40,6 +41,7 @@ import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexDevice;
 import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexServer;
+import com.atomjack.vcfp.model.PlexTrack;
 import com.atomjack.vcfp.model.PlexVideo;
 import com.atomjack.vcfp.model.Timeline;
 import com.atomjack.vcfp.net.PlexHttpClient;
@@ -408,7 +410,7 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
 
         // Save the downloaded image into the disk cache so we don't have to download it again
         try {
-          mSimpleDiskCache.put(String.format("%s/%s", media.server.machineIdentifier, thumb), is);
+          mSimpleDiskCache.put(media.getCacheKey(thumb), is);
         } catch (Exception ex) {
           ex.printStackTrace();
         }
@@ -422,10 +424,25 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
     });
   }
 
+  protected int getOrientation() {
+    return getResources().getConfiguration().orientation;
+  }
+
   @SuppressWarnings("deprecation")
   private void setThumb(InputStream is) {
     Logger.d("Setting thumb: %s", is);
-    final RelativeLayout layout = (RelativeLayout)findViewById(R.id.background);
+    View layout;
+    View backgroundLayout = findViewById(R.id.background);
+    View musicLayout = findViewById(R.id.nowPlayingImage);;
+
+    if(nowPlayingMedia instanceof PlexTrack && getOrientation() == Configuration.ORIENTATION_PORTRAIT) {
+      backgroundLayout.setBackground(null);
+      layout = musicLayout;
+    } else {
+      if(musicLayout != null)
+        musicLayout.setBackground(null);
+      layout = backgroundLayout;
+    }
 
     try {
       is.reset();
@@ -434,42 +451,51 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
 
     Drawable d = Drawable.createFromStream(is, "thumb");
     Logger.d("d: %s", d);
-    d.setAlpha(80);
+//    d.setAlpha(80);
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
       layout.setBackground(d);
     else
       layout.setBackgroundDrawable(d);
   }
 
-  public void setThumb(PlexMedia media, int orientation) {
-    if(!media.thumb.equals("")) {
-      String thumb = media.thumb;
-      if(media instanceof PlexVideo) {
-        PlexVideo video = (PlexVideo)media;
+  public void setThumb() {
+    if(!nowPlayingMedia.thumb.equals("")) {
+      String thumb = nowPlayingMedia.thumb;
+      if(nowPlayingMedia instanceof PlexVideo) {
+        PlexVideo video = (PlexVideo)nowPlayingMedia;
         thumb = video.type.equals("movie") ? video.thumb : video.grandparentThumb;
-        Logger.d("orientation: %s, type: %s", orientation, video.type);
-        if(orientation == Configuration.ORIENTATION_LANDSCAPE) {
+        Logger.d("orientation: %s, type: %s", getOrientation(), video.type);
+        if(getOrientation() == Configuration.ORIENTATION_LANDSCAPE) {
           if(video.type.equals("movie"))
             thumb = video.art;
           else if(video.type.equals("episode")) {
-            thumb = video.thumb;
+            Logger.d("Is episode");
+            thumb = video.art;
           }
         }
+      } else if(nowPlayingMedia instanceof PlexTrack && getOrientation() == Configuration.ORIENTATION_LANDSCAPE) {
+        PlexTrack track = (PlexTrack)nowPlayingMedia;
+        thumb = track.art;
       }
 
 
       Logger.d("thumb: %s", thumb);
 
-      SimpleDiskCache.InputStreamEntry thumbEntry = null;
-      try {
-        thumbEntry = mSimpleDiskCache.getInputStream(String.format("%s/%s", media.server.machineIdentifier, thumb));
-      } catch (Exception ex) {}
-      if(thumbEntry != null) {
-        Logger.d("Using cached thumb");
-        setThumb(thumbEntry.getInputStream());
+      if(thumb != null) {
+        SimpleDiskCache.InputStreamEntry thumbEntry = null;
+        try {
+          thumbEntry = mSimpleDiskCache.getInputStream(nowPlayingMedia.getCacheKey(thumb));
+        } catch (Exception ex) {
+        }
+        if (thumbEntry != null) {
+          Logger.d("Using cached thumb: %s", nowPlayingMedia.getCacheKey(thumb));
+          setThumb(thumbEntry.getInputStream());
+        } else {
+          Logger.d("Downloading thumb");
+          getThumb(thumb, nowPlayingMedia);
+        }
       } else {
-        Logger.d("Downloading thumb");
-        getThumb(thumb, media);
+        Logger.d("Couldn't find a background");
       }
     }
   }

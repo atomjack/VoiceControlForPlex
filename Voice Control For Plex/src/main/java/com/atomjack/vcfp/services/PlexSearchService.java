@@ -1432,6 +1432,7 @@ public class PlexSearchService extends Service {
 											PlexVideo video = mc.videos.get(i);
 											video.server = server;
 											video.thumb = show.thumb;
+                      Logger.d("Searching, setting show title: %s", show.title);
 											video.showTitle = show.title;
                       video.parentArt = mc.art;
 											playVideo(video);
@@ -1674,6 +1675,7 @@ public class PlexSearchService extends Service {
 					track.thumb = album.thumb;
 					track.artist = album.parentTitle;
 					track.album = album.title;
+          track.art = album.art;
 					playTrack(track, album);
 				} else {
 					Logger.d("Didn't find any tracks");

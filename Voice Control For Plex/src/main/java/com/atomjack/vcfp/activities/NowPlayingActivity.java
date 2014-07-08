@@ -69,7 +69,7 @@ public class NowPlayingActivity extends PlayerActivity {
     Logger.d("mClient: %s", mClient);
     Logger.d("nowPlayingMedia: %s", nowPlayingMedia);
 		state = PlayerState.PLAYING;
-		showNowPlaying(nowPlayingMedia, mClient);
+		showNowPlaying();
 		seekBar = (SeekBar)findViewById(R.id.seekBar);
     seekBar.setOnSeekBarChangeListener(this);
     seekBar.setMax(nowPlayingMedia.duration);
@@ -161,7 +161,7 @@ public class NowPlayingActivity extends PlayerActivity {
     Logger.d("now playing onconfigchanged: %d", newConfig.orientation);
 
 //    if(nowPlayingMedia instanceof PlexVideo)
-      setThumb(nowPlayingMedia, newConfig.orientation);
+      setThumb();
 //    else if(nowPlayingMedia instanceof PlexTrack)
 //      setThumb((PlexTrack)nowPlayingMedia, newConfig.orientation, (ImageView)findViewById(R.id.nowPlayingImage));
   }
@@ -227,7 +227,7 @@ public class NowPlayingActivity extends PlayerActivity {
 
   @Override
   protected void onSubscriptionMessage(Timeline timeline) {
-    Logger.d("NowPlaying onSubscriptionMessage: %d", timeline.time);
+//    Logger.d("NowPlaying onSubscriptionMessage: %d", timeline.time);
     if(!isSeeking)
       seekBar.setProgress(timeline.time);
     if(timeline.state.equals("stopped")) {

@@ -9,10 +9,12 @@ import org.simpleframework.xml.Attribute;
 import org.simpleframework.xml.ElementList;
 import org.simpleframework.xml.Root;
 
+import android.content.res.Configuration;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.text.TextUtils;
 
+import com.atomjack.vcfp.Logger;
 import com.atomjack.vcfp.PlexHeaders;
 import com.atomjack.vcfp.QueryString;
 import com.atomjack.vcfp.R;
@@ -23,8 +25,7 @@ public class PlexVideo extends PlexMedia {
 	@Attribute(required=false)
 	public String index;
 
-	@Attribute(required=false)
-	public String art;
+
 	@Attribute(required=false)
 	public String type;
 	@Attribute(required=false)
@@ -89,17 +90,10 @@ public class PlexVideo extends PlexMedia {
 		}
 	}
 
-	@Override
-	public String getArtUri() {
-		String uri = String.format("%s%s", server.activeConnection.uri, art);
-		return uri;
-	}
-
   @Override
 	public void writeToParcel(Parcel out, int flags) {
     super.writeToParcel(out, flags);
 		out.writeString(index);
-		out.writeString(art);
 		out.writeString(type);
 		out.writeString(year);
 		out.writeString(summary);
@@ -111,7 +105,6 @@ public class PlexVideo extends PlexMedia {
 	public PlexVideo(Parcel in) {
     super(in);
 		index = in.readString();
-		art = in.readString();
 		type = in.readString();
 		year = in.readString();
 		summary = in.readString();

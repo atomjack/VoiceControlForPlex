@@ -23,6 +23,7 @@
             android:layout_alignParentTop="true"
             android:layout_marginLeft="15dp"
             android:layout_marginTop="17dp"
+            style="@style/showShadow"
             android:textColor="@color/white"
             android:text="@string/now_playing_on" />
 
@@ -36,6 +37,7 @@
                 android:layout_marginTop="16dp"
                 android:textSize="24sp"
                 android:textStyle="bold"
+                style="@style/showShadow"
                 android:text="" />
 
             <TextView
@@ -45,6 +47,7 @@
                 android:layout_alignLeft="@+id/nowPlayingTitle"
                 android:layout_alignParentRight="true"
                 android:layout_below="@+id/nowPlayingTitle"
+                style="@style/showShadow"
                 android:text="" />
 
             <TextView
@@ -54,6 +57,7 @@
                 android:layout_alignLeft="@+id/nowPlayingGenre"
                 android:layout_alignParentRight="true"
                 android:layout_below="@+id/nowPlayingGenre"
+                style="@style/showShadow"
                 android:text="" />
 
             <TextView
@@ -63,6 +67,7 @@
                 android:layout_alignLeft="@+id/nowPlayingYear"
                 android:layout_alignParentRight="true"
                 android:layout_below="@+id/nowPlayingYear"
+                style="@style/showShadow"
                 android:text="" />
 
             <TextView
@@ -72,6 +77,7 @@
                 android:layout_alignLeft="@+id/nowPlayingDuration"
                 android:layout_alignParentRight="true"
                 android:layout_below="@+id/nowPlayingDuration"
+                style="@style/showShadow"
                 android:layout_marginTop="68dp"
                 android:text="" />
             <com.google.sample.castcompanionlibrary.widgets.MiniController

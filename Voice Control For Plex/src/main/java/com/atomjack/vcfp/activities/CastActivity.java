@@ -126,7 +126,7 @@ public class CastActivity extends PlayerActivity {
 	}
 
   private void init() {
-    showNowPlaying(nowPlayingMedia, mClient);
+    showNowPlaying();
 
 
     seekBar = (SeekBar)findViewById(R.id.seekBar);
