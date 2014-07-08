@@ -50,6 +50,8 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import com.loopj.android.http.BinaryHttpResponseHandler;
 
+import org.apache.http.Header;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -393,10 +395,9 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
     if(media.server.accessToken != null)
       url += String.format("?%s=%s", PlexHeaders.XPlexToken, media.server.accessToken);
 
-    Logger.d("Fetching Video Thumb: %s", url);
     PlexHttpClient.getClient().get(url, new BinaryHttpResponseHandler() {
       @Override
-      public void onSuccess(byte[] imageData) {
+      public void onSuccess(int i, Header[] headers, byte[] imageData) {
         InputStream is = new ByteArrayInputStream(imageData);
 
         try {
@@ -405,12 +406,18 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
           e.printStackTrace();
         }
 
+        // Save the downloaded image into the disk cache so we don't have to download it again
         try {
           mSimpleDiskCache.put(String.format("%s/%s", media.server.machineIdentifier, thumb), is);
         } catch (Exception ex) {
           ex.printStackTrace();
         }
         setThumb(is);
+      }
+
+      @Override
+      public void onFailure(int i, Header[] headers, byte[] bytes, Throwable throwable) {
+
       }
     });
   }
@@ -463,47 +470,6 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
       } else {
         Logger.d("Downloading thumb");
         getThumb(thumb, media);
-      }
-    }
-  }
-
-
-  public static void setThumb(PlexVideo video, int orientation, final RelativeLayout layout) {
-    if(!video.thumb.equals("")) {
-      try {
-        String thumb = video.type.equals("movie") ? video.thumb : video.grandparentThumb;
-        Logger.d("orientation: %s, type: %s", orientation, video.type);
-        if(orientation == Configuration.ORIENTATION_LANDSCAPE) {
-          if(video.type.equals("movie"))
-            thumb = video.art;
-          else if(video.type.equals("episode")) {
-            thumb = video.thumb;
-          }
-        }
-
-        String url = String.format("http://%s:%s%s", video.server.activeConnection.address, video.server.activeConnection.port, thumb);
-        if(video.server.accessToken != null)
-          url += String.format("?%s=%s", PlexHeaders.XPlexToken, video.server.accessToken);
-        Logger.d("Fetching Video Thumb: %s", url);
-        PlexHttpClient.getClient().get(url, new BinaryHttpResponseHandler() {
-          @Override
-          public void onSuccess(byte[] imageData) {
-            InputStream is = new ByteArrayInputStream(imageData);
-            try {
-              is.reset();
-            } catch (IOException e) {
-              e.printStackTrace();
-            }
-            Drawable d = Drawable.createFromStream(is, "thumb");
-            d.setAlpha(80);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
-              layout.setBackground(d);
-            else
-              layout.setBackgroundDrawable(d);
-          }
-        });
-      } catch(Exception e) {
-        e.printStackTrace();
       }
     }
   }

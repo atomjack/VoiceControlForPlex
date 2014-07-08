@@ -28,6 +28,8 @@ import java.util.List;
 public abstract class PlexMedia implements Parcelable {
 	@Attribute
 	public String key;
+  @Attribute
+  public String ratingKey;
 	@Attribute
 	public String title;
 	@Attribute(required=false)
@@ -84,15 +86,16 @@ public abstract class PlexMedia implements Parcelable {
 	public void getThumb(int width, int height, final BitmapHandler bitmapHandler) {
 		String path = String.format("/photo/:/transcode?width=%d&height=%d&url=%s", width, height, Uri.encode(String.format("http://127.0.0.1:32400%s", thumb)));
 		PlexHttpClient.get(server, path, new BinaryHttpResponseHandler() {
-			@Override
+
+      @Override
 			public void onFailure(int statusCode, Header[] headers, byte[] binaryData, Throwable error) {
-				super.onFailure(statusCode, headers, binaryData, error);
+//				super.onFailure(statusCode, headers, binaryData, error);
 				Logger.d("failed getting thumb: %s", statusCode);
 			}
 
 			@Override
-			public void onSuccess(byte[] imageData) {
-				InputStream is  = new ByteArrayInputStream(imageData);
+      public void onSuccess(int i, Header[] headers, byte[] imageData) {
+      InputStream is = new ByteArrayInputStream(imageData);
 				try {
 					is.reset();
 					Bitmap bitmap = BitmapFactory.decodeStream(is);
@@ -104,11 +107,6 @@ public abstract class PlexMedia implements Parcelable {
 				}
 			}
 		});
-	}
-
-	@Override
-	public void writeToParcel(Parcel parcel, int i) {
-
 	}
 
 	@Override
@@ -158,5 +156,33 @@ public abstract class PlexMedia implements Parcelable {
     public int streamType;
     @Attribute(required=false)
     public String language;
+  }
+
+  public PlexMedia() {
+
+  }
+
+  public void writeToParcel(Parcel out, int flags) {
+    out.writeString(key);
+    out.writeString(title);
+    out.writeString(viewOffset);
+    out.writeString(grandparentTitle);
+    out.writeString(grandparentThumb);
+    out.writeString(thumb);
+    out.writeInt(duration);
+    out.writeString(ratingKey);
+    out.writeParcelable(server, flags);
+  }
+
+  public PlexMedia(Parcel in) {
+    key = in.readString();
+    title = in.readString();
+    viewOffset = in.readString();
+    grandparentTitle = in.readString();
+    grandparentThumb = in.readString();
+    thumb = in.readString();
+    duration = in.readInt();
+    ratingKey = in.readString();
+    server = in.readParcelable(PlexServer.class.getClassLoader());
   }
 }

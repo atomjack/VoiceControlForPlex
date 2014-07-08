@@ -95,42 +95,29 @@ public class PlexVideo extends PlexMedia {
 		return uri;
 	}
 
+  @Override
 	public void writeToParcel(Parcel out, int flags) {
-		out.writeString(key);
-		out.writeString(title);
-		out.writeString(viewOffset);
+    super.writeToParcel(out, flags);
 		out.writeString(index);
-		out.writeString(grandparentTitle);
-		out.writeString(grandparentThumb);
-		out.writeString(thumb);
 		out.writeString(art);
 		out.writeString(type);
 		out.writeString(year);
-		out.writeInt(duration);
 		out.writeString(summary);
 		out.writeString(originallyAvailableAt);
 		out.writeString(showTitle);
-		out.writeParcelable(server, flags);
 		out.writeTypedList(genre);
 	}
 
 	public PlexVideo(Parcel in) {
-		this();
-		key = in.readString();
-		title = in.readString();
-		viewOffset = in.readString();
+    super(in);
 		index = in.readString();
-		grandparentTitle = in.readString();
-		grandparentThumb = in.readString();
-		thumb = in.readString();
 		art = in.readString();
 		type = in.readString();
 		year = in.readString();
-		duration = in.readInt();
 		summary = in.readString();
 		originallyAvailableAt = in.readString();
 		showTitle = in.readString();
-		server = in.readParcelable(PlexServer.class.getClassLoader());
+    genre = new ArrayList<Genre>();
 		in.readTypedList(genre, Genre.CREATOR);
 	}
 

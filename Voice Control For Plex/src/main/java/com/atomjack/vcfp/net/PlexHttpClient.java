@@ -1,11 +1,6 @@
 package com.atomjack.vcfp.net;
 
-import android.content.res.Configuration;
 import android.content.res.Resources;
-import android.graphics.drawable.Drawable;
-import android.os.Build;
-import android.widget.ImageView;
-import android.widget.RelativeLayout;
 
 import com.atomjack.vcfp.Logger;
 import com.atomjack.vcfp.PlexHeaders;
@@ -14,9 +9,7 @@ import com.atomjack.vcfp.model.Pin;
 import com.atomjack.vcfp.model.PlexError;
 import com.atomjack.vcfp.model.PlexResponse;
 import com.atomjack.vcfp.model.PlexServer;
-import com.atomjack.vcfp.model.PlexTrack;
 import com.atomjack.vcfp.model.PlexUser;
-import com.atomjack.vcfp.model.PlexVideo;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
 import com.loopj.android.http.BinaryHttpResponseHandler;
@@ -32,10 +25,8 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.simpleframework.xml.Serializer;
 import org.simpleframework.xml.core.Persister;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 
 public class PlexHttpClient
 {

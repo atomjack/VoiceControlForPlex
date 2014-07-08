@@ -8,6 +8,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.http.Header;
 import org.simpleframework.xml.Serializer;
 import org.simpleframework.xml.core.Persister;
 
@@ -18,7 +19,6 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.content.res.Resources.NotFoundException;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -31,7 +31,6 @@ import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexServer;
-import com.atomjack.vcfp.model.PlexStream;
 import com.atomjack.vcfp.services.PlexControlService;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -134,52 +133,59 @@ public class VoiceControlForPlexApplication extends Application
           Logger.d("Fetching %s", url);
           httpClient.get(url, new AsyncHttpResponseHandler() {
             @Override
+            public void onFailure(int i, Header[] headers, byte[] bytes, Throwable throwable) {
+              if(onFinish != null)
+                onFinish.run();
+            }
+
+            @Override
             public void onSuccess(int statusCode, org.apache.http.Header[] headers, byte[] responseBody) {
-            MediaContainer mc = new MediaContainer();
-            try {
-              mc = serial.read(MediaContainer.class, new String(responseBody, "UTF-8"));
-            } catch (NotFoundException e) {
-              e.printStackTrace();
-            } catch (Exception e) {
-              e.printStackTrace();
-            }
-            server.movieSections = new ArrayList<String>();
-            server.tvSections = new ArrayList<String>();
-            server.musicSections = new ArrayList<String>();
-            for(int i=0;i<mc.directories.size();i++) {
-              if(mc.directories.get(i).type.equals("movie")) {
-                server.addMovieSection(mc.directories.get(i).key);
+              MediaContainer mc = new MediaContainer();
+              try {
+                mc = serial.read(MediaContainer.class, new String(responseBody, "UTF-8"));
+              } catch (NotFoundException e) {
+                e.printStackTrace();
+              } catch (Exception e) {
+                e.printStackTrace();
               }
-              if(mc.directories.get(i).type.equals("show")) {
-                server.addTvSection(mc.directories.get(i).key);
+              server.movieSections = new ArrayList<String>();
+              server.tvSections = new ArrayList<String>();
+              server.musicSections = new ArrayList<String>();
+              for(int i=0;i<mc.directories.size();i++) {
+                if(mc.directories.get(i).type.equals("movie")) {
+                  server.addMovieSection(mc.directories.get(i).key);
+                }
+                if(mc.directories.get(i).type.equals("show")) {
+                  server.addTvSection(mc.directories.get(i).key);
+                }
+                if(mc.directories.get(i).type.equals("artist")) {
+                  server.addMusicSection(mc.directories.get(i).key);
+                }
               }
-              if(mc.directories.get(i).type.equals("artist")) {
-                server.addMusicSection(mc.directories.get(i).key);
-              }
-            }
-            Logger.d("%s has %d directories.", server.name, mc.directories != null ? mc.directories.size() : 0);
-            if(!server.name.equals("")) {
-              servers.put(server.name, server);
+              Logger.d("%s has %d directories.", server.name, mc.directories != null ? mc.directories.size() : 0);
+              if(!server.name.equals("")) {
+                servers.put(server.name, server);
 
-              // Finally, if this server is the current default server, save it in preferences so the access token gets transferred
-              PlexServer defaultServer = gsonRead.fromJson(Preferences.get(Preferences.SERVER, ""), PlexServer.class);
-              if(defaultServer != null && server.machineIdentifier.equals(defaultServer.machineIdentifier)) {
-                Preferences.put(Preferences.SERVER, gsonWrite.toJson(server));
-              }
+                // Finally, if this server is the current default server, save it in preferences so the access token gets transferred
+                PlexServer defaultServer = gsonRead.fromJson(Preferences.get(Preferences.SERVER, ""), PlexServer.class);
+                if(defaultServer != null && server.machineIdentifier.equals(defaultServer.machineIdentifier)) {
+                  Preferences.put(Preferences.SERVER, gsonWrite.toJson(server));
+                }
 
-              Logger.d("Added %s.", server.name);
+                Logger.d("Added %s.", server.name);
+              }
+              if(onFinish != null)
+                onFinish.run();
             }
-            if(onFinish != null)
-              onFinish.run();
-            }
+
           });
         }
 
         @Override
         public void onFailure(int statusCode) {
           Logger.d("Failed to find connection for %s: %d", server.name, statusCode);
-            if(onFinish != null)
-              onFinish.run();
+          if(onFinish != null)
+            onFinish.run();
         }
       });
 
