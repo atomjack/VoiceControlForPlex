@@ -1,17 +1,13 @@
 package com.atomjack.vcfp.activities;
 
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
-import android.support.v4.content.LocalBroadcastManager;
 
-import com.atomjack.vcfp.Feedback;
 import com.atomjack.vcfp.Logger;
 import com.atomjack.vcfp.PlexSubscription;
 import com.atomjack.vcfp.R;
-import com.atomjack.vcfp.VCFPSingleton;
+import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.model.PlexClient;
 
 public class SubscriptionActivity extends VCFPActivity {
@@ -27,7 +23,7 @@ public class SubscriptionActivity extends VCFPActivity {
     super.onCreate(savedInstanceState);
     Logger.d("SubscriptionActivity onCreate");
 
-    plexSubscription = VCFPSingleton.getInstance().getPlexSubscription();
+    plexSubscription = VoiceControlForPlexApplication.getInstance().plexSubscription;
     handleIntent(getIntent());
   }
 

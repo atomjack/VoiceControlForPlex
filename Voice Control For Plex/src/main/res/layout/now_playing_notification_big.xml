@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+             android:layout_width="match_parent"
+             android:layout_height="wrap_content">
+
+    <RelativeLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content">
+
+        <ImageView
+            android:id="@+id/thumb"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:src="@drawable/ic_launcher" />
+
+        <RelativeLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="fill_vertical"
+                android:layout_marginStart="@dimen/notification_large_icon_width"
+                android:minHeight="@dimen/notification_large_icon_height"
+                android:orientation="vertical"
+                android:paddingEnd="8dp"
+                android:paddingTop="2dp"
+                android:paddingBottom="2dp"
+                android:gravity="top"
+                android:paddingLeft="8dp">
+                <TextView
+                    android:id="@+id/title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_toRightOf="@+id/thumb"
+                    android:text="Aliens"
+                    android:layout_marginTop="5sp"
+                    android:textSize="18sp"/>
+
+                <TextView
+                    android:id="@+id/playingOn"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/title"
+                    android:layout_toRightOf="@+id/thumb"
+                    android:text="Playing on Plex"
+                    android:layout_marginTop="5sp"/>
+
+
+            </LinearLayout>
+        </RelativeLayout>
+
+    </RelativeLayout>
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal|bottom"
+        android:layout_marginTop="64dp">
+
+        <FrameLayout
+            android:layout_width="fill_parent"
+            android:layout_height="1dp"
+            android:background="?android:attr/dividerVertical"
+            android:layout_marginLeft="4dp"
+            android:layout_marginRight="4dp">
+        </FrameLayout>
+
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            >
+
+            <ImageButton
+                android:layout_width="0dp"
+                android:layout_height="42dp"
+                android:id="@+id/rewindButton"
+                android:src="@drawable/button_rewind"
+                android:background="@null"
+                android:layout_gravity="center_vertical"
+                android:layout_weight="1"/>
+
+            <FrameLayout
+                android:layout_width="1dp"
+                android:layout_height="fill_parent"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="4dp"
+                android:background="?android:attr/dividerHorizontal">
+            </FrameLayout>
+
+            <RelativeLayout
+                android:layout_width="0dp"
+                android:layout_height="50dp"
+                android:layout_weight="1">
+
+                <ImageButton
+                    android:layout_width="fill_parent"
+                    android:layout_height="42dp"
+                    android:id="@+id/playButton"
+                    android:src="@drawable/button_play"
+                    android:background="@null"
+                    android:layout_gravity="center_vertical"
+                    android:baselineAlignBottom="false"/>
+
+                <ImageButton
+                    android:layout_width="fill_parent"
+                    android:layout_height="42dp"
+                    android:id="@+id/pauseButton"
+                    android:src="@drawable/button_pause"
+                    android:background="@null"
+                    android:layout_gravity="center_vertical"
+                    android:baselineAlignBottom="false"/>
+            </RelativeLayout>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</FrameLayout>

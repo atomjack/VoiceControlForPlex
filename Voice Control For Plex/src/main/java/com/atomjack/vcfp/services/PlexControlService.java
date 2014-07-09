@@ -84,7 +84,7 @@ public class PlexControlService extends IntentService {
       }
 
       Logger.d("state: %s", currentState);
-      VoiceControlForPlexApplication.setNotification(getApplicationContext(), client, currentState, playingMedia);
+      VoiceControlForPlexApplication.getInstance().setNotification(client, currentState, playingMedia);
     }
   }
 }

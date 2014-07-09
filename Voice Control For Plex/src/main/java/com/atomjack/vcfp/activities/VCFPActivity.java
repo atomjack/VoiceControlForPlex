@@ -3,9 +3,7 @@ package com.atomjack.vcfp.activities;
 import android.app.AlertDialog;
 import android.app.NotificationManager;
 import android.content.DialogInterface;
-import android.content.pm.PackageInfo;
 import android.content.res.Configuration;
-import android.graphics.Bitmap;
 import android.graphics.drawable.AnimationDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
@@ -16,8 +14,6 @@ import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.ImageView;
-import android.widget.RelativeLayout;
 
 import com.atomjack.vcfp.BuildConfig;
 import com.atomjack.vcfp.CastPlayerManager;
@@ -27,7 +23,6 @@ import com.atomjack.vcfp.Logger;
 import com.atomjack.vcfp.PlayerState;
 import com.atomjack.vcfp.PlexHeaders;
 import com.atomjack.vcfp.PlexSubscription;
-import com.atomjack.vcfp.VCFPSingleton;
 import com.atomjack.vcfp.Preferences;
 import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.ScanHandler;
@@ -35,7 +30,7 @@ import com.atomjack.vcfp.ServerFindHandler;
 import com.atomjack.vcfp.UriDeserializer;
 import com.atomjack.vcfp.UriSerializer;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
-import com.atomjack.vcfp.handlers.BitmapHandler;
+import com.atomjack.vcfp.handlers.InputStreamHandler;
 import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexDevice;
@@ -108,13 +103,13 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
 
     Preferences.setContext(getApplicationContext());
 
-    mSimpleDiskCache = VCFPSingleton.getInstance().getSimpleDiskCache(this);
+    mSimpleDiskCache = VoiceControlForPlexApplication.getInstance().mSimpleDiskCache;
 
 
     app = (VoiceControlForPlexApplication)getApplication();
     feedback = new Feedback(this);
 
-    plexSubscription = VCFPSingleton.getInstance().getPlexSubscription();
+    plexSubscription = VoiceControlForPlexApplication.getInstance().plexSubscription;
     if(plexSubscription.isSubscribed()) {
       Logger.d("VCFPActivity setting client to %s", plexSubscription.mClient);
       mClient = plexSubscription.mClient;
@@ -122,7 +117,7 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
       Logger.d("Not subscribed: %s", plexSubscription.mClient);
     }
 
-    castPlayerManager = VCFPSingleton.getInstance().getCastPlayerManager(this);
+    castPlayerManager = VoiceControlForPlexApplication.getInstance().castPlayerManager;
     if(castPlayerManager.isSubscribed())
       mClient = castPlayerManager.mClient;
 
@@ -159,24 +154,48 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
               nowPlayingMedia = mediaContainer.tracks.get(0);
             else {
               // TODO: Handle failure
+              Logger.d("Failed to get media with type %s", timeline.type);
             }
 						nowPlayingMedia.server = server;
 						Logger.d("We're watching %s", nowPlayingMedia.title);
-						nowPlayingMedia.getThumb(64, 64, new BitmapHandler() {
-							@Override
-							public void onSuccess(final Bitmap bitmap) {
-								Logger.d("got bitmap");
+
+
+            SimpleDiskCache.InputStreamEntry thumbEntry = null;
+            try {
+              Logger.d("image key: %s", nowPlayingMedia.getImageKey(PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB));
+              thumbEntry = mSimpleDiskCache.getInputStream(nowPlayingMedia.getImageKey(PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB));
+              if(thumbEntry == null) {
+                nowPlayingMedia.getThumb(64, 64, new InputStreamHandler() {
+                  @Override
+                  public void onSuccess(final InputStream inputStream) {
+                    Logger.d("got bitmap");
 
 //                NotificationCompat.Action rewindAction =
 
 
-                //setNotification();
-                Logger.d("getPlayingMedia setting notification with %s", nowPlayingMedia);
-                VoiceControlForPlexApplication.setNotification(getApplicationContext(), mClient, mCurrentState, nowPlayingMedia);
+                    //setNotification();
 
-                continuing = true;
-							}
-						});
+
+                    if(timeline.continuing != null && timeline.continuing.equals("1"))
+                      continuing = true;
+                    try {
+                      mSimpleDiskCache.put(nowPlayingMedia.getImageKey(PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB), inputStream);
+                      Logger.d("Saved image to cache");
+                    } catch (Exception ex) {}
+                    Logger.d("getPlayingMedia setting notification with %s", nowPlayingMedia);
+                    VoiceControlForPlexApplication.getInstance().setNotification(mClient, mCurrentState, nowPlayingMedia);
+                  }
+                });
+              } else {
+                Logger.d("Got image from cache");
+                VoiceControlForPlexApplication.getInstance().setNotification(mClient, mCurrentState, nowPlayingMedia);
+                if(timeline.continuing != null && timeline.continuing.equals("1"))
+                  continuing = true;
+              }
+            } catch (Exception ex) {
+            }
+
+
 					}
 
 					@Override
@@ -373,7 +392,7 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
                 mCurrentState = newState;
                 if(mCurrentState != PlayerState.STOPPED) {
                   Logger.d("onMessageReceived setting notification with %s", mCurrentState);
-                  VoiceControlForPlexApplication.setNotification(getApplicationContext(), mClient, mCurrentState, nowPlayingMedia);
+                  VoiceControlForPlexApplication.getInstance().setNotification(mClient, mCurrentState, nowPlayingMedia);
                 }
               }
             }

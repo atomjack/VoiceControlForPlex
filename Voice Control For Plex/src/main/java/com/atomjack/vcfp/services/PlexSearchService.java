@@ -26,7 +26,6 @@ import com.atomjack.vcfp.ServerFindHandler;
 import com.atomjack.vcfp.UriDeserializer;
 import com.atomjack.vcfp.UriSerializer;
 import com.atomjack.vcfp.Utils;
-import com.atomjack.vcfp.VCFPSingleton;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.activities.CastActivity;
 import com.atomjack.vcfp.activities.MainActivity;
@@ -128,7 +127,7 @@ public class PlexSearchService extends Service {
 		videoPlayed = false;
 
     if(plexSubscription == null) {
-      plexSubscription = VCFPSingleton.getInstance().getPlexSubscription();
+      plexSubscription = VoiceControlForPlexApplication.getInstance().plexSubscription;
     }
 		if(!VoiceControlForPlexApplication.isWifiConnected(this)) {
 			feedback.e(getResources().getString(R.string.no_wifi_connection_message));
@@ -640,8 +639,8 @@ public class PlexSearchService extends Service {
           @Override
           public void run() {
             Logger.d("PlexSearchService Subscribing to %s", theClient.name);
-            if(VCFPSingleton.getInstance().getPlexSubscription().getListener() != null)
-              VCFPSingleton.getInstance().getPlexSubscription().subscribe(theClient);
+            if(VoiceControlForPlexApplication.getInstance().plexSubscription.getListener() != null)
+              VoiceControlForPlexApplication.getInstance().plexSubscription.subscribe(theClient);
             else {
               Intent sendIntent = new Intent(PlexSearchService.this, SubscriptionActivity.class);
               sendIntent.setAction(SubscriptionActivity.ACTION_SUBSCRIBE);
@@ -662,8 +661,8 @@ public class PlexSearchService extends Service {
       return new StopRunnable() {
         @Override
         public void run() {
-          if(VCFPSingleton.getInstance().getPlexSubscription().getListener() != null)
-            VCFPSingleton.getInstance().getPlexSubscription().unsubscribe();
+          if(VoiceControlForPlexApplication.getInstance().plexSubscription.getListener() != null)
+            VoiceControlForPlexApplication.getInstance().plexSubscription.unsubscribe();
           else {
             Intent sendIntent = new Intent(PlexSearchService.this, SubscriptionActivity.class);
             sendIntent.setAction(SubscriptionActivity.ACTION_UNSUBSCRIBE);

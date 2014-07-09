@@ -68,7 +68,6 @@ public class PlexSubscription {
 
   public PlexSubscription() {
     mHandler = new Handler();
-    Logger.d("Setting uuid to %s", Preferences.getUUID());
     uuid = Preferences.getUUID();
   }
 

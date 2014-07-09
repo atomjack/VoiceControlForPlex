@@ -1,5 +1,6 @@
 package com.atomjack.vcfp;
 
+import java.io.InputStream;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.ArrayList;
@@ -19,12 +20,18 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.pm.PackageInfo;
 import android.content.res.Resources.NotFoundException;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
+import android.os.Build;
 import android.support.v4.app.NotificationCompat;
 import android.text.TextUtils;
+import android.view.View;
+import android.widget.RemoteViews;
 
 import com.atomjack.vcfp.activities.NowPlayingActivity;
 import com.atomjack.vcfp.model.MediaContainer;
@@ -37,6 +44,8 @@ import com.google.gson.GsonBuilder;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
 
+import cz.fhucho.android.util.SimpleDiskCache;
+
 public class VoiceControlForPlexApplication extends Application
 {
 	public final static String MINIMUM_PHT_VERSION = "1.0.7";
@@ -44,6 +53,8 @@ public class VoiceControlForPlexApplication extends Application
 	private static boolean isApplicationVisible;
 
   private static int nowPlayingNotificationId = 0;
+
+  private static VoiceControlForPlexApplication instance;
 
 	public static Gson gsonRead = new GsonBuilder()
 					.registerTypeAdapter(Uri.class, new UriDeserializer())
@@ -86,6 +97,31 @@ public class VoiceControlForPlexApplication extends Application
 
 	private static Serializer serial = new Persister();
 
+  public PlexSubscription plexSubscription;
+  public CastPlayerManager castPlayerManager;
+  public SimpleDiskCache mSimpleDiskCache;
+
+  @Override
+  public void onCreate() {
+    super.onCreate();
+    instance = this;
+    Preferences.setContext(this);
+    plexSubscription = new PlexSubscription();
+    castPlayerManager = new CastPlayerManager(this);
+
+    try {
+      PackageInfo pInfo = getPackageManager().getPackageInfo(getPackageName(), 0);
+      mSimpleDiskCache = SimpleDiskCache.open(getCacheDir(), pInfo.versionCode, Long.parseLong(Integer.toString(10 * 1024 * 1024)));
+      Logger.d("Cache initialized");
+    } catch (Exception ex) {
+      ex.printStackTrace();
+    }
+  }
+
+  public static VoiceControlForPlexApplication getInstance() {
+    return instance;
+  }
+
 	public static Locale getVoiceLocale(String loc) {
 		String[] voice = loc.split("-");
 
@@ -99,18 +135,6 @@ public class VoiceControlForPlexApplication extends Application
 
 		return l;
 	}
-
-  @Override
-  public void onCreate() {
-    super.onCreate();
-    initSingletons();
-  }
-
-  protected void initSingletons()
-  {
-    // Initialize the instance of MySingleton
-//    VCFPSingleton.initInstance();
-  }
 
   public static void addPlexServer(final PlexServer server) {
 		addPlexServer(server, null);
@@ -260,52 +284,59 @@ public class VoiceControlForPlexApplication extends Application
     return new BigInteger(130, random).toString(32).substring(0, 12);
   }
 
-  public static void setNotification(Context context, PlexClient client, PlayerState currentState, PlexMedia media) {
-    Logger.d("Setting notification, client: %s", client);
-    if(client != null) {
-      NotificationManager mNotifyMgr = (NotificationManager) context.getSystemService(NOTIFICATION_SERVICE);
-      android.content.Intent rewindIntent = new android.content.Intent(context, PlexControlService.class);
+  public void setNotification(PlexClient client, PlayerState currentState, PlexMedia media) {
+    Logger.d("Setting notification, client: %s, media: %s", client, media);
+    if(client != null && media != null) {
+      NotificationManager mNotifyMgr = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+      android.content.Intent rewindIntent = new android.content.Intent(this, PlexControlService.class);
       rewindIntent.setAction(PlexControlService.ACTION_REWIND);
       rewindIntent.putExtra(PlexControlService.CLIENT, client);
       rewindIntent.putExtra(PlexControlService.MEDIA, media);
-      PendingIntent piRewind = PendingIntent.getService(context, 0, rewindIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+      PendingIntent piRewind = PendingIntent.getService(this, 0, rewindIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
-      android.content.Intent playPauseIntent = new android.content.Intent(context, PlexControlService.class);
-      int playPauseButton;
-      String playPauseAction;
-      if (currentState == PlayerState.PLAYING) {
-        playPauseButton = R.drawable.button_pause;
-        playPauseAction = PlexControlService.ACTION_PAUSE;
-      } else {
-        playPauseButton = R.drawable.button_play;
-        playPauseAction = PlexControlService.ACTION_PLAY;
-      }
-      playPauseIntent.setAction(playPauseAction);
-      playPauseIntent.putExtra(PlexControlService.CLIENT, client);
-      playPauseIntent.putExtra(PlexControlService.MEDIA, media);
-      PendingIntent piPlayPause = PendingIntent.getService(context, 0, playPauseIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+      android.content.Intent playIntent = new android.content.Intent(this, PlexControlService.class);
+      playIntent.setAction(PlexControlService.ACTION_PLAY);
+      playIntent.putExtra(PlexControlService.CLIENT, client);
+      playIntent.putExtra(PlexControlService.MEDIA, media);
+      PendingIntent playPendingIntent = PendingIntent.getService(this, 0, playIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
-      android.content.Intent nowPlayingIntent = new android.content.Intent(context, NowPlayingActivity.class);
+      android.content.Intent pauseIntent = new android.content.Intent(this, PlexControlService.class);
+      pauseIntent.setAction(PlexControlService.ACTION_PAUSE);
+      pauseIntent.putExtra(PlexControlService.CLIENT, client);
+      pauseIntent.putExtra(PlexControlService.MEDIA, media);
+      PendingIntent pausePendingIntent = PendingIntent.getService(this, 0, pauseIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+
+
+      android.content.Intent nowPlayingIntent = new android.content.Intent(this, NowPlayingActivity.class);
       nowPlayingIntent.setFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK |
               android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK);
       nowPlayingIntent.putExtra(Intent.EXTRA_MEDIA, media);
       nowPlayingIntent.putExtra(Intent.EXTRA_CLIENT, client);
-      PendingIntent piNowPlaying = PendingIntent.getActivity(context, 0, nowPlayingIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+      PendingIntent piNowPlaying = PendingIntent.getActivity(this, 0, nowPlayingIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+      Bitmap thumb = null;
+      try {
+        InputStream inputStream = mSimpleDiskCache.getInputStream(media.getImageKey(PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB)).getInputStream();
+        thumb = BitmapFactory.decodeStream(inputStream);
+      } catch (Exception ex) {
+        ex.printStackTrace();
+      }
 
       try {
         NotificationCompat.Builder mBuilder =
-                new NotificationCompat.Builder(context)
+                new NotificationCompat.Builder(this)
                         .setSmallIcon(R.drawable.ic_launcher)
                         .setAutoCancel(false)
                         .setOngoing(true)
                         .setOnlyAlertOnce(true)
-                        .setContentTitle(media.title)
-                        .setContentText(String.format(context.getString(R.string.playing_on), client.name))
-                        .addAction(R.drawable.button_rewind, context.getString(R.string.rewind), piRewind)
-                        .addAction(playPauseButton, context.getString(currentState != PlayerState.PAUSED ? R.string.pause : R.string.play), piPlayPause)
                         .setContentIntent(piNowPlaying)
+                        .setContent(getNotificationView(R.layout.now_playing_notification, thumb, media, client, playPendingIntent, pausePendingIntent, piRewind, currentState == PlayerState.PLAYING))
                         .setDefaults(Notification.DEFAULT_ALL);
         Notification n = mBuilder.build();
+        if (Build.VERSION.SDK_INT >= 16)
+          n.bigContentView = getNotificationView(R.layout.now_playing_notification_big, thumb, media, client, playPendingIntent, pausePendingIntent, piRewind, currentState == PlayerState.PLAYING);
+
         // Disable notification sound
         n.defaults = 0;
         mNotifyMgr.notify(nowPlayingNotificationId, n);
@@ -313,5 +344,25 @@ public class VoiceControlForPlexApplication extends Application
         ex.printStackTrace();
       }
     }
+  }
+
+  private RemoteViews getNotificationView(int layoutId, Bitmap thumb, PlexMedia media, PlexClient client,
+                                          PendingIntent playPendingIntent, PendingIntent pausePendingIntent, PendingIntent rewindIntent, boolean isPlaying) {
+    RemoteViews remoteViews = new RemoteViews(getPackageName(), layoutId);
+    remoteViews.setImageViewBitmap(R.id.thumb, thumb);
+    remoteViews.setTextViewText(R.id.title, media.title);
+    remoteViews.setTextViewText(R.id.playingOn, String.format(getString(R.string.playing_on), client.name));
+
+    remoteViews.setOnClickPendingIntent(R.id.pauseButton, pausePendingIntent);
+    remoteViews.setOnClickPendingIntent(R.id.playButton, playPendingIntent);
+    if (isPlaying) {
+      remoteViews.setViewVisibility(R.id.playButton, View.GONE);
+      remoteViews.setViewVisibility(R.id.pauseButton, View.VISIBLE);
+    } else {
+      remoteViews.setViewVisibility(R.id.playButton, View.VISIBLE);
+      remoteViews.setViewVisibility(R.id.pauseButton, View.GONE);
+    }
+    remoteViews.setOnClickPendingIntent(R.id.rewindButton, rewindIntent);
+    return remoteViews;
   }
 }

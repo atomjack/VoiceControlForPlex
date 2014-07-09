@@ -10,6 +10,7 @@ import com.atomjack.vcfp.Logger;
 import com.atomjack.vcfp.PlexHeaders;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.handlers.BitmapHandler;
+import com.atomjack.vcfp.handlers.InputStreamHandler;
 import com.atomjack.vcfp.net.PlexHttpClient;
 import com.loopj.android.http.BinaryHttpResponseHandler;
 
@@ -26,6 +27,20 @@ import java.util.List;
 
 @Root(strict=false)
 public abstract class PlexMedia implements Parcelable {
+  public enum IMAGE_KEY {
+    NOTIFICATION_THUMB
+  }
+
+  public String getImageKey(IMAGE_KEY imageKey) throws Exception {
+    if(server == null)
+      throw new Exception("The server for this piece of media must be defined.");
+    else {
+      return String.format("%s/%s/%s", server.machineIdentifier, ratingKey, imageKey);
+    }
+  }
+
+
+
 	@Attribute
 	public String key;
   @Attribute
@@ -86,7 +101,7 @@ public abstract class PlexMedia implements Parcelable {
 		return url;
 	}
 
-	public void getThumb(int width, int height, final BitmapHandler bitmapHandler) {
+	public void getThumb(int width, int height, final InputStreamHandler inputStreamHandler) {
 		String path = String.format("/photo/:/transcode?width=%d&height=%d&url=%s", width, height, Uri.encode(String.format("http://127.0.0.1:32400%s", thumb)));
 		PlexHttpClient.get(server, path, new BinaryHttpResponseHandler() {
 
@@ -101,9 +116,9 @@ public abstract class PlexMedia implements Parcelable {
       InputStream is = new ByteArrayInputStream(imageData);
 				try {
 					is.reset();
-					Bitmap bitmap = BitmapFactory.decodeStream(is);
-					if(bitmapHandler != null) {
-						bitmapHandler.onSuccess(bitmap);
+//					Bitmap bitmap = BitmapFactory.decodeStream(is);
+					if(inputStreamHandler != null) {
+            inputStreamHandler.onSuccess(is);
 					}
 				} catch (IOException e) {
 					e.printStackTrace();
