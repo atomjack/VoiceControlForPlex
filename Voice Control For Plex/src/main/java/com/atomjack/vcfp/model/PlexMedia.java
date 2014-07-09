@@ -109,31 +109,16 @@ public abstract class PlexMedia implements Parcelable {
 		return url;
 	}
 
-	public void getThumb(int width, int height, final InputStreamHandler inputStreamHandler) {
-		String path = String.format("/photo/:/transcode?width=%d&height=%d&url=%s", width, height, Uri.encode(String.format("http://127.0.0.1:32400%s", thumb)));
-		PlexHttpClient.get(server, path, new BinaryHttpResponseHandler() {
-
-      @Override
-			public void onFailure(int statusCode, Header[] headers, byte[] binaryData, Throwable error) {
-//				super.onFailure(statusCode, headers, binaryData, error);
-				Logger.d("failed getting thumb: %s", statusCode);
-			}
-
-			@Override
-      public void onSuccess(int i, Header[] headers, byte[] imageData) {
-      InputStream is = new ByteArrayInputStream(imageData);
-				try {
-					is.reset();
-//					Bitmap bitmap = BitmapFactory.decodeStream(is);
-					if(inputStreamHandler != null) {
-            inputStreamHandler.onSuccess(is);
-					}
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-		});
-	}
+  public InputStream getThumb(int width, int height) {
+    String path = String.format("/photo/:/transcode?width=%d&height=%d&url=%s", width, height, Uri.encode(String.format("http://127.0.0.1:32400%s", thumb)));
+    String url = server.buildURL(path);
+    byte[] imageData = PlexHttpClient.getSyncBytes(url);
+    InputStream is = new ByteArrayInputStream(imageData);
+    try {
+      is.reset();
+    } catch (Exception e) {}
+    return is;
+  }
 
 	@Override
 	public int describeContents() {

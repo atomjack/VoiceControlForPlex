@@ -130,12 +130,8 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
 
 
 		Type serverType = new TypeToken<ConcurrentHashMap<String, PlexServer>>(){}.getType();
-		VoiceControlForPlexApplication.servers = gsonRead.fromJson(Preferences.get(Preferences.SAVED_SERVERS, ""), serverType);
-
-    // Send an intent to check whether or not we are subscribed
-//    plexSubscription = getIntent().getParcelableExtra(VoiceControlForPlexApplication.Intent.EXTRA_SUBSCRIPTION);
-//    if(plexSubscription == null)
-//      plexSubscription = new PlexSubscription();
+    if(gsonRead.fromJson(Preferences.get(Preferences.SAVED_SERVERS, ""), serverType) != null)
+  		VoiceControlForPlexApplication.servers = gsonRead.fromJson(Preferences.get(Preferences.SAVED_SERVERS, ""), serverType);
 	}
 
   protected void onSubscriptionMessage(Timeline timeline) {
@@ -159,35 +155,9 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
 						nowPlayingMedia.server = server;
 						Logger.d("We're watching %s", nowPlayingMedia.title);
 
-
-            SimpleDiskCache.InputStreamEntry thumbEntry = null;
-            try {
-              Logger.d("image key: %s", nowPlayingMedia.getImageKey(PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB));
-              thumbEntry = mSimpleDiskCache.getInputStream(nowPlayingMedia.getImageKey(PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB));
-              if(thumbEntry == null) {
-                nowPlayingMedia.getThumb(64, 64, new InputStreamHandler() {
-                  @Override
-                  public void onSuccess(final InputStream inputStream) {
-                    if(timeline.continuing != null && timeline.continuing.equals("1"))
-                      continuing = true;
-                    try {
-                      mSimpleDiskCache.put(nowPlayingMedia.getImageKey(PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB), inputStream);
-                      Logger.d("Saved image to cache");
-                    } catch (Exception ex) {}
-                    Logger.d("getPlayingMedia setting notification with %s", nowPlayingMedia);
-                    VoiceControlForPlexApplication.getInstance().setNotification(mClient, mCurrentState, nowPlayingMedia);
-                  }
-                });
-              } else {
-                Logger.d("Got image from cache");
-                VoiceControlForPlexApplication.getInstance().setNotification(mClient, mCurrentState, nowPlayingMedia);
-                if(timeline.continuing != null && timeline.continuing.equals("1"))
-                  continuing = true;
-              }
-            } catch (Exception ex) {
-            }
-
-
+            VoiceControlForPlexApplication.getInstance().setNotification(mClient, mCurrentState, nowPlayingMedia);
+            if(timeline.continuing != null && timeline.continuing.equals("1"))
+              continuing = true;
 					}
 
 					@Override
@@ -363,7 +333,6 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
               // Found an update for the currently playing media
               PlayerState oldState = mCurrentState;
               mCurrentState = PlayerState.getState(t.state);
-              Logger.d("New player state: %s", mCurrentState);
               nowPlayingMedia.viewOffset = Integer.toString(t.time);
               if(oldState != mCurrentState) {
                 if(mCurrentState == PlayerState.PLAYING) {
@@ -486,7 +455,6 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
           if(video.isMovie())
             thumb = video.art;
           else if(video.isShow()) {
-            Logger.d("Is episode");
             thumb = video.art;
           }
         }

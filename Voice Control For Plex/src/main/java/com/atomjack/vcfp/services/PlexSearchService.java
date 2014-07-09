@@ -1432,6 +1432,7 @@ public class PlexSearchService extends Service {
 											video.server = server;
 											video.thumb = show.thumb;
                       Logger.d("Searching, setting show title: %s", show.title);
+                      video.grandparentTitle = show.title;
 											video.showTitle = show.title;
                       video.parentArt = mc.art;
 											playVideo(video);

@@ -225,4 +225,11 @@ public class PlexServer extends PlexDevice {
 			}
 		});
 	}
+
+  public String buildURL(String path) {
+    String url = String.format("%s%s", activeConnection.uri, path);
+    if(accessToken != null)
+      url += String.format("%s%s=%s", (url.contains("?") ? "&" : "?"), PlexHeaders.XPlexToken, accessToken);
+    return url;
+  }
 }

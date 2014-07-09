@@ -266,6 +266,28 @@ public class PlexHttpClient
     return mc;
   }
 
+  public static byte[] getSyncBytes(String url) {
+    try {
+      HttpClient httpclient = new DefaultHttpClient();
+      HttpGet get = new HttpGet(url);
+      HttpResponse response = httpclient.execute(get);
+      StatusLine statusLine = response.getStatusLine();
+      if (statusLine.getStatusCode() == HttpStatus.SC_OK) {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        response.getEntity().writeTo(out);
+        out.close();
+        return out.toByteArray();
+      } else {
+        //Closes the connection.
+        response.getEntity().getContent().close();
+        throw new IOException(statusLine.getReasonPhrase());
+      }
+    } catch (Exception ex) {
+      ex.printStackTrace();
+    }
+    return null;
+  }
+
   public static String getSyncBody(String url, Header[] headers) {
     try {
       HttpClient httpclient = new DefaultHttpClient();

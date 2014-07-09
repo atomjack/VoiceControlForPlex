@@ -248,12 +248,11 @@ public class PlexSubscription {
     if(client == null)
       return;
     mClient = client;
-    Logger.d("subscribe, mClient now %s", mClient);
+    Logger.d("subscribe, client now %s", mClient);
     QueryString qs = new QueryString("port", String.valueOf(subscriptionPort));
     qs.add("commandID", String.valueOf(commandId));
     qs.add("protocol", "http");
 
-    Logger.d("uuid: %s", uuid);
     Header[] headers = {
       new BasicHeader(PlexHeaders.XPlexClientIdentifier, uuid),
       new BasicHeader(PlexHeaders.XPlexDeviceName, appName)
