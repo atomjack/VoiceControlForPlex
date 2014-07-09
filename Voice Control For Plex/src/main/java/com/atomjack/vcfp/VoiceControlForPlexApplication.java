@@ -38,6 +38,8 @@ import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexServer;
+import com.atomjack.vcfp.model.PlexTrack;
+import com.atomjack.vcfp.model.PlexVideo;
 import com.atomjack.vcfp.services.PlexControlService;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -350,7 +352,16 @@ public class VoiceControlForPlexApplication extends Application
                                           PendingIntent playPendingIntent, PendingIntent pausePendingIntent, PendingIntent rewindIntent, boolean isPlaying) {
     RemoteViews remoteViews = new RemoteViews(getPackageName(), layoutId);
     remoteViews.setImageViewBitmap(R.id.thumb, thumb);
-    remoteViews.setTextViewText(R.id.title, media.title);
+    String title = media.title; // Movie title
+    if(media instanceof PlexTrack)
+      title = String.format("%s - %s", media.grandparentTitle, media.title);
+    else {
+      PlexVideo video = (PlexVideo)media;
+      if(video.type.equals("episode"))
+        title = String.format("%s - %s", video.grandparentTitle, video.title);
+    }
+
+    remoteViews.setTextViewText(R.id.title, title);
     remoteViews.setTextViewText(R.id.playingOn, String.format(getString(R.string.playing_on), client.name));
 
     remoteViews.setOnClickPendingIntent(R.id.pauseButton, pausePendingIntent);
