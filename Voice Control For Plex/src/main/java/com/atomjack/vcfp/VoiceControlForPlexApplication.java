@@ -353,13 +353,10 @@ public class VoiceControlForPlexApplication extends Application
     RemoteViews remoteViews = new RemoteViews(getPackageName(), layoutId);
     remoteViews.setImageViewBitmap(R.id.thumb, thumb);
     String title = media.title; // Movie title
-    if(media instanceof PlexTrack)
+    if(media.isMusic())
       title = String.format("%s - %s", media.grandparentTitle, media.title);
-    else {
-      PlexVideo video = (PlexVideo)media;
-      if(video.type.equals("episode"))
-        title = String.format("%s - %s", video.grandparentTitle, video.title);
-    }
+    else if(media.isShow())
+      title = String.format("%s - %s", media.grandparentTitle, media.title);
 
     remoteViews.setTextViewText(R.id.title, title);
     remoteViews.setTextViewText(R.id.playingOn, String.format(getString(R.string.playing_on), client.name));

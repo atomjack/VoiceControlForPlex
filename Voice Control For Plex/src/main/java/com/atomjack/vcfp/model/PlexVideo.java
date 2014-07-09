@@ -37,6 +37,8 @@ public class PlexVideo extends PlexMedia {
 	public String summary;
   @Attribute(required=false)
   public String originallyAvailableAt;
+  public String showTitle;
+
 	public Date airDate() {
     SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
     try {
@@ -46,9 +48,19 @@ public class PlexVideo extends PlexMedia {
       return null;
     }
   }
-	public String showTitle;
 
-	@Override
+  @Override
+  public boolean isMovie() {
+    return type.equals("movie");
+  }
+
+  @Override
+  public boolean isShow() {
+    return !type.equals("movie");
+  }
+
+
+  @Override
 	public String getTitle() {
 		return type.equals("movie") ? title : showTitle;
 	}

@@ -983,7 +983,7 @@ public class PlexSearchService extends Service {
 					// If the host we're playing on is this device, we don't wanna do anything else here.
 					if(Utils.getIPAddress(true).equals(client.address) || r == null)
 						return;
-					feedback.m(getResources().getString(R.string.now_watching_video), video.type.equals("movie") ? video.title : video.showTitle, client.name);
+					feedback.m(getResources().getString(R.string.now_watching_video), video.isMovie() ? video.title : video.showTitle, client.name);
 					Boolean passed = true;
 					if(r.code != null) {
 						if(!r.code.equals("200")) {

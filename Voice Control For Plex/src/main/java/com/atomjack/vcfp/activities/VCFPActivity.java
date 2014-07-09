@@ -480,12 +480,12 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
       String thumb = nowPlayingMedia.thumb;
       if(nowPlayingMedia instanceof PlexVideo) {
         PlexVideo video = (PlexVideo)nowPlayingMedia;
-        thumb = video.type.equals("movie") ? video.thumb : video.grandparentThumb;
+        thumb = video.isMovie() ? video.thumb : video.grandparentThumb;
         Logger.d("orientation: %s, type: %s", getOrientation(), video.type);
         if(getOrientation() == Configuration.ORIENTATION_LANDSCAPE) {
-          if(video.type.equals("movie"))
+          if(video.isMovie())
             thumb = video.art;
-          else if(video.type.equals("episode")) {
+          else if(video.isShow()) {
             Logger.d("Is episode");
             thumb = video.art;
           }

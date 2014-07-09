@@ -31,17 +31,25 @@ public abstract class PlexMedia implements Parcelable {
     NOTIFICATION_THUMB
   }
 
-  public String getImageKey(IMAGE_KEY imageKey) throws Exception {
-    if(server == null)
-      throw new Exception("The server for this piece of media must be defined.");
-    else {
-      return String.format("%s/%s/%s", server.machineIdentifier, ratingKey, imageKey);
-    }
+  public static final int TYPE_MOVIE = 0;
+  public static final int TYPE_SHOW = 1;
+  public static final int TYPE_MUSIC = 2;
+
+  public boolean isMovie() {
+    PlexVideo video = (PlexVideo)this;
+    return video.type.equals("movie");
   }
 
+  public boolean isMusic() {
+    return this instanceof PlexTrack;
+  }
 
+  public boolean isShow() {
+    PlexVideo video = (PlexVideo)this;
+    return !video.type.equals("movie");
+  }
 
-	@Attribute
+  @Attribute
 	public String key;
   @Attribute
   public String ratingKey;
@@ -208,6 +216,14 @@ public abstract class PlexMedia implements Parcelable {
 
   public String getCacheKey(String which) {
     return String.format("%s%s", server.machineIdentifier, which);
+  }
+
+  public String getImageKey(IMAGE_KEY imageKey) throws Exception {
+    if(server == null)
+      throw new Exception("The server for this piece of media must be defined.");
+    else {
+      return String.format("%s/%s/%s", server.machineIdentifier, ratingKey, imageKey);
+    }
   }
 
 }
