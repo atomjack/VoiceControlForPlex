@@ -168,14 +168,6 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
                 nowPlayingMedia.getThumb(64, 64, new InputStreamHandler() {
                   @Override
                   public void onSuccess(final InputStream inputStream) {
-                    Logger.d("got bitmap");
-
-//                NotificationCompat.Action rewindAction =
-
-
-                    //setNotification();
-
-
                     if(timeline.continuing != null && timeline.continuing.equals("1"))
                       continuing = true;
                     try {
@@ -369,28 +361,27 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
           if(nowPlayingMedia != null) {
             if(t.key != null && t.key.equals(nowPlayingMedia.key)) {
               // Found an update for the currently playing media
-              PlayerState newState = PlayerState.getState(t.state);
+              PlayerState oldState = mCurrentState;
+              mCurrentState = PlayerState.getState(t.state);
+              Logger.d("New player state: %s", mCurrentState);
               nowPlayingMedia.viewOffset = Integer.toString(t.time);
-              if(newState != mCurrentState) {
-                if(newState == PlayerState.PLAYING) {
+              if(oldState != mCurrentState) {
+                if(mCurrentState == PlayerState.PLAYING) {
                   Logger.d("mClient is now playing");
                   if(mCurrentState == PlayerState.STOPPED) {
                     // We're already subscribed and the mClient has started playing
                     // TODO: Continue this
                   }
-                } else if(newState == PlayerState.PAUSED) {
+                } else if(mCurrentState == PlayerState.PAUSED) {
                   Logger.d("mClient is now paused");
-                } else if(newState == PlayerState.STOPPED) {
+                } else if(mCurrentState == PlayerState.STOPPED) {
                   Logger.d("mClient is now stopped");
-                  if(continuing) {
-//                    getPlayingMedia(nowPlayingMedia.server, t);
-                  } else {
+                  if(!continuing) {
                     mNotifyMgr.cancel(mNotificationId);
                     nowPlayingMedia = null;
                   }
                 }
-                mCurrentState = newState;
-                if(mCurrentState != PlayerState.STOPPED) {
+                if(mCurrentState != PlayerState.STOPPED && oldState != mCurrentState) {
                   Logger.d("onMessageReceived setting notification with %s", mCurrentState);
                   VoiceControlForPlexApplication.getInstance().setNotification(mClient, mCurrentState, nowPlayingMedia);
                 }
