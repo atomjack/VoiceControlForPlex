@@ -1673,8 +1673,8 @@ public class PlexSearchService extends Service {
 					PlexTrack track = mc.tracks.get(0);
 					track.server = album.server;
 					track.thumb = album.thumb;
-					track.artist = album.parentTitle;
-					track.album = album.title;
+					track.grandparentTitle = album.parentTitle;
+					track.parentTitle = album.title;
           track.art = album.art;
 					playTrack(track, album);
 				} else {

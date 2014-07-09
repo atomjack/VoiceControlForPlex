@@ -84,6 +84,8 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
 	protected PlayerState mCurrentState = PlayerState.STOPPED;
   protected int position = -1;
 
+  protected boolean continuing = false;
+
 	int mNotificationId = 0;
 	NotificationManager mNotifyMgr;
 
@@ -172,6 +174,7 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
                 Logger.d("getPlayingMedia setting notification with %s", nowPlayingMedia);
                 VoiceControlForPlexApplication.setNotification(getApplicationContext(), mClient, mCurrentState, nowPlayingMedia);
 
+                continuing = true;
 							}
 						});
 					}
@@ -325,9 +328,9 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
     List<Timeline> timelines = mc.timelines;
     if(timelines != null) {
       for (Timeline t : timelines) {
-        // TODO: Handle music too
         if (t.key != null) {
-          if(!t.state.equals("stopped") && nowPlayingMedia == null) {
+
+          if((!t.state.equals("stopped") && nowPlayingMedia == null) || continuing) {
             // Get this media's info
             PlexServer server = null;
             for(PlexServer s : VoiceControlForPlexApplication.servers.values()) {
@@ -360,8 +363,12 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
                   Logger.d("mClient is now paused");
                 } else if(newState == PlayerState.STOPPED) {
                   Logger.d("mClient is now stopped");
-                  mNotifyMgr.cancel(mNotificationId);
-                  nowPlayingMedia = null;
+                  if(continuing) {
+//                    getPlayingMedia(nowPlayingMedia.server, t);
+                  } else {
+                    mNotifyMgr.cancel(mNotificationId);
+                    nowPlayingMedia = null;
+                  }
                 }
                 mCurrentState = newState;
                 if(mCurrentState != PlayerState.STOPPED) {

@@ -230,10 +230,23 @@ public class NowPlayingActivity extends PlayerActivity {
 //    Logger.d("NowPlaying onSubscriptionMessage: %d", timeline.time);
     if(!isSeeking)
       seekBar.setProgress(timeline.time);
+
+    if(continuing) {
+      showNowPlaying(false);
+      // Need to update the duration
+      seekBar.setMax(nowPlayingMedia.duration);
+      durationDisplay.setText(VoiceControlForPlexApplication.secondsToTimecode(nowPlayingMedia.duration / 1000));
+      setThumb();
+      continuing = false;
+    }
+
     if(timeline.state.equals("stopped")) {
-      Logger.d("stopping");
-      // TODO: unsub here?
-      finish();
+      Logger.d("NowPlayingActivity stopping");
+      if(timeline.continuing != null && timeline.continuing.equals("1")) {
+        Logger.d("Continuing to next track");
+      } else {
+        finish();
+      }
     } else if(timeline.state.equals("playing")) {
       setState(PlayerState.PLAYING);
     } else if(timeline.state.equals("paused")) {

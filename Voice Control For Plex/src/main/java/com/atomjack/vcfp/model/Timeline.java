@@ -22,6 +22,8 @@ public class Timeline implements Parcelable {
 	public String key;
 	@Attribute(required=false)
 	public String machineIdentifier; // id of server
+  @Attribute(required=false)
+  public String continuing;
 
 	public Timeline() {
 
@@ -49,6 +51,7 @@ public class Timeline implements Parcelable {
 		parcel.writeInt(duration);
 		parcel.writeString(key);
 		parcel.writeString(machineIdentifier);
+    parcel.writeString(continuing);
 	}
 
 	public Timeline(Parcel in) {
@@ -58,6 +61,7 @@ public class Timeline implements Parcelable {
 		duration = in.readInt();
 		key = in.readString();
 		machineIdentifier = in.readString();
+    continuing = in.readString();
 	}
 
 	public static final Parcelable.Creator<Timeline> CREATOR = new Parcelable.Creator<Timeline>() {

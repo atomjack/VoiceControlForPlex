@@ -88,10 +88,16 @@ public abstract class PlayerActivity extends VCFPActivity implements SeekBar.OnS
 	}
 
   public void showNowPlaying() {
+    showNowPlaying(true);
+  }
+
+  // This will be called with setView=false when a new track starts playing. We don't need to set the view again (and it seems to mess up the display of the album cover)
+  public void showNowPlaying(boolean setView) {
     if (nowPlayingMedia instanceof PlexVideo) {
       PlexVideo video = (PlexVideo)nowPlayingMedia;
       if(video.type.equals("movie")) {
-        setContentView(R.layout.now_playing_movie);
+        if(setView)
+          setContentView(R.layout.now_playing_movie);
 
         TextView title = (TextView)findViewById(R.id.nowPlayingTitle);
         title.setText(video.title);
@@ -104,7 +110,8 @@ public abstract class PlayerActivity extends VCFPActivity implements SeekBar.OnS
         TextView summary = (TextView)findViewById(R.id.nowPlayingSummary);
         summary.setText(video.summary);
       } else {
-        setContentView(R.layout.now_playing_show);
+        if(setView)
+          setContentView(R.layout.now_playing_show);
         TextView showTitle = (TextView)findViewById(R.id.nowPlayingShowTitle);
         showTitle.setText(video.grandparentTitle);
         TextView episodeTitle = (TextView)findViewById(R.id.nowPlayingEpisodeTitle);
@@ -119,12 +126,13 @@ public abstract class PlayerActivity extends VCFPActivity implements SeekBar.OnS
 
     } else if (nowPlayingMedia instanceof PlexTrack) {
       PlexTrack track = (PlexTrack)nowPlayingMedia;
-      setContentView(R.layout.now_playing_music);
+      if(setView)
+        setContentView(R.layout.now_playing_music);
 
       TextView artist = (TextView)findViewById(R.id.nowPlayingArtist);
-      artist.setText(track.artist);
+      artist.setText(track.grandparentTitle);
       TextView album = (TextView)findViewById(R.id.nowPlayingAlbum);
-      album.setText(track.album);
+      album.setText(track.parentTitle);
       TextView title = (TextView)findViewById(R.id.nowPlayingTitle);
       title.setText(track.title);
     }
