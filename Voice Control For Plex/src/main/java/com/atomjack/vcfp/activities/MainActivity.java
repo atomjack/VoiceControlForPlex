@@ -44,7 +44,6 @@ import android.widget.EditText;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 
-import com.atomjack.vcfp.Feedback;
 import com.atomjack.vcfp.FutureRunnable;
 import com.atomjack.vcfp.GDMService;
 import com.atomjack.vcfp.LocalScan;
@@ -827,10 +826,20 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 	}
 
 	private void setClient(PlexClient _client) {
-		client = _client;
-		Logger.d("Selected mClient: %s", client);
-		saveSettings();
-		initMainWithServer();
+    if(!VoiceControlForPlexApplication.getInstance().hasChromecast() && _client.isCastClient) {
+      showChromecastPurchase(_client, new Runnable() {
+        @Override
+        public void run() {
+          // Chromecast purchase was successful, and mHasChromecast was set to true, so call this again to continue
+          setClient(postChromecastPurchaseClient);
+        }
+      });
+    } else {
+      client = _client;
+      Logger.d("Selected mClient: %s", client);
+      saveSettings();
+      initMainWithServer();
+    }
 	}
 
 	private void saveSettings() {
@@ -968,8 +977,17 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 	}
 
 	private class MediaRouterCallback extends MediaRouter.Callback {
-		@Override
+    @Override
+    public void onRouteRemoved(MediaRouter router, MediaRouter.RouteInfo route) {
+      super.onRouteRemoved(router, route);
+      if(VoiceControlForPlexApplication.castClients.containsKey(route.getName())) {
+        Logger.d("Cast Client %s has gone missing. Removing.", route.getName());
+        VoiceControlForPlexApplication.castClients.remove(route.getName());
+        Preferences.put(Preferences.SAVED_CAST_CLIENTS, gsonWrite.toJson(VoiceControlForPlexApplication.castClients));
+      }
+    }
 
+    @Override
 		public void onRouteAdded(MediaRouter router, MediaRouter.RouteInfo route)
 		{
 			Logger.d("onRouteAdded: %s", route);
@@ -980,17 +998,17 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 				client.product = route.getDescription();
 				client.castDevice = CastDevice.getFromBundle(route.getExtras());
 				VoiceControlForPlexApplication.castClients.put(client.name, client);
-			}
+        Preferences.put(Preferences.SAVED_CAST_CLIENTS, gsonWrite.toJson(VoiceControlForPlexApplication.castClients));
+      }
 		}
 		@Override
 		public void onRouteSelected(MediaRouter router, MediaRouter.RouteInfo route) {
 			Logger.d("onRouteSelected: %s", route);
-//			MainActivity.this.onRouteSelected(route);
 		}
+
 		@Override
 		public void onRouteUnselected(MediaRouter router, MediaRouter.RouteInfo route) {
 			Logger.d("onRouteUnselected: %s", route);
-//			MainActivity.this.onRouteUnselected(route);
 		}
 	}
 }

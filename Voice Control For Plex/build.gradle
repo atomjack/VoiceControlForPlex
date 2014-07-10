@@ -38,11 +38,13 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
             buildConfigField "boolean", "USE_BUGSENSE", "true"
             buildConfigField "boolean", "CHROMECAST_REQUIRES_PURCHASE", "true"
+            buildConfigField "String", "SKU_CHROMECAST", "\"chromecast\""
         }
         debug {
             debuggable true
             buildConfigField "boolean", "USE_BUGSENSE", "false"
             buildConfigField "boolean", "CHROMECAST_REQUIRES_PURCHASE", "false"
+            buildConfigField "String", "SKU_CHROMECAST", "\"android.test.purchased\""
         }
         chromecast {
             signingConfig signingConfigs.release
@@ -50,13 +52,15 @@ android {
             runProguard false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
             buildConfigField "boolean", "USE_BUGSENSE", "false"
-            buildConfigField "boolean", "CHROMECAST_REQUIRES_PURCHASE", "false"
+            buildConfigField "boolean", "CHROMECAST_REQUIRES_PURCHASE", "true"
+            buildConfigField "String", "SKU_CHROMECAST", "\"android.test.canceled\""
         }
         beta {
             debuggable true
             signingConfig signingConfigs.debug
             buildConfigField "boolean", "USE_BUGSENSE", "true"
             buildConfigField "boolean", "CHROMECAST_REQUIRES_PURCHASE", "false"
+            buildConfigField "String", "SKU_CHROMECAST", "\"android.test.purchased\""
         }
     }
     lintOptions {

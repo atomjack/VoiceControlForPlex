@@ -1,8 +1,11 @@
 package com.atomjack.vcfp.activities;
 
+import android.accounts.Account;
+import android.accounts.AccountManager;
 import android.app.AlertDialog;
 import android.app.NotificationManager;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.drawable.AnimationDrawable;
 import android.graphics.drawable.Drawable;
@@ -15,6 +18,10 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 
+import com.android.vending.billing.IabHelper;
+import com.android.vending.billing.IabResult;
+import com.android.vending.billing.Inventory;
+import com.android.vending.billing.Purchase;
 import com.atomjack.vcfp.BuildConfig;
 import com.atomjack.vcfp.CastPlayerManager;
 import com.atomjack.vcfp.Feedback;
@@ -30,7 +37,6 @@ import com.atomjack.vcfp.ServerFindHandler;
 import com.atomjack.vcfp.UriDeserializer;
 import com.atomjack.vcfp.UriSerializer;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
-import com.atomjack.vcfp.handlers.InputStreamHandler;
 import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexDevice;
@@ -48,11 +54,13 @@ import com.google.gson.reflect.TypeToken;
 import com.loopj.android.http.BinaryHttpResponseHandler;
 
 import org.apache.http.Header;
+import org.json.JSONException;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Type;
+import java.security.MessageDigest;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -96,6 +104,8 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
 
   SimpleDiskCache mSimpleDiskCache;
 
+  protected PlexClient postChromecastPurchaseClient = null;
+  protected Runnable postChromecastPurchaseAction = null;
 
   @Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -104,7 +114,6 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
     Preferences.setContext(getApplicationContext());
 
     mSimpleDiskCache = VoiceControlForPlexApplication.getInstance().mSimpleDiskCache;
-
 
     app = (VoiceControlForPlexApplication)getApplication();
     feedback = new Feedback(this);
@@ -224,15 +233,69 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
         AnimationDrawable ad = (AnimationDrawable) castIcon.getIcon();
         ad.start();
 
-        mClient = clientSelected;
-        if (mClient.isCastClient) {
 
-          castPlayerManager.subscribe(mClient);
+        if (clientSelected.isCastClient) {
+          if(VoiceControlForPlexApplication.getInstance().hasChromecast()) {
+            mClient = clientSelected;
+            castPlayerManager.subscribe(mClient);
+          } else {
+            showChromecastPurchase(clientSelected, new Runnable() {
+              @Override
+              public void run() {
+                castPlayerManager.subscribe(postChromecastPurchaseClient);
+              }
+            });
+          }
         } else
           plexSubscription.startSubscription(mClient);
       }
 		}
 	};
+
+  protected void showChromecastPurchase(PlexClient client, Runnable onSuccess) {
+    postChromecastPurchaseClient = client;
+    postChromecastPurchaseAction = onSuccess;
+    new AlertDialog.Builder(VCFPActivity.this)
+            .setTitle(R.string.must_purchase_chromecast)
+            .setCancelable(false)
+            .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+              @Override
+              public void onClick(DialogInterface dialogInterface, int i) {
+                dialogInterface.cancel();
+                VoiceControlForPlexApplication.getInstance().getIabHelper().launchPurchaseFlow(VCFPActivity.this, VoiceControlForPlexApplication.SKU_CHROMECAST, 10001, mPurchaseFinishedListener, VoiceControlForPlexApplication.SKU_TEST_PURCHASED == VoiceControlForPlexApplication.SKU_CHROMECAST ? VoiceControlForPlexApplication.getInstance().getEmailHash() : "");
+              }
+            })
+            .setNeutralButton(R.string.no_thanks, new DialogInterface.OnClickListener() {
+              public void onClick(DialogInterface dialog, int id) {
+                dialog.cancel();
+                setCastIconInactive();
+              }
+            }).create().show();
+  }
+
+  IabHelper.OnIabPurchaseFinishedListener mPurchaseFinishedListener
+          = new IabHelper.OnIabPurchaseFinishedListener() {
+    public void onIabPurchaseFinished(IabResult result, Purchase purchase)
+    {
+      if (result.isFailure()) {
+        Logger.d("Error purchasing: " + result);
+        if(result.getResponse() != -1005) {
+          feedback.e(result.getMessage());
+        }
+        // Only reset the cast icon if we aren't subscribed (if we are, the only way to get here is through main client selection)
+        if(!isSubscribed())
+          setCastIconInactive();
+        return;
+      }
+      else if (purchase.getSku().equals(VoiceControlForPlexApplication.SKU_CHROMECAST)) {
+        Logger.d("Purchased chromecast!");
+        VoiceControlForPlexApplication.getInstance().setHasChromecast(true);
+        if(postChromecastPurchaseAction != null) {
+          postChromecastPurchaseAction.run();
+        }
+      }
+    }
+  };
 
   protected void castSubscribe() {}
 
@@ -370,12 +433,16 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
   @Override
   public void onUnsubscribed() {
     Logger.d("VCFPActivity onUnsubscribed");
-    MenuItem castIcon = menu.findItem(R.id.action_cast);
-    castIcon.setIcon(R.drawable.mr_ic_media_route_holo_dark);
+    setCastIconInactive();
     subscribed = false;
     nowPlayingMedia = null;
     mNotifyMgr.cancel(mNotificationId);
     feedback.m(R.string.disconnected);
+  }
+
+  protected void setCastIconInactive() {
+    MenuItem castIcon = menu.findItem(R.id.action_cast);
+    castIcon.setIcon(R.drawable.mr_ic_media_route_holo_dark);
   }
 
   private void getThumb(final String thumb, final PlexMedia media) {
@@ -482,6 +549,21 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
       } else {
         Logger.d("Couldn't find a background");
       }
+    }
+  }
+
+  @Override
+  protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    super.onActivityResult(requestCode, resultCode, data);
+
+    Logger.d("onActivityResult(" + requestCode + "," + resultCode + ","
+            + data);
+
+    // Pass on the activity result to the helper for handling
+    if (!VoiceControlForPlexApplication.getInstance().getIabHelper().handleActivityResult(requestCode, resultCode, data)) {
+      super.onActivityResult(requestCode, resultCode, data);
+    } else {
+      Logger.d("onActivityResult handled by IABUtil.");
     }
   }
 }

@@ -137,9 +137,9 @@ public class LocalScan {
     serverSelectDialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
       @Override
       public void onCancel(DialogInterface dialogInterface) {
-        if (onFinish == null)
+        if (onFinish == null && scanHandler != null)
           scanHandler.onDeviceSelected(null, false);
-        else
+        else if(onFinish != null)
           onFinish.onDeviceSelected(null, false);
       }
     });

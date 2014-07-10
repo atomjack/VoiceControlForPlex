@@ -154,6 +154,7 @@ public class PlexSearchService extends Service {
 					VoiceControlForPlexApplication.clients.put(c.name, c);
 				}
 				clients = (HashMap)VoiceControlForPlexApplication.clients;
+        clients.putAll(VoiceControlForPlexApplication.castClients);
 				startup();
 			}
 		} else {
@@ -194,6 +195,7 @@ public class PlexSearchService extends Service {
 
 			queries = new ArrayList<String>();
 			clients = (HashMap)VoiceControlForPlexApplication.clients;
+      clients.putAll(VoiceControlForPlexApplication.castClients);
 			resumePlayback = false;
 
 			specifiedServer = gsonRead.fromJson(intent.getStringExtra(VoiceControlForPlexApplication.Intent.EXTRA_SERVER), PlexServer.class);
@@ -371,10 +373,20 @@ public class PlexSearchService extends Service {
 				//for (int i = 0; i < clients.size(); i++) {
 				for(PlexClient c : clients.values()) {
 					if (c.name.toLowerCase().equals(specifiedClient)) {
-						client = c;
-						queryText = queryText.replaceAll(getString(R.string.pattern_on_client), "$1");
-						Logger.d("query text now %s", queryText);
-						break;
+            // TODO: Finish
+            if(c.isCastClient && !VoiceControlForPlexApplication.getInstance().hasChromecast()) {
+              return new StopRunnable() {
+                @Override
+                public void run() {
+                  feedback.e(R.string.must_purchase_chromecast_error);
+                }
+              };
+            } else {
+              client = c;
+              queryText = queryText.replaceAll(getString(R.string.pattern_on_client), "$1");
+              Logger.d("query text now %s", queryText);
+              break;
+            }
 					}
 				}
 			}

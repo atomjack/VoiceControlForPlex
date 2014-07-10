@@ -1,7 +1,9 @@
 package com.atomjack.vcfp;
 
 import java.io.InputStream;
+import java.lang.reflect.Type;
 import java.math.BigInteger;
+import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -13,6 +15,8 @@ import org.apache.http.Header;
 import org.simpleframework.xml.Serializer;
 import org.simpleframework.xml.core.Persister;
 
+import android.accounts.Account;
+import android.accounts.AccountManager;
 import android.app.AlertDialog;
 import android.app.Application;
 import android.app.Notification;
@@ -34,16 +38,19 @@ import android.text.TextUtils;
 import android.view.View;
 import android.widget.RemoteViews;
 
+import com.android.vending.billing.IabHelper;
+import com.android.vending.billing.IabResult;
+import com.android.vending.billing.Inventory;
+import com.android.vending.billing.Purchase;
 import com.atomjack.vcfp.activities.NowPlayingActivity;
 import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexServer;
-import com.atomjack.vcfp.model.PlexTrack;
-import com.atomjack.vcfp.model.PlexVideo;
 import com.atomjack.vcfp.services.PlexControlService;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
 
@@ -95,7 +102,6 @@ public class VoiceControlForPlexApplication extends Application
 
 	public static ConcurrentHashMap<String, PlexServer> servers = new ConcurrentHashMap<String, PlexServer>();
 	public static Map<String, PlexClient> clients = new HashMap<String, PlexClient>();
-
 	public static Map<String, PlexClient> castClients = new HashMap<String, PlexClient>();
 
 	private static Serializer serial = new Persister();
@@ -103,6 +109,18 @@ public class VoiceControlForPlexApplication extends Application
   public PlexSubscription plexSubscription;
   public CastPlayerManager castPlayerManager;
   public SimpleDiskCache mSimpleDiskCache;
+
+  // In-app purchasing
+  private IabHelper mIabHelper;
+  // TODO: Obfuscate this somehow:
+  String base64EncodedPublicKey = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAlgV+Gdi4nBVn2rRqi+oVLhenzbWcEVyUf1ulhvAElEf6c8iuX3OB4JZRYVhCE690mFaYUdEb8OG8p8wT7IrQmlZ0DRfP2X9csBJKd3qB+l9y11Ggujivythvoiz+uvDPhz54O6wGmUB8+oZXN+jk9MT5Eia3BZxJDvgFcmDe/KQTTKZoIk1Qs/4PSYFP8jaS/lc71yDyRmvAM+l1lv7Ld8h69hVvKFUr9BT/20lHQGohCIc91CJvKIP5DaptbE98DAlrTxjZRRpbi+wrLGKVbJpUOBgPC78qo3zPITn6M6N0tHkv1tHkGOeyLUbxOC0wFdXj33mUldV/rp3tHnld1wIDAQAB";
+
+  // Has the user purchased chromecast support?
+  // This is the default value.
+  private boolean mHasChromecast = !BuildConfig.CHROMECAST_REQUIRES_PURCHASE;
+  // Only the release build will use the actual Chromecast SKU
+  public static final String SKU_CHROMECAST = BuildConfig.SKU_CHROMECAST;
+  public static final String SKU_TEST_PURCHASED = "android.test.purchased";
 
   @Override
   public void onCreate() {
@@ -112,6 +130,13 @@ public class VoiceControlForPlexApplication extends Application
     plexSubscription = new PlexSubscription();
     castPlayerManager = new CastPlayerManager(this);
 
+    // If this build includes chromecast support, no need to setup purchasing
+    if(!mHasChromecast)
+      setupInAppPurchasing();
+
+    // TODO: Load saved servers and clients
+    Type clientType = new TypeToken<HashMap<String, PlexClient>>(){}.getType();
+    VoiceControlForPlexApplication.castClients = gsonRead.fromJson(Preferences.get(Preferences.SAVED_CAST_CLIENTS, "{}"), clientType);
 
 
     try {
@@ -121,6 +146,10 @@ public class VoiceControlForPlexApplication extends Application
     } catch (Exception ex) {
       ex.printStackTrace();
     }
+  }
+
+  public boolean hasChromecast() {
+    return mHasChromecast;
   }
 
   public static VoiceControlForPlexApplication getInstance() {
@@ -387,5 +416,100 @@ public class VoiceControlForPlexApplication extends Application
     }
     remoteViews.setOnClickPendingIntent(R.id.rewindButton, rewindIntent);
     return remoteViews;
+  }
+
+  public void setupInAppPurchasing() {
+
+    mIabHelper = new IabHelper(this, base64EncodedPublicKey);
+    // TODO: Disable this before release!
+    mIabHelper.enableDebugLogging(true);
+    mIabHelper.startSetup(new IabHelper.OnIabSetupFinishedListener() {
+      public void onIabSetupFinished(IabResult result) {
+        Logger.d("Setup finished.");
+
+        Logger.d("Hash: %s", getEmailHash());
+        if (!result.isSuccess()) {
+          // Oh noes, there was a problem.
+          Logger.d("Problem setting up in-app billing: " + result);
+          return;
+        }
+
+
+
+        // Have we been disposed of in the meantime? If so, quit.
+        if (mIabHelper == null) return;
+
+        // IAB is fully set up. Now, let's get an inventory of stuff we own.
+        Logger.d("Setup successful. Querying inventory.");
+        mIabHelper.queryInventoryAsync(mGotInventoryListener);
+      }
+    });
+  }
+
+  IabHelper.QueryInventoryFinishedListener mGotInventoryListener = new IabHelper.QueryInventoryFinishedListener() {
+    public void onQueryInventoryFinished(IabResult result, Inventory inventory) {
+
+      // Have we been disposed of in the meantime? If so, quit.
+      if (mIabHelper == null) return;
+
+      // Is it a failure?
+      if (result.isFailure()) {
+        Logger.d("Failed to query inventory: " + result);
+        return;
+      }
+
+      Logger.d("Query inventory was successful.");
+
+      // Enable the first part of this to consume (remove) the purchase - the next time the app is run, the chromecast purchase will be gone.
+      if(SKU_CHROMECAST == SKU_TEST_PURCHASED && false) {
+        if (inventory.hasPurchase(SKU_TEST_PURCHASED)) {
+          mIabHelper.consumeAsync(inventory.getPurchase(SKU_TEST_PURCHASED),null); }
+      } else {
+        Purchase chromecastPurchase = inventory.getPurchase(SKU_CHROMECAST);
+        mHasChromecast = (chromecastPurchase != null && verifyDeveloperPayload(chromecastPurchase));
+      }
+      Logger.d("Has Chromecast: %s", mHasChromecast);
+      Logger.d("Initial inventory query finished.");
+    }
+  };
+
+  boolean verifyDeveloperPayload(Purchase p) {
+    return p.getDeveloperPayload().equals(SKU_TEST_PURCHASED == SKU_CHROMECAST ? getEmailHash() : "");
+  }
+
+  public String getEmailHash() {
+    AccountManager manager = (AccountManager) getSystemService(ACCOUNT_SERVICE);
+    Account[] list = manager.getAccounts();
+    String userEmail = "";
+    for(Account account : list) {
+      if(account.type.equals("com.google")) {
+        userEmail = account.name;
+        break;
+      }
+    }
+    String hash = "";
+    try {
+      MessageDigest md = MessageDigest.getInstance("SHA-256");
+      md.reset();
+      byte[] buffer = userEmail.getBytes();
+      md.update(buffer);
+      byte[] digest = md.digest();
+
+      for (int i = 0; i < digest.length; i++) {
+        hash +=  Integer.toString( ( digest[i] & 0xff ) + 0x100, 16).substring( 1 );
+      }
+    } catch (Exception ex) {
+      ex.printStackTrace();
+    }
+    Logger.d("hash: %s", hash);
+    return hash;
+  }
+
+  public IabHelper getIabHelper() {
+    return mIabHelper;
+  }
+
+  public void setHasChromecast(boolean hasChromecast) {
+    mHasChromecast = hasChromecast;
   }
 }
