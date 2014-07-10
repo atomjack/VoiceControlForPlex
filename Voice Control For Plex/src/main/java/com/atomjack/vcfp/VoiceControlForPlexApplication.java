@@ -6,6 +6,7 @@ import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -42,6 +43,7 @@ import com.android.vending.billing.IabHelper;
 import com.android.vending.billing.IabResult;
 import com.android.vending.billing.Inventory;
 import com.android.vending.billing.Purchase;
+import com.android.vending.billing.SkuDetails;
 import com.atomjack.vcfp.activities.NowPlayingActivity;
 import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.PlexClient;
@@ -121,6 +123,7 @@ public class VoiceControlForPlexApplication extends Application
   // Only the release build will use the actual Chromecast SKU
   public static final String SKU_CHROMECAST = BuildConfig.SKU_CHROMECAST;
   public static final String SKU_TEST_PURCHASED = "android.test.purchased";
+  private static String mChromecastPrice = "$0.99"; // Default price, just in case
 
   @Override
   public void onCreate() {
@@ -423,6 +426,7 @@ public class VoiceControlForPlexApplication extends Application
     mIabHelper = new IabHelper(this, base64EncodedPublicKey);
     // TODO: Disable this before release!
     mIabHelper.enableDebugLogging(true);
+
     mIabHelper.startSetup(new IabHelper.OnIabSetupFinishedListener() {
       public void onIabSetupFinished(IabResult result) {
         Logger.d("Setup finished.");
@@ -447,7 +451,7 @@ public class VoiceControlForPlexApplication extends Application
   }
 
   IabHelper.QueryInventoryFinishedListener mGotInventoryListener = new IabHelper.QueryInventoryFinishedListener() {
-    public void onQueryInventoryFinished(IabResult result, Inventory inventory) {
+    public void onQueryInventoryFinished(IabResult result, final Inventory inventory) {
 
       // Have we been disposed of in the meantime? If so, quit.
       if (mIabHelper == null) return;
@@ -460,16 +464,30 @@ public class VoiceControlForPlexApplication extends Application
 
       Logger.d("Query inventory was successful.");
 
-      // Enable the first part of this to consume (remove) the purchase - the next time the app is run, the chromecast purchase will be gone.
-      if(SKU_CHROMECAST == SKU_TEST_PURCHASED && false) {
-        if (inventory.hasPurchase(SKU_TEST_PURCHASED)) {
-          mIabHelper.consumeAsync(inventory.getPurchase(SKU_TEST_PURCHASED),null); }
-      } else {
-        Purchase chromecastPurchase = inventory.getPurchase(SKU_CHROMECAST);
-        mHasChromecast = (chromecastPurchase != null && verifyDeveloperPayload(chromecastPurchase));
-      }
-      Logger.d("Has Chromecast: %s", mHasChromecast);
-      Logger.d("Initial inventory query finished.");
+      // Get the price for chromecast support
+      mIabHelper.queryInventoryAsync(true, new ArrayList<String>(Arrays.asList(SKU_CHROMECAST)), new IabHelper.QueryInventoryFinishedListener() {
+        @Override
+        public void onQueryInventoryFinished(IabResult result, Inventory inv) {
+          SkuDetails skuDetails = inv.getSkuDetails(SKU_CHROMECAST);
+          if(skuDetails != null) {
+            mChromecastPrice = skuDetails.getPrice();
+          }
+
+          // If the SKU being used is the test sku, consume it so that it has to be bought each time the app is run
+          if(SKU_CHROMECAST == SKU_TEST_PURCHASED) {
+            if (inventory.hasPurchase(SKU_TEST_PURCHASED))
+              mIabHelper.consumeAsync(inventory.getPurchase(SKU_TEST_PURCHASED),null);
+          } else {
+            Purchase chromecastPurchase = inventory.getPurchase(SKU_CHROMECAST);
+            mHasChromecast = (chromecastPurchase != null && verifyDeveloperPayload(chromecastPurchase));
+          }
+
+          Logger.d("Has Chromecast: %s", mHasChromecast);
+          Logger.d("Initial inventory query finished.");
+        }
+      });
+
+
     }
   };
 
@@ -511,5 +529,9 @@ public class VoiceControlForPlexApplication extends Application
 
   public void setHasChromecast(boolean hasChromecast) {
     mHasChromecast = hasChromecast;
+  }
+
+  public static String getChromecastPrice() {
+    return mChromecastPrice;
   }
 }

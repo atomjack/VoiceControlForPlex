@@ -108,7 +108,7 @@
     <string name="client_not_found">Sorry, I couldn\'t find the client you specified.</string>
     <string name="connected_to2">Connected to %s.</string>
     <string name="disconnected">Disconnected</string>
-    <string name="must_purchase_chromecast">Chromecast support is available as an in-app purchase. Would you like to proceed?</string>
+    <string name="must_purchase_chromecast">Chromecast support is available as an in-app purchase for %s. Would you like to proceed?</string>
     <string name="no_thanks">No thanks</string>
     <string name="must_purchase_chromecast_error">Sorry, but Chromecast support is only available via an in app purchase. To purchase, select your Chromecast as the client in the main settings.</string>
 </resources>

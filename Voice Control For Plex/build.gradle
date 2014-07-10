@@ -53,7 +53,16 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
             buildConfigField "boolean", "USE_BUGSENSE", "false"
             buildConfigField "boolean", "CHROMECAST_REQUIRES_PURCHASE", "true"
-            buildConfigField "String", "SKU_CHROMECAST", "\"android.test.canceled\""
+            buildConfigField "String", "SKU_CHROMECAST", "\"chromecast\""
+        }
+        chromecastTest {
+            signingConfig signingConfigs.release
+            debuggable true
+            runProguard false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
+            buildConfigField "boolean", "USE_BUGSENSE", "false"
+            buildConfigField "boolean", "CHROMECAST_REQUIRES_PURCHASE", "true"
+            buildConfigField "String", "SKU_CHROMECAST", "\"android.test.purchased\""
         }
         beta {
             debuggable true

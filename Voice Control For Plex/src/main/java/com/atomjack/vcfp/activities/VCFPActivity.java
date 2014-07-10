@@ -20,7 +20,6 @@ import android.view.View;
 
 import com.android.vending.billing.IabHelper;
 import com.android.vending.billing.IabResult;
-import com.android.vending.billing.Inventory;
 import com.android.vending.billing.Purchase;
 import com.atomjack.vcfp.BuildConfig;
 import com.atomjack.vcfp.CastPlayerManager;
@@ -256,7 +255,7 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
     postChromecastPurchaseClient = client;
     postChromecastPurchaseAction = onSuccess;
     new AlertDialog.Builder(VCFPActivity.this)
-            .setTitle(R.string.must_purchase_chromecast)
+            .setMessage(String.format(getString(R.string.must_purchase_chromecast), VoiceControlForPlexApplication.getChromecastPrice()))
             .setCancelable(false)
             .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
               @Override
