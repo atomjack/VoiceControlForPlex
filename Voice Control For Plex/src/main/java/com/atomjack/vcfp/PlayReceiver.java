@@ -23,7 +23,6 @@ public class PlayReceiver extends BroadcastReceiver
 			Intent sendIntent = new Intent(context, PlexSearchService.class);
 			sendIntent.setAction("com.atomjack.vcfp.intent.ACTION_SEARCH");
 			sendIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_QUERYTEXT, queryText);
-			sendIntent.putExtra("ORIGIN", "Tasker");
 			sendIntent.addFlags(Intent.FLAG_FROM_BACKGROUND);
 			sendIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
 			sendIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);

@@ -53,7 +53,7 @@ public class ShortcutProviderActivity extends Activity {
 				Logger.d("chose %s", device.name);
 				if(device instanceof PlexServer) {
 					server = (PlexServer)device;
-					localScan.showPlexClients(clients, true);
+					localScan.showPlexClients(true);
 				} else if(device instanceof PlexClient) {
 					client = (PlexClient)device;
 					resume = _resume;

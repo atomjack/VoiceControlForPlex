@@ -332,8 +332,7 @@ public class PlexSearchService extends Service {
 					mServiceIntent = new Intent(this, GDMService.class);
 				}
 				mServiceIntent.setAction(VoiceControlForPlexApplication.Intent.GDMRECEIVE);
-				mServiceIntent.putExtra("class", PlexSearchService.class);
-				mServiceIntent.putExtra("ORIGIN", "PlexSearch");
+				mServiceIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLASS, PlexSearchService.class);
 				mServiceIntent.putExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE, VoiceControlForPlexApplication.Intent.SCAN_TYPE_SERVER);
 				startService(mServiceIntent);
 				feedback.m("Scanning for Plex Servers");
@@ -1830,8 +1829,7 @@ public class PlexSearchService extends Service {
     Intent mServiceIntent = new Intent(this, GDMService.class);
     mServiceIntent.putExtra(GDMService.PORT, 32412); // Port for clients
     mServiceIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-    mServiceIntent.putExtra("ORIGIN", PlexSearchService.class.getSimpleName());
-    mServiceIntent.putExtra("class", PlexSearchService.class);
+    mServiceIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLASS, PlexSearchService.class);
     mServiceIntent.putExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE, VoiceControlForPlexApplication.Intent.SCAN_TYPE_CLIENT);
     startService(mServiceIntent);
   }

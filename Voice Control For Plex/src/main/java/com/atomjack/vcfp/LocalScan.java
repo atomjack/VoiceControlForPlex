@@ -51,9 +51,8 @@ public class LocalScan {
 
 		Intent mServiceIntent = new Intent(context, GDMService.class);
 		mServiceIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-		mServiceIntent.putExtra("ORIGIN", theClass.getSimpleName());
 		mServiceIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_SILENT, silent);
-		mServiceIntent.putExtra("class", theClass);
+		mServiceIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLASS, theClass);
 		mServiceIntent.putExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE, VoiceControlForPlexApplication.Intent.SCAN_TYPE_SERVER);
 		context.startService(mServiceIntent);
 	}
@@ -90,7 +89,11 @@ public class LocalScan {
 		});
 	}
 
-	public void searchForPlexClients() {
+  public void searchForPlexClients() {
+    searchForPlexClients(false);
+  }
+
+  public void searchForPlexClients(boolean connectToClient) {
 		Logger.d("searchForPlexClients()");
 		if(!VoiceControlForPlexApplication.isWifiConnected(context)) {
 			VoiceControlForPlexApplication.showNoWifiDialog(context);
@@ -107,10 +110,11 @@ public class LocalScan {
 		Intent mServiceIntent = new Intent(context, GDMService.class);
 		mServiceIntent.putExtra(GDMService.PORT, 32412); // Port for clients
 		mServiceIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-		mServiceIntent.putExtra("ORIGIN", theClass.getSimpleName());
-		mServiceIntent.putExtra("class", theClass);
+		mServiceIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLASS, theClass);
+    mServiceIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_CONNECT_TO_CLIENT, connectToClient);
 		mServiceIntent.putExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE, VoiceControlForPlexApplication.Intent.SCAN_TYPE_CLIENT);
 		context.startService(mServiceIntent);
+    VoiceControlForPlexApplication.hasDoneClientScan = true;
 	}
 
 	public void hideSearchDialog() {
@@ -118,15 +122,15 @@ public class LocalScan {
 			searchDialog.dismiss();
 	}
 
-	public void showPlexClients(Map<String, PlexClient> clients) {
-		showPlexClients(clients, false);
+	public void showPlexClients() {
+		showPlexClients(false);
 	}
 
-	public void showPlexClients(Map<String, PlexClient> clients, boolean showResume) {
-		showPlexClients(clients, showResume, null);
+	public void showPlexClients(boolean showResume) {
+		showPlexClients(showResume, null);
 	}
 
-	public void showPlexClients(Map<String, PlexClient> clients, boolean showResume, final ScanHandler onFinish) {
+	public void showPlexClients(boolean showResume, final ScanHandler onFinish) {
     if (searchDialog != null)
       searchDialog.dismiss();
     if (serverSelectDialog == null) {
@@ -150,13 +154,9 @@ public class LocalScan {
       resumeCheckbox.setVisibility(View.VISIBLE);
     }
 
-    // Add any chromecasts we've found
-    clients.putAll(VoiceControlForPlexApplication.castClients);
-
-
     final ListView serverListView = (ListView) serverSelectDialog.findViewById(R.id.serverListView);
     final PlexListAdapter adapter = new PlexListAdapter(context, PlexListAdapter.TYPE_CLIENT);
-    adapter.setClients(clients);
+    adapter.setClients(VoiceControlForPlexApplication.getAllClients());
     serverListView.setAdapter(adapter);
     serverListView.setOnItemClickListener(new ListView.OnItemClickListener() {
 

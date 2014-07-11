@@ -41,8 +41,8 @@ public class RemoteScan {
 
 
 	public static void refreshResources(String authToken, final RefreshResourcesResponseHandler responseHandler, boolean silent) {
+    VoiceControlForPlexApplication.hasDoneClientScan = true;
 		VoiceControlForPlexApplication.servers = new ConcurrentHashMap<String, PlexServer>();
-//		VoiceControlForPlexApplication.clients = new HashMap<String, PlexClient>();
 		String url = String.format("https://plex.tv/pms/resources?%s=%s", PlexHeaders.XPlexToken, authToken);
 		Logger.d("Fetching %s", url);
 		client.get(url, new RequestParams(), new AsyncHttpResponseHandler() {

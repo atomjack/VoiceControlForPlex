@@ -131,11 +131,6 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
 		mNotifyMgr = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 
     mHandler = new Handler();
-
-
-		Type serverType = new TypeToken<ConcurrentHashMap<String, PlexServer>>(){}.getType();
-    if(gsonRead.fromJson(Preferences.get(Preferences.SAVED_SERVERS, ""), serverType) != null)
-  		VoiceControlForPlexApplication.servers = gsonRead.fromJson(Preferences.get(Preferences.SAVED_SERVERS, ""), serverType);
 	}
 
   protected void onSubscriptionMessage(Timeline timeline) {
@@ -190,7 +185,10 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
         Logger.d("subscribing: %s", subscribing);
 				if(!isSubscribed() && !subscribing) {
 					subscribing = true;
-					localScan.showPlexClients(VoiceControlForPlexApplication.clients, false, onClientChosen);
+          if(VoiceControlForPlexApplication.clients.size() == 0 || VoiceControlForPlexApplication.hasDoneClientScan) {
+            localScan.searchForPlexClients(true);
+          } else
+  					localScan.showPlexClients(false, onClientChosen);
 				} else if(!subscribing) {
 					AlertDialog.Builder subscribeDialog = new AlertDialog.Builder(this)
 						.setTitle(R.string.connected_to)
@@ -567,5 +565,20 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
     } else {
       Logger.d("onActivityResult handled by IABUtil.");
     }
+  }
+
+  protected void showErrorDialog(String title, String message) {
+    AlertDialog.Builder errorDialog = new AlertDialog.Builder(this);
+    if(title != null)
+      errorDialog.setTitle(title);
+    if(message != null)
+      errorDialog.setMessage(message);
+    errorDialog.setNegativeButton(R.string.ok, new DialogInterface.OnClickListener() {
+              @Override
+              public void onClick(DialogInterface dialogInterface, int i) {
+                dialogInterface.dismiss();
+              }
+            });
+    errorDialog.show();
   }
 }

@@ -97,6 +97,7 @@ public class VoiceControlForPlexApplication extends Application
 			public final static String CAST_MEDIA = "com.atomjack.vcfp.intent.CAST_MEDIA";
 			public final static String EXTRA_MEDIA = "com.atomjack.vcfp.intent.EXTRA_MEDIA";
       public final static String EXTRA_CLASS = "com.atomjack.vcfp.intent.EXTRA_CLASS";
+      public final static String EXTRA_CONNECT_TO_CLIENT = "com.atomjack.vcfp.intent.EXTRA_CONNECT_TO_CLIENT";
       public final static String SUBSCRIBED = "com.atomjack.vcfp.intent.SUBSCRIBED";
 
       public final static String EXTRA_QUERYTEXT = "com.atomjack.vcfp.intent.EXTRA_QUERYTEXT";
@@ -125,6 +126,8 @@ public class VoiceControlForPlexApplication extends Application
   public static final String SKU_TEST_PURCHASED = "android.test.purchased";
   private static String mChromecastPrice = "$0.99"; // Default price, just in case
 
+  public static boolean hasDoneClientScan = false;
+
   @Override
   public void onCreate() {
     super.onCreate();
@@ -137,10 +140,12 @@ public class VoiceControlForPlexApplication extends Application
     if(!mHasChromecast)
       setupInAppPurchasing();
 
-    // TODO: Load saved servers and clients
+    // Load saved clients and servers
     Type clientType = new TypeToken<HashMap<String, PlexClient>>(){}.getType();
     VoiceControlForPlexApplication.castClients = gsonRead.fromJson(Preferences.get(Preferences.SAVED_CAST_CLIENTS, "{}"), clientType);
-
+    VoiceControlForPlexApplication.clients = gsonRead.fromJson(Preferences.get(Preferences.SAVED_CLIENTS, "{}"), clientType);
+    Type serverType = new TypeToken<ConcurrentHashMap<String, PlexServer>>(){}.getType();
+    VoiceControlForPlexApplication.servers = gsonRead.fromJson(Preferences.get(Preferences.SAVED_SERVERS, "{}"), serverType);
 
     try {
       PackageInfo pInfo = getPackageManager().getPackageInfo(getPackageName(), 0);
@@ -533,5 +538,12 @@ public class VoiceControlForPlexApplication extends Application
 
   public static String getChromecastPrice() {
     return mChromecastPrice;
+  }
+
+  public static Map<String, PlexClient> getAllClients() {
+    Map<String, PlexClient> allClients = new HashMap<String, PlexClient>();
+    allClients.putAll(clients);
+    allClients.putAll(castClients);
+    return allClients;
   }
 }

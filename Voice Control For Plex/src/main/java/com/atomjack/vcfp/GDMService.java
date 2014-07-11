@@ -26,7 +26,6 @@ public class GDMService extends IntentService {
     protected void onHandleIntent(Intent intent) {
 			try
 			{
-				String origin = intent.getStringExtra("ORIGIN") == null ? "" : intent.getStringExtra("ORIGIN");
 				int port = intent.getIntExtra(PORT, 32414); // Default port, for Plex Media Servers (Clients use 32412)
 				DatagramSocket socket = new DatagramSocket(32420);
 				socket.setBroadcast(true);
@@ -53,8 +52,7 @@ public class GDMService extends IntentService {
 							Intent packetBroadcast = new Intent(GDMService.MSG_RECEIVED);
 							packetBroadcast.putExtra("data", packetData);
 							packetBroadcast.putExtra("ipaddress", packet.getAddress().toString());
-							packetBroadcast.putExtra("ORIGIN", origin);
-							packetBroadcast.putExtra("class", intent.getSerializableExtra("class"));
+							packetBroadcast.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLASS, intent.getSerializableExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLASS));
 							LocalBroadcastManager.getInstance(this).sendBroadcast(packetBroadcast);
 						}
 					}
@@ -64,10 +62,10 @@ public class GDMService extends IntentService {
 						socket.close();
 						listening = false;
 						Intent socketBroadcast = new Intent(GDMService.SOCKET_CLOSED);
-						socketBroadcast.putExtra("ORIGIN", origin);
 						socketBroadcast.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_SILENT, intent.getBooleanExtra(VoiceControlForPlexApplication.Intent.EXTRA_SILENT, false));
-						socketBroadcast.putExtra("class", intent.getSerializableExtra("class"));
-						socketBroadcast.putExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE, intent.getStringExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE));
+						socketBroadcast.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLASS, intent.getSerializableExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLASS));
+            socketBroadcast.putExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE, intent.getStringExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE));
+            socketBroadcast.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_CONNECT_TO_CLIENT, intent.getBooleanExtra(VoiceControlForPlexApplication.Intent.EXTRA_CONNECT_TO_CLIENT, false));
 						LocalBroadcastManager.getInstance(this).sendBroadcast(socketBroadcast);
 					}
 				}

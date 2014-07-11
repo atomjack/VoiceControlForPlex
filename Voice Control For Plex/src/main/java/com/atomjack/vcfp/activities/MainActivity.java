@@ -134,9 +134,6 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 
 		authToken = Preferences.getString(Preferences.AUTHENTICATION_TOKEN);
 
-		Type clientType = new TypeToken<HashMap<String, PlexClient>>(){}.getType();
-		VoiceControlForPlexApplication.clients = gsonRead.fromJson(Preferences.get(Preferences.SAVED_CLIENTS, ""), clientType);
-
 		setContentView(R.layout.main);
 
 		server = gsonRead.fromJson(Preferences.get(Preferences.SERVER, ""), PlexServer.class);
@@ -760,52 +757,53 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
     Logger.d("MainActivity onNewIntent: %s", intent.getAction());
 
 		if(intent.getAction().equals(VoiceControlForPlexApplication.Intent.GDMRECEIVE)) {
-			Logger.d("Origin: " + intent.getStringExtra("ORIGIN"));
-			String origin = intent.getStringExtra("ORIGIN") == null ? "" : intent.getStringExtra("ORIGIN");
-			if(origin.equals("MainActivity")) {
-				if(intent.getStringExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE).equals(VoiceControlForPlexApplication.Intent.SCAN_TYPE_SERVER)) {
-					Logger.d("Got " + VoiceControlForPlexApplication.servers.size() + " servers");
-          if(searchDialog != null)
-            searchDialog.cancel();
-					Preferences.put(Preferences.SAVED_SERVERS, gsonWrite.toJson(VoiceControlForPlexApplication.servers));
-					if (VoiceControlForPlexApplication.servers.size() > 0) {
-						localScan.showPlexServers();
-					} else {
-						localScan.hideSearchDialog();
-						AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-						builder.setTitle(R.string.no_servers_found);
-						builder.setCancelable(false).setNeutralButton(R.string.ok, new DialogInterface.OnClickListener() {
-								public void onClick(DialogInterface dialog, int id) {
-									dialog.cancel();
-								}
-							});
-						AlertDialog d = builder.create();
-						d.show();
-					}
-				} else if(intent.getStringExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE).equals(VoiceControlForPlexApplication.Intent.SCAN_TYPE_CLIENT)) {
-					ArrayList<PlexClient> clients = intent.getParcelableArrayListExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLIENTS);
-					if(clients != null) {
-						VoiceControlForPlexApplication.clients = new HashMap<String, PlexClient>();
-						for (PlexClient c : clients) {
-							VoiceControlForPlexApplication.clients.put(c.name, c);
-						}
-						Preferences.put(Preferences.SAVED_CLIENTS, gsonWrite.toJson(VoiceControlForPlexApplication.clients));
-						localScan.showPlexClients(VoiceControlForPlexApplication.clients);
-					} else {
-						localScan.hideSearchDialog();
-						AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-						builder.setTitle(R.string.no_clients_found);
-						builder.setCancelable(false)
-							.setNeutralButton(R.string.ok, new DialogInterface.OnClickListener() {
-								public void onClick(DialogInterface dialog, int id) {
-									dialog.cancel();
-								}
-							});
-						AlertDialog d = builder.create();
-						d.show();
-					}
-				}
-			}
+      if(intent.getStringExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE).equals(VoiceControlForPlexApplication.Intent.SCAN_TYPE_SERVER)) {
+        Logger.d("Got " + VoiceControlForPlexApplication.servers.size() + " servers");
+        if(searchDialog != null)
+          searchDialog.cancel();
+        Preferences.put(Preferences.SAVED_SERVERS, gsonWrite.toJson(VoiceControlForPlexApplication.servers));
+        if (VoiceControlForPlexApplication.servers.size() > 0) {
+          localScan.showPlexServers();
+        } else {
+          localScan.hideSearchDialog();
+          AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+          builder.setTitle(R.string.no_servers_found);
+          builder.setCancelable(false).setNeutralButton(R.string.ok, new DialogInterface.OnClickListener() {
+              public void onClick(DialogInterface dialog, int id) {
+                dialog.cancel();
+              }
+            });
+          AlertDialog d = builder.create();
+          d.show();
+        }
+      } else if(intent.getStringExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE).equals(VoiceControlForPlexApplication.Intent.SCAN_TYPE_CLIENT)) {
+        ArrayList<PlexClient> clients = intent.getParcelableArrayListExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLIENTS);
+        if(clients != null) {
+          VoiceControlForPlexApplication.clients = new HashMap<String, PlexClient>();
+          for (PlexClient c : clients) {
+            VoiceControlForPlexApplication.clients.put(c.name, c);
+          }
+          Preferences.put(Preferences.SAVED_CLIENTS, gsonWrite.toJson(VoiceControlForPlexApplication.clients));
+          boolean showConnectToClients = intent.getBooleanExtra(VoiceControlForPlexApplication.Intent.EXTRA_CONNECT_TO_CLIENT, false);
+          Logger.d("showConnectToClients: %s", showConnectToClients);
+          if(showConnectToClients) {
+            localScan.showPlexClients(false, onClientChosen);
+          } else
+            localScan.showPlexClients();
+        } else {
+          localScan.hideSearchDialog();
+          AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+          builder.setTitle(R.string.no_clients_found);
+          builder.setCancelable(false)
+            .setNeutralButton(R.string.ok, new DialogInterface.OnClickListener() {
+              public void onClick(DialogInterface dialog, int id) {
+                dialog.cancel();
+              }
+            });
+          AlertDialog d = builder.create();
+          d.show();
+        }
+      }
 		}
 		super.onNewIntent(intent);
 	}

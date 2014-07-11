@@ -59,18 +59,17 @@ public class GDMReceiver extends BroadcastReceiver {
 		} else if (intent.getAction().equals(GDMService.SOCKET_CLOSED)) {
 			Logger.i("Finished Searching");
 			// Send the reply back to whichever class called for it.
-			Class theClass = (Class)intent.getSerializableExtra("class");
+			Class theClass = (Class)intent.getSerializableExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLASS);
 			Intent i = new Intent(context, theClass);
-			Logger.d("(gdm) ORIGIN: %s", intent.getStringExtra("ORIGIN"));
 			i.setAction(VoiceControlForPlexApplication.Intent.GDMRECEIVE);
-			i.putExtra("ORIGIN", intent.getStringExtra("ORIGIN"));
 			i.putExtra(VoiceControlForPlexApplication.Intent.SHOWRESOURCE, intent.getBooleanExtra(VoiceControlForPlexApplication.Intent.SHOWRESOURCE, false));
 
 			String scanType = intent.getStringExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE);
 			if(clients.size() > 0 && scanType.equals(VoiceControlForPlexApplication.Intent.SCAN_TYPE_CLIENT))
 				i.putParcelableArrayListExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLIENTS, clients);
 
-			i.putExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE, intent.getStringExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE));
+      i.putExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE, intent.getStringExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE));
+      i.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_CONNECT_TO_CLIENT, intent.getBooleanExtra(VoiceControlForPlexApplication.Intent.EXTRA_CONNECT_TO_CLIENT, false));
 
 			i.addFlags(Intent.FLAG_FROM_BACKGROUND);
 			i.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
