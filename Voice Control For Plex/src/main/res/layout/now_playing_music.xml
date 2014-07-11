@@ -3,65 +3,75 @@
     android:id="@+id/background"
     android:layout_width="match_parent"
     android:layout_height="match_parent" >
-    
-    <com.atomjack.vcfp.SquareImageButton
-        android:id="@+id/nowPlayingImage"
+
+    <com.atomjack.vcfp.SquareImageView
         android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
-        android:adjustViewBounds="true"
-        android:layout_centerInParent="true"
-        android:layout_gravity="center_vertical"
-        android:layout_centerVertical="true"
-        android:tileMode="repeat"
-        android:layout_alignParentTop="true" />
-
-    <TextView
-        android:id="@+id/nowPlayingAlbum"
-        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        style="@style/showShadow"
-        android:textSize="20sp"
-        android:layout_below="@+id/nowPlayingTitle"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"/>
+        android:id="@+id/nowPlayingMusicCover"
+        android:background="@drawable/ic_launcher"/>
 
-    <TextView
-        android:id="@+id/nowPlayingTitle"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        style="@style/showShadow"
-        android:textSize="18sp"
-        android:layout_below="@+id/nowPlayingArtist"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"/>
-
-    <TextView
-        android:id="@+id/nowPlayingArtist"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        style="@style/showShadow"
-        android:textSize="24sp"
-        android:layout_below="@+id/nowPlayingOnClient"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"/>
-
-    <TextView
-        android:id="@+id/nowPlayingOnClient"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/now_playing_on"
-        style="@style/showShadow"
-        android:textColor="@color/white"
-        android:layout_marginTop="5dp"
         android:layout_alignParentTop="true"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"/>
+        android:layout_above="@+id/nowPlayingControls"
+        android:id="@+id/nowPlayingMusic">
+
+        <TextView
+            android:id="@+id/nowPlayingOnClient"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/now_playing_on"
+            style="@style/showShadow"
+            android:textColor="@color/white"
+            android:layout_marginTop="5dp"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true"/>
+
+        <TextView
+            android:id="@+id/nowPlayingArtist"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            style="@style/showShadow"
+            android:textSize="24sp"
+            android:layout_below="@+id/nowPlayingOnClient"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true"
+            android:text="Bonobo"/>
+
+        <TextView
+            android:id="@+id/nowPlayingTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            style="@style/showShadow"
+            android:textSize="18sp"
+            android:layout_below="@+id/nowPlayingArtist"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true"
+            android:text="Animals"/>
+
+        <TextView
+            android:id="@+id/nowPlayingAlbum"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            style="@style/showShadow"
+            android:textSize="20sp"
+            android:layout_below="@+id/nowPlayingTitle"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true"
+            android:text="Black Sands"/>
+
+    </LinearLayout>
+
     <LinearLayout
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="110dp"
         android:orientation="vertical"
         android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true" >
+        android:layout_centerHorizontal="true"
+        android:id="@+id/nowPlayingControls">
         <SeekBar
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
@@ -69,4 +79,5 @@
             android:layout_alignParentBottom="true"/>
         <include layout="@layout/playback" />
     </LinearLayout>
+
 </RelativeLayout>

@@ -273,8 +273,16 @@ public class PlexSubscription {
       }
 
       @Override
-      public void onFailure(Throwable error) {
+      public void onFailure(final Throwable error) {
         error.printStackTrace();
+        mHandler.post(new Runnable() {
+          @Override
+          public void run() {
+            if(listener != null) {
+              listener.onSubscribeError(error.getMessage());
+            }
+          }
+        });
       }
     });
   }
@@ -384,5 +392,6 @@ public class PlexSubscription {
     void onSubscribed(PlexClient client);
     void onUnsubscribed();
     void onMessageReceived(MediaContainer mc);
+    void onSubscribeError(String errorMessage);
   };
 }

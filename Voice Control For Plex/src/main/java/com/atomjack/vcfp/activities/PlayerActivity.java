@@ -7,8 +7,6 @@ import android.os.Bundle;
 import android.speech.RecognizerIntent;
 import android.view.View;
 import android.widget.ImageButton;
-import android.widget.ImageView;
-import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
@@ -17,12 +15,10 @@ import com.atomjack.vcfp.services.PlexSearchService;
 import com.atomjack.vcfp.Preferences;
 import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
-import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexServer;
 import com.atomjack.vcfp.model.PlexTrack;
 import com.atomjack.vcfp.model.PlexVideo;
-import com.atomjack.vcfp.net.PlexHttpClient;
 import com.google.gson.Gson;
 
 import java.math.BigInteger;

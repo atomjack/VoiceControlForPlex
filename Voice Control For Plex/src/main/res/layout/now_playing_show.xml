@@ -6,12 +6,16 @@
                 android:orientation="vertical">
     <ScrollView
         android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
+        android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
-        android:layout_alignParentTop="true" >
-        <RelativeLayout
+        android:layout_alignParentTop="true"
+        android:layout_above="@+id/nowPlayingMusic">
+        <LinearLayout
+            android:orientation="vertical"
             android:layout_width="fill_parent"
-            android:layout_height="wrap_content" >
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:padding="3dp">
             <TextView
             android:id="@+id/nowPlayingOnClient"
             android:layout_width="wrap_content"
@@ -80,14 +84,15 @@
                 android:text="" />
 
 
-        </RelativeLayout>
+        </LinearLayout>
     </ScrollView>
     <LinearLayout
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="110dp"
         android:orientation="vertical"
         android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true" >
+        android:layout_centerHorizontal="true"
+        android:id="@+id/nowPlayingMusic">
         <SeekBar
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"

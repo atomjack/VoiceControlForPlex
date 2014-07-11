@@ -8,20 +8,22 @@
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
-        android:layout_alignParentTop="true" >
+        android:layout_alignParentTop="true"
+        android:layout_above="@+id/nowPlayingMusic">
 
         <LinearLayout
-        android:orientation="vertical"
-        android:padding="10dp"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content" >
+            android:orientation="vertical"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:padding="3dp">
+
             <TextView
             android:id="@+id/nowPlayingOnClient"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentLeft="true"
             android:layout_alignParentTop="true"
-            android:layout_marginLeft="15dp"
             android:layout_marginTop="17dp"
             style="@style/showShadow"
             android:textColor="@color/white"
@@ -38,7 +40,7 @@
                 android:textSize="24sp"
                 android:textStyle="bold"
                 style="@style/showShadow"
-                android:text="" />
+                android:text="Aliens" />
 
             <TextView
                 android:id="@+id/nowPlayingGenre"
@@ -79,23 +81,18 @@
                 android:layout_below="@+id/nowPlayingDuration"
                 style="@style/showShadow"
                 android:layout_marginTop="68dp"
-                android:text="" />
-            <com.google.sample.castcompanionlibrary.widgets.MiniController
-                android:id="@+id/miniController1"
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content"
-                android:layout_alignParentBottom="true"
-                android:background="@drawable/shadow7"
-                android:visibility="gone" >
-            </com.google.sample.castcompanionlibrary.widgets.MiniController>
+                android:text="When Ripley's lifepod is found by a salvage crew over 50 years later, she finds that terra-formers are on the very planet they found the alien species. When the company sends a family of colonists out to investigate her story... all contact is lost with the planet and colonists. They enlist Ripley and the colonial marines to return and search for answers." />
+
         </LinearLayout>
     </ScrollView>
+
     <LinearLayout
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="110dp"
         android:orientation="vertical"
         android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true" >
+        android:layout_centerHorizontal="true"
+        android:id="@+id/nowPlayingControls">
         <SeekBar
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
@@ -103,4 +100,5 @@
             android:layout_alignParentBottom="true"/>
         <include layout="@layout/playback" />
     </LinearLayout>
+
 </RelativeLayout>

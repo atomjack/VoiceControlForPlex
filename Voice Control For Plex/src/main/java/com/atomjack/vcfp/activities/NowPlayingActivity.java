@@ -6,22 +6,16 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.view.Menu;
 import android.view.View;
-import android.widget.ImageView;
-import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 
 import com.atomjack.vcfp.BuildConfig;
-import com.atomjack.vcfp.Feedback;
 import com.atomjack.vcfp.Logger;
 import com.atomjack.vcfp.Preferences;
 import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexResponse;
-import com.atomjack.vcfp.model.PlexTrack;
-import com.atomjack.vcfp.model.PlexVideo;
 import com.atomjack.vcfp.model.Timeline;
-import com.atomjack.vcfp.net.PlexHttpClient;
 import com.atomjack.vcfp.net.PlexHttpResponseHandler;
 import com.bugsense.trace.BugSenseHandler;
 

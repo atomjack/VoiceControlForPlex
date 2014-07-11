@@ -1,7 +1,5 @@
 package com.atomjack.vcfp.activities;
 
-import android.accounts.Account;
-import android.accounts.AccountManager;
 import android.app.AlertDialog;
 import android.app.NotificationManager;
 import android.content.DialogInterface;
@@ -53,13 +51,11 @@ import com.google.gson.reflect.TypeToken;
 import com.loopj.android.http.BinaryHttpResponseHandler;
 
 import org.apache.http.Header;
-import org.json.JSONException;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Type;
-import java.security.MessageDigest;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -245,8 +241,9 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
               }
             });
           }
-        } else
-          plexSubscription.startSubscription(mClient);
+        } else {
+          plexSubscription.startSubscription(clientSelected);
+        }
       }
 		}
 	};
@@ -339,6 +336,12 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
       e.printStackTrace();
     }
     feedback.m(String.format(getString(R.string.connected_to2), mClient.name));
+  }
+
+  @Override
+  public void onSubscribeError(String errorMessage) {
+    feedback.e(String.format(getString(R.string.got_error), errorMessage));
+    setCastIconInactive();
   }
 
   protected void setCastIconActive() {
@@ -485,7 +488,7 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
     Logger.d("Setting thumb: %s", is);
     View layout;
     View backgroundLayout = findViewById(R.id.background);
-    View musicLayout = findViewById(R.id.nowPlayingImage);;
+    View musicLayout = findViewById(R.id.nowPlayingMusicCover);;
 
     if(nowPlayingMedia instanceof PlexTrack && getOrientation() == Configuration.ORIENTATION_PORTRAIT) {
       backgroundLayout.setBackground(null);
@@ -559,7 +562,7 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
             + data);
 
     // Pass on the activity result to the helper for handling
-    if (!VoiceControlForPlexApplication.getInstance().getIabHelper().handleActivityResult(requestCode, resultCode, data)) {
+    if (VoiceControlForPlexApplication.getInstance().getIabHelper() == null || !VoiceControlForPlexApplication.getInstance().getIabHelper().handleActivityResult(requestCode, resultCode, data)) {
       super.onActivityResult(requestCode, resultCode, data);
     } else {
       Logger.d("onActivityResult handled by IABUtil.");
