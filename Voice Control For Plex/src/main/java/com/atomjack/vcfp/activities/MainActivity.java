@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -21,9 +22,11 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
+import android.net.ConnectivityManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -44,6 +47,7 @@ import android.widget.EditText;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 
+import com.atomjack.vcfp.BuildConfig;
 import com.atomjack.vcfp.FutureRunnable;
 import com.atomjack.vcfp.GDMService;
 import com.atomjack.vcfp.LocalScan;
@@ -84,10 +88,6 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 	public final static int FEEDBACK_VOICE = 0;
 	public final static int FEEDBACK_TOAST = 1;
 
-//	public final static String CHROMECAST_APP_ID = "713B411C"; // styled media receiver
-	public final static String CHROMECAST_APP_ID = "11B8EAA3"; // custom
-
-
 	private final static int RESULT_VOICE_FEEDBACK_SELECTED = 0;
 	private final static int RESULT_TASKER_PROJECT_IMPORTED = 1;
 	private final static int RESULT_SHORTCUT_CREATED = 2;
@@ -126,7 +126,7 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 
 		mMediaRouter = MediaRouter.getInstance(getApplicationContext());
 		mMediaRouteSelector = new MediaRouteSelector.Builder()
-			.addControlCategory(CastMediaControlIntent.categoryForCast(MainActivity.CHROMECAST_APP_ID))
+			.addControlCategory(CastMediaControlIntent.categoryForCast(BuildConfig.CHROMECAST_APP_ID))
 			.build();
 		mMediaRouterCallback = new MediaRouterCallback();
 		mMediaRouter.addCallback(mMediaRouteSelector, mMediaRouterCallback, MediaRouter.CALLBACK_FLAG_PERFORM_ACTIVE_SCAN);
@@ -279,9 +279,12 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 	}
 
 	private void initMainWithServer() {
+    String clientName = client != null ? client.name : getString(R.string.not_set);
+    if(currentNetworkState == NetworkState.MOBILE)
+      clientName = getString(R.string.this_device);
 		MainSetting setting_data[] = new MainSetting[] {
 			new MainSetting(MainListAdapter.SettingHolder.TAG_SERVER, getResources().getString(R.string.stream_video_from_server), server.owned ? server.name : server.sourceTitle),
-			new MainSetting(MainListAdapter.SettingHolder.TAG_CLIENT, getResources().getString(R.string.to_the_client), client != null ? client.name : getResources().getString(R.string.not_set)),
+			new MainSetting(MainListAdapter.SettingHolder.TAG_CLIENT, getResources().getString(R.string.to_the_client), clientName),
 			new MainSetting(MainListAdapter.SettingHolder.TAG_FEEDBACK, getResources().getString(R.string.feedback), Preferences.get(Preferences.FEEDBACK, FEEDBACK_TOAST) == FEEDBACK_VOICE ? getResources().getString(R.string.voice) : getResources().getString(R.string.toast)),
 			new MainSetting(MainListAdapter.SettingHolder.TAG_ERRORS, getResources().getString(R.string.errors), Preferences.get(Preferences.ERRORS, FEEDBACK_TOAST) == FEEDBACK_VOICE ? getResources().getString(R.string.voice) : getResources().getString(R.string.toast))
 		};
@@ -300,8 +303,8 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 				MainListAdapter.SettingHolder holder = (MainListAdapter.SettingHolder) view.getTag();
 				Logger.d("Clicked %s", holder.tag);
 				if (holder.tag.equals(holder.TAG_SERVER)) {
-					if(!VoiceControlForPlexApplication.isWifiConnected(MainActivity.this)) {
-						feedback.e(getResources().getString(R.string.no_wifi_connection_message));
+					if(currentNetworkState.equals(NetworkState.DISCONNECTED)) {
+						feedback.e(R.string.no_wifi_connection_message);
 						return;
 					}
 					if(authToken != null) {
@@ -314,7 +317,12 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 						RemoteScan.refreshResources(authToken, new RemoteScan.RefreshResourcesResponseHandler() {
 							@Override
 							public void onSuccess() {
-								localScan.searchForPlexServers(true);
+                // Finished getting servers from plex.tv. If no wifi connection is detected, just show the servers we found.
+								if(currentNetworkState.equals(NetworkState.MOBILE)) {
+                  searchDialog.dismiss();
+                  localScan.showPlexServers();
+                } else
+                  localScan.searchForPlexServers(true);
 							}
 
 							@Override
@@ -330,15 +338,23 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 						});
 					} else {
 						Logger.d("not logged in");
-						localScan.searchForPlexServers();
+            if(currentNetworkState.equals(NetworkState.MOBILE)) {
+              feedback.e(R.string.mobile_connection_login_required);
+            } else
+  						localScan.searchForPlexServers();
 					}
 				} else if (holder.tag.equals(holder.TAG_CLIENT)) {
-					if(!VoiceControlForPlexApplication.isWifiConnected(MainActivity.this)) {
-						feedback.e(getResources().getString(R.string.no_wifi_connection_message));
-						return;
-					}
-					VoiceControlForPlexApplication.clients = new HashMap<String, PlexClient>();
-					localScan.searchForPlexClients();
+          if(!currentNetworkState.equals(NetworkState.WIFI)) {
+            if(currentNetworkState.equals(NetworkState.MOBILE)) {
+              feedback.m(R.string.mobile_network_connection_active);
+            } else {
+              feedback.e(R.string.network_connection_required);
+            }
+            return;
+          } else {
+            VoiceControlForPlexApplication.clients = new HashMap<String, PlexClient>();
+            localScan.searchForPlexClients();
+          }
 				} else if (holder.tag.equals(holder.TAG_FEEDBACK)) {
 					selectFeedback();
 				} else if (holder.tag.equals(holder.TAG_ERRORS)) {
@@ -1009,6 +1025,18 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 			Logger.d("onRouteUnselected: %s", route);
 		}
 	}
+
+  @Override
+  public void onConnected(int connectionType) {
+    super.onConnected(connectionType);
+    initMainWithServer();
+  }
+
+  @Override
+  public void onDisconnected() {
+    super.onDisconnected();
+
+  }
 }
 
 

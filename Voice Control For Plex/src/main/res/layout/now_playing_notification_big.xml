@@ -20,7 +20,7 @@
 
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="64dp"
                 android:layout_gravity="fill_vertical"
                 android:layout_marginStart="@dimen/notification_large_icon_width"
                 android:minHeight="@dimen/notification_large_icon_height"
@@ -33,20 +33,22 @@
                 <TextView
                     android:id="@+id/title"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:layout_height="25dp"
                     android:layout_toRightOf="@+id/thumb"
-                    android:text="Aliens"
                     android:layout_marginTop="5sp"
-                    android:textSize="18sp"/>
+                    android:textSize="18sp"
+                    android:singleLine="true"
+                    android:text="Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. "/>
 
                 <TextView
                     android:id="@+id/playingOn"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:layout_height="27dp"
                     android:layout_below="@+id/title"
                     android:layout_toRightOf="@+id/thumb"
                     android:text="Playing on Plex"
-                    android:layout_marginTop="5sp"/>
+                    android:layout_marginTop="5sp"
+                    android:singleLine="true"/>
 
 
             </LinearLayout>

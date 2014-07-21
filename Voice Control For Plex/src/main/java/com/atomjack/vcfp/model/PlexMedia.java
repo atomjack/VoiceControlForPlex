@@ -153,7 +153,7 @@ public abstract class PlexMedia implements Parcelable {
 
   @Root(strict=false)
   static class Part {
-    @Attribute
+    @Attribute(required=false)
     public String id;
     @ElementList(required=false, inline=true, entry="Stream")
     public List<Stream> streams = new ArrayList<Stream>();

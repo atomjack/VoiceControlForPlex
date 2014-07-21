@@ -3,10 +3,14 @@ package com.atomjack.vcfp;
 import java.io.InputStream;
 import java.lang.reflect.Type;
 import java.math.BigInteger;
+import java.net.InetAddress;
+import java.net.InterfaceAddress;
+import java.net.NetworkInterface;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -113,6 +117,8 @@ public class VoiceControlForPlexApplication extends Application
   public CastPlayerManager castPlayerManager;
   public SimpleDiskCache mSimpleDiskCache;
 
+  private NetworkChangeListener networkChangeListener;
+
   // In-app purchasing
   private IabHelper mIabHelper;
   // TODO: Obfuscate this somehow:
@@ -134,7 +140,7 @@ public class VoiceControlForPlexApplication extends Application
     instance = this;
     Preferences.setContext(this);
     plexSubscription = new PlexSubscription();
-    castPlayerManager = new CastPlayerManager(this);
+    castPlayerManager = new CastPlayerManager(getApplicationContext());
 
     // If this build includes chromecast support, no need to setup purchasing
     if(!mHasChromecast)
@@ -545,5 +551,25 @@ public class VoiceControlForPlexApplication extends Application
     allClients.putAll(clients);
     allClients.putAll(castClients);
     return allClients;
+  }
+
+  public interface NetworkChangeListener {
+    void onConnected(int connectionType);
+    void onDisconnected();
+  }
+
+  public void onNetworkConnected(int connectionType) {
+    if(networkChangeListener != null) {
+      networkChangeListener.onConnected(connectionType);
+    }
+  }
+
+  public void onNetworkDisconnected() {
+    if(networkChangeListener != null)
+    networkChangeListener.onDisconnected();
+  }
+
+  public void setNetworkChangeListener(NetworkChangeListener listener) {
+    networkChangeListener = listener;
   }
 }

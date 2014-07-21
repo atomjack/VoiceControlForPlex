@@ -45,11 +45,11 @@ public class CastPlayerManager {
 
 
     public static final String ACTION = "action";
-    public static final String ACTION_LOAD = "action_load";
-    public static final String ACTION_PLAY = "action_play";
-    public static final String ACTION_PAUSE = "action_pause";
-    public static final String ACTION_STOP = "action_stop";
-    public static final String ACTION_UPDATE_SRC = "action_update_src";
+    public static final String ACTION_LOAD = "load";
+    public static final String ACTION_PLAY = "play";
+    public static final String ACTION_PAUSE = "pause";
+    public static final String ACTION_STOP = "stop";
+    public static final String ACTION_UPDATE_SRC = "updateSrc";
 
   };
 
@@ -72,6 +72,10 @@ public class CastPlayerManager {
     mContext = context;
     Preferences.setContext(mContext);
     setCastConsumer();
+  }
+
+  public void setContext(Context context) {
+    mContext = context;
   }
 
   public void subscribe(final PlexClient _client) {
@@ -103,13 +107,11 @@ public class CastPlayerManager {
     try {
       Logger.d("is connected: %s", castManager.isConnected());
       castManager.stopApplication();
-      subscribed = false;
-      listener.onCastDisconnected();
-//      castManager.stop();
-//      stopDurationTimer();
     } catch (Exception ex) {
       ex.printStackTrace();
     }
+    subscribed = false;
+    listener.onCastDisconnected();
   }
 
   public void setListener(VCFPActivity _listener) {
@@ -177,7 +179,7 @@ public class CastPlayerManager {
 
   private static VideoCastManager getCastManager(Context context) {
     if (null == castManager) {
-      castManager = VideoCastManager.initialize(context, MainActivity.CHROMECAST_APP_ID,
+      castManager = VideoCastManager.initialize(context, BuildConfig.CHROMECAST_APP_ID,
               null, "urn:x-cast:com.atomjack.vcfp");
       castManager.enableFeatures(
               VideoCastManager.FEATURE_NOTIFICATION |
@@ -186,8 +188,6 @@ public class CastPlayerManager {
 
     }
     castManager.setContext(context);
-//		String destroyOnExitStr = Utils.getStringFromPreference(context,
-//						CastPreference.TERMINATION_POLICY_KEY);
     castManager.setStopOnDisconnect(false);
     return castManager;
   }
@@ -343,6 +343,12 @@ public class CastPlayerManager {
       }
 
       @Override
+      public void onVolumeChanged(double value, boolean isMute) {
+        super.onVolumeChanged(value, isMute);
+        Logger.d("Volume is now %s", Double.toString(value));
+      }
+
+      @Override
       public void onCastDeviceDetected(final MediaRouter.RouteInfo info) {
         Logger.d("onCastDeviceDetected: %s", info);
       }
@@ -406,14 +412,16 @@ public class CastPlayerManager {
       if(nowPlayingMedia instanceof PlexVideo) {
         PlexVideo video = (PlexVideo)nowPlayingMedia;
         data.put(CastPlayerManager.PARAMS.PLOT, video.summary);
-        title = String.format("%s (%s)", video.title, video.year);
+        if(video.isMovie())
+          title = String.format("%s (%s)", video.title, video.year);
+        else
+          title = String.format("%s - %s (%s)", video.grandparentTitle, video.title, video.year);
       }
 
       data.put(CastPlayerManager.PARAMS.TITLE, title);
       data.put(CastPlayerManager.PARAMS.RUNTIME, nowPlayingMedia.duration / 1000);
-      Logger.d("Using %s for duration", nowPlayingMedia.getDurationTimecode());
       data.put(CastPlayerManager.PARAMS.KEY, nowPlayingMedia.key);
-      data.put(CastPlayerManager.PARAMS.THUMB, nowPlayingMedia.getThumbUri(160, 106));
+      data.put(CastPlayerManager.PARAMS.THUMB, nowPlayingMedia.getThumbUri(200, 300));
       data.put(CastPlayerManager.PARAMS.OFFSET, offset);
       data.put(CastPlayerManager.PARAMS.SRC, getTranscodeUrl(nowPlayingMedia, offset));
     } catch (Exception ex) {

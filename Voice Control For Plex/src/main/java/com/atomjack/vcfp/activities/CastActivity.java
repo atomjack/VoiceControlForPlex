@@ -8,6 +8,7 @@ import android.view.View;
 import android.widget.SeekBar;
 
 import com.atomjack.vcfp.AfterTransientTokenRequest;
+import com.atomjack.vcfp.BuildConfig;
 import com.atomjack.vcfp.Logger;
 import com.atomjack.vcfp.PlexHeaders;
 import com.atomjack.vcfp.Preferences;
@@ -15,6 +16,7 @@ import com.atomjack.vcfp.QueryString;
 import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.VCFPCastConsumer;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
+import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexTrack;
 import com.atomjack.vcfp.model.PlexVideo;
@@ -66,6 +68,7 @@ public class CastActivity extends PlayerActivity {
 
       castManager = castPlayerManager.getCastManager();
 
+      showNowPlaying();
       if(castPlayerManager.isSubscribed()) {
         init();
       } else {
@@ -125,10 +128,13 @@ public class CastActivity extends PlayerActivity {
 		}
 	}
 
+  @Override
+  public void onCastConnected(PlexClient _client) {
+    super.onCastConnected(_client);
+    init();
+  }
+
   private void init() {
-    showNowPlaying();
-
-
     seekBar = (SeekBar)findViewById(R.id.seekBar);
     seekBar.setOnSeekBarChangeListener(this);
     Logger.d("setting progress to %d", getOffset(nowPlayingMedia));
@@ -210,7 +216,7 @@ public class CastActivity extends PlayerActivity {
 
 	public static VideoCastManager getCastManager(Context context) {
 		if (null == castManager) {
-			castManager = VideoCastManager.initialize(context, MainActivity.CHROMECAST_APP_ID,
+			castManager = VideoCastManager.initialize(context, BuildConfig.CHROMECAST_APP_ID,
 							null, null);
 			castManager.enableFeatures(
 							VideoCastManager.FEATURE_NOTIFICATION |
@@ -325,7 +331,7 @@ public class CastActivity extends PlayerActivity {
 	public void doPlayPause(View v) {
 		try {
       Logger.d("doPlayPause, currentState: %s", currentState);
-			if(currentState ==  MediaStatus.PLAYER_STATE_PAUSED) {
+			if(currentState !=  MediaStatus.PLAYER_STATE_PLAYING) {
 				castPlayerManager.play();
 			} else if(currentState ==  MediaStatus.PLAYER_STATE_PLAYING) {
         castPlayerManager.pause();
@@ -358,7 +364,7 @@ public class CastActivity extends PlayerActivity {
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
-		isSeeking = false;
+//		isSeeking = false;
 	}
 
 	private void setState(int newState) {
@@ -389,6 +395,8 @@ public class CastActivity extends PlayerActivity {
   @Override
   public void onCastPlayerStateChanged(int status) {
     Logger.d("onCastPlayerStateChanged: %d", status);
+    if(isSeeking)
+      isSeeking = false;
     if(status == MediaStatus.PLAYER_STATE_IDLE)
       finish();
     else
@@ -396,7 +404,14 @@ public class CastActivity extends PlayerActivity {
   }
 
   @Override
+  public void onUnsubscribed() {
+    super.onUnsubscribed();
+    finish();
+  }
+
+  @Override
   public void onCastPlayerTimeUpdate(int seconds) {
-    seekBar.setProgress(seconds*1000);
+    if(!isSeeking)
+      seekBar.setProgress(seconds*1000);
   }
 }

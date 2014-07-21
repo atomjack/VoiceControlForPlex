@@ -31,6 +31,7 @@ import com.atomjack.vcfp.activities.CastActivity;
 import com.atomjack.vcfp.activities.MainActivity;
 import com.atomjack.vcfp.activities.NowPlayingActivity;
 import com.atomjack.vcfp.activities.SubscriptionActivity;
+import com.atomjack.vcfp.activities.VCFPActivity;
 import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexDirectory;
@@ -99,6 +100,8 @@ public class PlexSearchService extends Service {
 
   private PlexSubscription plexSubscription;
 
+  private VCFPActivity.NetworkState currentNetworkState;
+
 	// Chromecast
 	MediaRouter mMediaRouter;
 	MediaRouterCallback mMediaRouterCallback;
@@ -129,10 +132,14 @@ public class PlexSearchService extends Service {
     if(plexSubscription == null) {
       plexSubscription = VoiceControlForPlexApplication.getInstance().plexSubscription;
     }
-		if(!VoiceControlForPlexApplication.isWifiConnected(this)) {
-			feedback.e(getResources().getString(R.string.no_wifi_connection_message));
-			return Service.START_NOT_STICKY;
-		}
+
+    // TODO: Detect network connection here
+//		if(!VoiceControlForPlexApplication.isWifiConnected(this)) {
+//			feedback.e(getResources().getString(R.string.no_wifi_connection_message));
+//			return Service.START_NOT_STICKY;
+//		}
+
+    currentNetworkState = VCFPActivity.NetworkState.getCurrentNetworkState(this);
 
 		Logger.d("action: %s", intent.getAction());
 		Logger.d("scan type: %s", intent.getStringExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE));
@@ -163,7 +170,7 @@ public class PlexSearchService extends Service {
 
 			mMediaRouter = MediaRouter.getInstance(getApplicationContext());
 			mMediaRouteSelector = new MediaRouteSelector.Builder()
-							.addControlCategory(CastMediaControlIntent.categoryForCast(MainActivity.CHROMECAST_APP_ID))
+							.addControlCategory(CastMediaControlIntent.categoryForCast(BuildConfig.CHROMECAST_APP_ID))
 							.build();
 			mMediaRouterCallback = new MediaRouterCallback();
 			mMediaRouter.addCallback(mMediaRouteSelector, mMediaRouterCallback, MediaRouter.CALLBACK_FLAG_PERFORM_ACTIVE_SCAN);
@@ -968,58 +975,64 @@ public class PlexSearchService extends Service {
 
 			return;
 		}
-		try {
-			QueryString qs = new QueryString("machineIdentifier", video.server.machineIdentifier);
-			Logger.d("machine id: %s", video.server.machineIdentifier);
-			qs.add("key", video.key);
-			Logger.d("key: %s", video.key);
-			qs.add("port", video.server.activeConnection.port);
-			Logger.d("port: %s", video.server.activeConnection.port);
-			qs.add("address", video.server.activeConnection.address);
-			Logger.d("address: %s", video.server.activeConnection.address);
 
-			if((Preferences.get(Preferences.RESUME, false) || resumePlayback) && video.viewOffset != null)
-				qs.add("viewOffset", video.viewOffset);
-			if(transientToken != null)
-				qs.add("token", transientToken);
-			if(video.server.accessToken != null)
-				qs.add(PlexHeaders.XPlexToken, video.server.accessToken);
+    Logger.d("currentNetworkState: %s", currentNetworkState);
+    if(currentNetworkState == VCFPActivity.NetworkState.MOBILE) {
+      video.server.localPlay(video, resumePlayback, transientToken);
+    } else if(currentNetworkState == VCFPActivity.NetworkState.WIFI) {
 
-			String url = String.format("http://%s:%s/player/playback/playMedia?%s", client.address, client.port, qs);
-			PlexHttpClient.get(url, new PlexHttpResponseHandler()
-			{
-				@Override
-				public void onSuccess(PlexResponse r)
-				{
-					// If the host we're playing on is this device, we don't wanna do anything else here.
-					if(Utils.getIPAddress(true).equals(client.address) || r == null)
-						return;
-					feedback.m(getResources().getString(R.string.now_watching_video), video.isMovie() ? video.title : video.showTitle, client.name);
-					Boolean passed = true;
-					if(r.code != null) {
-						if(!r.code.equals("200")) {
-							passed = false;
-						}
-					}
-					Logger.d("Playback response: %s", r.code);
-					if(passed) {
-						videoPlayed = true;
-						showPlayingVideo(video);
-					} else {
-						feedback.e(getResources().getString(R.string.http_status_code_error), r.code);
-					}
-				}
 
-				@Override
-				public void onFailure(Throwable error) {
-					feedback.e(getResources().getString(R.string.got_error), error.getMessage());
-				}
-			});
-		} catch (Exception e) {
-			feedback.e(getResources().getString(R.string.got_error), e.getMessage());
-			Logger.e("Exception trying to play video: %s", e.toString());
-			e.printStackTrace();
-		}
+      try {
+        QueryString qs = new QueryString("machineIdentifier", video.server.machineIdentifier);
+        Logger.d("machine id: %s", video.server.machineIdentifier);
+        qs.add("key", video.key);
+        Logger.d("key: %s", video.key);
+        qs.add("port", video.server.activeConnection.port);
+        Logger.d("port: %s", video.server.activeConnection.port);
+        qs.add("address", video.server.activeConnection.address);
+        Logger.d("address: %s", video.server.activeConnection.address);
+
+        if ((Preferences.get(Preferences.RESUME, false) || resumePlayback) && video.viewOffset != null)
+          qs.add("viewOffset", video.viewOffset);
+        if (transientToken != null)
+          qs.add("token", transientToken);
+        if (video.server.accessToken != null)
+          qs.add(PlexHeaders.XPlexToken, video.server.accessToken);
+
+        String url = String.format("http://%s:%s/player/playback/playMedia?%s", client.address, client.port, qs);
+        PlexHttpClient.get(url, new PlexHttpResponseHandler() {
+          @Override
+          public void onSuccess(PlexResponse r) {
+            // If the host we're playing on is this device, we don't wanna do anything else here.
+            if (Utils.getIPAddress(true).equals(client.address) || r == null)
+              return;
+            feedback.m(getResources().getString(R.string.now_watching_video), video.isMovie() ? video.title : video.showTitle, client.name);
+            Boolean passed = true;
+            if (r.code != null) {
+              if (!r.code.equals("200")) {
+                passed = false;
+              }
+            }
+            Logger.d("Playback response: %s", r.code);
+            if (passed) {
+              videoPlayed = true;
+              showPlayingVideo(video);
+            } else {
+              feedback.e(getResources().getString(R.string.http_status_code_error), r.code);
+            }
+          }
+
+          @Override
+          public void onFailure(Throwable error) {
+            feedback.e(getResources().getString(R.string.got_error), error.getMessage());
+          }
+        });
+      } catch (Exception e) {
+        feedback.e(getResources().getString(R.string.got_error), e.getMessage());
+        Logger.e("Exception trying to play video: %s", e.toString());
+        e.printStackTrace();
+      }
+    }
 	}
 
 	private void showPlayingVideo(PlexVideo video) {
@@ -1710,41 +1723,45 @@ public class PlexSearchService extends Service {
 	}
 
 	private void playTrack(final PlexTrack track, final PlexDirectory album) {
-		QueryString qs = new QueryString("machineIdentifier", track.server.machineIdentifier);
-		qs.add("key", track.key);
-		qs.add("port", track.server.activeConnection.port);
-		qs.add("address", track.server.activeConnection.address);
-		if(album != null)
-			qs.add("containerKey", album.key);
-		if((Preferences.get(Preferences.RESUME, false) || resumePlayback) && track.viewOffset != null)
-			qs.add("viewOffset", track.viewOffset);
-		qs.add(PlexHeaders.XPlexTargetClientIdentifier, client.machineIdentifier);
-		String url = String.format("http://%s:%s/player/playback/playMedia?%s", client.address, client.port, qs);
+    if(currentNetworkState == VCFPActivity.NetworkState.MOBILE) {
+      track.server.localPlay(track, resumePlayback, album.key, null);
+    } else if(currentNetworkState == VCFPActivity.NetworkState.WIFI) {
 
-		PlexHttpClient.get(url, new PlexHttpResponseHandler()
-		{
-			@Override
-			public void onSuccess(PlexResponse r)
-			{
-				Boolean passed = true;
-				if(r.code != null) {
-					if(!r.code.equals("200")) {
-						passed = false;
-					}
-				}
-				Logger.d("Playback response: %s", r.code);
-				if(passed) {
-					showPlayingTrack(track);
-				} else {
-					feedback.e(getResources().getString(R.string.http_status_code_error), r.code);
-				}
-			}
 
-			@Override
-			public void onFailure(Throwable error) {
-				feedback.e(getResources().getString(R.string.got_error), error.getMessage());
-			}
-		});
+      QueryString qs = new QueryString("machineIdentifier", track.server.machineIdentifier);
+      qs.add("key", track.key);
+      qs.add("port", track.server.activeConnection.port);
+      qs.add("address", track.server.activeConnection.address);
+      if (album != null)
+        qs.add("containerKey", album.key);
+      if ((Preferences.get(Preferences.RESUME, false) || resumePlayback) && track.viewOffset != null)
+        qs.add("viewOffset", track.viewOffset);
+      qs.add(PlexHeaders.XPlexTargetClientIdentifier, client.machineIdentifier);
+      String url = String.format("http://%s:%s/player/playback/playMedia?%s", client.address, client.port, qs);
+
+      PlexHttpClient.get(url, new PlexHttpResponseHandler() {
+        @Override
+        public void onSuccess(PlexResponse r) {
+          Boolean passed = true;
+          if (r.code != null) {
+            if (!r.code.equals("200")) {
+              passed = false;
+            }
+          }
+          Logger.d("Playback response: %s", r.code);
+          if (passed) {
+            showPlayingTrack(track);
+          } else {
+            feedback.e(getResources().getString(R.string.http_status_code_error), r.code);
+          }
+        }
+
+        @Override
+        public void onFailure(Throwable error) {
+          feedback.e(getResources().getString(R.string.got_error), error.getMessage());
+        }
+      });
+    }
 	}
 
 	private void showPlayingTrack(PlexTrack track) {
@@ -1785,7 +1802,7 @@ public class PlexSearchService extends Service {
 				//reconnectChannels();
 			} else {
 				try {
-					Cast.CastApi.launchApplication(mApiClient, MainActivity.CHROMECAST_APP_ID, false)
+					Cast.CastApi.launchApplication(mApiClient, BuildConfig.CHROMECAST_APP_ID, false)
 									.setResultCallback(
 													new ResultCallback<Cast.ApplicationConnectionResult>() {
 														@Override

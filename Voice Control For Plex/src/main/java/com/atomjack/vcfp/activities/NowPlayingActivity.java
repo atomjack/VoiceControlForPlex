@@ -127,7 +127,7 @@ public class NowPlayingActivity extends PlayerActivity {
 	}
 
 	public void doStop(View v) {
-		mClient.stop(null);
+    mClient.stop(null);
 	}
 
 	@Override

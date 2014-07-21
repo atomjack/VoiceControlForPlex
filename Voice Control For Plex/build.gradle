@@ -39,12 +39,14 @@ android {
             buildConfigField "boolean", "USE_BUGSENSE", "true"
             buildConfigField "boolean", "CHROMECAST_REQUIRES_PURCHASE", "true"
             buildConfigField "String", "SKU_CHROMECAST", "\"chromecast\""
+            buildConfigField "String", "CHROMECAST_APP_ID", "\"" + RELEASE_CHROMECAST_APP_ID + "\""
         }
         debug {
             debuggable true
             buildConfigField "boolean", "USE_BUGSENSE", "false"
             buildConfigField "boolean", "CHROMECAST_REQUIRES_PURCHASE", "false"
             buildConfigField "String", "SKU_CHROMECAST", "\"android.test.purchased\""
+            buildConfigField "String", "CHROMECAST_APP_ID", "\"" + DEBUG_CHROMECAST_APP_ID + "\""
         }
         chromecast {
             signingConfig signingConfigs.release
@@ -54,6 +56,7 @@ android {
             buildConfigField "boolean", "USE_BUGSENSE", "false"
             buildConfigField "boolean", "CHROMECAST_REQUIRES_PURCHASE", "true"
             buildConfigField "String", "SKU_CHROMECAST", "\"chromecast\""
+            buildConfigField "String", "CHROMECAST_APP_ID", "\"" + RELEASE_CHROMECAST_APP_ID + "\""
         }
         chromecastTest {
             signingConfig signingConfigs.release
@@ -63,6 +66,7 @@ android {
             buildConfigField "boolean", "USE_BUGSENSE", "false"
             buildConfigField "boolean", "CHROMECAST_REQUIRES_PURCHASE", "true"
             buildConfigField "String", "SKU_CHROMECAST", "\"android.test.purchased\""
+            buildConfigField "String", "CHROMECAST_APP_ID", "\"" + RELEASE_CHROMECAST_APP_ID + "\""
         }
         beta {
             debuggable true
@@ -70,6 +74,7 @@ android {
             buildConfigField "boolean", "USE_BUGSENSE", "true"
             buildConfigField "boolean", "CHROMECAST_REQUIRES_PURCHASE", "false"
             buildConfigField "String", "SKU_CHROMECAST", "\"android.test.purchased\""
+            buildConfigField "String", "CHROMECAST_APP_ID", "\"" + RELEASE_CHROMECAST_APP_ID + "\""
         }
     }
     lintOptions {

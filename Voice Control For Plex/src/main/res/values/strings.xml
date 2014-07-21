@@ -111,4 +111,8 @@
     <string name="must_purchase_chromecast">Chromecast support is available as an in-app purchase for %s. Would you like to proceed?</string>
     <string name="no_thanks">No thanks</string>
     <string name="must_purchase_chromecast_error">Sorry, but Chromecast support is only available via an in app purchase. To purchase, select your Chromecast as the client in the main settings.</string>
+    <string name="this_device">This device</string>
+    <string name="network_connection_required">A network connection is required</string>
+    <string name="mobile_network_connection_active">While a mobile network connection is active, playback is only supported onto this device, through the official Plex client.</string>
+    <string name="mobile_connection_login_required">You must be logged in to MyPlex in order to select a server when not on WiFi.</string>
 </resources>

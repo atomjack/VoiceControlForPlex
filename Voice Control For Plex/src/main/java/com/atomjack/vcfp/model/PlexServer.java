@@ -6,10 +6,15 @@ import android.os.Parcelable;
 import com.atomjack.vcfp.AfterTransientTokenRequest;
 import com.atomjack.vcfp.Logger;
 import com.atomjack.vcfp.PlexHeaders;
+import com.atomjack.vcfp.Preferences;
+import com.atomjack.vcfp.QueryString;
+import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.ServerFindHandler;
 import com.atomjack.vcfp.ServerTestHandler;
+import com.atomjack.vcfp.Utils;
 import com.atomjack.vcfp.net.PlexHttpClient;
 import com.atomjack.vcfp.net.PlexHttpMediaContainerHandler;
+import com.atomjack.vcfp.net.PlexHttpResponseHandler;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
 
@@ -231,5 +236,48 @@ public class PlexServer extends PlexDevice {
     if(accessToken != null)
       url += String.format("%s%s=%s", (url.contains("?") ? "&" : "?"), PlexHeaders.XPlexToken, accessToken);
     return url;
+  }
+
+  public void localPlay(PlexMedia media, boolean resumePlayback, String transientToken) {
+    localPlay(media, resumePlayback, null, transientToken);
+  }
+
+  public void localPlay(PlexMedia media, String containerKey, boolean resumePlayback) {
+    localPlay(media, resumePlayback, containerKey, null);
+  }
+
+  public void localPlay(PlexMedia media, boolean resumePlayback, String containerKey, String transientToken) {
+    QueryString qs = new QueryString("machineIdentifier", machineIdentifier);
+    Logger.d("machine id: %s", machineIdentifier);
+    qs.add("key", media.key);
+    Logger.d("key: %s", media.key);
+    qs.add("port", activeConnection.port);
+    Logger.d("port: %s", activeConnection.port);
+    qs.add("address", activeConnection.address);
+    Logger.d("address: %s", activeConnection.address);
+
+    if(containerKey != null)
+      qs.add("containerKey", containerKey);
+
+    if((Preferences.get(Preferences.RESUME, false) || resumePlayback) && media.viewOffset != null)
+      qs.add("viewOffset", media.viewOffset);
+    if(transientToken != null)
+      qs.add("token", transientToken);
+    if(accessToken != null)
+      qs.add(PlexHeaders.XPlexToken, accessToken);
+    String url = String.format("http://127.0.0.1:32400/player/playback/playMedia?%s", qs);
+    Logger.d("[PlexServer] Playback url: %s ", url);
+    PlexHttpClient.get(url, new PlexHttpResponseHandler()
+    {
+      @Override
+      public void onSuccess(PlexResponse r)
+      {
+      }
+
+      @Override
+      public void onFailure(Throwable error) {
+//        feedback.e(getResources().getString(R.string.got_error), error.getMessage());
+      }
+    });
   }
 }

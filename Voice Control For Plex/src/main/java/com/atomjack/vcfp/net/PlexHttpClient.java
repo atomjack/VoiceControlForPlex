@@ -154,6 +154,7 @@ public class PlexHttpClient
 		client.get(url, new RequestParams(), new AsyncHttpResponseHandler() {
 			@Override
 			public void onSuccess(int statusCode, org.apache.http.Header[] headers, byte[] responseBody) {
+        Logger.d("Response: %s", new String(responseBody));
 				PlexResponse r = new PlexResponse();
 				try {
 					r = serial.read(PlexResponse.class, new String(responseBody, "UTF-8"));
