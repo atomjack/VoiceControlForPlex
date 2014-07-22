@@ -1,14 +1,11 @@
 package com.atomjack.vcfp.activities;
 
-import android.content.Context;
-import android.net.Uri;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.View;
 import android.widget.SeekBar;
 
 import com.atomjack.vcfp.AfterTransientTokenRequest;
-import com.atomjack.vcfp.BuildConfig;
 import com.atomjack.vcfp.Logger;
 import com.atomjack.vcfp.PlexHeaders;
 import com.atomjack.vcfp.Preferences;
@@ -18,31 +15,20 @@ import com.atomjack.vcfp.VCFPCastConsumer;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexMedia;
-import com.atomjack.vcfp.model.PlexTrack;
-import com.atomjack.vcfp.model.PlexVideo;
-import com.google.android.gms.cast.MediaInfo;
-import com.google.android.gms.cast.MediaMetadata;
 import com.google.android.gms.cast.MediaStatus;
-import com.google.android.gms.common.images.WebImage;
 import com.google.sample.castcompanionlibrary.cast.VideoCastManager;
-import com.google.sample.castcompanionlibrary.widgets.MiniController;
 
-import org.json.JSONObject;
+import java.util.List;
 
 public class CastActivity extends PlayerActivity {
 	private static VideoCastManager castManager = null;
 	private VCFPCastConsumer castConsumer;
-	private MiniController miniController;
-
-	protected MediaInfo remoteMediaInformation;
 
 	private int currentState = MediaStatus.PLAYER_STATE_UNKNOWN;
 
 	private String transientToken;
 
-	// This gets set to true when we do a seek, so after we receive a message from the receiver that
-	// we have stopped, we'll resume with the new offset.
-	private boolean seekDone = false;
+  private List<PlexMedia> nowPlayingAlbum;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -51,17 +37,9 @@ public class CastActivity extends PlayerActivity {
 		Preferences.setContext(this);
 
 		if(getIntent().getAction().equals(VoiceControlForPlexApplication.Intent.CAST_MEDIA)) {
-			PlexVideo video = getIntent().getParcelableExtra("video");
 			mClient = getIntent().getParcelableExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLIENT);
-			PlexTrack track = getIntent().getParcelableExtra("track");
-
-			if(video != null)
-				nowPlayingMedia = video;
-			else if(track != null)
-				nowPlayingMedia = track;
-			else {
-				// TODO: something here
-			}
+      nowPlayingMedia = getIntent().getParcelableExtra(VoiceControlForPlexApplication.Intent.EXTRA_MEDIA);
+      nowPlayingAlbum = getIntent().getParcelableArrayListExtra(VoiceControlForPlexApplication.Intent.EXTRA_ALBUM);
 			resumePlayback = getIntent().getBooleanExtra("resume", false);
 
 			Logger.d("Casting %s", nowPlayingMedia.title);
@@ -73,56 +51,7 @@ public class CastActivity extends PlayerActivity {
         init();
       } else {
         castPlayerManager.subscribe(mClient);
-        // TODO: Handle this here, need to load media after done connecting to chromecast
       }
-      /*
-
-			setCastConsumer();
-
-			if(castManager == null) {
-				castManager = getCastManager(this);
-				castManager.addVideoCastConsumer(castConsumer);
-				castManager.incrementUiCounter();
-			}
-			castManager.setDevice(mClient.castDevice, false);
-
-
-			miniController = (MiniController) findViewById(R.id.miniController1);
-			castManager.addMiniController(miniController);
-
-			showNowPlaying(nowPlayingMedia, mClient);
-
-
-			seekBar = (SeekBar)findViewById(R.id.seekBar);
-			seekBar.setOnSeekBarChangeListener(this);
-			Logger.d("setting progress to %d", getOffset(nowPlayingMedia));
-			seekBar.setMax(nowPlayingMedia.duration);
-			seekBar.setProgress(getOffset(nowPlayingMedia)*1000);
-
-			setCurrentTimeDisplay(getOffset(nowPlayingMedia));
-			durationDisplay.setText(VoiceControlForPlexApplication.secondsToTimecode(nowPlayingMedia.duration / 1000));
-
-			currentState = castManager.getPlaybackStatus();
-			if (Preferences.getString(Preferences.PLEX_USERNAME) != null) {
-				nowPlayingMedia.server.requestTransientAccessToken(new AfterTransientTokenRequest() {
-					@Override
-					public void success(String token) {
-						Logger.d("Got transient token: %s", token);
-						transientToken = token;
-						beginPlayback();
-					}
-
-					@Override
-					public void failure() {
-						Logger.d("Failed to get transient access token");
-						// Failed to get an access token, so let's try without one
-						beginPlayback();
-					}
-				});
-			} else {
-				beginPlayback();
-			}
-			*/
 		} else {
 			// TODO: Something here
 		}
@@ -134,15 +63,19 @@ public class CastActivity extends PlayerActivity {
     init();
   }
 
-  private void init() {
-    seekBar = (SeekBar)findViewById(R.id.seekBar);
-    seekBar.setOnSeekBarChangeListener(this);
+  private void setupUI() {
     Logger.d("setting progress to %d", getOffset(nowPlayingMedia));
     seekBar.setMax(nowPlayingMedia.duration);
     seekBar.setProgress(getOffset(nowPlayingMedia)*1000);
 
     setCurrentTimeDisplay(getOffset(nowPlayingMedia));
     durationDisplay.setText(VoiceControlForPlexApplication.secondsToTimecode(nowPlayingMedia.duration / 1000));
+  }
+
+  private void init() {
+    seekBar = (SeekBar)findViewById(R.id.seekBar);
+    seekBar.setOnSeekBarChangeListener(this);
+    setupUI();
 
     currentState = castManager.getPlaybackStatus();
     if (Preferences.getString(Preferences.PLEX_USERNAME) != null) {
@@ -167,97 +100,15 @@ public class CastActivity extends PlayerActivity {
     }
   }
 
-	private MediaInfo getMediaInfo(String url) {
-		MediaInfo mediaInfo = buildMediaInfo(
-			nowPlayingMedia.getTitle(),
-			nowPlayingMedia.getSummary(),
-			nowPlayingMedia.getEpisodeTitle(),
-			url,
-			nowPlayingMedia.getArtUri(),
-			nowPlayingMedia.getThumbUri(),
-			nowPlayingMedia.duration,
-			getOffset(nowPlayingMedia)
-		);
-		return mediaInfo;
-	}
-
 	private void beginPlayback() {
 		String url = getTranscodeUrl(nowPlayingMedia, transientToken);
 		Logger.d("url: %s", url);
 		Logger.d("duration: %s", nowPlayingMedia.duration);
-//		final MediaInfo mediaInfo = getMediaInfo(url);
 
 		Logger.d("offset is %d", getOffset(nowPlayingMedia));
 		if(castManager.isConnected()) {
-//      try {
-//        JSONObject data = buildMedia();
-        castPlayerManager.loadMedia(nowPlayingMedia, getOffset(nowPlayingMedia));
-//        castManager.sendDataMessage(data.toString());
-
-      /*
-			try {
-				castManager.loadMedia(mediaInfo, true, getOffset(nowPlayingMedia) * 1000);
-			} catch (Exception ex) {}
-		} else {
-			castConsumer.setOnConnected(new Runnable() {
-				@Override
-				public void run() {
-					try {
-						Logger.d("loading media");
-						castManager.loadMedia(mediaInfo, true, getOffset(nowPlayingMedia) * 1000);
-					} catch (Exception ex) {
-						ex.printStackTrace();
-					}
-				}
-			});
-			*/
+        castPlayerManager.loadMedia(nowPlayingMedia, nowPlayingAlbum, getOffset(nowPlayingMedia));
 		}
-	}
-
-	public static VideoCastManager getCastManager(Context context) {
-		if (null == castManager) {
-			castManager = VideoCastManager.initialize(context, BuildConfig.CHROMECAST_APP_ID,
-							null, null);
-			castManager.enableFeatures(
-							VideoCastManager.FEATURE_NOTIFICATION |
-											VideoCastManager.FEATURE_LOCKSCREEN |
-											VideoCastManager.FEATURE_DEBUGGING);
-
-		}
-		castManager.setContext(context);
-//		String destroyOnExitStr = Utils.getStringFromPreference(context,
-//						CastPreference.TERMINATION_POLICY_KEY);
-		castManager.setStopOnDisconnect(false);
-		return castManager;
-	}
-
-	private static MediaInfo buildMediaInfo(String title, String summary, String episodeName,
-				String url, String imgUrl, String bigImageUrl, int duration, int offset) {
-		MediaMetadata movieMetadata = new MediaMetadata(MediaMetadata.MEDIA_TYPE_MOVIE);
-
-//		movieMetadata.putString(MediaMetadata.KEY_SUBTITLE, summary);
-//		movieMetadata.putString(MediaMetadata.KEY_TITLE, title);
-//		movieMetadata.putString(MediaMetadata.KEY_STUDIO, episodeName);
-		movieMetadata.addImage(new WebImage(Uri.parse(imgUrl)));
-		movieMetadata.addImage(new WebImage(Uri.parse(bigImageUrl)));
-
-		JSONObject customData = new JSONObject();
-		try {
-			customData.put("duration", duration/1000);
-			customData.put("position", offset);
-
-			customData.put("title", title);
-			customData.put("summary", summary);
-			customData.put("episodeName", episodeName);
-
-		} catch(Exception ex) {}
-		return new MediaInfo.Builder(url)
-						.setStreamType(MediaInfo.STREAM_TYPE_BUFFERED)
-						.setStreamDuration((long)duration)
-						.setCustomData(customData)
-						.setContentType("video/mp4")
-						.setMetadata(movieMetadata)
-						.build();
 	}
 
 	private String getTranscodeUrl(PlexMedia media, String transientToken) {
@@ -317,12 +168,8 @@ public class CastActivity extends PlayerActivity {
 
 	@Override
 	protected void onDestroy() {
-		Logger.d("onDestroy is called");
+		Logger.d("[CastActivity] onDestroy");
 		if (null != castManager) {
-			if(miniController != null) {
-				miniController.removeOnMiniControllerChangedListener(castManager);
-				castManager.removeMiniController(miniController);
-			}
 			castManager.clearContext(this);
 		}
 		super.onDestroy();
@@ -358,13 +205,12 @@ public class CastActivity extends PlayerActivity {
 	public void onStopTrackingTouch(SeekBar _seekBar) {
 		Logger.d("stopped changing progress");
 		try {
-			seekDone = true;
 			nowPlayingMedia.viewOffset = Integer.toString(_seekBar.getProgress());
       castPlayerManager.seekTo(Integer.parseInt(nowPlayingMedia.viewOffset) / 1000);
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
-//		isSeeking = false;
+    isSeeking = false;
 	}
 
 	private void setState(int newState) {
@@ -375,11 +221,6 @@ public class CastActivity extends PlayerActivity {
 			playPauseButton.setImageResource(R.drawable.button_pause);
 		}
 	}
-
-  @Override
-  protected void castSubscribe() {
-
-  }
 
   @Override
   public boolean onCreateOptionsMenu(Menu _menu) {
@@ -397,9 +238,10 @@ public class CastActivity extends PlayerActivity {
     Logger.d("onCastPlayerStateChanged: %d", status);
     if(isSeeking)
       isSeeking = false;
-    if(status == MediaStatus.PLAYER_STATE_IDLE)
+    if(status == MediaStatus.PLAYER_STATE_IDLE) {
+      Logger.d("[CastActivity] media player is idle, finishing");
       finish();
-    else
+    } else
       setState(status);
   }
 
@@ -413,5 +255,17 @@ public class CastActivity extends PlayerActivity {
   public void onCastPlayerTimeUpdate(int seconds) {
     if(!isSeeking)
       seekBar.setProgress(seconds*1000);
+  }
+
+  @Override
+  public void onCastPlayerPlaylistAdvance(String key) {
+    for(PlexMedia track : nowPlayingAlbum) {
+      if(track.key.equals(key)) {
+        nowPlayingMedia = track;
+        setupUI();
+        showNowPlaying(false);
+        break;
+      }
+    }
   }
 }

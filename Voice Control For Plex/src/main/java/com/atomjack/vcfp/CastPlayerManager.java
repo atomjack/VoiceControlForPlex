@@ -7,7 +7,9 @@ import android.support.v7.media.MediaRouter;
 import com.atomjack.vcfp.activities.MainActivity;
 import com.atomjack.vcfp.activities.VCFPActivity;
 import com.atomjack.vcfp.model.PlexClient;
+import com.atomjack.vcfp.model.PlexDirectory;
 import com.atomjack.vcfp.model.PlexMedia;
+import com.atomjack.vcfp.model.PlexTrack;
 import com.atomjack.vcfp.model.PlexVideo;
 import com.google.android.gms.cast.ApplicationMetadata;
 import com.google.android.gms.cast.MediaInfo;
@@ -17,12 +19,16 @@ import com.google.android.gms.common.images.WebImage;
 import com.google.sample.castcompanionlibrary.cast.VideoCastManager;
 import com.google.sample.castcompanionlibrary.widgets.MiniController;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Timer;
 
 public class CastPlayerManager {
   private PlexMedia nowPlayingMedia;
+  private List<PlexMedia> nowPlayingAlbum;
 
   private static VideoCastManager castManager = null;
   private VCFPCastConsumer castConsumer;
@@ -42,14 +48,20 @@ public class CastPlayerManager {
     public static final String THUMB = "thumb";
     public static final String OFFSET = "offset";
     public static final String SRC = "src";
+    public static final String ART = "art";
 
+    public static final String ARTIST = "artist";
+    public static final String ALBUM = "album";
+    public static final String TRACK = "track";
+
+    public static final String PLAYLIST = "playlist";
 
     public static final String ACTION = "action";
     public static final String ACTION_LOAD = "load";
     public static final String ACTION_PLAY = "play";
     public static final String ACTION_PAUSE = "pause";
     public static final String ACTION_STOP = "stop";
-    public static final String ACTION_UPDATE_SRC = "updateSrc";
+    public static final String ACTION_SEEK = "seek";
 
   };
 
@@ -57,7 +69,7 @@ public class CastPlayerManager {
 
   private Timer durationTimer;
 
-  private VCFPActivity listener;
+  private Listener listener;
   private VCFPActivity notificationListener;
 
   private boolean subscribed = false;
@@ -94,7 +106,10 @@ public class CastPlayerManager {
         mClient = _client;
         Logger.d("castConsumer connected");
         subscribed = true;
-        listener.onCastConnected(_client);
+        if(listener != null)
+          listener.onCastConnected(_client);
+        else
+          Logger.d("[CastPlayerManager] listener is null");
       }
     });
   }
@@ -111,7 +126,8 @@ public class CastPlayerManager {
       ex.printStackTrace();
     }
     subscribed = false;
-    listener.onCastDisconnected();
+    if(listener != null)
+      listener.onCastDisconnected();
   }
 
   public void setListener(VCFPActivity _listener) {
@@ -125,6 +141,7 @@ public class CastPlayerManager {
     void onCastDisconnected();
     void onCastPlayerStateChanged(int status);
     void onCastPlayerTimeUpdate(int seconds);
+    void onCastPlayerPlaylistAdvance(String key);
   };
 
   public VideoCastManager getCastManager() {
@@ -132,8 +149,9 @@ public class CastPlayerManager {
   }
 
   // This will send a message to the cast device to load the passed in media
-  public void loadMedia(PlexMedia media, int offset) {
+  public void loadMedia(PlexMedia media, List<PlexMedia> album, int offset) {
     nowPlayingMedia = media;
+    nowPlayingAlbum = album;
     sendMessage(buildMedia(offset));
   }
 
@@ -152,8 +170,9 @@ public class CastPlayerManager {
   public void seekTo(int seconds) {
     JSONObject obj = new JSONObject();
     try {
-      obj.put(PARAMS.ACTION, PARAMS.ACTION_UPDATE_SRC);
-      obj.put(PARAMS.SRC, getTranscodeUrl(nowPlayingMedia, seconds));
+      obj.put(PARAMS.ACTION, PARAMS.ACTION_SEEK);
+      if(nowPlayingMedia instanceof PlexVideo)
+        obj.put(PARAMS.SRC, getTranscodeUrl(nowPlayingMedia, seconds));
       obj.put(PARAMS.OFFSET, seconds);
       sendMessage(obj);
     } catch (Exception ex) {}
@@ -192,49 +211,18 @@ public class CastPlayerManager {
     return castManager;
   }
 
-  private static MediaInfo buildMediaInfo(String title, String summary, String episodeName,
-                                          String url, String imgUrl, String bigImageUrl, int duration, int offset) {
-    MediaMetadata movieMetadata = new MediaMetadata(MediaMetadata.MEDIA_TYPE_MOVIE);
-
-//		movieMetadata.putString(MediaMetadata.KEY_SUBTITLE, summary);
-//		movieMetadata.putString(MediaMetadata.KEY_TITLE, title);
-//		movieMetadata.putString(MediaMetadata.KEY_STUDIO, episodeName);
-    movieMetadata.addImage(new WebImage(Uri.parse(imgUrl)));
-    movieMetadata.addImage(new WebImage(Uri.parse(bigImageUrl)));
-
-    JSONObject customData = new JSONObject();
-    try {
-      customData.put("duration", duration/1000);
-      customData.put("position", offset);
-
-      customData.put("title", title);
-      customData.put("summary", summary);
-      customData.put("episodeName", episodeName);
-
-    } catch(Exception ex) {}
-    return new MediaInfo.Builder(url)
-            .setStreamType(MediaInfo.STREAM_TYPE_BUFFERED)
-            .setStreamDuration((long)duration)
-            .setCustomData(customData)
-            .setContentType("video/mp4")
-            .setMetadata(movieMetadata)
-            .build();
-  }
-
   private void setCastConsumer() {
     castConsumer = new VCFPCastConsumer() {
-      private boolean launched = false;
       private Runnable onConnectedRunnable;
 
       @Override
       public void onDataMessageReceived(String message) {
-        Logger.d("DATA MESSAGE RECEIVED: %s", message);
+//        Logger.d("DATA MESSAGE RECEIVED: %s", message);
         try {
           JSONObject obj = new JSONObject(message);
           if(obj.has("event") && obj.has("status")) {
-            Logger.d("has event and status");
             if(obj.getString("event").equals("playerStatusChanged")) {
-              Logger.d("playerStatusChanged");
+              Logger.d("playerStatusChanged: %s", obj.getString("status"));
               if(obj.getString("status").equals("playing"))
                 listener.onCastPlayerStateChanged(MediaStatus.PLAYER_STATE_PLAYING);
               else if(obj.getString("status").equals("paused"))
@@ -244,6 +232,10 @@ public class CastPlayerManager {
             }
           } else if(obj.has("event") && obj.getString("event").equals("timeUpdate") && obj.has("currentTime")) {
             listener.onCastPlayerTimeUpdate(obj.getInt("currentTime"));
+          } else if(obj.has("event") && obj.getString("event").equals("playlistAdvance") && obj.has("key")) {
+            Logger.d("[CastPlayerManager] playlistAdvance: %s", obj.getString("key"));
+            listener.onCastPlayerPlaylistAdvance(obj.getString("key"));
+            // TODO: update now playing screen
           }
         } catch (Exception ex) {
           ex.printStackTrace();
@@ -272,18 +264,6 @@ public class CastPlayerManager {
           if(currentState == MediaStatus.PLAYER_STATE_IDLE) {
             Logger.d("idle reason: %d", castManager.getIdleReason());
 
-            /*
-            // If we stopped because a seek was done, resume playback at the new offset.
-            if(seekDone) {
-              seekDone = false;
-              Logger.d("resuming playback with an offset of %s", nowPlayingMedia.viewOffset);
-              beginPlayback();
-            } else {
-              if (durationTimer != null)
-                stopDurationTimer();
-              finish();
-            }
-            */
           } else if(currentState == MediaStatus.PLAYER_STATE_PAUSED) {
 //            setState(MediaStatus.PLAYER_STATE_PAUSED);
 //            stopDurationTimer();
@@ -324,7 +304,7 @@ public class CastPlayerManager {
         Logger.d("sessionid: %s", sessionId);
         Logger.d("was launched: %s", wasLaunched);
 //        if(!launched) {
-          launched = true;
+//          launched = true;
           if(onConnectedRunnable != null)
             onConnectedRunnable.run();
 //        }
@@ -355,13 +335,13 @@ public class CastPlayerManager {
     };
   }
 
-  public String getTranscodeUrl(PlexMedia media) {
+  public String getTranscodeUrl(PlexVideo media) {
     return getTranscodeUrl(media, 0);
   }
 
   public String getTranscodeUrl(PlexMedia media, int offset) {
     String url = media.server.activeConnection.uri;
-    url += "/video/:/transcode/universal/start?";
+    url += String.format("/%s/:/transcode/universal/start?", media instanceof PlexVideo ? "video" : "audio");
     QueryString qs = new QueryString("path", String.format("http://127.0.0.1:32400%s", media.key));
     qs.add("mediaIndex", "0");
     qs.add("partIndex", "0");
@@ -416,17 +396,56 @@ public class CastPlayerManager {
           title = String.format("%s (%s)", video.title, video.year);
         else
           title = String.format("%s - %s (%s)", video.grandparentTitle, video.title, video.year);
+      } else if(nowPlayingMedia instanceof PlexTrack) {
+        data.put(PARAMS.ARTIST, nowPlayingMedia.grandparentTitle);
+        data.put(PARAMS.ALBUM, ((PlexTrack) nowPlayingMedia).parentTitle);
+        data.put(PARAMS.TRACK, nowPlayingMedia.title);
       }
 
       data.put(CastPlayerManager.PARAMS.TITLE, title);
       data.put(CastPlayerManager.PARAMS.RUNTIME, nowPlayingMedia.duration / 1000);
       data.put(CastPlayerManager.PARAMS.KEY, nowPlayingMedia.key);
-      data.put(CastPlayerManager.PARAMS.THUMB, nowPlayingMedia.getThumbUri(200, 300));
+      if(nowPlayingMedia instanceof PlexVideo)
+        data.put(CastPlayerManager.PARAMS.THUMB, nowPlayingMedia.getThumbUri(200, 300));
+      else
+        data.put(CastPlayerManager.PARAMS.THUMB, nowPlayingMedia.getThumbUri(350, 350));
       data.put(CastPlayerManager.PARAMS.OFFSET, offset);
-      data.put(CastPlayerManager.PARAMS.SRC, getTranscodeUrl(nowPlayingMedia, offset));
+      if(nowPlayingMedia instanceof PlexVideo)
+        data.put(CastPlayerManager.PARAMS.SRC, getTranscodeUrl(nowPlayingMedia, offset));
+      else {
+        data.put(PARAMS.SRC, nowPlayingMedia.getPartUri());
+
+        data.put(PARAMS.PLAYLIST, getAlbumJson());
+
+
+
+      }
     } catch (Exception ex) {
       ex.printStackTrace();
     }
     return data;
+  }
+
+  private JSONArray getAlbumJson() {
+    JSONArray album = new JSONArray();
+    for(PlexMedia track : nowPlayingAlbum) {
+      JSONObject trackJson = new JSONObject();
+      try {
+        trackJson.put(PARAMS.ARTIST, track.grandparentTitle);
+        trackJson.put(PARAMS.ALBUM, ((PlexTrack)track).parentTitle);
+        trackJson.put(PARAMS.TITLE, track.title);
+        trackJson.put(PARAMS.RUNTIME, Math.floor(track.duration / 1000));
+        trackJson.put(PARAMS.SRC, track.getPartUri());
+        trackJson.put(PARAMS.KEY, track.key);
+        trackJson.put(PARAMS.ART, track.getArtUri());
+        trackJson.put(PARAMS.OFFSET, 0);
+        trackJson.put(PARAMS.THUMB, track.getThumbUri(350, 350));
+        trackJson.put(PARAMS.MEDIA_TYPE, PARAMS.MEDIA_TYPE_AUDIO);
+      } catch (Exception e) {}
+      album.put(trackJson);
+    }
+
+
+    return album;
   }
 }

@@ -910,7 +910,7 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 
 	@Override
 	protected void onPause() {
-    Logger.d("MainActivity onPause");
+    Logger.d("[MainActivity] onPause");
 		if (isFinishing()) {
 			mMediaRouter.removeCallback(mMediaRouterCallback);
 		}
@@ -1015,6 +1015,7 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
         Preferences.put(Preferences.SAVED_CAST_CLIENTS, gsonWrite.toJson(VoiceControlForPlexApplication.castClients));
       }
 		}
+
 		@Override
 		public void onRouteSelected(MediaRouter router, MediaRouter.RouteInfo route) {
 			Logger.d("onRouteSelected: %s", route);

@@ -99,7 +99,8 @@ public class VoiceControlForPlexApplication extends Application
 			public final static String SHOWRESOURCE = "com.atomjack.vcfp.intent.SHOWRESOURCE";
 
 			public final static String CAST_MEDIA = "com.atomjack.vcfp.intent.CAST_MEDIA";
-			public final static String EXTRA_MEDIA = "com.atomjack.vcfp.intent.EXTRA_MEDIA";
+      public final static String EXTRA_MEDIA = "com.atomjack.vcfp.intent.EXTRA_MEDIA";
+      public final static String EXTRA_ALBUM = "com.atomjack.vcfp.intent.EXTRA_ALBUM";
       public final static String EXTRA_CLASS = "com.atomjack.vcfp.intent.EXTRA_CLASS";
       public final static String EXTRA_CONNECT_TO_CLIENT = "com.atomjack.vcfp.intent.EXTRA_CONNECT_TO_CLIENT";
       public final static String SUBSCRIBED = "com.atomjack.vcfp.intent.SUBSCRIBED";

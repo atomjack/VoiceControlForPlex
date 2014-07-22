@@ -4,7 +4,10 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 import org.simpleframework.xml.Attribute;
+import org.simpleframework.xml.ElementList;
 import org.simpleframework.xml.Root;
+
+import java.util.ArrayList;
 
 @Root(strict=false)
 public class PlexTrack extends PlexMedia {
@@ -27,33 +30,19 @@ public class PlexTrack extends PlexMedia {
 
 	@Override
 	public void writeToParcel(Parcel out, int i) {
-		out.writeString(key);
-		out.writeString(title);
-		out.writeString(thumb);
+    super.writeToParcel(out, i);
 		out.writeString(parentThumb);
 		out.writeString(parentTitle);
-		out.writeString(grandparentTitle);
-		out.writeString(viewOffset);
 		out.writeString(artist);
 		out.writeString(album);
-    out.writeInt(duration);
-    out.writeString(art);
-		out.writeParcelable(server, i);
 	}
 
 	public PlexTrack(Parcel in) {
-		key = in.readString();
-		title = in.readString();
-		thumb = in.readString();
+    super(in);
 		parentThumb = in.readString();
 		parentTitle = in.readString();
-		grandparentTitle = in.readString();
-		viewOffset = in.readString();
 		artist = in.readString();
 		album = in.readString();
-    duration = in.readInt();
-    art = in.readString();
-		server = in.readParcelable(PlexServer.class.getClassLoader());
 	}
 
 	public static final Parcelable.Creator<PlexTrack> CREATOR = new Parcelable.Creator<PlexTrack>() {
@@ -66,4 +55,6 @@ public class PlexTrack extends PlexMedia {
 		}
 	};
 
+
 }
+

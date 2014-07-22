@@ -2,11 +2,9 @@ package com.atomjack.vcfp.activities;
 
 import android.app.AlertDialog;
 import android.app.NotificationManager;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.res.Configuration;
 import android.graphics.drawable.AnimationDrawable;
 import android.graphics.drawable.Drawable;
@@ -16,7 +14,6 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.ActionBarActivity;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -218,7 +215,7 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
 	public boolean onOptionsItemSelected(MenuItem item) {
 		switch (item.getItemId()) {
 			case R.id.action_cast:
-        Logger.d("[VCFPActivity] subscribed: %s", subscribed);
+        Logger.d("[VCFPActivity] subscribed: %s", isSubscribed());
         Logger.d("[VCFPActivity] subscribing: %s", subscribing);
 				if(!isSubscribed() && !subscribing) {
 					subscribing = true;
@@ -259,6 +256,7 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
 		public void onDeviceSelected(PlexDevice device, boolean resume) {
       subscribing = false;
       if(device != null) {
+        Logger.d("[VCFPActivity] onClientChosen: %s", device.name);
         PlexClient clientSelected = (PlexClient) device;
 
         // Start animating the action bar icon
@@ -271,6 +269,7 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
         if (clientSelected.isCastClient) {
           if(VoiceControlForPlexApplication.getInstance().hasChromecast()) {
             mClient = clientSelected;
+            Logger.d("[VCPActivity] subscribing");
             castPlayerManager.subscribe(mClient);
           } else {
             showChromecastPurchase(clientSelected, new Runnable() {
@@ -332,8 +331,6 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
     }
   };
 
-  protected void castSubscribe() {}
-
 	@Override
 	protected void onDestroy() {
 		super.onDestroy();
@@ -350,6 +347,7 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
 	@Override
 	protected void onResume() {
 		super.onResume();
+    Logger.d("[VCFPActivity] onResume");
     if(!plexSubscription.isSubscribed() && !castPlayerManager.isSubscribed()) {
       subscribed = false;
       setCastIconInactive();
@@ -380,13 +378,25 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
     setCastIconInactive();
   }
 
+  protected void setCastIconInactive() {
+    Logger.d("[VCFPActivity] setCastIconInactive");
+    try {
+      MenuItem castIcon = menu.findItem(R.id.action_cast);
+      castIcon.setIcon(R.drawable.mr_ic_media_route_holo_dark);
+    } catch (Exception e) {}
+  }
+
   protected void setCastIconActive() {
-    MenuItem castIcon = menu.findItem(R.id.action_cast);
-    castIcon.setIcon(R.drawable.mr_ic_media_route_on_holo_dark);
+    Logger.d("[VCFPActivity] setCastIconActive");
+    try {
+      MenuItem castIcon = menu.findItem(R.id.action_cast);
+      castIcon.setIcon(R.drawable.mr_ic_media_route_on_holo_dark);
+    } catch (Exception e) {}
   }
 
   @Override
   public void onCastConnected(PlexClient _client) {
+    Logger.d("[VCFPActivity] onCastConnected");
     onSubscribed(_client);
   }
 
@@ -404,6 +414,8 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
   public void onCastPlayerTimeUpdate(int seconds) {
 
   }
+
+
 
   @Override
   public void onMessageReceived(MediaContainer mc) {
@@ -476,11 +488,6 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
     nowPlayingMedia = null;
     mNotifyMgr.cancel(mNotificationId);
     feedback.m(R.string.disconnected);
-  }
-
-  protected void setCastIconInactive() {
-    MenuItem castIcon = menu.findItem(R.id.action_cast);
-    castIcon.setIcon(R.drawable.mr_ic_media_route_holo_dark);
   }
 
   private void getThumb(final String thumb, final PlexMedia media) {
@@ -644,5 +651,10 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
     // We have no network connection, so hide the cast button
     MenuItem item = menu.findItem(R.id.action_cast);
     item.setVisible(false);
+  }
+
+  @Override
+  public void onCastPlayerPlaylistAdvance(String key) {
+
   }
 }

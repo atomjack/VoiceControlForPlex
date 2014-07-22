@@ -35,6 +35,7 @@ import com.atomjack.vcfp.activities.VCFPActivity;
 import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexDirectory;
+import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexResponse;
 import com.atomjack.vcfp.model.PlexServer;
 import com.atomjack.vcfp.model.PlexTrack;
@@ -876,7 +877,7 @@ public class PlexSearchService extends Service {
 
 		if(videos.size() == 1) {
 			Logger.d("Chosen video: %s", videos.get(0).title);
-			playVideo(videos.get(0));
+			playMedia(videos.get(0));
 		} else if(videos.size() > 1) {
 			// We found more than one match, but let's see if any of them are an exact match
 			Boolean exactMatch = false;
@@ -885,7 +886,7 @@ public class PlexSearchService extends Service {
 				if(videos.get(i).title.toLowerCase().equals(queryTerm.toLowerCase())) {
 					Logger.d("found exact match!");
 					exactMatch = true;
-					playVideo(videos.get(i));
+					playMedia(videos.get(i));
 					break;
 				}
 			}
@@ -905,99 +906,86 @@ public class PlexSearchService extends Service {
 		}
 	}
 
-	private void playVideo(final PlexVideo video) {
-		if(video.server.owned)
-			playVideo(video, null);
+  private void requestTransientAccessToken(PlexServer server, final AfterTransientTokenRequest onFinish) {
+    String path = "/security/token?type=delegation&scope=all";
+    PlexHttpClient.get(server, path, new PlexHttpMediaContainerHandler() {
+      @Override
+      public void onSuccess(MediaContainer mediaContainer) {
+        onFinish.success(mediaContainer.token);
+      }
+
+      @Override
+      public void onFailure(Throwable error) {
+        onFinish.failure();
+      }
+    });
+  }
+
+	private void playMedia(final PlexMedia media) {
+    playMedia(media, null);
+  }
+
+  private void playMedia(final PlexMedia media, final PlexDirectory album) {
+		if(media.server.owned)
+			playMedia(media, album, null);
 		else {
 			// TODO: switch this to the PlexServer method and verify
-			requestTransientAccessToken(video.server, new AfterTransientTokenRequest() {
+			requestTransientAccessToken(media.server, new AfterTransientTokenRequest() {
 				@Override
 				public void success(String token) {
-					playVideo(video, token);
+					playMedia(media, album, token);
 				}
 
 				@Override
 				public void failure() {
 					// Just try to play without a transient token
-					playVideo(video, null);
+					playMedia(media, album, null);
 				}
 			});
 		}
 	}
 
-	private void requestTransientAccessToken(PlexServer server, final AfterTransientTokenRequest onFinish) {
-		String path = "/security/token?type=delegation&scope=all";
-		PlexHttpClient.get(server, path, new PlexHttpMediaContainerHandler() {
-			@Override
-			public void onSuccess(MediaContainer mediaContainer) {
-				onFinish.success(mediaContainer.token);
-			}
-
-			@Override
-			public void onFailure(Throwable error) {
-				onFinish.failure();
-			}
-		});
-	}
-
-	private void playVideo(final PlexVideo video, String transientToken) {
-		Logger.d("Playing video: %s", video.title);
+	private void playMedia(final PlexMedia media, PlexDirectory album, String transientToken) {
+		Logger.d("Playing video: %s", media.title);
 		Logger.d("Client: %s", client);
 		if(client.isCastClient) {
 
-			Logger.d("active connection: %s", video.server.activeConnection);
+			Logger.d("active connection: %s", media.server.activeConnection);
 			Intent sendIntent = new Intent(this, CastActivity.class);
 			sendIntent.setAction(VoiceControlForPlexApplication.Intent.CAST_MEDIA);
-			sendIntent.putExtra("video", video);
-			sendIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLIENT, client);
+      sendIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_MEDIA, media);
+      sendIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLIENT, client);
 			sendIntent.putExtra("resume", resumePlayback);
 			sendIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 			startActivity(sendIntent);
-			/*
-
-
-			Logger.d("cast device: %s", mClient.castDevice);
-
-
-
-
-
-			Cast.CastOptions.Builder apiOptionsBuilder = Cast.CastOptions
-							.builder(mClient.castDevice, mCastClientListener);
-			mApiClient = new GoogleApiClient.Builder(this)
-							.addApi(Cast.API, apiOptionsBuilder.build())
-							.addConnectionCallbacks(mConnectionCallbacks)
-//							.addOnConnectionFailedListener(mConnectionFailedListener)
-							.build();
-			mApiClient.connect();
-
-			*/
-
 			return;
 		}
 
     Logger.d("currentNetworkState: %s", currentNetworkState);
     if(currentNetworkState == VCFPActivity.NetworkState.MOBILE) {
-      video.server.localPlay(video, resumePlayback, transientToken);
+      media.server.localPlay(media, resumePlayback, transientToken);
     } else if(currentNetworkState == VCFPActivity.NetworkState.WIFI) {
 
 
       try {
-        QueryString qs = new QueryString("machineIdentifier", video.server.machineIdentifier);
-        Logger.d("machine id: %s", video.server.machineIdentifier);
-        qs.add("key", video.key);
-        Logger.d("key: %s", video.key);
-        qs.add("port", video.server.activeConnection.port);
-        Logger.d("port: %s", video.server.activeConnection.port);
-        qs.add("address", video.server.activeConnection.address);
-        Logger.d("address: %s", video.server.activeConnection.address);
+        QueryString qs = new QueryString("machineIdentifier", media.server.machineIdentifier);
+        Logger.d("machine id: %s", media.server.machineIdentifier);
+        qs.add("key", media.key);
+        Logger.d("key: %s", media.key);
+        qs.add("port", media.server.activeConnection.port);
+        Logger.d("port: %s", media.server.activeConnection.port);
+        qs.add("address", media.server.activeConnection.address);
+        Logger.d("address: %s", media.server.activeConnection.address);
 
-        if ((Preferences.get(Preferences.RESUME, false) || resumePlayback) && video.viewOffset != null)
-          qs.add("viewOffset", video.viewOffset);
+        if ((Preferences.get(Preferences.RESUME, false) || resumePlayback) && media.viewOffset != null)
+          qs.add("viewOffset", media.viewOffset);
         if (transientToken != null)
           qs.add("token", transientToken);
-        if (video.server.accessToken != null)
-          qs.add(PlexHeaders.XPlexToken, video.server.accessToken);
+        if (media.server.accessToken != null)
+          qs.add(PlexHeaders.XPlexToken, media.server.accessToken);
+
+        if (album != null)
+          qs.add("containerKey", album.key);
 
         String url = String.format("http://%s:%s/player/playback/playMedia?%s", client.address, client.port, qs);
         PlexHttpClient.get(url, new PlexHttpResponseHandler() {
@@ -1006,7 +994,7 @@ public class PlexSearchService extends Service {
             // If the host we're playing on is this device, we don't wanna do anything else here.
             if (Utils.getIPAddress(true).equals(client.address) || r == null)
               return;
-            feedback.m(getResources().getString(R.string.now_watching_video), video.isMovie() ? video.title : video.showTitle, client.name);
+            feedback.m(getResources().getString(R.string.now_watching_video), media.isMovie() ? media.title : media.grandparentTitle, client.name);
             Boolean passed = true;
             if (r.code != null) {
               if (!r.code.equals("200")) {
@@ -1016,7 +1004,7 @@ public class PlexSearchService extends Service {
             Logger.d("Playback response: %s", r.code);
             if (passed) {
               videoPlayed = true;
-              showPlayingVideo(video);
+              showPlayingMedia(media);
             } else {
               feedback.e(getResources().getString(R.string.http_status_code_error), r.code);
             }
@@ -1035,9 +1023,21 @@ public class PlexSearchService extends Service {
     }
 	}
 
-	private void showPlayingVideo(PlexVideo video) {
+  private void castAlbum(List<PlexTrack> tracks) {
+    Intent sendIntent = new Intent(this, CastActivity.class);
+    sendIntent.setAction(VoiceControlForPlexApplication.Intent.CAST_MEDIA);
+    sendIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_MEDIA, tracks.get(0));
+    sendIntent.putParcelableArrayListExtra(VoiceControlForPlexApplication.Intent.EXTRA_ALBUM, (ArrayList<PlexTrack>)tracks);
+    sendIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLIENT, client);
+    sendIntent.putExtra("resume", resumePlayback);
+    sendIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    sendIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+    startActivity(sendIntent);
+  }
+
+	private void showPlayingMedia(PlexMedia media) {
 		Intent nowPlayingIntent = new Intent(this, NowPlayingActivity.class);
-		nowPlayingIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_MEDIA, video);
+		nowPlayingIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_MEDIA, media);
 		nowPlayingIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLIENT, client);
 		nowPlayingIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 		startActivity(nowPlayingIntent);
@@ -1112,7 +1112,7 @@ public class PlexSearchService extends Service {
 			}
 		} else {
 			if(videos.size() == 1)
-				playVideo(videos.get(0));
+				playMedia(videos.get(0));
 			else {
 				// We found more than one matching show. Let's check if the title of any of the matching shows
 				// exactly equals the query term, otherwise tell the user to be more specific.
@@ -1126,7 +1126,7 @@ public class PlexSearchService extends Service {
 				}
 
 				if(exactMatch > -1) {
-					playVideo(videos.get(exactMatch));
+					playMedia(videos.get(exactMatch));
 				} else {
 					feedback.e(getResources().getString(R.string.found_more_than_one_show));
 					return;
@@ -1243,7 +1243,7 @@ public class PlexSearchService extends Service {
 				latestVideo.server = show.server;
 				Logger.d("Found video: %s", latestVideo.airDate());
 				if(latestVideo != null) {
-					playVideo(latestVideo);
+					playMedia(latestVideo);
 				} else {
 					if(queries.size() > 0)
 						startup();
@@ -1331,13 +1331,13 @@ public class PlexSearchService extends Service {
 			else
 				feedback.e(getResources().getString(R.string.couldnt_find_episode));
 		} else if(videos.size() == 1) {
-			playVideo(videos.get(0));
+			playMedia(videos.get(0));
 		} else {
 			Boolean exactMatch = false;
 			for(int i=0;i<videos.size();i++) {
 				if(videos.get(i).grandparentTitle.toLowerCase().equals(showSpecified.toLowerCase())) {
 					exactMatch = true;
-					playVideo(videos.get(i));
+					playMedia(videos.get(i));
 					break;
 				}
 			}
@@ -1459,7 +1459,7 @@ public class PlexSearchService extends Service {
                       video.grandparentTitle = show.title;
 											video.showTitle = show.title;
                       video.parentArt = mc.art;
-											playVideo(video);
+											playMedia(video);
 											foundEpisode = true;
 											break;
 										}
@@ -1495,7 +1495,10 @@ public class PlexSearchService extends Service {
 	}
 
 	private void searchForAlbum(final String artist, final String album) {
-		feedback.m(getString(R.string.searching_for_album), album, artist);
+    if(!artist.equals(""))
+      feedback.m(getString(R.string.searching_for_album), album, artist);
+    else
+      feedback.m(getString(R.string.searching_for_the_album), album);
 		Logger.d("Searching for album %s by %s.", album, artist);
 		serversSearched = 0;
 		Logger.d("Servers: %d", plexmediaServers.size());
@@ -1604,7 +1607,7 @@ public class PlexSearchService extends Service {
 						serversSearched++;
 						if(serversSearched == plexmediaServers.size()) {
 							if(tracks.size() > 0) {
-								playTrack(tracks.get(0));
+								playMedia(tracks.get(0));
 							} else {
 								if(queries.size() > 0)
 									startup();
@@ -1639,13 +1642,13 @@ public class PlexSearchService extends Service {
 									if(serversSearched == plexmediaServers.size()) {
 										Logger.d("found music to play.");
 										if(tracks.size() > 0) {
-											playTrack(tracks.get(0));
+                      playMedia(tracks.get(0));
 										} else {
 											Boolean exactMatch = false;
 											for(int k=0;k<albums.size();k++) {
 												if(tracks.get(k).artist.toLowerCase().equals(artist.toLowerCase())) {
 													exactMatch = true;
-													playTrack(tracks.get(k));
+                          playMedia(tracks.get(k));
 												}
 											}
 											if(!exactMatch) {
@@ -1673,7 +1676,7 @@ public class PlexSearchService extends Service {
 					serversSearched++;
 					if(serversSearched == plexmediaServers.size()) {
 						if(tracks.size() > 0) {
-							playTrack(tracks.get(0));
+              playMedia(tracks.get(0));
 						} else {
 							if(queries.size() > 0)
 								startup();
@@ -1694,13 +1697,26 @@ public class PlexSearchService extends Service {
 			public void onSuccess(MediaContainer mc)
 			{
 				if(mc.tracks.size() > 0) {
-					PlexTrack track = mc.tracks.get(0);
-					track.server = album.server;
-					track.thumb = album.thumb;
-					track.grandparentTitle = album.parentTitle;
-					track.parentTitle = album.title;
-          track.art = album.art;
-					playTrack(track, album);
+          List<PlexTrack> tracks = mc.tracks;
+          for(PlexTrack track : tracks) {
+            track.server = album.server;
+            track.thumb = album.thumb;
+            track.grandparentTitle = album.parentTitle;
+            track.parentTitle = album.title;
+            track.art = album.art;
+          }
+
+
+//					PlexTrack track = mc.tracks.get(0);
+//					track.server = album.server;
+//					track.thumb = album.thumb;
+//					track.grandparentTitle = album.parentTitle;
+//					track.parentTitle = album.title;
+//          track.art = album.art;
+          if(client.isCastClient)
+            castAlbum(tracks);
+          else
+  					playMedia(tracks.get(0), album);
 				} else {
 					Logger.d("Didn't find any tracks");
 					if(queries.size() > 0)
@@ -1716,52 +1732,6 @@ public class PlexSearchService extends Service {
 				feedback.e(getResources().getString(R.string.got_error), error.getMessage());
 			}
 		});
-	}
-
-	private void playTrack(final PlexTrack track) {
-		playTrack(track, null);
-	}
-
-	private void playTrack(final PlexTrack track, final PlexDirectory album) {
-    if(currentNetworkState == VCFPActivity.NetworkState.MOBILE) {
-      track.server.localPlay(track, resumePlayback, album.key, null);
-    } else if(currentNetworkState == VCFPActivity.NetworkState.WIFI) {
-
-
-      QueryString qs = new QueryString("machineIdentifier", track.server.machineIdentifier);
-      qs.add("key", track.key);
-      qs.add("port", track.server.activeConnection.port);
-      qs.add("address", track.server.activeConnection.address);
-      if (album != null)
-        qs.add("containerKey", album.key);
-      if ((Preferences.get(Preferences.RESUME, false) || resumePlayback) && track.viewOffset != null)
-        qs.add("viewOffset", track.viewOffset);
-      qs.add(PlexHeaders.XPlexTargetClientIdentifier, client.machineIdentifier);
-      String url = String.format("http://%s:%s/player/playback/playMedia?%s", client.address, client.port, qs);
-
-      PlexHttpClient.get(url, new PlexHttpResponseHandler() {
-        @Override
-        public void onSuccess(PlexResponse r) {
-          Boolean passed = true;
-          if (r.code != null) {
-            if (!r.code.equals("200")) {
-              passed = false;
-            }
-          }
-          Logger.d("Playback response: %s", r.code);
-          if (passed) {
-            showPlayingTrack(track);
-          } else {
-            feedback.e(getResources().getString(R.string.http_status_code_error), r.code);
-          }
-        }
-
-        @Override
-        public void onFailure(Throwable error) {
-          feedback.e(getResources().getString(R.string.got_error), error.getMessage());
-        }
-      });
-    }
 	}
 
 	private void showPlayingTrack(PlexTrack track) {
