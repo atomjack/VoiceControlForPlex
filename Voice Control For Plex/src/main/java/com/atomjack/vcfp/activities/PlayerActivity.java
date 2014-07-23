@@ -135,6 +135,7 @@ public abstract class PlayerActivity extends VCFPActivity implements SeekBar.OnS
     TextView nowPlayingOnClient = (TextView)findViewById(R.id.nowPlayingOnClient);
     nowPlayingOnClient.setText(getResources().getString(R.string.now_playing_on) + " " + mClient.name);
 
+    Logger.d("[PlayerActivity] Setting thumb in showNowPlaying");
     setThumb();
     attachUIElements();
   }

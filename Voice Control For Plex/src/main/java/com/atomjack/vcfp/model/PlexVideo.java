@@ -59,6 +59,10 @@ public class PlexVideo extends PlexMedia {
     return !type.equals("movie");
   }
 
+  @Override
+  public boolean isClip() {
+    return type.equals("clip");
+  }
 
   @Override
 	public String getTitle() {

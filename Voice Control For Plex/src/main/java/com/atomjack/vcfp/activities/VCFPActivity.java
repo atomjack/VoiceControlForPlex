@@ -50,6 +50,7 @@ import com.atomjack.vcfp.model.Timeline;
 import com.atomjack.vcfp.net.PlexHttpClient;
 import com.atomjack.vcfp.net.PlexHttpMediaContainerHandler;
 import com.bugsense.trace.BugSenseHandler;
+import com.google.android.gms.cast.MediaStatus;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.loopj.android.http.BinaryHttpResponseHandler;
@@ -63,7 +64,7 @@ import java.util.List;
 
 import cz.fhucho.android.util.SimpleDiskCache;
 
-public abstract class VCFPActivity extends ActionBarActivity implements PlexSubscription.Listener, CastPlayerManager.Listener, VoiceControlForPlexApplication.NetworkChangeListener {
+public abstract class VCFPActivity extends ActionBarActivity implements PlexSubscription.PlexListener, CastPlayerManager.CastListener, VoiceControlForPlexApplication.NetworkChangeListener {
 	protected PlexMedia nowPlayingMedia;
 	protected boolean subscribed = false;
 	protected boolean subscribing = false;
@@ -171,6 +172,7 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
   }
 
   private void getPlayingMedia(final PlexServer server, final Timeline timeline) {
+    Logger.d("[VCFPActivity] getPlayingMedia: %s", timeline.key);
 		server.findServerConnection(new ServerFindHandler() {
 			@Override
 			public void onSuccess() {
@@ -186,7 +188,6 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
               Logger.d("Failed to get media with type %s", timeline.type);
             }
 						nowPlayingMedia.server = server;
-						Logger.d("We're watching %s", nowPlayingMedia.title);
 
             VoiceControlForPlexApplication.getInstance().setNotification(mClient, mCurrentState, nowPlayingMedia);
             if(timeline.continuing != null && timeline.continuing.equals("1"))
@@ -407,7 +408,16 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
 
   @Override
   public void onCastPlayerStateChanged(int status) {
-
+    PlayerState oldState = mCurrentState;
+    mCurrentState = PlayerState.getState(status);
+    Logger.d("[VCFPActivity] onCastPlayerStateChanged: %s (old state: %s)", mCurrentState, oldState);
+    if(mCurrentState != oldState) {
+      if(mCurrentState == PlayerState.STOPPED) {
+        mNotifyMgr.cancel(mNotificationId);
+      } else {
+        VoiceControlForPlexApplication.getInstance().setNotification(mClient, mCurrentState, nowPlayingMedia);
+      }
+    }
   }
 
   @Override
@@ -418,7 +428,7 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
 
 
   @Override
-  public void onMessageReceived(MediaContainer mc) {
+  public void onTimelineReceived(MediaContainer mc) {
     List<Timeline> timelines = mc.timelines;
     if(timelines != null) {
       for (Timeline timeline : timelines) {
@@ -464,7 +474,7 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
                   }
                 }
                 if(mCurrentState != PlayerState.STOPPED && oldState != mCurrentState) {
-                  Logger.d("onMessageReceived setting notification with %s", mCurrentState);
+                  Logger.d("onTimelineReceived setting notification with %s", mCurrentState);
                   VoiceControlForPlexApplication.getInstance().setNotification(mClient, mCurrentState, nowPlayingMedia);
                 }
               }
@@ -531,8 +541,7 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
     Logger.d("Setting thumb: %s", is);
     View layout;
     View backgroundLayout = findViewById(R.id.background);
-    View musicLayout = findViewById(R.id.nowPlayingMusicCover);;
-
+    View musicLayout = findViewById(R.id.nowPlayingMusicCover);
     if(nowPlayingMedia instanceof PlexTrack && getOrientation() == Configuration.ORIENTATION_PORTRAIT) {
       backgroundLayout.setBackground(null);
       layout = musicLayout;
@@ -548,8 +557,6 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
     }
 
     Drawable d = Drawable.createFromStream(is, "thumb");
-    Logger.d("d: %s", d);
-//    d.setAlpha(80);
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
       layout.setBackground(d);
     else
@@ -559,16 +566,17 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
   public void setThumb() {
     if(nowPlayingMedia.thumb != null && !nowPlayingMedia.thumb.equals("")) {
       String thumb = nowPlayingMedia.thumb;
+      Logger.d("setThumb: %s", thumb);
       if(nowPlayingMedia instanceof PlexVideo) {
         PlexVideo video = (PlexVideo)nowPlayingMedia;
-        thumb = video.isMovie() ? video.thumb : video.grandparentThumb;
+        thumb = video.isMovie() || video.isClip() ? video.thumb : video.grandparentThumb;
         Logger.d("orientation: %s, type: %s", getOrientation(), video.type);
+        if(video.isClip()) {
+
+        }
+
         if(getOrientation() == Configuration.ORIENTATION_LANDSCAPE) {
-          if(video.isMovie())
-            thumb = video.art;
-          else if(video.isShow()) {
-            thumb = video.art;
-          }
+          thumb = video.art;
         }
       } else if(nowPlayingMedia instanceof PlexTrack && getOrientation() == Configuration.ORIENTATION_LANDSCAPE) {
         PlexTrack track = (PlexTrack)nowPlayingMedia;

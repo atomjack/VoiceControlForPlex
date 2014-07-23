@@ -370,9 +370,9 @@ public class PlexSubscription {
       @Override
       public void run() {
         if (listener != null) {
-          listener.onMessageReceived(mc);
+          listener.onTimelineReceived(mc);
         } else {
-          notificationListener.onMessageReceived(mc);
+          notificationListener.onTimelineReceived(mc);
         }
       }
     });
@@ -388,10 +388,10 @@ public class PlexSubscription {
     });
   }
 
-  public interface Listener {
+  public interface PlexListener {
     void onSubscribed(PlexClient client);
     void onUnsubscribed();
-    void onMessageReceived(MediaContainer mc);
+    void onTimelineReceived(MediaContainer mc);
     void onSubscribeError(String errorMessage);
   };
 }

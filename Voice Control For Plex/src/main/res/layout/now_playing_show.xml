@@ -4,6 +4,7 @@
                 android:layout_height="fill_parent"
                 android:id="@+id/background"
                 android:orientation="vertical">
+
     <ScrollView
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
@@ -85,6 +86,7 @@
 
         </LinearLayout>
     </ScrollView>
+
     <LinearLayout
         android:layout_width="fill_parent"
         android:layout_height="110dp"
@@ -99,4 +101,5 @@
             android:layout_alignParentBottom="true"/>
         <include layout="@layout/playback" />
     </LinearLayout>
+
 </RelativeLayout>

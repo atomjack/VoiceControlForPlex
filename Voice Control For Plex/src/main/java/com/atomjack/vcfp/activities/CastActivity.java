@@ -36,7 +36,7 @@ public class CastActivity extends PlayerActivity {
 
 		Preferences.setContext(this);
 
-		if(getIntent().getAction().equals(VoiceControlForPlexApplication.Intent.CAST_MEDIA)) {
+		if(getIntent().getAction() != null && getIntent().getAction().equals(VoiceControlForPlexApplication.Intent.CAST_MEDIA)) {
 			mClient = getIntent().getParcelableExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLIENT);
       nowPlayingMedia = getIntent().getParcelableExtra(VoiceControlForPlexApplication.Intent.EXTRA_MEDIA);
       nowPlayingAlbum = getIntent().getParcelableArrayListExtra(VoiceControlForPlexApplication.Intent.EXTRA_ALBUM);
@@ -54,6 +54,8 @@ public class CastActivity extends PlayerActivity {
       }
 		} else {
 			// TODO: Something here
+      Logger.d("[CastActivity] No action found.");
+      finish();
 		}
 	}
 
@@ -235,7 +237,8 @@ public class CastActivity extends PlayerActivity {
 
   @Override
   public void onCastPlayerStateChanged(int status) {
-    Logger.d("onCastPlayerStateChanged: %d", status);
+    super.onCastPlayerStateChanged(status);
+    Logger.d("[CastActivity] onCastPlayerStateChanged: %d", status);
     if(isSeeking)
       isSeeking = false;
     if(status == MediaStatus.PLAYER_STATE_IDLE) {

@@ -48,6 +48,8 @@ public abstract class PlexMedia implements Parcelable {
     return !video.type.equals("movie");
   }
 
+  public boolean isClip() { return false; }
+
   @Attribute
 	public String key;
   @Attribute

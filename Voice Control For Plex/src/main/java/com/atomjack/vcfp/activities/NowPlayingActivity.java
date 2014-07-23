@@ -155,6 +155,7 @@ public class NowPlayingActivity extends PlayerActivity {
     Logger.d("now playing onconfigchanged: %d", newConfig.orientation);
 
 //    if(nowPlayingMedia instanceof PlexVideo)
+      Logger.d("[NowPlayingActivity] Setting thumb in onConfigChanged");
       setThumb();
 //    else if(nowPlayingMedia instanceof PlexTrack)
 //      setThumb((PlexTrack)nowPlayingMedia, newConfig.orientation, (ImageView)findViewById(R.id.nowPlayingImage));
@@ -230,6 +231,7 @@ public class NowPlayingActivity extends PlayerActivity {
       // Need to update the duration
       seekBar.setMax(nowPlayingMedia.duration);
       durationDisplay.setText(VoiceControlForPlexApplication.secondsToTimecode(nowPlayingMedia.duration / 1000));
+      Logger.d("[NowPlayingActivity] Setting thumb in onSubscriptionMessage");
       setThumb();
       continuing = false;
     }

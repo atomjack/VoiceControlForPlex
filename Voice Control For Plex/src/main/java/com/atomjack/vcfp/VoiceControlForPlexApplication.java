@@ -48,6 +48,7 @@ import com.android.vending.billing.IabResult;
 import com.android.vending.billing.Inventory;
 import com.android.vending.billing.Purchase;
 import com.android.vending.billing.SkuDetails;
+import com.atomjack.vcfp.activities.CastActivity;
 import com.atomjack.vcfp.activities.NowPlayingActivity;
 import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.PlexClient;
@@ -373,7 +374,12 @@ public class VoiceControlForPlexApplication extends Application
           pauseIntent.putExtra(PlexControlService.MEDIA, media);
           PendingIntent pausePendingIntent = PendingIntent.getService(VoiceControlForPlexApplication.this, 0, pauseIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
-          android.content.Intent nowPlayingIntent = new android.content.Intent(VoiceControlForPlexApplication.this, NowPlayingActivity.class);
+          android.content.Intent nowPlayingIntent;
+          if(client.isCastClient) {
+            nowPlayingIntent = new android.content.Intent(VoiceControlForPlexApplication.this, CastActivity.class);
+            nowPlayingIntent.setAction(Intent.CAST_MEDIA);
+          } else
+            nowPlayingIntent = new android.content.Intent(VoiceControlForPlexApplication.this, NowPlayingActivity.class);
           nowPlayingIntent.setFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK |
                   android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK);
           nowPlayingIntent.putExtra(Intent.EXTRA_MEDIA, media);

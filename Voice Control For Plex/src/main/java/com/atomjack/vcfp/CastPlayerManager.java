@@ -1,13 +1,10 @@
 package com.atomjack.vcfp;
 
 import android.content.Context;
-import android.net.Uri;
 import android.support.v7.media.MediaRouter;
 
-import com.atomjack.vcfp.activities.MainActivity;
 import com.atomjack.vcfp.activities.VCFPActivity;
 import com.atomjack.vcfp.model.PlexClient;
-import com.atomjack.vcfp.model.PlexDirectory;
 import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexTrack;
 import com.atomjack.vcfp.model.PlexVideo;
@@ -15,14 +12,12 @@ import com.google.android.gms.cast.ApplicationMetadata;
 import com.google.android.gms.cast.MediaInfo;
 import com.google.android.gms.cast.MediaMetadata;
 import com.google.android.gms.cast.MediaStatus;
-import com.google.android.gms.common.images.WebImage;
 import com.google.sample.castcompanionlibrary.cast.VideoCastManager;
 import com.google.sample.castcompanionlibrary.widgets.MiniController;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
 
@@ -69,7 +64,7 @@ public class CastPlayerManager {
 
   private Timer durationTimer;
 
-  private Listener listener;
+  private CastListener listener;
   private VCFPActivity notificationListener;
 
   private boolean subscribed = false;
@@ -136,7 +131,7 @@ public class CastPlayerManager {
       notificationListener = _listener;
   }
 
-  public interface Listener {
+  public interface CastListener {
     void onCastConnected(PlexClient client);
     void onCastDisconnected();
     void onCastPlayerStateChanged(int status);
@@ -438,7 +433,7 @@ public class CastPlayerManager {
         trackJson.put(PARAMS.SRC, track.getPartUri());
         trackJson.put(PARAMS.KEY, track.key);
         trackJson.put(PARAMS.ART, track.getArtUri());
-        trackJson.put(PARAMS.OFFSET, 0);
+        trackJson.put(PARAMS.OFFSET, Math.floor(Integer.parseInt(track.viewOffset) / 1000)) ;
         trackJson.put(PARAMS.THUMB, track.getThumbUri(350, 350));
         trackJson.put(PARAMS.MEDIA_TYPE, PARAMS.MEDIA_TYPE_AUDIO);
       } catch (Exception e) {}
