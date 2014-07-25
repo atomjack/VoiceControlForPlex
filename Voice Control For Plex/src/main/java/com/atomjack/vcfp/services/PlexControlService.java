@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.os.Handler;
 import android.os.IBinder;
 
+import com.atomjack.vcfp.CastPlayerManager;
 import com.atomjack.vcfp.Logger;
 import com.atomjack.vcfp.PlayerState;
 import com.atomjack.vcfp.PlexHeaders;
@@ -16,6 +17,7 @@ import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexResponse;
 import com.atomjack.vcfp.model.Timeline;
 import com.atomjack.vcfp.net.PlexHttpClient;
+import com.google.android.gms.games.Player;
 
 import org.apache.http.Header;
 import org.apache.http.message.BasicHeader;
@@ -35,6 +37,8 @@ public class PlexControlService extends IntentService {
 
   private static Serializer serial = new Persister();
 
+  private CastPlayerManager castPlayerManager;
+
   public PlexControlService() {
     super("Plex Control Service");
   }
@@ -47,32 +51,55 @@ public class PlexControlService extends IntentService {
   @Override
   public void onHandleIntent(final Intent intent) {
 
+    if(castPlayerManager == null)
+      castPlayerManager = VoiceControlForPlexApplication.getInstance().castPlayerManager;
+
     if(intent.getAction() != null) {
       client = intent.getParcelableExtra(CLIENT);
       PlexMedia playingMedia = intent.getParcelableExtra(MEDIA);
+      PlayerState currentState;
+      Timeline t = null;
 
       Preferences.setContext(this);
-      Header[] headers = {
-        new BasicHeader(PlexHeaders.XPlexClientIdentifier, Preferences.getUUID())
-      };
-      MediaContainer mc = PlexHttpClient.getSync(String.format("http://%s:%s/player/timeline/poll?commandID=0", client.address, client.port), headers);
-      Timeline t = mc.getActiveTimeline();
-      PlayerState currentState = PlayerState.getState(t.state);
+
+
+      if(client.isCastClient) {
+        currentState = castPlayerManager.getCurrentState();
+      } else {
+        Header[] headers = {
+                new BasicHeader(PlexHeaders.XPlexClientIdentifier, Preferences.getUUID())
+        };
+        MediaContainer mc = PlexHttpClient.getSync(String.format("http://%s:%s/player/timeline/poll?commandID=0", client.address, client.port), headers);
+        t = mc.getActiveTimeline();
+        currentState = PlayerState.getState(t.state);
+      }
 
       PlexResponse response = null;
 
       if (intent.getAction().equals(ACTION_PLAY)) {
-        response = client.play();
-        if(response.code.equals("200"))
-          currentState = PlayerState.PLAYING;
+        if(client.isCastClient) {
+          castPlayerManager.play();
+        } else {
+          response = client.play();
+          if (response.code.equals("200"))
+            currentState = PlayerState.PLAYING;
+        }
       } else if (intent.getAction().equals(ACTION_PAUSE)) {
-        response = client.pause();
-        if(response.code.equals("200"))
-          currentState = PlayerState.PAUSED;
+        if(client.isCastClient) {
+          castPlayerManager.pause();
+        } else {
+          response = client.pause();
+          if (response.code.equals("200"))
+            currentState = PlayerState.PAUSED;
+        }
       } else if (intent.getAction().equals(ACTION_STOP)) {
-        response = client.stop();
-        if(response.code.equals("200"))
-          currentState = PlayerState.STOPPED;
+        if(client.isCastClient) {
+          castPlayerManager.stop();
+        } else {
+          response = client.stop();
+          if (response.code.equals("200"))
+            currentState = PlayerState.STOPPED;
+        }
       }
 
 

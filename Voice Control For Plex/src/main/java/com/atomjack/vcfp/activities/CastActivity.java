@@ -7,6 +7,7 @@ import android.widget.SeekBar;
 
 import com.atomjack.vcfp.AfterTransientTokenRequest;
 import com.atomjack.vcfp.Logger;
+import com.atomjack.vcfp.PlayerState;
 import com.atomjack.vcfp.PlexHeaders;
 import com.atomjack.vcfp.Preferences;
 import com.atomjack.vcfp.QueryString;
@@ -24,7 +25,7 @@ public class CastActivity extends PlayerActivity {
 	private static VideoCastManager castManager = null;
 	private VCFPCastConsumer castConsumer;
 
-	private int currentState = MediaStatus.PLAYER_STATE_UNKNOWN;
+	private PlayerState currentState = PlayerState.STOPPED;
 
 	private String transientToken;
 
@@ -36,15 +37,17 @@ public class CastActivity extends PlayerActivity {
 
 		Preferences.setContext(this);
 
+    mClient = getIntent().getParcelableExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLIENT);
+    nowPlayingMedia = getIntent().getParcelableExtra(VoiceControlForPlexApplication.Intent.EXTRA_MEDIA);
+    nowPlayingAlbum = getIntent().getParcelableArrayListExtra(VoiceControlForPlexApplication.Intent.EXTRA_ALBUM);
+    resumePlayback = getIntent().getBooleanExtra("resume", false);
+    castManager = castPlayerManager.getCastManager();
+
+    Logger.d("[CastActivity] starting up, action: %s, current state: %s", getIntent().getAction(), castPlayerManager.getCurrentState());
+    Logger.d("mClient: %s", mClient);
 		if(getIntent().getAction() != null && getIntent().getAction().equals(VoiceControlForPlexApplication.Intent.CAST_MEDIA)) {
-			mClient = getIntent().getParcelableExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLIENT);
-      nowPlayingMedia = getIntent().getParcelableExtra(VoiceControlForPlexApplication.Intent.EXTRA_MEDIA);
-      nowPlayingAlbum = getIntent().getParcelableArrayListExtra(VoiceControlForPlexApplication.Intent.EXTRA_ALBUM);
-			resumePlayback = getIntent().getBooleanExtra("resume", false);
 
 			Logger.d("Casting %s", nowPlayingMedia.title);
-
-      castManager = castPlayerManager.getCastManager();
 
       showNowPlaying();
       if(castPlayerManager.isSubscribed()) {
@@ -55,9 +58,19 @@ public class CastActivity extends PlayerActivity {
 		} else {
 			// TODO: Something here
       Logger.d("[CastActivity] No action found.");
-      finish();
+      if(castPlayerManager.getCurrentState().equals(NowPlayingActivity.PlayerState.STOPPED))
+        finish();
+      else {
+        showNowPlaying();
+      }
 		}
 	}
+
+  @Override
+  public void showNowPlaying() {
+    super.showNowPlaying();
+    setupUI();
+  }
 
   @Override
   public void onCastConnected(PlexClient _client) {
@@ -67,6 +80,8 @@ public class CastActivity extends PlayerActivity {
 
   private void setupUI() {
     Logger.d("setting progress to %d", getOffset(nowPlayingMedia));
+    seekBar = (SeekBar)findViewById(R.id.seekBar);
+    seekBar.setOnSeekBarChangeListener(this);
     seekBar.setMax(nowPlayingMedia.duration);
     seekBar.setProgress(getOffset(nowPlayingMedia)*1000);
 
@@ -75,11 +90,10 @@ public class CastActivity extends PlayerActivity {
   }
 
   private void init() {
-    seekBar = (SeekBar)findViewById(R.id.seekBar);
-    seekBar.setOnSeekBarChangeListener(this);
-    setupUI();
-
-    currentState = castManager.getPlaybackStatus();
+    currentState = castPlayerManager.getCurrentState();
+    Logger.d("castPlayerManager.getCurrentState(): %s", castPlayerManager.getCurrentState());
+    if(castPlayerManager.getCurrentState() != PlayerState.STOPPED)
+      return;
     if (Preferences.getString(Preferences.PLEX_USERNAME) != null) {
       nowPlayingMedia.server.requestTransientAccessToken(new AfterTransientTokenRequest() {
         @Override
@@ -180,9 +194,9 @@ public class CastActivity extends PlayerActivity {
 	public void doPlayPause(View v) {
 		try {
       Logger.d("doPlayPause, currentState: %s", currentState);
-			if(currentState !=  MediaStatus.PLAYER_STATE_PLAYING) {
+			if(currentState !=  PlayerState.PLAYING) {
 				castPlayerManager.play();
-			} else if(currentState ==  MediaStatus.PLAYER_STATE_PLAYING) {
+			} else if(currentState ==  PlayerState.PLAYING) {
         castPlayerManager.pause();
 			}
 		} catch (Exception ex) {}
@@ -215,11 +229,11 @@ public class CastActivity extends PlayerActivity {
     isSeeking = false;
 	}
 
-	private void setState(int newState) {
-		currentState = newState;
-		if(currentState ==  MediaStatus.PLAYER_STATE_PAUSED) {
+	private void setState(PlayerState state) {
+		currentState = state;
+		if(currentState ==  PlayerState.PAUSED) {
 			playPauseButton.setImageResource(R.drawable.button_play);
-		} else if(currentState ==  MediaStatus.PLAYER_STATE_PLAYING) {
+		} else if(currentState ==  PlayerState.PLAYING) {
 			playPauseButton.setImageResource(R.drawable.button_pause);
 		}
 	}
@@ -236,16 +250,16 @@ public class CastActivity extends PlayerActivity {
   }
 
   @Override
-  public void onCastPlayerStateChanged(int status) {
-    super.onCastPlayerStateChanged(status);
-    Logger.d("[CastActivity] onCastPlayerStateChanged: %d", status);
+  public void onCastPlayerStateChanged(PlayerState state) {
+    super.onCastPlayerStateChanged(state);
+    Logger.d("[CastActivity] onCastPlayerStateChanged: %s", state);
     if(isSeeking)
       isSeeking = false;
-    if(status == MediaStatus.PLAYER_STATE_IDLE) {
+    if(state == PlayerState.STOPPED) {
       Logger.d("[CastActivity] media player is idle, finishing");
       finish();
     } else
-      setState(status);
+      setState(state);
   }
 
   @Override

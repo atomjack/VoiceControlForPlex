@@ -377,7 +377,7 @@ public class VoiceControlForPlexApplication extends Application
           android.content.Intent nowPlayingIntent;
           if(client.isCastClient) {
             nowPlayingIntent = new android.content.Intent(VoiceControlForPlexApplication.this, CastActivity.class);
-            nowPlayingIntent.setAction(Intent.CAST_MEDIA);
+//            nowPlayingIntent.setAction(Intent.CAST_MEDIA);
           } else
             nowPlayingIntent = new android.content.Intent(VoiceControlForPlexApplication.this, NowPlayingActivity.class);
           nowPlayingIntent.setFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK |

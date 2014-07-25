@@ -14,6 +14,7 @@ import android.support.v7.media.MediaRouter;
 
 import com.atomjack.vcfp.AfterTransientTokenRequest;
 import com.atomjack.vcfp.BuildConfig;
+import com.atomjack.vcfp.CastPlayerManager;
 import com.atomjack.vcfp.Feedback;
 import com.atomjack.vcfp.GDMService;
 import com.atomjack.vcfp.Logger;
@@ -111,7 +112,7 @@ public class PlexSearchService extends Service {
 	boolean mWaitingForReconnect = false;
 	Cast.Listener mCastClientListener;
 	ConnectionCallbacks mConnectionCallbacks;
-
+  private CastPlayerManager castPlayerManager;
 
 	// Callbacks for when we figure out what action the user wishes to take.
 	private myRunnable actionToDo;
@@ -132,6 +133,13 @@ public class PlexSearchService extends Service {
 
     if(plexSubscription == null) {
       plexSubscription = VoiceControlForPlexApplication.getInstance().plexSubscription;
+    }
+
+    if(castPlayerManager == null)
+      castPlayerManager = VoiceControlForPlexApplication.getInstance().castPlayerManager;
+    castPlayerManager.setContext(this);
+    if(castPlayerManager.isSubscribed()) {
+      Logger.d("CAST MANAGER IS SUBSCRIBED");
     }
 
     // TODO: Detect network connection here
@@ -244,6 +252,8 @@ public class PlexSearchService extends Service {
 				feedback.e(getResources().getString(R.string.client_not_specified));
 				return Service.START_NOT_STICKY;
 			}
+//      if(client.isCastClient)
+//        castPlayerManager.subscribe(client);
 			if (queries.size() > 0) {
 				Logger.d("Starting up, with queries: %s", queries);
 				startup();
@@ -390,6 +400,8 @@ public class PlexSearchService extends Service {
               };
             } else {
               client = c;
+//              if(client.isCastClient)
+//                castPlayerManager.subscribe(client);
               queryText = queryText.replaceAll(getString(R.string.pattern_on_client), "$1");
               Logger.d("query text now %s", queryText);
               break;
@@ -711,6 +723,16 @@ public class PlexSearchService extends Service {
 		ArrayList<String> validModes = new ArrayList<String>(Arrays.asList("pause", "play", "stop"));
 		if(validModes.indexOf(which) == -1)
 			return;
+
+    if(client.isCastClient) {
+      if(which.equals("pause"))
+        castPlayerManager.pause();
+      else if(which.equals("play"))
+        castPlayerManager.play();
+      else if(which.equals("stop"))
+        castPlayerManager.stop();
+      return;
+    }
 
 		PlexHttpResponseHandler responseHandler = new PlexHttpResponseHandler()
 		{

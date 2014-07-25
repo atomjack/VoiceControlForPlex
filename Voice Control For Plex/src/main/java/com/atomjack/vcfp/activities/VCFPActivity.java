@@ -399,6 +399,18 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
   public void onCastConnected(PlexClient _client) {
     Logger.d("[VCFPActivity] onCastConnected");
     onSubscribed(_client);
+    castPlayerManager.getPlaybackState();
+  }
+
+  @Override
+  public void onCastPlayerState(PlayerState state, PlexMedia media) {
+    mCurrentState = state;
+    Logger.d("[VCFPActivity] mCurrentState: %s, media: %s", mCurrentState, media);
+    if(!mCurrentState.equals(PlayerState.STOPPED) && media != null) {
+      nowPlayingMedia = media;
+      mClient = castPlayerManager.mClient;
+      VoiceControlForPlexApplication.getInstance().setNotification(mClient, mCurrentState, nowPlayingMedia);
+    }
   }
 
   @Override
@@ -407,9 +419,9 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
   }
 
   @Override
-  public void onCastPlayerStateChanged(int status) {
+  public void onCastPlayerStateChanged(PlayerState state) {
     PlayerState oldState = mCurrentState;
-    mCurrentState = PlayerState.getState(status);
+    mCurrentState = state;
     Logger.d("[VCFPActivity] onCastPlayerStateChanged: %s (old state: %s)", mCurrentState, oldState);
     if(mCurrentState != oldState) {
       if(mCurrentState == PlayerState.STOPPED) {
