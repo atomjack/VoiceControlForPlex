@@ -1006,13 +1006,17 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 		{
 			Logger.d("onRouteAdded: %s", route);
 			if(!VoiceControlForPlexApplication.castClients.containsKey(route.getName())) {
-				PlexClient client = new PlexClient();
-				client.isCastClient = true;
-				client.name = route.getName();
-				client.product = route.getDescription();
-				client.castDevice = CastDevice.getFromBundle(route.getExtras());
-				VoiceControlForPlexApplication.castClients.put(client.name, client);
+        PlexClient client = new PlexClient();
+        client.isCastClient = true;
+        client.name = route.getName();
+        client.product = route.getDescription();
+        client.castDevice = CastDevice.getFromBundle(route.getExtras());
+        VoiceControlForPlexApplication.castClients.put(client.name, client);
         Preferences.put(Preferences.SAVED_CAST_CLIENTS, gsonWrite.toJson(VoiceControlForPlexApplication.castClients));
+        // If the "select a plex client" dialog is showing, refresh the list of clients
+        if(localScan.isDeviceDialogShowing()) {
+          localScan.deviceSelectDialogRefresh();
+        }
       }
 		}
 

@@ -13,14 +13,13 @@ import com.atomjack.vcfp.adapters.PlexListAdapter;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexServer;
 
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class LocalScan {
 	private Context context;
 	private Class theClass;
 	private Dialog searchDialog;
-	private Dialog serverSelectDialog = null;
+	private Dialog deviceSelectDialog = null;
 	private ScanHandler scanHandler;
 
 	public LocalScan(Context ctx, Class cls, ScanHandler handler) {
@@ -64,14 +63,14 @@ public class LocalScan {
 	public void showPlexServers(ConcurrentHashMap<String, PlexServer> servers) {
 		if(searchDialog != null)
 			searchDialog.dismiss();
-		if(serverSelectDialog == null) {
-			serverSelectDialog = new Dialog(context);
+		if(deviceSelectDialog == null) {
+			deviceSelectDialog = new Dialog(context);
 		}
-		serverSelectDialog.setContentView(R.layout.server_select);
-		serverSelectDialog.setTitle("Select a Plex Server");
-		serverSelectDialog.show();
+		deviceSelectDialog.setContentView(R.layout.server_select);
+		deviceSelectDialog.setTitle("Select a Plex Server");
+		deviceSelectDialog.show();
 
-		final ListView serverListView = (ListView)serverSelectDialog.findViewById(R.id.serverListView);
+		final ListView serverListView = (ListView) deviceSelectDialog.findViewById(R.id.serverListView);
 		if(servers == null)
 			servers = new ConcurrentHashMap<String, PlexServer>(VoiceControlForPlexApplication.servers);
 		final PlexListAdapter adapter = new PlexListAdapter(context, PlexListAdapter.TYPE_SERVER);
@@ -83,7 +82,7 @@ public class LocalScan {
 			public void onItemClick(AdapterView<?> parentAdapter, View view, int position, long id) {
 				Logger.d("Clicked position %d", position);
 				PlexServer s = (PlexServer)parentAdapter.getItemAtPosition(position);
-				serverSelectDialog.dismiss();
+				deviceSelectDialog.dismiss();
 				scanHandler.onDeviceSelected(s, false);
 			}
 		});
@@ -130,31 +129,42 @@ public class LocalScan {
 		showPlexClients(showResume, null);
 	}
 
+  public void deviceSelectDialogRefresh() {
+    ListView serverListView = (ListView) deviceSelectDialog.findViewById(R.id.serverListView);
+    PlexListAdapter adapter = (PlexListAdapter)serverListView.getAdapter();
+    adapter.setClients(VoiceControlForPlexApplication.getAllClients());
+    adapter.notifyDataSetChanged();
+  }
+
+  public boolean isDeviceDialogShowing() {
+    return deviceSelectDialog != null && deviceSelectDialog.isShowing();
+  }
+
 	public void showPlexClients(boolean showResume, final ScanHandler onFinish) {
     if (searchDialog != null)
       searchDialog.dismiss();
-    if (serverSelectDialog == null) {
-      serverSelectDialog = new Dialog(context);
+    if (deviceSelectDialog == null) {
+      deviceSelectDialog = new Dialog(context);
     }
-    serverSelectDialog.setContentView(R.layout.server_select);
-    serverSelectDialog.setTitle(R.string.select_plex_client);
-    serverSelectDialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
+    deviceSelectDialog.setContentView(R.layout.server_select);
+    deviceSelectDialog.setTitle(R.string.select_plex_client);
+    deviceSelectDialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
       @Override
       public void onCancel(DialogInterface dialogInterface) {
         if (onFinish == null && scanHandler != null)
           scanHandler.onDeviceSelected(null, false);
-        else if(onFinish != null)
+        else if (onFinish != null)
           onFinish.onDeviceSelected(null, false);
       }
     });
-    serverSelectDialog.show();
+    deviceSelectDialog.show();
 
     if (showResume) {
-      CheckBox resumeCheckbox = (CheckBox) serverSelectDialog.findViewById(R.id.serverListResume);
+      CheckBox resumeCheckbox = (CheckBox) deviceSelectDialog.findViewById(R.id.serverListResume);
       resumeCheckbox.setVisibility(View.VISIBLE);
     }
 
-    final ListView serverListView = (ListView) serverSelectDialog.findViewById(R.id.serverListView);
+    final ListView serverListView = (ListView) deviceSelectDialog.findViewById(R.id.serverListView);
     final PlexListAdapter adapter = new PlexListAdapter(context, PlexListAdapter.TYPE_CLIENT);
     adapter.setClients(VoiceControlForPlexApplication.getAllClients());
     serverListView.setAdapter(adapter);
@@ -164,8 +174,8 @@ public class LocalScan {
       public void onItemClick(AdapterView<?> parentAdapter, View view, int position,
                               long id) {
         PlexClient s = (PlexClient) parentAdapter.getItemAtPosition(position);
-        serverSelectDialog.dismiss();
-        CheckBox resumeCheckbox = (CheckBox) serverSelectDialog.findViewById(R.id.serverListResume);
+        deviceSelectDialog.dismiss();
+        CheckBox resumeCheckbox = (CheckBox) deviceSelectDialog.findViewById(R.id.serverListResume);
         if (onFinish == null)
           scanHandler.onDeviceSelected(s, resumeCheckbox.isChecked());
         else
