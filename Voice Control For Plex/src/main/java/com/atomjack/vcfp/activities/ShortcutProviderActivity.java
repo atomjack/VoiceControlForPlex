@@ -149,6 +149,7 @@ public class ShortcutProviderActivity extends Activity {
 			IntentFilter filters = new IntentFilter();
 			filters.addAction(GDMService.MSG_RECEIVED);
 			filters.addAction(GDMService.SOCKET_CLOSED);
+      filters.addAction(GDMReceiver.ACTION_CANCEL);
 			LocalBroadcastManager.getInstance(this).registerReceiver(gdmReceiver,
 							filters);
 		}

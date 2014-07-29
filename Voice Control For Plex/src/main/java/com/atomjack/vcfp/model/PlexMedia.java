@@ -62,6 +62,8 @@ public abstract class PlexMedia implements Parcelable {
 	public String viewOffset = "0";
 	@Attribute(required=false)
 	public PlexServer server;
+  @Attribute(required=false)
+  public String grandparentKey;
 	@Attribute(required=false)
 	public String grandparentTitle;
 	@Attribute(required=false)
@@ -169,6 +171,7 @@ public abstract class PlexMedia implements Parcelable {
     out.writeString(ratingKey);
     out.writeParcelable(server, flags);
     out.writeTypedList(media);
+    out.writeString(grandparentKey);
   }
 
   public PlexMedia(Parcel in) {
@@ -184,6 +187,7 @@ public abstract class PlexMedia implements Parcelable {
     server = in.readParcelable(PlexServer.class.getClassLoader());
     media = new ArrayList<Media>();
     in.readTypedList(media, Media.CREATOR);
+    grandparentKey = in.readString();
   }
 
   public String getCacheKey(String which) {

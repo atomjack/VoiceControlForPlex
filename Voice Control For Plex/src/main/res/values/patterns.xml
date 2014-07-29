@@ -9,10 +9,11 @@ adding translations, please do not modify (.*), $1, ([0-9]+), etc.
     a quite complicated regular expression. Plugging it into https://www.debuggex.com/ should help you figure out how
     it is constructed.
     -->
-    <item name="pattern_recognition" type="string">^(((watch|resume watching|listen to|watch movie) (.+)( on (.+))?)|((offset|timecode) (.+)( on (.+))?)|((pause|stop|resume) playback( on (.+))?))|(connect to (.+)|disconnect)$</item>
+    <item name="pattern_recognition" type="string">^(((watch|resume watching|listen to|watch movie) (.+)( on (.+))?( on shuffle)?)|((offset|timecode) (.+)( on (.+))?)|((pause|stop|resume) playback( on (.+))?))|(connect to (.+)|disconnect)$</item>
 
     <item name="pattern_on_client" type="string">(.+) on (.+)$</item>
     <item name="pattern_resume_watching" type="string">^resume watching (.+)</item>
+    <item name="pattern_on_shuffle" type="string"> on shuffle$</item>
     <item name="pattern_watch" type="string">watch $1</item>
     <item name="pattern_watch_movie" type="string">watch movie (.+)</item>
     <item name="pattern_watch_season_episode_of_show" type="string">watch season ([0-9]+) episode ([0-9]+) of (.+)</item>

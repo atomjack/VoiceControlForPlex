@@ -4,6 +4,7 @@ import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.support.v4.content.LocalBroadcastManager;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.CheckBox;
@@ -14,6 +15,8 @@ import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexServer;
 
 import java.util.concurrent.ConcurrentHashMap;
+
+import us.nineworlds.serenity.GDMReceiver;
 
 public class LocalScan {
 	private Context context;
@@ -45,6 +48,7 @@ public class LocalScan {
 			searchDialog.setContentView(R.layout.search_popup);
 			searchDialog.setTitle(context.getResources().getString(R.string.searching_for_plex_servers));
 
+      searchDialog.setOnCancelListener(searchDialogCancel);
 			searchDialog.show();
 		}
 
@@ -55,6 +59,15 @@ public class LocalScan {
 		mServiceIntent.putExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE, VoiceControlForPlexApplication.Intent.SCAN_TYPE_SERVER);
 		context.startService(mServiceIntent);
 	}
+
+  private DialogInterface.OnCancelListener searchDialogCancel = new DialogInterface.OnCancelListener() {
+    @Override
+    public void onCancel(DialogInterface dialogInterface) {
+      Logger.d("Broadcasting cancel to gdmreceiver");
+      Intent cancelBroadcast = new Intent(GDMReceiver.ACTION_CANCEL);
+      LocalBroadcastManager.getInstance(context).sendBroadcast(cancelBroadcast);
+    }
+  };
 
 	public void showPlexServers() {
 		showPlexServers(null);
@@ -103,6 +116,7 @@ public class LocalScan {
 
 		searchDialog.setContentView(R.layout.search_popup);
 		searchDialog.setTitle(context.getResources().getString(R.string.searching_for_plex_clients));
+    searchDialog.setOnCancelListener(searchDialogCancel);
 
 		searchDialog.show();
 

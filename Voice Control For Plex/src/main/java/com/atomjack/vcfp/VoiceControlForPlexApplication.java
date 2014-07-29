@@ -95,7 +95,7 @@ public class VoiceControlForPlexApplication extends Application
       public final static String SCAN_TYPE_SERVER = "com.atomjack.vcfp.intent.scan_type_server";
 			public final static String EXTRA_SERVERS = "com.atomjack.vcfp.intent.extra_servers";
 			public final static String EXTRA_CLIENTS = "com.atomjack.vcfp.intent.extra_clients";
-			public final static String ARGUMENTS = "com.atomjack.vcfp.intent.ARGUMENTS";
+      public final static String ARGUMENTS = "com.atomjack.vcfp.intent.ARGUMENTS";
 
 			public final static String SHOWRESOURCE = "com.atomjack.vcfp.intent.SHOWRESOURCE";
 

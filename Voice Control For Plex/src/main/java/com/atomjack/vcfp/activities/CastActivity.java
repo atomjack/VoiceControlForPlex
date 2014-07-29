@@ -257,6 +257,7 @@ public class CastActivity extends PlayerActivity {
       isSeeking = false;
     if(state == PlayerState.STOPPED) {
       Logger.d("[CastActivity] media player is idle, finishing");
+      mNotifyMgr.cancel(mNotificationId);
       finish();
     } else
       setState(state);
@@ -275,14 +276,9 @@ public class CastActivity extends PlayerActivity {
   }
 
   @Override
-  public void onCastPlayerPlaylistAdvance(String key) {
-    for(PlexMedia track : nowPlayingAlbum) {
-      if(track.key.equals(key)) {
-        nowPlayingMedia = track;
-        setupUI();
-        showNowPlaying(false);
-        break;
-      }
-    }
+  public void onCastPlayerPlaylistAdvance(PlexMedia media) {
+    nowPlayingMedia = media;
+    setupUI();
+    showNowPlaying(false);
   }
 }

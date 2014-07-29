@@ -57,6 +57,7 @@ import com.google.gson.GsonBuilder;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -96,6 +97,8 @@ public class PlexSearchService extends Service {
 
 	private boolean didClientScan = false;
 
+  private boolean shuffle = false;
+
 	private ArrayList<String> queries;
 	// Will be set to true after we scan for servers, so we don't have to do it again on the next query
 	private boolean didServerScan = false;
@@ -130,6 +133,7 @@ public class PlexSearchService extends Service {
 			BugSenseHandler.initAndStartSession(PlexSearchService.this, MainActivity.BUGSENSE_APIKEY);
 
 		videoPlayed = false;
+    shuffle = false;
 
     if(plexSubscription == null) {
       plexSubscription = VoiceControlForPlexApplication.getInstance().plexSubscription;
@@ -165,12 +169,14 @@ public class PlexSearchService extends Service {
 				// Got back from mClient scan, so set didClientScan to true so we don't do this again, and save the clients we got, then continue
 				didClientScan = true;
 				ArrayList<PlexClient> cs = intent.getParcelableArrayListExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLIENTS);
-				VoiceControlForPlexApplication.clients = new HashMap<String, PlexClient>();
-				for(PlexClient c : cs) {
-					VoiceControlForPlexApplication.clients.put(c.name, c);
-				}
-				clients = (HashMap)VoiceControlForPlexApplication.clients;
-        clients.putAll(VoiceControlForPlexApplication.castClients);
+        if(cs != null) {
+          VoiceControlForPlexApplication.clients = new HashMap<String, PlexClient>();
+          for (PlexClient c : cs) {
+            VoiceControlForPlexApplication.clients.put(c.name, c);
+          }
+          clients = (HashMap) VoiceControlForPlexApplication.clients;
+          clients.putAll(VoiceControlForPlexApplication.castClients);
+        }
 				startup();
 			}
 		} else {
@@ -381,12 +387,14 @@ public class PlexSearchService extends Service {
 		if(!noChange) {
 			p = Pattern.compile(getString(R.string.pattern_on_client), Pattern.DOTALL);
 			matcher = p.matcher(queryText);
+      Pattern p2 = Pattern.compile(getString(R.string.pattern_on_shuffle), Pattern.DOTALL);
+      Matcher matcher2 = p2.matcher(queryText);
 
-			if (matcher.find()) {
+			if (matcher.find() && !matcher2.find()) {
 				String specifiedClient = matcher.group(2).toLowerCase();
 
 				Logger.d("Clients: %d", clients.size());
-				Logger.d("Specified mClient: %s", specifiedClient);
+				Logger.d("Specified client: %s", specifiedClient);
 				//for (int i = 0; i < clients.size(); i++) {
 				for(PlexClient c : clients.values()) {
 					if (c.name.toLowerCase().equals(specifiedClient)) {
@@ -418,6 +426,18 @@ public class PlexSearchService extends Service {
 				// Replace "resume watching" with just "watch" so the pattern matching below works
 				queryText = matcher.replaceAll(getString(R.string.pattern_watch));
 			}
+
+      // Check for a sentence ending with "on shuffle"
+      p = Pattern.compile(getString(R.string.pattern_on_shuffle));
+      matcher = p.matcher(queryText);
+      if(matcher.find()) {
+        shuffle = true;
+        // Remove "on shuffle" from the query text
+        queryText = matcher.replaceAll("").trim();
+        Logger.d("Shuffling, query is now !%s!", queryText);
+      } else {
+        Logger.d("No shuffle");
+      }
 		}
 
 		// Done changing the query if the user said "resume watching" or specified a client
@@ -556,18 +576,18 @@ public class PlexSearchService extends Service {
 			};
 		}
 
-		p = Pattern.compile(getString(R.string.pattern_listen_to_song_by_artist));
-		matcher = p.matcher(queryText);
-		if(matcher.find()) {
-			final String track = matcher.group(1);
-			final String artist = matcher.group(2);
-			return new myRunnable() {
-				@Override
-				public void run() {
-					searchForSong(artist, track);
-				}
-			};
-		}
+    p = Pattern.compile(getString(R.string.pattern_listen_to_song_by_artist));
+    matcher = p.matcher(queryText);
+    if(matcher.find()) {
+      final String track = matcher.group(1);
+      final String artist = matcher.group(2);
+      return new myRunnable() {
+        @Override
+        public void run() {
+          searchForSong(artist, track);
+        }
+      };
+    }
 
 		p = Pattern.compile(getString(R.string.pattern_pause_playback), Pattern.DOTALL);
 		matcher = p.matcher(queryText);
@@ -1569,9 +1589,10 @@ public class PlexSearchService extends Service {
 										if(albums.size() == 1) {
 											playAlbum(albums.get(0));
 										} else {
-											Boolean exactMatch = false;
+											boolean exactMatch = false;
 											for(int k=0;k<albums.size();k++) {
 												if(albums.get(k).title.toLowerCase().equals(album.toLowerCase())) {
+                          Logger.d("Found an exact match : %s", album);
 													exactMatch = true;
 													playAlbum(albums.get(k));
 												}
@@ -1713,6 +1734,7 @@ public class PlexSearchService extends Service {
 	}
 
 	private void playAlbum(final PlexDirectory album) {
+    Logger.d("[PlexSearchService] playing album %s", album.key);
 		PlexHttpClient.get(album.server, album.key, new PlexHttpMediaContainerHandler()
 		{
 			@Override
@@ -1726,9 +1748,13 @@ public class PlexSearchService extends Service {
             track.grandparentTitle = album.parentTitle;
             track.parentTitle = album.title;
             track.art = album.art;
+            track.grandparentKey = album.parentKey;
           }
 
 
+          if(shuffle) {
+            Collections.shuffle(tracks);
+          }
 //					PlexTrack track = mc.tracks.get(0);
 //					track.server = album.server;
 //					track.thumb = album.thumb;

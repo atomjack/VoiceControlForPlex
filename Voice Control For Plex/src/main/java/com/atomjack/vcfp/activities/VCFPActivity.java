@@ -88,7 +88,7 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
   protected boolean continuing = false;
 
 	int mNotificationId = 0;
-	NotificationManager mNotifyMgr;
+	protected NotificationManager mNotifyMgr;
 
   protected NetworkMonitor networkMonitor;
 
@@ -399,7 +399,7 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
   public void onCastConnected(PlexClient _client) {
     Logger.d("[VCFPActivity] onCastConnected");
     onSubscribed(_client);
-    castPlayerManager.getPlaybackState();
+//    castPlayerManager.getPlaybackState();
   }
 
   @Override
@@ -674,7 +674,7 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
   }
 
   @Override
-  public void onCastPlayerPlaylistAdvance(String key) {
+  public void onCastPlayerPlaylistAdvance(PlexMedia media) {
 
   }
 }

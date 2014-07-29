@@ -139,7 +139,7 @@ public class CastPlayerManager {
     void onCastDisconnected();
     void onCastPlayerStateChanged(PlayerState state);
     void onCastPlayerTimeUpdate(int seconds);
-    void onCastPlayerPlaylistAdvance(String key);
+    void onCastPlayerPlaylistAdvance(PlexMedia media);
     void onCastPlayerState(PlayerState state, PlexMedia media);
   };
 
@@ -218,6 +218,11 @@ public class CastPlayerManager {
       private Runnable onConnectedRunnable;
 
       @Override
+      public void onApplicationDisconnected(int errorCode) {
+//        super.onApplicationDisconnected(errorCode);
+      }
+
+      @Override
       public void onDataMessageReceived(String message) {
 //        Logger.d("DATA MESSAGE RECEIVED: %s", message);
         try {
@@ -230,9 +235,10 @@ public class CastPlayerManager {
             }
           } else if(obj.has("event") && obj.getString("event").equals("timeUpdate") && obj.has("currentTime")) {
             listener.onCastPlayerTimeUpdate(obj.getInt("currentTime"));
-          } else if(obj.has("event") && obj.getString("event").equals("playlistAdvance") && obj.has("key")) {
-            Logger.d("[CastPlayerManager] playlistAdvance: %s", obj.getString("key"));
-            listener.onCastPlayerPlaylistAdvance(obj.getString("key"));
+          } else if(obj.has("event") && obj.getString("event").equals("playlistAdvance") && obj.has("media")) {
+            Logger.d("[CastPlayerManager] playlistAdvance");
+            nowPlayingMedia = VoiceControlForPlexApplication.gsonRead.fromJson(obj.getString("media"), PlexTrack.class);
+            listener.onCastPlayerPlaylistAdvance(nowPlayingMedia);
           } else if(obj.has("event") && obj.getString("event").equals("getPlaybackState") && obj.has("state")) {
             currentState = PlayerState.getState(obj.getString("state"));
             PlexMedia media = null;

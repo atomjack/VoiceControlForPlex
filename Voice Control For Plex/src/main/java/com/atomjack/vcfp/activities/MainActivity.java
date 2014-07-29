@@ -3,10 +3,8 @@ package com.atomjack.vcfp.activities;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -22,11 +20,9 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
-import android.net.ConnectivityManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -73,7 +69,6 @@ import com.atomjack.vcfp.net.PlexPinResponseHandler;
 import com.cubeactive.martin.inscription.WhatsNewDialog;
 import com.google.android.gms.cast.CastDevice;
 import com.google.android.gms.cast.CastMediaControlIntent;
-import com.google.gson.reflect.TypeToken;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
 import com.loopj.android.http.RequestParams;
@@ -313,6 +308,12 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 						searchDialog.setContentView(R.layout.search_popup);
 						searchDialog.setTitle(getResources().getString(R.string.searching_for_plex_servers));
 
+            searchDialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
+              @Override
+              public void onCancel(DialogInterface dialogInterface) {
+                RemoteScan.cancelScan();
+              }
+            });
 						searchDialog.show();
 						RemoteScan.refreshResources(authToken, new RemoteScan.RefreshResourcesResponseHandler() {
 							@Override
@@ -929,6 +930,7 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
       IntentFilter filters = new IntentFilter();
       filters.addAction(GDMService.MSG_RECEIVED);
       filters.addAction(GDMService.SOCKET_CLOSED);
+      filters.addAction(GDMReceiver.ACTION_CANCEL);
       LocalBroadcastManager.getInstance(this).registerReceiver(gdmReceiver,
               filters);
     }
@@ -998,6 +1000,10 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
         Logger.d("Cast Client %s has gone missing. Removing.", route.getName());
         VoiceControlForPlexApplication.castClients.remove(route.getName());
         Preferences.put(Preferences.SAVED_CAST_CLIENTS, gsonWrite.toJson(VoiceControlForPlexApplication.castClients));
+        // If the "select a plex client" dialog is showing, refresh the list of clients
+        if(localScan.isDeviceDialogShowing()) {
+          localScan.deviceSelectDialogRefresh();
+        }
       }
     }
 

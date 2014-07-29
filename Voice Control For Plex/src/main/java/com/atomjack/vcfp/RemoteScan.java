@@ -26,6 +26,8 @@ public class RemoteScan {
 	private static AsyncHttpClient client = new AsyncHttpClient();
 	private static Serializer serial = new Persister();
 
+  private static boolean cancel = false;
+
 	public interface RefreshResourcesResponseHandler {
 		void onSuccess();
 		void onFailure(int statusCode);
@@ -39,6 +41,9 @@ public class RemoteScan {
 		refreshResources(authToken, null, true);
 	}
 
+  public static void cancelScan() {
+    cancel = true;
+  }
 
 	public static void refreshResources(String authToken, final RefreshResourcesResponseHandler responseHandler, boolean silent) {
     VoiceControlForPlexApplication.hasDoneClientScan = true;
@@ -49,6 +54,10 @@ public class RemoteScan {
 			@Override
 			public void onSuccess(int statusCode, org.apache.http.Header[] headers, byte[] responseBody) {
 				try {
+          if(cancel) {
+            cancel = false;
+            return;
+          }
 					MediaContainer mediaContainer = new MediaContainer();
 
 					try {
@@ -71,12 +80,6 @@ public class RemoteScan {
 							servers.add(server);
 						} else if(device.provides.contains("player")) {
 							Logger.d("Device %s is a player", device.name);
-//							PlexClient mClient = PlexClient.fromDevice(device);
-//							if(VoiceControlForPlexApplication.clients == null)
-//								VoiceControlForPlexApplication.clients = new HashMap<String, PlexClient>();
-//							if(!VoiceControlForPlexApplication.clients.containsKey(mClient.name)) {
-//								VoiceControlForPlexApplication.clients.put(mClient.name, mClient);
-//							}
 						}
  					}
 //					Preferences.put(Preferences.SAVED_CLIENTS, gson.toJson(VoiceControlForPlexApplication.clients));
@@ -110,6 +113,10 @@ public class RemoteScan {
 			@Override
 			public void onFailure(int statusCode, org.apache.http.Header[] headers, byte[] responseBody, java.lang.Throwable error) {
 				Logger.d("Failure getting resources: %d", statusCode);
+        if(cancel) {
+          cancel = false;
+          return;
+        }
 				error.printStackTrace();
 				if(responseHandler != null)
 					responseHandler.onFailure(statusCode);
