@@ -82,7 +82,6 @@ public class RemoteScan {
 							Logger.d("Device %s is a player", device.name);
 						}
  					}
-//					Preferences.put(Preferences.SAVED_CLIENTS, gson.toJson(VoiceControlForPlexApplication.clients));
 
 					final int[] serversScanned = new int[1];
 					serversScanned[0] = 0;

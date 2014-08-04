@@ -116,4 +116,6 @@
     <string name="mobile_network_connection_active">While a mobile network connection is active, playback is only supported onto this device, through the official Plex client.</string>
     <string name="mobile_connection_login_required">You must be logged in to MyPlex in order to select a server when not on WiFi.</string>
     <string name="searching_for_the_album">Searching for the album %s.</string>
+    <string name="connecting">Connecting</string>
+    <string name="client_lost_connection">I lost the connection with %s.</string>
 </resources>

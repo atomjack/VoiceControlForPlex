@@ -1,7 +1,6 @@
 package com.atomjack.vcfp.activities;
 
 import android.app.AlertDialog;
-import android.app.NotificationManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -50,7 +49,6 @@ import com.atomjack.vcfp.model.Timeline;
 import com.atomjack.vcfp.net.PlexHttpClient;
 import com.atomjack.vcfp.net.PlexHttpMediaContainerHandler;
 import com.bugsense.trace.BugSenseHandler;
-import com.google.android.gms.cast.MediaStatus;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.loopj.android.http.BinaryHttpResponseHandler;
@@ -86,9 +84,6 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
   protected int position = -1;
 
   protected boolean continuing = false;
-
-	int mNotificationId = 0;
-	protected NotificationManager mNotifyMgr;
 
   protected NetworkMonitor networkMonitor;
 
@@ -144,6 +139,7 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
     if(plexSubscription.isSubscribed()) {
       Logger.d("VCFPActivity setting client to %s", plexSubscription.mClient);
       mClient = plexSubscription.mClient;
+      Logger.d("[VCFPActivity] 2 set mClient: %s", mClient);
     } else {
       Logger.d("Not subscribed: %s", plexSubscription.mClient);
     }
@@ -157,13 +153,13 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
 
     castPlayerManager = VoiceControlForPlexApplication.getInstance().castPlayerManager;
     castPlayerManager.setContext(this);
-    if(castPlayerManager.isSubscribed())
+    if(castPlayerManager.isSubscribed()) {
       mClient = castPlayerManager.mClient;
+      Logger.d("[VCFPActivity] 3 set mClient: %s", mClient);
+    }
 
 		if(BuildConfig.USE_BUGSENSE)
 			BugSenseHandler.initAndStartSession(getApplicationContext(), BUGSENSE_APIKEY);
-
-		mNotifyMgr = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 
     mHandler = new Handler();
 	}
@@ -187,11 +183,14 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
               // TODO: Handle failure
               Logger.d("Failed to get media with type %s", timeline.type);
             }
-						nowPlayingMedia.server = server;
 
-            VoiceControlForPlexApplication.getInstance().setNotification(mClient, mCurrentState, nowPlayingMedia);
-            if(timeline.continuing != null && timeline.continuing.equals("1"))
-              continuing = true;
+            if(nowPlayingMedia != null) {
+              nowPlayingMedia.server = server;
+
+              VoiceControlForPlexApplication.getInstance().setNotification(mClient, mCurrentState, nowPlayingMedia);
+              if (timeline.continuing != null && timeline.continuing.equals("1"))
+                continuing = true;
+            }
 					}
 
 					@Override
@@ -225,24 +224,28 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
           } else
   					localScan.showPlexClients(false, onClientChosen);
 				} else if(!subscribing) {
-					AlertDialog.Builder subscribeDialog = new AlertDialog.Builder(this)
-						.setTitle(mClient.name)
-            .setIcon(R.drawable.mr_ic_media_route_on_holo_dark)
-						.setNegativeButton(R.string.disconnect, new DialogInterface.OnClickListener() {
-              @Override
-              public void onClick(DialogInterface dialogInterface, int i) {
-                if (mClient.isCastClient)
-                  castPlayerManager.unsubscribe();
-                else
-                  plexSubscription.unsubscribe();
-                dialogInterface.dismiss();
-              }
-            });
-          if(mClient.isCastClient) {
-            View subscribeVolume = LayoutInflater.from(this).inflate(R.layout.connected_popup, null);
-            subscribeDialog.setView(subscribeVolume);
+          if(mClient == null) {
+            setCastIconInactive();
+          } else {
+            AlertDialog.Builder subscribeDialog = new AlertDialog.Builder(this)
+                    .setTitle(mClient.name)
+                    .setIcon(R.drawable.mr_ic_media_route_on_holo_dark)
+                    .setNegativeButton(R.string.disconnect, new DialogInterface.OnClickListener() {
+                      @Override
+                      public void onClick(DialogInterface dialogInterface, int i) {
+                        if (mClient.isCastClient)
+                          castPlayerManager.unsubscribe();
+                        else
+                          plexSubscription.unsubscribe();
+                        dialogInterface.dismiss();
+                      }
+                    });
+            if (mClient.isCastClient) {
+              View subscribeVolume = LayoutInflater.from(this).inflate(R.layout.connected_popup, null);
+              subscribeDialog.setView(subscribeVolume);
+            }
+            subscribeDialog.show();
           }
-					subscribeDialog.show();
 				}
 				break;
 			default:
@@ -270,6 +273,7 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
         if (clientSelected.isCastClient) {
           if(VoiceControlForPlexApplication.getInstance().hasChromecast()) {
             mClient = clientSelected;
+            Logger.d("[VCFPActivity] 3 set mClient: %s", mClient);
             Logger.d("[VCPActivity] subscribing");
             castPlayerManager.subscribe(mClient);
           } else {
@@ -409,6 +413,8 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
     if(!mCurrentState.equals(PlayerState.STOPPED) && media != null) {
       nowPlayingMedia = media;
       mClient = castPlayerManager.mClient;
+      Logger.d("[VCFPActivity] 1 set mClient: %s", mClient);
+      // TODO: only set notification here if it's already on?
       VoiceControlForPlexApplication.getInstance().setNotification(mClient, mCurrentState, nowPlayingMedia);
     }
   }
@@ -425,8 +431,9 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
     Logger.d("[VCFPActivity] onCastPlayerStateChanged: %s (old state: %s)", mCurrentState, oldState);
     if(mCurrentState != oldState) {
       if(mCurrentState == PlayerState.STOPPED) {
-        mNotifyMgr.cancel(mNotificationId);
+        VoiceControlForPlexApplication.getInstance().cancelNotification();
       } else {
+        // TODO: only set notification here if it's already on?
         VoiceControlForPlexApplication.getInstance().setNotification(mClient, mCurrentState, nowPlayingMedia);
       }
     }
@@ -481,11 +488,11 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
                 } else if(mCurrentState == PlayerState.STOPPED) {
                   Logger.d("mClient is now stopped");
                   if(!continuing) {
-                    mNotifyMgr.cancel(mNotificationId);
+                    VoiceControlForPlexApplication.getInstance().cancelNotification();
                     nowPlayingMedia = null;
                   }
                 }
-                if(mCurrentState != PlayerState.STOPPED && oldState != mCurrentState) {
+                if(mCurrentState != PlayerState.STOPPED && oldState != mCurrentState && VoiceControlForPlexApplication.getInstance().getNotificationStatus() != VoiceControlForPlexApplication.NOTIFICATION_STATUS.initializing) {
                   Logger.d("onTimelineReceived setting notification with %s", mCurrentState);
                   VoiceControlForPlexApplication.getInstance().setNotification(mClient, mCurrentState, nowPlayingMedia);
                 }
@@ -508,7 +515,7 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
     setCastIconInactive();
     subscribed = false;
     nowPlayingMedia = null;
-    mNotifyMgr.cancel(mNotificationId);
+    VoiceControlForPlexApplication.getInstance().cancelNotification();
     feedback.m(R.string.disconnected);
   }
 
@@ -581,6 +588,7 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
       Logger.d("setThumb: %s", thumb);
       if(nowPlayingMedia instanceof PlexVideo) {
         PlexVideo video = (PlexVideo)nowPlayingMedia;
+        Logger.d("grandparentThumb: %s", nowPlayingMedia.grandparentThumb);
         thumb = video.isMovie() || video.isClip() ? video.thumb : video.grandparentThumb;
         Logger.d("orientation: %s, type: %s", getOrientation(), video.type);
         if(video.isClip()) {
@@ -603,6 +611,7 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
         try {
           thumbEntry = mSimpleDiskCache.getInputStream(nowPlayingMedia.getCacheKey(thumb));
         } catch (Exception ex) {
+          ex.printStackTrace();
         }
         if (thumbEntry != null) {
           Logger.d("Using cached thumb: %s", nowPlayingMedia.getCacheKey(thumb));

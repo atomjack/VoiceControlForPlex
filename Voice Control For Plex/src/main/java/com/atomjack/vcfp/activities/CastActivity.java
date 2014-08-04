@@ -1,5 +1,6 @@
 package com.atomjack.vcfp.activities;
 
+import android.app.Dialog;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.View;
@@ -31,6 +32,8 @@ public class CastActivity extends PlayerActivity {
 
   private List<PlexMedia> nowPlayingAlbum;
 
+  private Dialog connectingDialog;
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -38,6 +41,7 @@ public class CastActivity extends PlayerActivity {
 		Preferences.setContext(this);
 
     mClient = getIntent().getParcelableExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLIENT);
+    Logger.d("[CastActivity] set mClient: %s", mClient);
     nowPlayingMedia = getIntent().getParcelableExtra(VoiceControlForPlexApplication.Intent.EXTRA_MEDIA);
     nowPlayingAlbum = getIntent().getParcelableArrayListExtra(VoiceControlForPlexApplication.Intent.EXTRA_ALBUM);
     resumePlayback = getIntent().getBooleanExtra("resume", false);
@@ -53,10 +57,10 @@ public class CastActivity extends PlayerActivity {
       if(castPlayerManager.isSubscribed()) {
         init();
       } else {
+        showConnectingDialog();
         castPlayerManager.subscribe(mClient);
       }
 		} else {
-			// TODO: Something here
       Logger.d("[CastActivity] No action found.");
       if(castPlayerManager.getCurrentState().equals(NowPlayingActivity.PlayerState.STOPPED))
         finish();
@@ -75,6 +79,7 @@ public class CastActivity extends PlayerActivity {
   @Override
   public void onCastConnected(PlexClient _client) {
     super.onCastConnected(_client);
+    hideConnectingDialog();
     init();
   }
 
@@ -116,12 +121,34 @@ public class CastActivity extends PlayerActivity {
     }
   }
 
+  private void showConnectingDialog() {
+    if(connectingDialog == null) {
+      connectingDialog = new Dialog(this);
+    }
+    connectingDialog.setContentView(R.layout.search_popup);
+    connectingDialog.setTitle(getResources().getString(R.string.connecting));
+
+    // TODO: Re-enable this
+//    connectingDialog.setCancelable(false);
+
+    connectingDialog.show();
+  }
+
+  private void hideConnectingDialog() {
+    if(connectingDialog != null && connectingDialog.isShowing()) {
+      connectingDialog.dismiss();
+    }
+  }
+
 	private void beginPlayback() {
 		String url = getTranscodeUrl(nowPlayingMedia, transientToken);
 		Logger.d("url: %s", url);
 		Logger.d("duration: %s", nowPlayingMedia.duration);
 
 		Logger.d("offset is %d", getOffset(nowPlayingMedia));
+
+
+
 		if(castManager.isConnected()) {
         castPlayerManager.loadMedia(nowPlayingMedia, nowPlayingAlbum, getOffset(nowPlayingMedia));
 		}
@@ -219,7 +246,7 @@ public class CastActivity extends PlayerActivity {
 
 	@Override
 	public void onStopTrackingTouch(SeekBar _seekBar) {
-		Logger.d("stopped changing progress");
+		Logger.d("stopped changing progress: %d", _seekBar.getProgress());
 		try {
 			nowPlayingMedia.viewOffset = Integer.toString(_seekBar.getProgress());
       castPlayerManager.seekTo(Integer.parseInt(nowPlayingMedia.viewOffset) / 1000);
@@ -257,7 +284,7 @@ public class CastActivity extends PlayerActivity {
       isSeeking = false;
     if(state == PlayerState.STOPPED) {
       Logger.d("[CastActivity] media player is idle, finishing");
-      mNotifyMgr.cancel(mNotificationId);
+      VoiceControlForPlexApplication.getInstance().cancelNotification();
       finish();
     } else
       setState(state);

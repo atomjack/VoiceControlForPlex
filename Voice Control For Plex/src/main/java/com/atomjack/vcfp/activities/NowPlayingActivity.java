@@ -23,7 +23,6 @@ import org.codechimp.apprater.AppRater;
 
 public class NowPlayingActivity extends PlayerActivity {
 	private boolean subscribed = false;
-  private Handler mHandler;
 
 	PlayerState state = PlayerState.STOPPED;
 	enum PlayerState {
@@ -51,9 +50,11 @@ public class NowPlayingActivity extends PlayerActivity {
 			Logger.d("found saved instance state");
 			nowPlayingMedia = savedInstanceState.getParcelable(VoiceControlForPlexApplication.Intent.EXTRA_MEDIA);
       mClient = savedInstanceState.getParcelable(VoiceControlForPlexApplication.Intent.EXTRA_CLIENT);
+      Logger.d("[NowPlayingActivity] 1 set mClient: %s", mClient);
 		} else {
 			nowPlayingMedia = getIntent().getParcelableExtra(VoiceControlForPlexApplication.Intent.EXTRA_MEDIA);
       mClient = getIntent().getParcelableExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLIENT);
+      Logger.d("[NowPlayingActivity] 2 set mClient: %s", mClient);
 		}
 
 		if(mClient == null || nowPlayingMedia == null)

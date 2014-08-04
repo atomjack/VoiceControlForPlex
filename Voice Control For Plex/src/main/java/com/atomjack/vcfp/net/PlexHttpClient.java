@@ -22,11 +22,15 @@ import org.apache.http.StatusLine;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.params.BasicHttpParams;
+import org.apache.http.params.HttpConnectionParams;
+import org.apache.http.params.HttpParams;
 import org.simpleframework.xml.Serializer;
 import org.simpleframework.xml.core.Persister;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.net.SocketTimeoutException;
 
 public class PlexHttpClient
 {
@@ -267,10 +271,18 @@ public class PlexHttpClient
     return mc;
   }
 
-  public static byte[] getSyncBytes(String url) {
+  public static byte[] getSyncBytes(String url) throws SocketTimeoutException {
     try {
-      HttpClient httpclient = new DefaultHttpClient();
       HttpGet get = new HttpGet(url);
+      HttpParams httpParameters = new BasicHttpParams();
+      int timeoutConnection = 3000;
+      HttpConnectionParams.setConnectionTimeout(httpParameters, timeoutConnection);
+      int timeoutSocket = 5000;
+      HttpConnectionParams.setSoTimeout(httpParameters, timeoutSocket);
+
+
+      HttpClient httpclient = new DefaultHttpClient(httpParameters);
+
       HttpResponse response = httpclient.execute(get);
       StatusLine statusLine = response.getStatusLine();
       if (statusLine.getStatusCode() == HttpStatus.SC_OK) {

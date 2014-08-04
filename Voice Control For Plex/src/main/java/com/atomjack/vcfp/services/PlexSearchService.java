@@ -1279,6 +1279,7 @@ public class PlexSearchService extends Service {
 					if(latestVideo == null || latestVideo.airDate().before(video.airDate())) {
 						video.showTitle = video.grandparentTitle;
             video.parentArt = mc.art;
+            video.grandparentThumb = mc.art.replaceAll("\\/art\\/", "\\/thumb\\/");
 						latestVideo = video;
 					}
 				}

@@ -14,7 +14,7 @@
         android:orientation="vertical"
         android:layout_width="fill_parent"
         android:layout_height="@dimen/notification_large_icon_height"
-        android:layout_marginLeft="@dimen/notification_large_icon_width">
+        android:layout_marginLeft="@dimen/notification_large_icon_width_music">
 
         <LinearLayout
             android:layout_width="match_parent"

@@ -64,6 +64,9 @@ public class PlexSubscription {
   Thread serverThread = null;
   Handler updateConversationHandler;
 
+  private int failedHeartbeats = 0;
+  private final int failedHeartbeatMax = 5;
+
   private Handler mHandler;
 
   public PlexSubscription() {
@@ -260,6 +263,7 @@ public class PlexSubscription {
     PlexHttpClient.get(String.format("http://%s:%s/player/timeline/subscribe?%s", mClient.address, mClient.port, qs), headers, new PlexHttpResponseHandler() {
       @Override
       public void onSuccess(PlexResponse response) {
+        failedHeartbeats = 0;
         Logger.d("PlexSubscription: Subscribed: %s", response.status);
         commandId++;
         subscribed = true;
@@ -275,14 +279,39 @@ public class PlexSubscription {
       @Override
       public void onFailure(final Throwable error) {
         error.printStackTrace();
-        mHandler.post(new Runnable() {
-          @Override
-          public void run() {
-            if(listener != null) {
-              listener.onSubscribeError(error.getMessage());
-            }
+
+
+        if(isHeartbeat) {
+          failedHeartbeats++;
+          Logger.d("%d failed heartbeats", failedHeartbeats);
+          if(failedHeartbeats >= failedHeartbeatMax) {
+            Logger.d("Unsubscribing due to failed heartbeats");
+            // Since several heartbeats in a row failed, set ourselves as unsubscribed and notify any listeners that we're no longer subscribed. Don't
+            // bother trying to actually unsubscribe since we probably can't rely on the client to respond at this point
+            //
+            subscribed = false;
+            onUnsubscribed();
+            mHandler.removeCallbacks(subscriptionHeartbeat);
+            if(listener != null)
+              mHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                  if(listener != null) {
+                    listener.onSubscribeError(String.format(listener.getString(R.string.client_lost_connection), mClient.name));
+                  }
+                }
+              });
           }
-        });
+        } else {
+          mHandler.post(new Runnable() {
+            @Override
+            public void run() {
+              if(listener != null) {
+                listener.onSubscribeError(error.getMessage());
+              }
+            }
+          });
+        }
       }
     });
   }
@@ -294,14 +323,10 @@ public class PlexSubscription {
         Logger.d("PlexSubscription onSubscribed, client: %s, listener: %s", mClient, listener);
         if (listener != null && mClient != null) {
           listener.onSubscribed(mClient);
-          Logger.d("Sending broadcast");
-//          Intent subscribedBroadcast = new Intent(listener, listener.getClass());
-//          subscribedBroadcast.setAction(ACTION_SUBSCRIBED);
+//          Logger.d("Sending broadcast");
+//          Intent subscribedBroadcast = new Intent(ACTION_SUBSCRIBED);
 //          subscribedBroadcast.putExtra(EXTRA_CLIENT, mClient);
-//          listener.startActivity(subscribedBroadcast);
-          Intent subscribedBroadcast = new Intent(ACTION_SUBSCRIBED);
-          subscribedBroadcast.putExtra(EXTRA_CLIENT, mClient);
-          LocalBroadcastManager.getInstance(listener).sendBroadcast(subscribedBroadcast);
+//          LocalBroadcastManager.getInstance(listener).sendBroadcast(subscribedBroadcast);
         }
       }
     });
@@ -355,6 +380,8 @@ public class PlexSubscription {
         public void onFailure(Throwable error) {
           // TODO: Handle failure here?
           Logger.d("failure unsubscribing");
+          subscribed = false;
+          mHandler.removeCallbacks(subscriptionHeartbeat);
           onUnsubscribed();
         }
       });

@@ -47,7 +47,7 @@ public class SubscriptionActivity extends VCFPActivity {
     } else if(intent.getAction().equals(ACTION_UNSUBSCRIBE)) {
       plexSubscription.setListener(this);
       plexSubscription.unsubscribe();
-      mNotifyMgr.cancel(mNotificationId);
+      VoiceControlForPlexApplication.getInstance().cancelNotification();
       feedback.m(R.string.disconnected, new Runnable() {
         @Override
         public void run() {
@@ -88,6 +88,7 @@ public class SubscriptionActivity extends VCFPActivity {
   @Override
   public void onSubscribed(PlexClient _client) {
     mClient = _client;
+    Logger.d("[SubscriptionActivity] set mClient: %s", mClient);
     // Do nothing
   }
 

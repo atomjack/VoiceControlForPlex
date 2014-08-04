@@ -22,6 +22,7 @@ import org.simpleframework.xml.Root;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -112,15 +113,39 @@ public abstract class PlexMedia implements Parcelable {
 		return url;
 	}
 
+  public InputStream getNotificationThumb() {
+    int width = 87;
+    int height = 128;
+    String whichThumb = null;
+    if(isMovie())
+      whichThumb = thumb;
+    else if(isShow()) {
+      whichThumb = grandparentThumb;
+    }
+    return getThumb(width, height, whichThumb);
+  }
+
   public InputStream getThumb(int width, int height) {
-    String path = String.format("/photo/:/transcode?width=%d&height=%d&url=%s", width, height, Uri.encode(String.format("http://127.0.0.1:32400%s", thumb)));
+    return getThumb(width, height, thumb);
+  }
+
+  public InputStream getThumb(int width, int height, String whichThumb) {
+    if(whichThumb == null)
+      whichThumb = thumb;
+    String path = String.format("/photo/:/transcode?width=%d&height=%d&url=%s", width, height, Uri.encode(String.format("http://127.0.0.1:32400%s", whichThumb)));
     String url = server.buildURL(path);
-    byte[] imageData = PlexHttpClient.getSyncBytes(url);
-    InputStream is = new ByteArrayInputStream(imageData);
+    Logger.d("thumb url: %s", url);
     try {
+      byte[] imageData = PlexHttpClient.getSyncBytes(url);
+      InputStream is = new ByteArrayInputStream(imageData);
       is.reset();
-    } catch (Exception e) {}
-    return is;
+      return is;
+    } catch (SocketTimeoutException e) {
+      Logger.d("Couldn't get thumb");
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+    return null;
   }
 
 	@Override
