@@ -4,10 +4,7 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 import org.simpleframework.xml.Attribute;
-import org.simpleframework.xml.ElementList;
 import org.simpleframework.xml.Root;
-
-import java.util.ArrayList;
 
 @Root(strict=false)
 public class PlexTrack extends PlexMedia {

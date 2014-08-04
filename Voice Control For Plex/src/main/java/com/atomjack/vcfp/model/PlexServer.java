@@ -8,21 +8,20 @@ import com.atomjack.vcfp.Logger;
 import com.atomjack.vcfp.PlexHeaders;
 import com.atomjack.vcfp.Preferences;
 import com.atomjack.vcfp.QueryString;
-import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.ServerFindHandler;
 import com.atomjack.vcfp.ServerTestHandler;
-import com.atomjack.vcfp.Utils;
+import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.net.PlexHttpClient;
 import com.atomjack.vcfp.net.PlexHttpMediaContainerHandler;
 import com.atomjack.vcfp.net.PlexHttpResponseHandler;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.http.Header;
 import org.simpleframework.xml.Root;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Root(strict=false)
 public class PlexServer extends PlexDevice {
@@ -259,7 +258,7 @@ public class PlexServer extends PlexDevice {
     if(containerKey != null)
       qs.add("containerKey", containerKey);
 
-    if((Preferences.get(Preferences.RESUME, false) || resumePlayback) && media.viewOffset != null)
+    if((VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.RESUME, false) || resumePlayback) && media.viewOffset != null)
       qs.add("viewOffset", media.viewOffset);
     if(transientToken != null)
       qs.add("token", transientToken);

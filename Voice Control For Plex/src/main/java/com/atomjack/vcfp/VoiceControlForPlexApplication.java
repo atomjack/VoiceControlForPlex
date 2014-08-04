@@ -1,22 +1,5 @@
 package com.atomjack.vcfp;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.lang.reflect.Type;
-import java.math.BigInteger;
-import java.security.MessageDigest;
-import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
-import org.apache.http.Header;
-import org.simpleframework.xml.Serializer;
-import org.simpleframework.xml.core.Persister;
-
 import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.app.AlertDialog;
@@ -58,6 +41,23 @@ import com.google.gson.reflect.TypeToken;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
 
+import org.apache.http.Header;
+import org.simpleframework.xml.Serializer;
+import org.simpleframework.xml.core.Persister;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.Type;
+import java.math.BigInteger;
+import java.security.MessageDigest;
+import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 import cz.fhucho.android.util.SimpleDiskCache;
 
 public class VoiceControlForPlexApplication extends Application
@@ -69,6 +69,8 @@ public class VoiceControlForPlexApplication extends Application
   private static int nowPlayingNotificationId = 0;
 
   private static VoiceControlForPlexApplication instance;
+
+  public Preferences prefs;
 
 	public static Gson gsonRead = new GsonBuilder()
 					.registerTypeAdapter(Uri.class, new UriDeserializer())
@@ -147,7 +149,9 @@ public class VoiceControlForPlexApplication extends Application
   public void onCreate() {
     super.onCreate();
     instance = this;
-    Preferences.setContext(this);
+
+    prefs = new Preferences(getApplicationContext());
+
     plexSubscription = new PlexSubscription();
     castPlayerManager = new CastPlayerManager(getApplicationContext());
 
@@ -157,12 +161,14 @@ public class VoiceControlForPlexApplication extends Application
 
     mNotifyMgr = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 
+
+
     // Load saved clients and servers
     Type clientType = new TypeToken<HashMap<String, PlexClient>>(){}.getType();
-    VoiceControlForPlexApplication.castClients = gsonRead.fromJson(Preferences.get(Preferences.SAVED_CAST_CLIENTS, "{}"), clientType);
-    VoiceControlForPlexApplication.clients = gsonRead.fromJson(Preferences.get(Preferences.SAVED_CLIENTS, "{}"), clientType);
+    VoiceControlForPlexApplication.castClients = gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.SAVED_CAST_CLIENTS, "{}"), clientType);
+    VoiceControlForPlexApplication.clients = gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.SAVED_CLIENTS, "{}"), clientType);
     Type serverType = new TypeToken<ConcurrentHashMap<String, PlexServer>>(){}.getType();
-    VoiceControlForPlexApplication.servers = gsonRead.fromJson(Preferences.get(Preferences.SAVED_SERVERS, "{}"), serverType);
+    VoiceControlForPlexApplication.servers = gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.SAVED_SERVERS, "{}"), serverType);
 
     try {
       PackageInfo pInfo = getPackageManager().getPackageInfo(getPackageName(), 0);
@@ -251,9 +257,9 @@ public class VoiceControlForPlexApplication extends Application
                 servers.put(server.name, server);
 
                 // Finally, if this server is the current default server, save it in preferences so the access token gets transferred
-                PlexServer defaultServer = gsonRead.fromJson(Preferences.get(Preferences.SERVER, ""), PlexServer.class);
+                PlexServer defaultServer = gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.SERVER, ""), PlexServer.class);
                 if(defaultServer != null && server.machineIdentifier.equals(defaultServer.machineIdentifier)) {
-                  Preferences.put(Preferences.SERVER, gsonWrite.toJson(server));
+                  VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.SERVER, gsonWrite.toJson(server));
                 }
 
                 Logger.d("Added %s.", server.name);

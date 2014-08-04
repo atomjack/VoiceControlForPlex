@@ -13,11 +13,6 @@
 
 package com.atomjack.vcfp.tasker;
 
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
-
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -29,6 +24,11 @@ import android.os.Bundle;
 import android.os.PatternMatcher;
 import android.os.Process;
 import android.util.Log;
+
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 
 public class TaskerIntent extends Intent {
 

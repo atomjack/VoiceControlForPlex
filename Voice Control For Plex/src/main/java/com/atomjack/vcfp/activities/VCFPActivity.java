@@ -31,7 +31,6 @@ import com.atomjack.vcfp.NetworkMonitor;
 import com.atomjack.vcfp.PlayerState;
 import com.atomjack.vcfp.PlexHeaders;
 import com.atomjack.vcfp.PlexSubscription;
-import com.atomjack.vcfp.Preferences;
 import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.ScanHandler;
 import com.atomjack.vcfp.ServerFindHandler;
@@ -127,8 +126,6 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
   @Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-
-    Preferences.setContext(getApplicationContext());
 
     mSimpleDiskCache = VoiceControlForPlexApplication.getInstance().mSimpleDiskCache;
 

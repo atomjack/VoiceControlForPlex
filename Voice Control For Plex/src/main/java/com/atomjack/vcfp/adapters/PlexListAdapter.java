@@ -1,8 +1,5 @@
 package com.atomjack.vcfp.adapters;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -13,6 +10,9 @@ import android.widget.TextView;
 import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexServer;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class PlexListAdapter extends BaseAdapter {
   private final Context context;

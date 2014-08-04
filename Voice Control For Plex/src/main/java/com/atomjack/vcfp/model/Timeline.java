@@ -6,8 +6,6 @@ import android.os.Parcelable;
 import org.simpleframework.xml.Attribute;
 import org.simpleframework.xml.Root;
 
-import java.io.Serializable;
-
 @Root(strict=false)
 public class Timeline implements Parcelable {
 	@Attribute

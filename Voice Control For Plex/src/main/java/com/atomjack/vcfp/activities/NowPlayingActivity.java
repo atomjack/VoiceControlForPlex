@@ -3,14 +3,12 @@ package com.atomjack.vcfp.activities;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
-import android.os.Handler;
 import android.view.Menu;
 import android.view.View;
 import android.widget.SeekBar;
 
 import com.atomjack.vcfp.BuildConfig;
 import com.atomjack.vcfp.Logger;
-import com.atomjack.vcfp.Preferences;
 import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.model.PlexClient;
@@ -34,8 +32,6 @@ public class NowPlayingActivity extends PlayerActivity {
 	protected void onCreate(Bundle savedInstanceState) {
 		Logger.d("on create NowPlayingActivity");
 		super.onCreate(savedInstanceState);
-
-		Preferences.setContext(this);
 
     plexSubscription.setListener(this);
 

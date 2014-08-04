@@ -1,9 +1,7 @@
 package com.atomjack.vcfp;
 
-import android.content.Intent;
 import android.content.res.Resources;
 import android.os.Handler;
-import android.support.v4.content.LocalBroadcastManager;
 
 import com.atomjack.vcfp.activities.VCFPActivity;
 import com.atomjack.vcfp.model.MediaContainer;
@@ -71,7 +69,7 @@ public class PlexSubscription {
 
   public PlexSubscription() {
     mHandler = new Handler();
-    uuid = Preferences.getUUID();
+    uuid = VoiceControlForPlexApplication.getInstance().prefs.getUUID();
   }
 
   public void setListener(VCFPActivity _listener) {

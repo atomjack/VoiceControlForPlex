@@ -7,11 +7,11 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.speech.RecognizerIntent;
 
-import com.atomjack.vcfp.services.PlexSearchService;
 import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.model.Connection;
 import com.atomjack.vcfp.model.PlexServer;
+import com.atomjack.vcfp.services.PlexSearchService;
 import com.google.gson.Gson;
 
 import java.math.BigInteger;

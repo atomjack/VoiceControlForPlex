@@ -13,11 +13,11 @@ import com.atomjack.vcfp.PlexHeaders;
 import com.atomjack.vcfp.Preferences;
 import com.atomjack.vcfp.QueryString;
 import com.atomjack.vcfp.R;
+import com.atomjack.vcfp.Utils;
 import com.atomjack.vcfp.VCFPCastConsumer;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexMedia;
-import com.google.android.gms.cast.MediaStatus;
 import com.google.sample.castcompanionlibrary.cast.VideoCastManager;
 
 import java.util.List;
@@ -37,8 +37,6 @@ public class CastActivity extends PlayerActivity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-
-		Preferences.setContext(this);
 
     mClient = getIntent().getParcelableExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLIENT);
     Logger.d("[CastActivity] set mClient: %s", mClient);
@@ -99,7 +97,7 @@ public class CastActivity extends PlayerActivity {
     Logger.d("castPlayerManager.getCurrentState(): %s", castPlayerManager.getCurrentState());
     if(castPlayerManager.getCurrentState() != PlayerState.STOPPED)
       return;
-    if (Preferences.getString(Preferences.PLEX_USERNAME) != null) {
+    if (VoiceControlForPlexApplication.getInstance().prefs.getString(Preferences.PLEX_USERNAME) != null) {
       nowPlayingMedia.server.requestTransientAccessToken(new AfterTransientTokenRequest() {
         @Override
         public void success(String token) {
@@ -141,7 +139,7 @@ public class CastActivity extends PlayerActivity {
   }
 
 	private void beginPlayback() {
-		String url = getTranscodeUrl(nowPlayingMedia, transientToken);
+		String url = castPlayerManager.getTranscodeUrl(nowPlayingMedia);
 		Logger.d("url: %s", url);
 		Logger.d("duration: %s", nowPlayingMedia.duration);
 
@@ -170,8 +168,9 @@ public class CastActivity extends PlayerActivity {
 		qs.add("maxVideoBitrate", "2000");
 		qs.add("subtitleSize", "100");
 		qs.add("audioBoost", "100");
-		qs.add("session", Preferences.getUUID());
-		qs.add(PlexHeaders.XPlexClientIdentifier, Preferences.getUUID());
+    // TODO: Fix this
+		qs.add("session", Utils.generateRandomString());
+		qs.add(PlexHeaders.XPlexClientIdentifier, VoiceControlForPlexApplication.getInstance().prefs.getUUID());
 		qs.add(PlexHeaders.XPlexProduct, String.format("%s Chromecast", getString(R.string.app_name)));
 		qs.add(PlexHeaders.XPlexDevice, mClient.castDevice.getModelName());
 		qs.add(PlexHeaders.XPlexDeviceName, mClient.castDevice.getModelName());
@@ -185,8 +184,8 @@ public class CastActivity extends PlayerActivity {
 			ex.printStackTrace();
 		}
 		// TODO: Fix this
-		if(Preferences.getString(Preferences.PLEX_USERNAME) != null)
-			qs.add(PlexHeaders.XPlexUsername, Preferences.getString(Preferences.PLEX_USERNAME));
+		if(VoiceControlForPlexApplication.getInstance().prefs.getString(Preferences.PLEX_USERNAME) != null)
+			qs.add(PlexHeaders.XPlexUsername, VoiceControlForPlexApplication.getInstance().prefs.getString(Preferences.PLEX_USERNAME));
 		return url + qs.toString();
 	}
 

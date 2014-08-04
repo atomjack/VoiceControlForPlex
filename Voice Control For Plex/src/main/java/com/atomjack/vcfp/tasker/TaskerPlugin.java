@@ -16,9 +16,6 @@ package com.atomjack.vcfp.tasker;
 // added REQUESTED_TIMEOUT_MS_NONE, REQUESTED_TIMEOUT_MS_MAX and REQUESTED_TIMEOUT_MS_NEVER
 // requestTimeoutMS(): added range check
 
-import java.net.URISyntaxException;
-import java.util.regex.Pattern;
-
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -27,6 +24,9 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
+
+import java.net.URISyntaxException;
+import java.util.regex.Pattern;
 
 public class TaskerPlugin {
 

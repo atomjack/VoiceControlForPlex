@@ -251,7 +251,7 @@ public class PlexSearchService extends Service {
 			}
 
 			if(client == null)
-				client = gsonRead.fromJson(Preferences.get(Preferences.CLIENT, ""), PlexClient.class);
+				client = gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.CLIENT, ""), PlexClient.class);
 
 			if(client == null) {
 				// No mClient set in options, and either none specified in the query or I just couldn't find it.
@@ -281,7 +281,6 @@ public class PlexSearchService extends Service {
 	public void onCreate() {
 		Logger.d("PlexSearch onCreate");
 		queryText = null;
-		Preferences.setContext(this);
 		feedback = new Feedback(this);
 		if(gdmReceiver != null) {
 			IntentFilter filters = new IntentFilter();
@@ -318,7 +317,7 @@ public class PlexSearchService extends Service {
 		shows = new ArrayList<PlexDirectory>();
 
 		Gson gson = new Gson();
-		final PlexServer defaultServer = gson.fromJson(Preferences.get(Preferences.SERVER, ""), PlexServer.class);
+		final PlexServer defaultServer = gson.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.SERVER, ""), PlexServer.class);
 		if(specifiedServer != null && client != null && !specifiedServer.name.equals(getResources().getString(R.string.scan_all))) {
 			// got a specified server and mClient from a shortcut
 			Logger.d("Got hardcoded server and mClient from shortcut");
@@ -1019,7 +1018,7 @@ public class PlexSearchService extends Service {
         qs.add("address", media.server.activeConnection.address);
         Logger.d("address: %s", media.server.activeConnection.address);
 
-        if ((Preferences.get(Preferences.RESUME, false) || resumePlayback) && media.viewOffset != null)
+        if ((VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.RESUME, false) || resumePlayback) && media.viewOffset != null)
           qs.add("viewOffset", media.viewOffset);
         if (transientToken != null)
           qs.add("token", transientToken);

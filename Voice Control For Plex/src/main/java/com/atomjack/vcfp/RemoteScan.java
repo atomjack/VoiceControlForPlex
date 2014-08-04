@@ -1,11 +1,9 @@
 package com.atomjack.vcfp;
 
-import android.content.SharedPreferences;
 import android.content.res.Resources;
 
 import com.atomjack.vcfp.model.Device;
 import com.atomjack.vcfp.model.MediaContainer;
-import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexServer;
 import com.google.gson.Gson;
 import com.loopj.android.http.AsyncHttpClient;
@@ -16,7 +14,6 @@ import org.simpleframework.xml.Serializer;
 import org.simpleframework.xml.core.Persister;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 

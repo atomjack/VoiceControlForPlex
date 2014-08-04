@@ -65,8 +65,8 @@ public class ShortcutProviderActivity extends Activity {
 
 		Type serverType = new TypeToken<ConcurrentHashMap<String, PlexServer>>(){}.getType();
 		Type clientType = new TypeToken<HashMap<String, PlexClient>>(){}.getType();
-		servers = gson.fromJson(Preferences.get(Preferences.SAVED_SERVERS, ""), serverType);
-		clients = gson.fromJson(Preferences.get(Preferences.SAVED_CLIENTS, ""), clientType);
+		servers = gson.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.SAVED_SERVERS, ""), serverType);
+		clients = gson.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.SAVED_CLIENTS, ""), clientType);
 
 		Logger.d("server: %s", servers);
 		boolean didScan = false;

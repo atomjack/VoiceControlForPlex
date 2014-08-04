@@ -1,7 +1,6 @@
 package com.atomjack.vcfp;
 
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
 import android.widget.Toast;
@@ -29,9 +28,9 @@ public class Feedback implements TextToSpeech.OnInitListener {
 	public void onInit(int i) {
 		Logger.d("Feedback onInit");
 		if(errorsTts != null)
-			errorsTts.setLanguage(VoiceControlForPlexApplication.getVoiceLocale(Preferences.get(Preferences.ERRORS_VOICE, "Locale.US")));
+			errorsTts.setLanguage(VoiceControlForPlexApplication.getVoiceLocale(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.ERRORS_VOICE, "Locale.US")));
 		if(feedbackTts != null)
-			feedbackTts.setLanguage(VoiceControlForPlexApplication.getVoiceLocale(Preferences.get(Preferences.FEEDBACK_VOICE, "Locale.US")));
+			feedbackTts.setLanguage(VoiceControlForPlexApplication.getVoiceLocale(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.FEEDBACK_VOICE, "Locale.US")));
 
 		if(errorsQueue != null) {
 			feedback(errorsQueue, true);
@@ -97,7 +96,7 @@ public class Feedback implements TextToSpeech.OnInitListener {
 
 	private void feedback(String text, boolean errors, boolean forceToast) {
 
-		if(!forceToast && Preferences.get(errors ? Preferences.ERRORS : Preferences.FEEDBACK, MainActivity.FEEDBACK_TOAST) == MainActivity.FEEDBACK_VOICE) {
+		if(!forceToast && VoiceControlForPlexApplication.getInstance().prefs.get(errors ? Preferences.ERRORS : Preferences.FEEDBACK, MainActivity.FEEDBACK_TOAST) == MainActivity.FEEDBACK_VOICE) {
 			TextToSpeech tts = errors ? errorsTts : feedbackTts;
 			if (tts == null) {
 				// This tts not set up yet, so initiate it and add the text to be spoken to the appropriate queue.

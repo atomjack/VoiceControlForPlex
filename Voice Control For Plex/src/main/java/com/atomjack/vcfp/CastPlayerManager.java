@@ -8,18 +8,12 @@ import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexTrack;
 import com.atomjack.vcfp.model.PlexVideo;
 import com.google.android.gms.cast.ApplicationMetadata;
-import com.google.android.gms.cast.MediaInfo;
-import com.google.android.gms.cast.MediaMetadata;
-import com.google.android.gms.cast.MediaStatus;
 import com.google.sample.castcompanionlibrary.cast.VideoCastManager;
-import com.google.sample.castcompanionlibrary.widgets.MiniController;
 
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.ListIterator;
 
 public class CastPlayerManager {
   private PlexMedia nowPlayingMedia;
@@ -27,9 +21,8 @@ public class CastPlayerManager {
 
   private static VideoCastManager castManager = null;
   private VCFPCastConsumer castConsumer;
-  private MiniController miniController;
 
-  protected MediaInfo remoteMediaInformation;
+  private String mSessionId;
 
   public static final class PARAMS {
     public static final String MEDIA_TYPE = "media_type";
@@ -61,12 +54,13 @@ public class CastPlayerManager {
     public static final String ACTION_SEEK = "seek";
     public static final String ACTION_GET_PLAYBACK_STATE = "getPlaybackState";
 
+    public static final String PLEX_USERNAME = "plexUsername";
+
   };
 
   private Context mContext;
 
   private CastListener listener;
-  private CastListener notificationListener;
 
   private boolean subscribed = false;
 
@@ -78,7 +72,6 @@ public class CastPlayerManager {
 
   public CastPlayerManager(Context context) {
     mContext = context;
-    Preferences.setContext(mContext);
     setCastConsumer();
   }
 
@@ -130,8 +123,8 @@ public class CastPlayerManager {
 
   public void setListener(CastListener _listener) {
     listener = _listener;
-    if(_listener != null)
-      notificationListener = _listener;
+//    if(_listener != null)
+//      notificationListener = _listener;
   }
 
   public interface CastListener {
@@ -263,38 +256,6 @@ public class CastPlayerManager {
       }
 
       @Override
-      public void onRemoteMediaPlayerStatusUpdated() {
-        super.onRemoteMediaPlayerStatusUpdated();
-        /*
-        Logger.d("onRemoteMediaPlayerStatusUpdated");
-        try {
-          remoteMediaInformation = castManager.getRemoteMediaInformation();
-          MediaMetadata metadata = remoteMediaInformation.getMetadata();
-          int lastState = currentState;
-          currentState = castManager.getPlaybackStatus();
-
-          Logger.d("currentState: %d", currentState);
-
-          listener.onCastPlayerStateChanged(currentState);
-          if(currentState == MediaStatus.PLAYER_STATE_IDLE) {
-            Logger.d("idle reason: %d", castManager.getIdleReason());
-
-          } else if(currentState == MediaStatus.PLAYER_STATE_PAUSED) {
-//            setState(MediaStatus.PLAYER_STATE_PAUSED);
-//            stopDurationTimer();
-          } else if(currentState == MediaStatus.PLAYER_STATE_PLAYING) {
-//            setState(MediaStatus.PLAYER_STATE_PLAYING);
-//            startDurationTimer();
-          }
-//					Logger.d("metadata: %s", metadata);
-        } catch (Exception ex) {
-          // silent
-          ex.printStackTrace();
-        }
-        */
-      }
-
-      @Override
       public void setOnConnected(Runnable runnable) {
         onConnectedRunnable = runnable;
       }
@@ -319,6 +280,7 @@ public class CastPlayerManager {
         Logger.d("metadata: %s", appMetadata);
         Logger.d("sessionid: %s", sessionId);
         Logger.d("was launched: %s", wasLaunched);
+        mSessionId = sessionId;
 //        if(!launched) {
 //          launched = true;
           if(onConnectedRunnable != null)
@@ -351,7 +313,7 @@ public class CastPlayerManager {
     };
   }
 
-  public String getTranscodeUrl(PlexVideo media) {
+  public String getTranscodeUrl(PlexMedia media) {
     return getTranscodeUrl(media, 0);
   }
 
@@ -371,8 +333,8 @@ public class CastPlayerManager {
     qs.add("maxVideoBitrate", "2000");
     qs.add("subtitleSize", "100");
     qs.add("audioBoost", "100");
-    qs.add("session", VoiceControlForPlexApplication.generateRandomString());
-    qs.add(PlexHeaders.XPlexClientIdentifier, Preferences.getUUID());
+    qs.add("session", mSessionId);
+    qs.add(PlexHeaders.XPlexClientIdentifier, VoiceControlForPlexApplication.getInstance().prefs.getUUID());
     qs.add(PlexHeaders.XPlexProduct, String.format("%s Chromecast", mContext.getString(R.string.app_name)));
     qs.add(PlexHeaders.XPlexDevice, mClient.castDevice.getModelName());
     qs.add(PlexHeaders.XPlexDeviceName, mClient.castDevice.getModelName());
@@ -386,8 +348,8 @@ public class CastPlayerManager {
       ex.printStackTrace();
     }
     // TODO: Fix this
-    if(Preferences.getString(Preferences.PLEX_USERNAME) != null)
-      qs.add(PlexHeaders.XPlexUsername, Preferences.getString(Preferences.PLEX_USERNAME));
+    if(VoiceControlForPlexApplication.getInstance().prefs.getString(Preferences.PLEX_USERNAME) != null)
+      qs.add(PlexHeaders.XPlexUsername, VoiceControlForPlexApplication.getInstance().prefs.getString(Preferences.PLEX_USERNAME));
     return url + qs.toString();
   }
 
@@ -403,6 +365,9 @@ public class CastPlayerManager {
     JSONObject data = new JSONObject();
     try {
       data.put(PARAMS.ACTION, PARAMS.ACTION_LOAD);
+      if(VoiceControlForPlexApplication.getInstance().prefs.getString(Preferences.PLEX_USERNAME) != null) {
+        data.put(PARAMS.PLEX_USERNAME, VoiceControlForPlexApplication.getInstance().prefs.getString(Preferences.PLEX_USERNAME));
+      }
       data.put(PARAMS.MEDIA_TYPE, nowPlayingMedia instanceof PlexVideo ? PARAMS.MEDIA_TYPE_VIDEO : PARAMS.MEDIA_TYPE_AUDIO);
       data.put(PARAMS.OFFSET, offset);
       data.put(PARAMS.CLIENT, VoiceControlForPlexApplication.gsonWrite.toJson(mClient));
@@ -432,5 +397,9 @@ public class CastPlayerManager {
 
   public PlexMedia getNowPlayingMedia() {
     return nowPlayingMedia;
+  }
+
+  public String getSessionId() {
+    return mSessionId;
   }
 }

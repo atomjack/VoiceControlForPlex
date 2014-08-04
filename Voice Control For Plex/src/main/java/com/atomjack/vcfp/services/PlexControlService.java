@@ -2,14 +2,12 @@ package com.atomjack.vcfp.services;
 
 import android.app.IntentService;
 import android.content.Intent;
-import android.os.Handler;
 import android.os.IBinder;
 
 import com.atomjack.vcfp.CastPlayerManager;
 import com.atomjack.vcfp.Logger;
 import com.atomjack.vcfp.PlayerState;
 import com.atomjack.vcfp.PlexHeaders;
-import com.atomjack.vcfp.Preferences;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.PlexClient;
@@ -17,7 +15,6 @@ import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexResponse;
 import com.atomjack.vcfp.model.Timeline;
 import com.atomjack.vcfp.net.PlexHttpClient;
-import com.google.android.gms.games.Player;
 
 import org.apache.http.Header;
 import org.apache.http.message.BasicHeader;
@@ -60,14 +57,11 @@ public class PlexControlService extends IntentService {
       PlayerState currentState;
       Timeline t = null;
 
-      Preferences.setContext(this);
-
-
       if(client.isCastClient) {
         currentState = castPlayerManager.getCurrentState();
       } else {
         Header[] headers = {
-                new BasicHeader(PlexHeaders.XPlexClientIdentifier, Preferences.getUUID())
+                new BasicHeader(PlexHeaders.XPlexClientIdentifier, VoiceControlForPlexApplication.getInstance().prefs.getUUID())
         };
         MediaContainer mc = PlexHttpClient.getSync(String.format("http://%s:%s/player/timeline/poll?commandID=0", client.address, client.port), headers);
         t = mc.getActiveTimeline();

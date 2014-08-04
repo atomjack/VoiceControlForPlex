@@ -1,24 +1,17 @@
 package com.atomjack.vcfp.model;
 
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.concurrent.TimeUnit;
+import android.os.Parcel;
+import android.os.Parcelable;
+import android.text.TextUtils;
 
 import org.simpleframework.xml.Attribute;
 import org.simpleframework.xml.ElementList;
 import org.simpleframework.xml.Root;
 
-import android.content.res.Configuration;
-import android.os.Parcel;
-import android.os.Parcelable;
-import android.text.TextUtils;
-
-import com.atomjack.vcfp.Logger;
-import com.atomjack.vcfp.PlexHeaders;
-import com.atomjack.vcfp.QueryString;
-import com.atomjack.vcfp.R;
-import com.atomjack.vcfp.VoiceControlForPlexApplication;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
 @Root(strict=false)
 public class PlexVideo extends PlexMedia {

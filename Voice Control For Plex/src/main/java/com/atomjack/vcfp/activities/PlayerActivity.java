@@ -11,7 +11,6 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.atomjack.vcfp.Logger;
-import com.atomjack.vcfp.services.PlexSearchService;
 import com.atomjack.vcfp.Preferences;
 import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
@@ -19,6 +18,7 @@ import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexServer;
 import com.atomjack.vcfp.model.PlexTrack;
 import com.atomjack.vcfp.model.PlexVideo;
+import com.atomjack.vcfp.services.PlexSearchService;
 import com.google.gson.Gson;
 
 import java.math.BigInteger;
@@ -35,7 +35,7 @@ public abstract class PlayerActivity extends VCFPActivity implements SeekBar.OnS
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		resumePlayback = Preferences.get(Preferences.RESUME, false);
+		resumePlayback = VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.RESUME, false);
 	}
 
 	public void doMic(View v) {
@@ -77,7 +77,7 @@ public abstract class PlayerActivity extends VCFPActivity implements SeekBar.OnS
 	}
 
 	protected int getOffset(PlexMedia media) {
-		if((Preferences.get(Preferences.RESUME, false) || resumePlayback) && media.viewOffset != null)
+		if((VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.RESUME, false) || resumePlayback) && media.viewOffset != null)
 			return Integer.parseInt(media.viewOffset) / 1000;
 		else
 			return 0;

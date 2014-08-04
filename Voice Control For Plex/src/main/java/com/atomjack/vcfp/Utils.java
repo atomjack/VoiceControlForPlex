@@ -1,12 +1,20 @@
 package com.atomjack.vcfp;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
 import org.apache.http.conn.util.InetAddressUtils;
+
+import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
+import java.math.BigInteger;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.security.SecureRandom;
+import java.util.Collections;
+import java.util.List;
 
 public class Utils {
 
+  private static SecureRandom random = new SecureRandom();
 	/**
 	 * Convert byte array to hex string
 	 * @param bytes
@@ -120,4 +128,11 @@ public class Utils {
 		return "";
 	}
 
+  public static String generateRandomString() {
+    return generateRandomString(16);
+  }
+
+  public static String generateRandomString(int length) {
+    return new BigInteger(130, random).toString(32).substring(0, length);
+  }
 }

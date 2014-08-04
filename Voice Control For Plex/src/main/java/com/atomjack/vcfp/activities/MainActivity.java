@@ -1,17 +1,5 @@
 package com.atomjack.vcfp.activities;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.UUID;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-
-import us.nineworlds.serenity.GDMReceiver;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -49,13 +37,12 @@ import com.atomjack.vcfp.GDMService;
 import com.atomjack.vcfp.LocalScan;
 import com.atomjack.vcfp.Logger;
 import com.atomjack.vcfp.PlexHeaders;
-import com.atomjack.vcfp.adapters.MainListAdapter;
 import com.atomjack.vcfp.Preferences;
 import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.RemoteScan;
 import com.atomjack.vcfp.ScanHandler;
-import com.atomjack.vcfp.tasker.TaskerPlugin;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
+import com.atomjack.vcfp.adapters.MainListAdapter;
 import com.atomjack.vcfp.model.MainSetting;
 import com.atomjack.vcfp.model.Pin;
 import com.atomjack.vcfp.model.PlexClient;
@@ -66,6 +53,7 @@ import com.atomjack.vcfp.model.PlexUser;
 import com.atomjack.vcfp.net.PlexHttpClient;
 import com.atomjack.vcfp.net.PlexHttpUserHandler;
 import com.atomjack.vcfp.net.PlexPinResponseHandler;
+import com.atomjack.vcfp.tasker.TaskerPlugin;
 import com.cubeactive.martin.inscription.WhatsNewDialog;
 import com.google.android.gms.cast.CastDevice;
 import com.google.android.gms.cast.CastMediaControlIntent;
@@ -77,6 +65,19 @@ import org.apache.http.Header;
 import org.apache.http.message.BasicHeader;
 import org.simpleframework.xml.Serializer;
 import org.simpleframework.xml.core.Persister;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
+import us.nineworlds.serenity.GDMReceiver;
 
 public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitListener {
 
@@ -112,8 +113,6 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		Preferences.setContext(this);
-
     gdmReceiver = new GDMReceiver();
 
 		final WhatsNewDialog whatsNewDialog = new WhatsNewDialog(this);
@@ -127,15 +126,15 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 		mMediaRouter.addCallback(mMediaRouteSelector, mMediaRouterCallback, MediaRouter.CALLBACK_FLAG_PERFORM_ACTIVE_SCAN);
 
 
-		authToken = Preferences.getString(Preferences.AUTHENTICATION_TOKEN);
+		authToken = VoiceControlForPlexApplication.getInstance().prefs.getString(Preferences.AUTHENTICATION_TOKEN);
 
 		setContentView(R.layout.main);
 
-		server = gsonRead.fromJson(Preferences.get(Preferences.SERVER, ""), PlexServer.class);
+		server = gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.SERVER, ""), PlexServer.class);
 		if(server == null)
 			server = new PlexServer(getString(R.string.scan_all));
 
-		client = gsonRead.fromJson(Preferences.get(Preferences.CLIENT, ""), PlexClient.class);
+		client = gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.CLIENT, ""), PlexClient.class);
 
 		localScan = new LocalScan(this, MainActivity.class, new ScanHandler() {
 			@Override
@@ -219,7 +218,7 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 	}
 
 	public void resumeChecked(View v) {
-		Preferences.put("resume", ((CheckBox) v).isChecked());
+    VoiceControlForPlexApplication.getInstance().prefs.put("resume", ((CheckBox) v).isChecked());
 	}
 
 	@Override
@@ -280,8 +279,8 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 		MainSetting setting_data[] = new MainSetting[] {
 			new MainSetting(MainListAdapter.SettingHolder.TAG_SERVER, getResources().getString(R.string.stream_video_from_server), server.owned ? server.name : server.sourceTitle),
 			new MainSetting(MainListAdapter.SettingHolder.TAG_CLIENT, getResources().getString(R.string.to_the_client), clientName),
-			new MainSetting(MainListAdapter.SettingHolder.TAG_FEEDBACK, getResources().getString(R.string.feedback), Preferences.get(Preferences.FEEDBACK, FEEDBACK_TOAST) == FEEDBACK_VOICE ? getResources().getString(R.string.voice) : getResources().getString(R.string.toast)),
-			new MainSetting(MainListAdapter.SettingHolder.TAG_ERRORS, getResources().getString(R.string.errors), Preferences.get(Preferences.ERRORS, FEEDBACK_TOAST) == FEEDBACK_VOICE ? getResources().getString(R.string.voice) : getResources().getString(R.string.toast))
+			new MainSetting(MainListAdapter.SettingHolder.TAG_FEEDBACK, getResources().getString(R.string.feedback), VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.FEEDBACK, FEEDBACK_TOAST) == FEEDBACK_VOICE ? getResources().getString(R.string.voice) : getResources().getString(R.string.toast)),
+			new MainSetting(MainListAdapter.SettingHolder.TAG_ERRORS, getResources().getString(R.string.errors), VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.ERRORS, FEEDBACK_TOAST) == FEEDBACK_VOICE ? getResources().getString(R.string.voice) : getResources().getString(R.string.toast))
 		};
 
 		MainListAdapter adapter = new MainListAdapter(this, R.layout.main_setting_item_row, setting_data);
@@ -330,7 +329,7 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 							public void onFailure(int statusCode) {
 								if(statusCode == 401) {
 									authToken = null;
-									Preferences.remove(Preferences.AUTHENTICATION_TOKEN);
+                  VoiceControlForPlexApplication.getInstance().prefs.remove(Preferences.AUTHENTICATION_TOKEN);
 									feedback.e(R.string.login_unauthorized);
 									switchLogin();
 								} else
@@ -365,7 +364,7 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 		});
 
 		CheckBox resumeCheckbox = (CheckBox)findViewById(R.id.resumeCheckbox);
-		resumeCheckbox.setChecked(Preferences.get(Preferences.RESUME, false));
+		resumeCheckbox.setChecked(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.RESUME, false));
 	}
 
 	public void settingRowHelpButtonClicked(View v) {
@@ -402,7 +401,7 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 		final MainActivity ctx = this;
 		builder.setPositiveButton(R.string.feedback_voice, new DialogInterface.OnClickListener() {
 			public void onClick(DialogInterface dialog, int id) {
-				Preferences.put(errors ? Preferences.ERRORS : Preferences.FEEDBACK, FEEDBACK_VOICE);
+        VoiceControlForPlexApplication.getInstance().prefs.put(errors ? Preferences.ERRORS : Preferences.FEEDBACK, FEEDBACK_VOICE);
 				Intent checkIntent = new Intent();
 				checkIntent.setAction(TextToSpeech.Engine.ACTION_CHECK_TTS_DATA);
 				tts = new TextToSpeech(ctx, new TextToSpeech.OnInitListener() {
@@ -418,7 +417,7 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 			}
 		}).setNegativeButton(R.string.feedback_toast, new DialogInterface.OnClickListener() {
 			public void onClick(DialogInterface dialog, int id) {
-				Preferences.put(errors ? Preferences.ERRORS : Preferences.FEEDBACK, FEEDBACK_TOAST);
+        VoiceControlForPlexApplication.getInstance().prefs.put(errors ? Preferences.ERRORS : Preferences.FEEDBACK, FEEDBACK_TOAST);
 				initMainWithServer();
 			}
 		});
@@ -447,8 +446,8 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 	}
 
 	public void logout(MenuItem item) {
-		Preferences.remove(Preferences.AUTHENTICATION_TOKEN);
-		Preferences.remove(Preferences.PLEX_USERNAME);
+    VoiceControlForPlexApplication.getInstance().prefs.remove(Preferences.AUTHENTICATION_TOKEN);
+    VoiceControlForPlexApplication.getInstance().prefs.remove(Preferences.PLEX_USERNAME);
 		authToken = null;
 
 		// If the currently selected server is not local, reset it to scan all.
@@ -464,7 +463,7 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 				VoiceControlForPlexApplication.servers.remove(s.name);
 		}
 
-		Preferences.put(Preferences.SAVED_SERVERS, gsonWrite.toJson(VoiceControlForPlexApplication.servers));
+    VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.SAVED_SERVERS, gsonWrite.toJson(VoiceControlForPlexApplication.servers));
 		MenuItem loginItem = menu.findItem(R.id.menu_login);
 		loginItem.setVisible(true);
 		MenuItem logoutItem = menu.findItem(R.id.menu_logout);
@@ -555,7 +554,7 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 						}
 						if(pin.authToken != null) {
 							authToken = pin.authToken;
-							Preferences.put(Preferences.AUTHENTICATION_TOKEN, authToken);
+              VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.AUTHENTICATION_TOKEN, authToken);
 							Header[] sheaders = {
 											new BasicHeader(com.atomjack.vcfp.PlexHeaders.XPlexClientPlatform, "Android"),
 											new BasicHeader(com.atomjack.vcfp.PlexHeaders.XPlexClientIdentifier, getUUID()),
@@ -564,7 +563,7 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 							PlexHttpClient.signin(authToken, sheaders, new PlexHttpUserHandler() {
 								@Override
 								public void onSuccess(PlexUser user) {
-									Preferences.put(Preferences.PLEX_USERNAME, user.username);
+                  VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.PLEX_USERNAME, user.username);
 									Logger.d("Saved username %s", user.username);
 								}
 
@@ -661,9 +660,9 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 				PlexHttpClient.signin(usernameInput.getText().toString(), passwordInput.getText().toString(), headers, new PlexHttpUserHandler() {
 					@Override
 					public void onSuccess(PlexUser user) {
-						Preferences.put(Preferences.AUTHENTICATION_TOKEN, user.authenticationToken);
+            VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.AUTHENTICATION_TOKEN, user.authenticationToken);
 						authToken = user.authenticationToken;
-						Preferences.put(Preferences.PLEX_USERNAME, user.username);
+            VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.PLEX_USERNAME, user.username);
 						feedback.m(R.string.logged_in);
 						MenuItem loginItem = menu.findItem(R.id.menu_login);
 						loginItem.setVisible(false);
@@ -687,10 +686,10 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 	}
 
 	public String getUUID() {
-		String uuid = Preferences.get(Preferences.UUID, null);
+		String uuid = VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.UUID, null);
 		if(uuid == null) {
 			uuid = UUID.randomUUID().toString();
-			Preferences.put(Preferences.UUID, uuid);
+      VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.UUID, uuid);
 		}
 		return uuid;
 	}
@@ -778,7 +777,7 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
         Logger.d("Got " + VoiceControlForPlexApplication.servers.size() + " servers");
         if(searchDialog != null)
           searchDialog.cancel();
-        Preferences.put(Preferences.SAVED_SERVERS, gsonWrite.toJson(VoiceControlForPlexApplication.servers));
+        VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.SAVED_SERVERS, gsonWrite.toJson(VoiceControlForPlexApplication.servers));
         if (VoiceControlForPlexApplication.servers.size() > 0) {
           localScan.showPlexServers();
         } else {
@@ -800,7 +799,7 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
           for (PlexClient c : clients) {
             VoiceControlForPlexApplication.clients.put(c.name, c);
           }
-          Preferences.put(Preferences.SAVED_CLIENTS, gsonWrite.toJson(VoiceControlForPlexApplication.clients));
+          VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.SAVED_CLIENTS, gsonWrite.toJson(VoiceControlForPlexApplication.clients));
           boolean showConnectToClients = intent.getBooleanExtra(VoiceControlForPlexApplication.Intent.EXTRA_CONNECT_TO_CLIENT, false);
           Logger.d("showConnectToClients: %s", showConnectToClients);
           if(showConnectToClients) {
@@ -858,9 +857,9 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 	}
 
 	private void saveSettings() {
-		Preferences.put(Preferences.SERVER, gsonWrite.toJson(server));
-		Preferences.put(Preferences.CLIENT, gsonWrite.toJson(client));
-		Preferences.put(Preferences.RESUME, Preferences.get(Preferences.RESUME, false));
+    VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.SERVER, gsonWrite.toJson(server));
+    VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.CLIENT, gsonWrite.toJson(client));
+    VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.RESUME, VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.RESUME, false));
 	}
 
 	@Override
@@ -954,7 +953,7 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 
 			String blurb = "Server: " + (server != null ? server.name : getResources().getString(R.string.scan_all));
 			blurb += " | Client: " + (client != null ? client.name : "Not specified.");
-			if(Preferences.get(Preferences.RESUME, false))
+			if(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.RESUME, false))
 				blurb += " (resume)";
 
 
@@ -972,14 +971,14 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 				AlertDialog.Builder adb = new AlertDialog.Builder(this);
 				final CharSequence items[] = availableVoices.toArray(new CharSequence[availableVoices.size()]);
 				int selectedVoice = -1;
-				String v = Preferences.get(pref, "Locale.US");
+				String v = VoiceControlForPlexApplication.getInstance().prefs.get(pref, "Locale.US");
 				if (availableVoices.indexOf(v) > -1)
 					selectedVoice = availableVoices.indexOf(v);
 
 				adb.setSingleChoiceItems(items, selectedVoice, new DialogInterface.OnClickListener() {
 					@Override
 					public void onClick(DialogInterface d, int n) {
-						Preferences.put(pref, items[n].toString());
+            VoiceControlForPlexApplication.getInstance().prefs.put(pref, items[n].toString());
 						d.dismiss();
 					}
 				});
@@ -987,7 +986,7 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 				adb.setTitle(R.string.select_voice);
 				adb.show();
 			} else {
-				Preferences.put(pref, "Locale.US");
+        VoiceControlForPlexApplication.getInstance().prefs.put(pref, "Locale.US");
 			}
 		}
 	}
@@ -999,7 +998,7 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
       if(VoiceControlForPlexApplication.castClients.containsKey(route.getName())) {
         Logger.d("Cast Client %s has gone missing. Removing.", route.getName());
         VoiceControlForPlexApplication.castClients.remove(route.getName());
-        Preferences.put(Preferences.SAVED_CAST_CLIENTS, gsonWrite.toJson(VoiceControlForPlexApplication.castClients));
+        VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.SAVED_CAST_CLIENTS, gsonWrite.toJson(VoiceControlForPlexApplication.castClients));
         // If the "select a plex client" dialog is showing, refresh the list of clients
         if(localScan.isDeviceDialogShowing()) {
           localScan.deviceSelectDialogRefresh();
@@ -1018,7 +1017,7 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
         client.product = route.getDescription();
         client.castDevice = CastDevice.getFromBundle(route.getExtras());
         VoiceControlForPlexApplication.castClients.put(client.name, client);
-        Preferences.put(Preferences.SAVED_CAST_CLIENTS, gsonWrite.toJson(VoiceControlForPlexApplication.castClients));
+        VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.SAVED_CAST_CLIENTS, gsonWrite.toJson(VoiceControlForPlexApplication.castClients));
         // If the "select a plex client" dialog is showing, refresh the list of clients
         if(localScan.isDeviceDialogShowing()) {
           localScan.deviceSelectDialogRefresh();

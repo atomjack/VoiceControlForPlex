@@ -1,7 +1,5 @@
 package com.atomjack.vcfp.model;
 
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -9,18 +7,13 @@ import android.os.Parcelable;
 import com.atomjack.vcfp.Logger;
 import com.atomjack.vcfp.PlexHeaders;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
-import com.atomjack.vcfp.handlers.BitmapHandler;
-import com.atomjack.vcfp.handlers.InputStreamHandler;
 import com.atomjack.vcfp.net.PlexHttpClient;
-import com.loopj.android.http.BinaryHttpResponseHandler;
 
-import org.apache.http.Header;
 import org.simpleframework.xml.Attribute;
 import org.simpleframework.xml.ElementList;
 import org.simpleframework.xml.Root;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
