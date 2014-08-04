@@ -139,7 +139,6 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
     if(plexSubscription.isSubscribed()) {
       Logger.d("VCFPActivity setting client to %s", plexSubscription.mClient);
       mClient = plexSubscription.mClient;
-      Logger.d("[VCFPActivity] 2 set mClient: %s", mClient);
     } else {
       Logger.d("Not subscribed: %s", plexSubscription.mClient);
     }
@@ -155,7 +154,6 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
     castPlayerManager.setContext(this);
     if(castPlayerManager.isSubscribed()) {
       mClient = castPlayerManager.mClient;
-      Logger.d("[VCFPActivity] 3 set mClient: %s", mClient);
     }
 
 		if(BuildConfig.USE_BUGSENSE)
@@ -273,7 +271,6 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
         if (clientSelected.isCastClient) {
           if(VoiceControlForPlexApplication.getInstance().hasChromecast()) {
             mClient = clientSelected;
-            Logger.d("[VCFPActivity] 3 set mClient: %s", mClient);
             Logger.d("[VCPActivity] subscribing");
             castPlayerManager.subscribe(mClient);
           } else {
@@ -413,7 +410,6 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
     if(!mCurrentState.equals(PlayerState.STOPPED) && media != null) {
       nowPlayingMedia = media;
       mClient = castPlayerManager.mClient;
-      Logger.d("[VCFPActivity] 1 set mClient: %s", mClient);
       // TODO: only set notification here if it's already on?
       VoiceControlForPlexApplication.getInstance().setNotification(mClient, mCurrentState, nowPlayingMedia);
     }
@@ -588,7 +584,6 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
       Logger.d("setThumb: %s", thumb);
       if(nowPlayingMedia instanceof PlexVideo) {
         PlexVideo video = (PlexVideo)nowPlayingMedia;
-        Logger.d("grandparentThumb: %s", nowPlayingMedia.grandparentThumb);
         thumb = video.isMovie() || video.isClip() ? video.thumb : video.grandparentThumb;
         Logger.d("orientation: %s, type: %s", getOrientation(), video.type);
         if(video.isClip()) {

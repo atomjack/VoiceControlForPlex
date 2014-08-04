@@ -88,7 +88,6 @@ public class SubscriptionActivity extends VCFPActivity {
   @Override
   public void onSubscribed(PlexClient _client) {
     mClient = _client;
-    Logger.d("[SubscriptionActivity] set mClient: %s", mClient);
     // Do nothing
   }
 
