@@ -35,6 +35,8 @@ public class CastPlayerManager {
     public static final String KEY = "key";
     public static final String THUMB = "thumb";
     public static final String OFFSET = "offset";
+    public static final String RESUME="resume";
+
     public static final String SRC = "src";
     public static final String ART = "art";
 
@@ -169,7 +171,7 @@ public class CastPlayerManager {
       obj.put(PARAMS.ACTION, PARAMS.ACTION_SEEK);
       if(nowPlayingMedia instanceof PlexVideo)
         obj.put(PARAMS.SRC, getTranscodeUrl(nowPlayingMedia, seconds));
-      obj.put(PARAMS.OFFSET, seconds);
+      obj.put(PARAMS.RESUME, VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.RESUME, false));
       sendMessage(obj);
     } catch (Exception ex) {}
 
@@ -369,7 +371,7 @@ public class CastPlayerManager {
         data.put(PARAMS.PLEX_USERNAME, VoiceControlForPlexApplication.getInstance().prefs.getString(Preferences.PLEX_USERNAME));
       }
       data.put(PARAMS.MEDIA_TYPE, nowPlayingMedia instanceof PlexVideo ? PARAMS.MEDIA_TYPE_VIDEO : PARAMS.MEDIA_TYPE_AUDIO);
-      data.put(PARAMS.OFFSET, offset);
+      data.put(PARAMS.RESUME, VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.RESUME, false));
       data.put(PARAMS.CLIENT, VoiceControlForPlexApplication.gsonWrite.toJson(mClient));
       data.put(PARAMS.SRC, getTranscodeUrl(nowPlayingMedia, offset));
       data.put(PARAMS.PLAYLIST, getPlaylistJson());

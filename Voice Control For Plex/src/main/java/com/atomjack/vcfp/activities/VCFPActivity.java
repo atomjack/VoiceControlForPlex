@@ -159,6 +159,9 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
     mHandler = new Handler();
 	}
 
+  protected void onMediaChange() {
+
+  }
   protected void onSubscriptionMessage(Timeline timeline) {
   }
 
@@ -185,6 +188,7 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
               VoiceControlForPlexApplication.getInstance().setNotification(mClient, mCurrentState, nowPlayingMedia);
               if (timeline.continuing != null && timeline.continuing.equals("1"))
                 continuing = true;
+              onMediaChange();
             }
 					}
 
@@ -219,7 +223,16 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
           } else
   					localScan.showPlexClients(false, onClientChosen);
 				} else if(!subscribing) {
+          // For some reason we sometimes lost mClient here, even though we're subscribed. If we do, let's try to get the client from the subscription manager
           if(mClient == null) {
+            Logger.d("[VCFPActivity] 0Lost subscribed client.");
+            if(castPlayerManager.mClient != null)
+              mClient = castPlayerManager.mClient;
+            else if(plexSubscription.mClient != null)
+              mClient = plexSubscription.mClient;
+          }
+          if(mClient == null) {
+            Logger.d("Lost subscribed client.");
             setCastIconInactive();
           } else {
             AlertDialog.Builder subscribeDialog = new AlertDialog.Builder(this)
@@ -348,11 +361,9 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
 		super.onResume();
     Logger.d("[VCFPActivity] onResume");
     if(!plexSubscription.isSubscribed() && !castPlayerManager.isSubscribed()) {
-      subscribed = false;
       setCastIconInactive();
     } else {
       setCastIconActive();
-      subscribed = true;
     }
     networkMonitor.register();
 	}
@@ -363,7 +374,6 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
     mClient = _client;
     try {
       setCastIconActive();
-      subscribed = true;
       subscribing = false;
     } catch (Exception e) {
       e.printStackTrace();
@@ -445,16 +455,18 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
     if(timelines != null) {
       for (Timeline timeline : timelines) {
         if (timeline.key != null) {
-
-          if((!timeline.state.equals("stopped") && nowPlayingMedia == null) || continuing) {
-            // Get this media's info
-            PlexServer server = null;
-            for(PlexServer s : VoiceControlForPlexApplication.servers.values()) {
-              if(s.machineIdentifier.equals(timeline.machineIdentifier)) {
-                server = s;
-                break;
-              }
+//          Logger.d("state: %s", timeline.state);
+//          Logger.d("nowPlayingMedia: %s", nowPlayingMedia);
+          // Get this media's info
+          PlexServer server = null;
+          for(PlexServer s : VoiceControlForPlexApplication.servers.values()) {
+            if(s.machineIdentifier.equals(timeline.machineIdentifier)) {
+              server = s;
+              break;
             }
+          }
+          if((!timeline.state.equals("stopped") && nowPlayingMedia == null) || continuing) {
+
             if(server == null) {
               // TODO: Scan servers for this server, then get playing media
               Logger.d("server is null");
@@ -464,6 +476,7 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
           }
 
           if(nowPlayingMedia != null) {
+//            Logger.d("timeline key: %s, now playing key: %s", timeline.key, nowPlayingMedia.key);
             if(timeline.key != null && timeline.key.equals(nowPlayingMedia.key)) {
               // Found an update for the currently playing media
               PlayerState oldState = mCurrentState;
@@ -474,7 +487,6 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
                   Logger.d("mClient is now playing");
                   if(mCurrentState == PlayerState.STOPPED) {
                     // We're already subscribed and the mClient has started playing
-                    // TODO: Continue this
                   }
                 } else if(mCurrentState == PlayerState.PAUSED) {
                   Logger.d("mClient is now paused");
@@ -490,6 +502,9 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
                   VoiceControlForPlexApplication.getInstance().setNotification(mClient, mCurrentState, nowPlayingMedia);
                 }
               }
+            } else if(timeline.key != null) {
+              // A different piece of media is playing
+              getPlayingMedia(server, timeline);
             }
             position = timeline.time;
           }
@@ -506,7 +521,6 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
   public void onUnsubscribed() {
     Logger.d("VCFPActivity onUnsubscribed");
     setCastIconInactive();
-    subscribed = false;
     nowPlayingMedia = null;
     VoiceControlForPlexApplication.getInstance().cancelNotification();
     feedback.m(R.string.disconnected);

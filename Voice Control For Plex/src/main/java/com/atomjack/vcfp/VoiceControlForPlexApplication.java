@@ -34,6 +34,7 @@ import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexServer;
+import com.atomjack.vcfp.model.PlexTrack;
 import com.atomjack.vcfp.services.PlexControlService;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -89,6 +90,7 @@ public class VoiceControlForPlexApplication extends Application
 
   private NotificationManager mNotifyMgr;
   private Bitmap notificationBitmap = null;
+  private Bitmap notificationBitmapBig = null;
 
 	public final static class Intent {
 			public final static String GDMRECEIVE = "com.atomjack.vcfp.intent.gdmreceive";
@@ -354,40 +356,42 @@ public class VoiceControlForPlexApplication extends Application
     setNotification(client, currentState, media, false);
   }
 
-  public void setNotification(final PlexClient client, final PlayerState currentState, final PlexMedia media, boolean skipThumb) {
-    Logger.d("Setting notification, client: %s, media: %s", client, media);
-    if(notificationStatus == NOTIFICATION_STATUS.off) {
-      notificationStatus = NOTIFICATION_STATUS.initializing;
-      notificationBitmap = null;
-    }
+  private Bitmap getCachedBitmap(String key) {
+    if(key == null)
+      return null;
 
+    Bitmap bitmap = null;
     try {
-      Logger.d("Trying to get cached thumb: %s", media.getImageKey(PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB));
-      SimpleDiskCache.BitmapEntry bitmapEntry = mSimpleDiskCache.getBitmap(media.getImageKey(PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB));
+      Logger.d("Trying to get cached thumb: %s", key);
+      SimpleDiskCache.BitmapEntry bitmapEntry = mSimpleDiskCache.getBitmap(key);
       Logger.d("bitmapEntry: %s", bitmapEntry);
       if(bitmapEntry != null) {
-        notificationBitmap = bitmapEntry.getBitmap();
+        bitmap = bitmapEntry.getBitmap();
       }
     } catch (Exception ex) {
       ex.printStackTrace();
     }
 
-    if(notificationBitmap == null && notificationStatus == NOTIFICATION_STATUS.initializing && !skipThumb) {
-      Logger.d("Thumb not found in cache. Downloading.");
+    return bitmap;
+
+
+  }
+
+  // Fetch the notification bitmap for the given key. Once it's been downloaded, we'll save the bitmap to the image cache, then set the
+  // notification again.
+  private void fetchNotificationBitmap(final PlexMedia.IMAGE_KEY key, final PlexClient client, final PlexMedia media, final PlayerState currentState) {
+      Logger.d("Thumb not found in cache. Downloading %s.", key);
       new AsyncTask() {
         @Override
         protected Object doInBackground(Object[] objects) {
           if (client != null && media != null) {
-            InputStream inputStream = media.getNotificationThumb();
-            Logger.d("Got input stream: %s", inputStream);
-            notificationBitmap = BitmapFactory.decodeStream(inputStream);
+            InputStream inputStream = media.getNotificationThumb(media instanceof PlexTrack ? PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB_MUSIC : key);
             try {
               inputStream.reset();
             } catch (IOException e) {}
-            Logger.d("notificationBitmap: %s", notificationBitmap);
             try {
-              Logger.d("image key: %s", media.getImageKey(PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB));
-              mSimpleDiskCache.put(media.getImageKey(PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB), inputStream);
+              Logger.d("image key: %s", media.getImageKey(key));
+              mSimpleDiskCache.put(media.getImageKey(key), inputStream);
               inputStream.close();
               Logger.d("Downloaded thumb. Redoing notification.");
               setNotification(client, currentState, media, true);
@@ -396,10 +400,29 @@ public class VoiceControlForPlexApplication extends Application
           return null;
         }
       }.execute();
+  }
+
+  public void setNotification(final PlexClient client, final PlayerState currentState, final PlexMedia media, boolean skipThumb) {
+    Logger.d("Setting notification, client: %s, media: %s", client, media);
+    if(client == null) {
+      Logger.d("Client is null for some reason");
+      return;
+    }
+    if(notificationStatus == NOTIFICATION_STATUS.off) {
+      notificationStatus = NOTIFICATION_STATUS.initializing;
+      notificationBitmap = null;
+      notificationBitmapBig = null;
     }
 
+    notificationBitmap = getCachedBitmap(media.getImageKey(PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB));
+    if(notificationBitmap == null && notificationStatus == NOTIFICATION_STATUS.initializing && !skipThumb)
+      fetchNotificationBitmap(PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB, client, media, currentState);
+    notificationBitmapBig = getCachedBitmap(media.getImageKey(PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB_BIG));
+    if(notificationBitmapBig == null && notificationStatus == NOTIFICATION_STATUS.initializing && !skipThumb)
+      fetchNotificationBitmap(PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB_BIG, client, media, currentState);
+
+
     Logger.d("Setting up notification");
-    // notificationBitmap
     android.content.Intent rewindIntent = new android.content.Intent(VoiceControlForPlexApplication.this, PlexControlService.class);
     rewindIntent.setAction(PlexControlService.ACTION_REWIND);
     rewindIntent.putExtra(PlexControlService.CLIENT, client);
@@ -421,7 +444,6 @@ public class VoiceControlForPlexApplication extends Application
     android.content.Intent nowPlayingIntent;
     if(client.isCastClient) {
       nowPlayingIntent = new android.content.Intent(VoiceControlForPlexApplication.this, CastActivity.class);
-//            nowPlayingIntent.setAction(Intent.CAST_MEDIA);
     } else
       nowPlayingIntent = new android.content.Intent(VoiceControlForPlexApplication.this, NowPlayingActivity.class);
     nowPlayingIntent.setFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK |
@@ -438,11 +460,11 @@ public class VoiceControlForPlexApplication extends Application
                       .setOngoing(true)
                       .setOnlyAlertOnce(true)
                       .setContentIntent(piNowPlaying)
-                      .setContent(getNotificationView(R.layout.now_playing_notification, notificationBitmap, media, client, playPendingIntent, pausePendingIntent, piRewind, currentState == PlayerState.PLAYING))
+                      .setContent(getNotificationView(media.isMusic() ? R.layout.now_playing_notification_music : R.layout.now_playing_notification, notificationBitmap, media, client, playPendingIntent, pausePendingIntent, piRewind, currentState == PlayerState.PLAYING))
                       .setDefaults(Notification.DEFAULT_ALL);
       Notification n = mBuilder.build();
       if (Build.VERSION.SDK_INT >= 16)
-        n.bigContentView = getNotificationView(media.isMusic() ? R.layout.now_playing_notification_big_music : R.layout.now_playing_notification_big, notificationBitmap, media, client, playPendingIntent, pausePendingIntent, piRewind, currentState == PlayerState.PLAYING);
+        n.bigContentView = getNotificationView(media.isMusic() ? R.layout.now_playing_notification_big_music : R.layout.now_playing_notification_big, notificationBitmapBig, media, client, playPendingIntent, pausePendingIntent, piRewind, currentState == PlayerState.PLAYING);
 
       // Disable notification sound
       n.defaults = 0;
@@ -474,7 +496,8 @@ public class VoiceControlForPlexApplication extends Application
       title = String.format("%s - %s", media.grandparentTitle, media.title);
     else if(media.isShow())
       title = String.format("%s - %s", media.grandparentTitle, media.title);
-
+//    else if(media.isShow())
+//      title = String.format("%s - %s", media.grandparentTitle, media.title);
     remoteViews.setTextViewText(R.id.title, title);
     remoteViews.setTextViewText(R.id.playingOn, String.format(getString(R.string.playing_on), client.name));
 

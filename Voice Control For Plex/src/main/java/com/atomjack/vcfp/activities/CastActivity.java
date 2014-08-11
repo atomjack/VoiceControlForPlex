@@ -20,6 +20,8 @@ import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexMedia;
 import com.google.sample.castcompanionlibrary.cast.VideoCastManager;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class CastActivity extends PlayerActivity {
@@ -44,6 +46,10 @@ public class CastActivity extends PlayerActivity {
     nowPlayingAlbum = getIntent().getParcelableArrayListExtra(VoiceControlForPlexApplication.Intent.EXTRA_ALBUM);
     resumePlayback = getIntent().getBooleanExtra("resume", false);
     castManager = castPlayerManager.getCastManager();
+
+    // If just playing a single track, put the media into an array
+    if(nowPlayingMedia.isMusic() && nowPlayingAlbum == null)
+      nowPlayingAlbum = Arrays.asList(nowPlayingMedia);
 
     Logger.d("[CastActivity] starting up, action: %s, current state: %s", getIntent().getAction(), castPlayerManager.getCurrentState());
     Logger.d("mClient: %s", mClient);

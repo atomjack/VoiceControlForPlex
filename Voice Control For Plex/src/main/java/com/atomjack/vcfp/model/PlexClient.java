@@ -86,8 +86,16 @@ public class PlexClient extends PlexDevice {
     adjustPlayback("play", responseHandler);
   }
 
+  public void next(PlexHttpResponseHandler responseHandler) {
+    adjustPlayback("skipNext", responseHandler);
+  }
+
+  public void previous(PlexHttpResponseHandler responseHandler) {
+    adjustPlayback("skipPrevious", responseHandler);
+  }
+
 	private void adjustPlayback(String which, PlexHttpResponseHandler responseHandler) {
-		ArrayList<String> validModes = new ArrayList<String>(Arrays.asList("pause", "play", "stop"));
+		ArrayList<String> validModes = new ArrayList<String>(Arrays.asList("pause", "play", "stop", "skipNext", "skipPrevious"));
 		if(validModes.indexOf(which) == -1)
 			return;
 		try {

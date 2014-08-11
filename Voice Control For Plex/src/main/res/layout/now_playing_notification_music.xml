@@ -5,16 +5,17 @@
              android:layout_height="64dp">
     <ImageView
         android:id="@+id/thumb"
-        android:layout_width="114dp"
+        android:layout_width="64dp"
         android:layout_height="64dp"
         android:src="@drawable/ic_launcher" />
 
     <LinearLayout
         android:orientation="horizontal"
-        android:layout_width="wrap_content"
+        android:layout_width="100dp"
         android:layout_height="fill_parent"
-        android:layout_gravity="center_vertical|right"
-        >
+        android:layout_marginTop="11dp"
+        android:layout_gravity="right"
+        android:paddingLeft="3dp">
 
         <ImageButton
             android:layout_width="42dp"
@@ -22,11 +23,12 @@
             android:id="@+id/rewindButton"
             android:src="@drawable/button_rewind"
             android:background="@null"
-            android:layout_marginTop="10dp"/>
+            android:layout_marginRight="8dp"/>
 
         <RelativeLayout
             android:layout_width="fill_parent"
-            android:layout_height="fill_parent">
+            android:layout_height="fill_parent"
+            >
 
             <ImageButton
                 android:layout_width="42dp"
@@ -34,13 +36,12 @@
                 android:id="@+id/playButton"
                 android:src="@drawable/button_play"
                 android:background="@null"
-                android:layout_marginTop="10dp"/>
+                />
 
             <ImageButton
                 android:layout_width="42dp"
                 android:layout_height="42dp"
                 android:id="@+id/pauseButton"
-                android:layout_marginTop="10dp"
                 android:background="@null"
                 android:src="@drawable/button_pause"/>
         </RelativeLayout>
@@ -51,15 +52,15 @@
         android:layout_width="wrap_content"
         android:layout_height="64dp"
         android:layout_gravity="fill_vertical"
-        android:layout_marginStart="@dimen/notification_icon_width"
+        android:layout_marginStart="@dimen/notification_icon_width_music"
         android:minHeight="@dimen/notification_large_icon_height"
         android:orientation="vertical"
         android:paddingEnd="8dp"
         android:paddingTop="2dp"
         android:paddingBottom="2dp"
         android:gravity="top"
-        android:paddingRight="90dp"
-        android:paddingLeft="8dp">
+        android:paddingLeft="8dp"
+        android:layout_marginRight="86dp">
         <TextView
             android:id="@+id/title"
             android:layout_width="wrap_content"

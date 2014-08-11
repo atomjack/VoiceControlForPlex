@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:orientation="horizontal"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent">
+    <TextView
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:text="00:00"
+        android:id="@+id/currentTimeView"
+        android:gravity="center_vertical"
+        android:maxLines="1"
+        android:layout_weight="1"
+        android:paddingLeft="15sp" />
+    <ImageButton
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="@android:color/transparent"
+        android:onClick="doPrevious"
+        android:id="@+id/rewindButton" android:src="@drawable/button_previous"
+        android:layout_weight="1" />
+    <ImageButton
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="@android:color/transparent"
+        android:onClick="doPlayPause"
+        android:id="@+id/playPauseButton" android:src="@drawable/button_play"
+        android:layout_weight="1" />
+    <ImageButton
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="@android:color/transparent"
+        android:onClick="doStop"
+        android:id="@+id/stopButton" android:src="@drawable/button_stop"
+        android:layout_weight="1" />
+    <ImageButton
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="@android:color/transparent"
+        android:onClick="doNext"
+        android:id="@+id/forwardButton" android:src="@drawable/button_next"
+        android:layout_weight="1" />
+    <ImageButton
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="@android:color/transparent"
+        android:onClick="doMic"
+        android:id="@+id/micButton" android:src="@drawable/button_microphone"
+        android:layout_weight="1" />
+    <TextView
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:text="00:00"
+        android:id="@+id/durationView"
+        android:maxLines="1"
+        android:layout_weight="1" />
+</LinearLayout>

@@ -46,9 +46,11 @@ public class NowPlayingActivity extends PlayerActivity {
 			Logger.d("found saved instance state");
 			nowPlayingMedia = savedInstanceState.getParcelable(VoiceControlForPlexApplication.Intent.EXTRA_MEDIA);
       mClient = savedInstanceState.getParcelable(VoiceControlForPlexApplication.Intent.EXTRA_CLIENT);
+      Logger.d("[NowPlaying] set mClient: %s", mClient);
 		} else {
 			nowPlayingMedia = getIntent().getParcelableExtra(VoiceControlForPlexApplication.Intent.EXTRA_MEDIA);
       mClient = getIntent().getParcelableExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLIENT);
+      Logger.d("[NowPlayingActivity] 2 set mClient: %s", mClient);
 		}
 
 		if(mClient == null || nowPlayingMedia == null)
@@ -121,8 +123,28 @@ public class NowPlayingActivity extends PlayerActivity {
 		}
 	}
 
+  public void doNext(View v) {
+    Logger.d("doNext");
+    mClient.next(null);
+  }
+
+  public void doPrevious(View v) {
+    Logger.d("doPrevious");
+    mClient.previous(null);
+  }
+
 	public void doStop(View v) {
-    mClient.stop(null);
+    mClient.stop(new PlexHttpResponseHandler() {
+      @Override
+      public void onSuccess(PlexResponse response) {
+        finish();
+      }
+
+      @Override
+      public void onFailure(Throwable error) {
+        finish();
+      }
+    });
 	}
 
 	@Override
@@ -217,17 +239,12 @@ public class NowPlayingActivity extends PlayerActivity {
 
   @Override
   protected void onSubscriptionMessage(Timeline timeline) {
-//    Logger.d("NowPlaying onSubscriptionMessage: %d", timeline.time);
+//    Logger.d("[NowPlaying] onSubscriptionMessage: %d, Continuing: %s", timeline.time, continuing);
     if(!isSeeking)
       seekBar.setProgress(timeline.time);
 
     if(continuing) {
-      showNowPlaying(false);
-      // Need to update the duration
-      seekBar.setMax(nowPlayingMedia.duration);
-      durationDisplay.setText(VoiceControlForPlexApplication.secondsToTimecode(nowPlayingMedia.duration / 1000));
-      Logger.d("[NowPlayingActivity] Setting thumb in onSubscriptionMessage");
-      setThumb();
+      onMediaChange();
       continuing = false;
     }
 
@@ -243,6 +260,16 @@ public class NowPlayingActivity extends PlayerActivity {
     } else if(timeline.state.equals("paused")) {
       setState(PlayerState.PAUSED);
     }
+  }
+
+  @Override
+  protected void onMediaChange() {
+    Logger.d("[NowPlayingActivity] onMediaChange: %s, duration %d", nowPlayingMedia.title, nowPlayingMedia.duration);
+    seekBar.setMax(nowPlayingMedia.duration);
+    durationDisplay.setText(VoiceControlForPlexApplication.secondsToTimecode(nowPlayingMedia.duration / 1000));
+    Logger.d("[NowPlayingActivity] Setting thumb in onSubscriptionMessage");
+    setThumb();
+    showNowPlaying(false);
   }
 
   @Override

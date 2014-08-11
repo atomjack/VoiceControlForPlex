@@ -9,6 +9,7 @@ import com.atomjack.vcfp.PlexHeaders;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.net.PlexHttpClient;
 
+import org.apache.http.NameValuePair;
 import org.simpleframework.xml.Attribute;
 import org.simpleframework.xml.ElementList;
 import org.simpleframework.xml.Root;
@@ -17,13 +18,25 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Root(strict=false)
 public abstract class PlexMedia implements Parcelable {
   public enum IMAGE_KEY {
-    NOTIFICATION_THUMB
+    NOTIFICATION_THUMB,
+    NOTIFICATION_THUMB_BIG,
+    NOTIFICATION_THUMB_MUSIC
   }
+
+  public final static Map<IMAGE_KEY, int[]> IMAGE_SIZES = new HashMap<IMAGE_KEY, int[]>() {
+    {
+      put(IMAGE_KEY.NOTIFICATION_THUMB, new int[] {114, 64});
+      put(IMAGE_KEY.NOTIFICATION_THUMB_BIG, new int[] {87, 128});
+      put(IMAGE_KEY.NOTIFICATION_THUMB_MUSIC, new int[] {64, 64});
+    }
+  };
 
   public static final int TYPE_MOVIE = 0;
   public static final int TYPE_SHOW = 1;
@@ -38,8 +51,7 @@ public abstract class PlexMedia implements Parcelable {
   }
 
   public boolean isShow() {
-    PlexVideo video = (PlexVideo)this;
-    return !video.type.equals("movie");
+    return false;
   }
 
   public boolean isClip() { return false; }
@@ -60,8 +72,10 @@ public abstract class PlexMedia implements Parcelable {
   public String grandparentKey;
 	@Attribute(required=false)
 	public String grandparentTitle;
-	@Attribute(required=false)
-	public String grandparentThumb;
+  @Attribute(required=false)
+  public String grandparentThumb;
+  @Attribute(required=false)
+  public String grandparentArt;
 	@Attribute(required=false)
 	public int duration;
 	@Attribute(required=false)
@@ -106,15 +120,26 @@ public abstract class PlexMedia implements Parcelable {
 		return url;
 	}
 
-  public InputStream getNotificationThumb() {
-    int width = 87;
-    int height = 128;
+  public InputStream getNotificationThumb(IMAGE_KEY key) {
+    int width;
+    width = IMAGE_SIZES.get(key)[0];
+    int height;
+    height = IMAGE_SIZES.get(key)[1];
     String whichThumb = null;
-    if(isMovie())
-      whichThumb = thumb;
-    else if(isShow()) {
-      whichThumb = grandparentThumb;
+    if(isMovie()) {
+      Logger.d("width/height: %d/%d", width, height);
+      if(width > height)
+        whichThumb = art;
+      else
+        whichThumb = thumb;
+
+    } else if(isShow()) {
+      if(width > height)
+        whichThumb = parentArt;
+      else
+        whichThumb = grandparentThumb;
     }
+    Logger.d("whichThumb: %s", whichThumb);
     return getThumb(width, height, whichThumb);
   }
 
@@ -183,6 +208,8 @@ public abstract class PlexMedia implements Parcelable {
     out.writeString(viewOffset);
     out.writeString(grandparentTitle);
     out.writeString(grandparentThumb);
+    out.writeString(grandparentArt);
+    out.writeString(parentArt);
     out.writeString(thumb);
     out.writeString(art);
     out.writeInt(duration);
@@ -198,6 +225,8 @@ public abstract class PlexMedia implements Parcelable {
     viewOffset = in.readString();
     grandparentTitle = in.readString();
     grandparentThumb = in.readString();
+    grandparentArt = in.readString();
+    parentArt = in.readString();
     thumb = in.readString();
     art = in.readString();
     duration = in.readInt();
@@ -212,9 +241,9 @@ public abstract class PlexMedia implements Parcelable {
     return String.format("%s%s", server.machineIdentifier, which);
   }
 
-  public String getImageKey(IMAGE_KEY imageKey) throws Exception {
+  public String getImageKey(IMAGE_KEY imageKey) {
     if(server == null)
-      throw new Exception("The server for this piece of media must be defined.");
+      return null;
     else {
       return String.format("%s/%s/%s", server.machineIdentifier, ratingKey, imageKey);
     }

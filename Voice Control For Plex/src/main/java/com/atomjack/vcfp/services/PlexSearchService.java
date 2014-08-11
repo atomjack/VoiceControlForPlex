@@ -918,7 +918,7 @@ public class PlexSearchService extends Service {
 
 		if(videos.size() == 1) {
 			Logger.d("Chosen video: %s", videos.get(0).title);
-			playMedia(videos.get(0));
+      fetchAndPlayMedia(videos.get(0));
 		} else if(videos.size() > 1) {
 			// We found more than one match, but let's see if any of them are an exact match
 			Boolean exactMatch = false;
@@ -927,7 +927,7 @@ public class PlexSearchService extends Service {
 				if(videos.get(i).title.toLowerCase().equals(queryTerm.toLowerCase())) {
 					Logger.d("found exact match!");
 					exactMatch = true;
-					playMedia(videos.get(i));
+          fetchAndPlayMedia(videos.get(i));
 					break;
 				}
 			}
@@ -942,8 +942,6 @@ public class PlexSearchService extends Service {
 			Logger.d("Didn't find a video");
 			// Let's also support using this syntax to play the next episode in a tv show. Probably will want to use a different error message if nothing is found, though.
 			doNextEpisodeSearch(queryTerm, true);
-//			feedback.e(getResources().getString(R.string.couldnt_find), queryTerm);
-//			return;
 		}
 	}
 
@@ -958,6 +956,33 @@ public class PlexSearchService extends Service {
       @Override
       public void onFailure(Throwable error) {
         onFinish.failure();
+      }
+    });
+  }
+
+  // When searching for media, the media element contained inside the media container doesn't necessarily have a complete set of attributes. So,
+  // fetch the specific media element by its key. This prevents the need to add new missing fields to the media
+  //
+  private void fetchAndPlayMedia(final PlexMedia media) {
+    PlexHttpClient.get(media.server, media.key, new PlexHttpMediaContainerHandler() {
+      @Override
+      public void onSuccess(MediaContainer mediaContainer) {
+        PlexMedia theMedia = null;
+        if(media instanceof PlexVideo)
+          theMedia = mediaContainer.videos.get(0);
+        else if(media instanceof PlexTrack)
+          theMedia = mediaContainer.tracks.get(0);
+        if(theMedia != null) {
+          theMedia.server = media.server;
+          playMedia(theMedia);
+        } else {
+          // TODO: Handle failure
+        }
+      }
+
+      @Override
+      public void onFailure(Throwable error) {
+        // TODO: Handle failure
       }
     });
   }
@@ -987,7 +1012,7 @@ public class PlexSearchService extends Service {
 	}
 
 	private void playMedia(final PlexMedia media, PlexDirectory album, String transientToken) {
-		Logger.d("Playing video: %s", media.title);
+		Logger.d("Playing media: %s", media.title);
 		Logger.d("Client: %s", client);
 		if(client.isCastClient) {
 
@@ -1153,7 +1178,7 @@ public class PlexSearchService extends Service {
 			}
 		} else {
 			if(videos.size() == 1)
-				playMedia(videos.get(0));
+				fetchAndPlayMedia(videos.get(0));
 			else {
 				// We found more than one matching show. Let's check if the title of any of the matching shows
 				// exactly equals the query term, otherwise tell the user to be more specific.
@@ -1167,7 +1192,7 @@ public class PlexSearchService extends Service {
 				}
 
 				if(exactMatch > -1) {
-					playMedia(videos.get(exactMatch));
+          fetchAndPlayMedia(videos.get(exactMatch));
 				} else {
 					feedback.e(getResources().getString(R.string.found_more_than_one_show));
 					return;
@@ -1276,16 +1301,16 @@ public class PlexSearchService extends Service {
 				for(int j=0;j<mc.videos.size();j++) {
 					PlexVideo video = mc.videos.get(j);
 					if(latestVideo == null || latestVideo.airDate().before(video.airDate())) {
-						video.showTitle = video.grandparentTitle;
-            video.parentArt = mc.art;
-            video.grandparentThumb = mc.art.replaceAll("\\/art\\/", "\\/thumb\\/");
+//						video.showTitle = video.grandparentTitle;
+//            video.parentArt = mc.art;
+//            video.grandparentThumb = mc.art.replaceAll("\\/art\\/", "\\/thumb\\/");
 						latestVideo = video;
 					}
 				}
 				latestVideo.server = show.server;
 				Logger.d("Found video: %s", latestVideo.airDate());
 				if(latestVideo != null) {
-					playMedia(latestVideo);
+					fetchAndPlayMedia(latestVideo);
 				} else {
 					if(queries.size() > 0)
 						startup();
@@ -1373,13 +1398,13 @@ public class PlexSearchService extends Service {
 			else
 				feedback.e(getResources().getString(R.string.couldnt_find_episode));
 		} else if(videos.size() == 1) {
-			playMedia(videos.get(0));
+      fetchAndPlayMedia(videos.get(0));
 		} else {
 			Boolean exactMatch = false;
 			for(int i=0;i<videos.size();i++) {
 				if(videos.get(i).grandparentTitle.toLowerCase().equals(showSpecified.toLowerCase())) {
 					exactMatch = true;
-					playMedia(videos.get(i));
+          fetchAndPlayMedia(videos.get(i));
 					break;
 				}
 			}
@@ -1496,12 +1521,7 @@ public class PlexSearchService extends Service {
 											serversSearched++;
 											PlexVideo video = mc.videos.get(i);
 											video.server = server;
-											video.thumb = show.thumb;
-                      Logger.d("Searching, setting show title: %s", show.title);
-                      video.grandparentTitle = show.title;
-											video.showTitle = show.title;
-                      video.parentArt = mc.art;
-											playMedia(video);
+                      fetchAndPlayMedia(video);
 											foundEpisode = true;
 											break;
 										}
@@ -1650,7 +1670,7 @@ public class PlexSearchService extends Service {
 						serversSearched++;
 						if(serversSearched == plexmediaServers.size()) {
 							if(tracks.size() > 0) {
-								playMedia(tracks.get(0));
+                fetchAndPlayMedia(tracks.get(0));
 							} else {
 								if(queries.size() > 0)
 									startup();
@@ -1685,13 +1705,13 @@ public class PlexSearchService extends Service {
 									if(serversSearched == plexmediaServers.size()) {
 										Logger.d("found music to play.");
 										if(tracks.size() > 0) {
-                      playMedia(tracks.get(0));
+                      fetchAndPlayMedia(tracks.get(0));
 										} else {
 											Boolean exactMatch = false;
 											for(int k=0;k<albums.size();k++) {
 												if(tracks.get(k).artist.toLowerCase().equals(artist.toLowerCase())) {
 													exactMatch = true;
-                          playMedia(tracks.get(k));
+                          fetchAndPlayMedia(tracks.get(k));
 												}
 											}
 											if(!exactMatch) {
@@ -1719,7 +1739,7 @@ public class PlexSearchService extends Service {
 					serversSearched++;
 					if(serversSearched == plexmediaServers.size()) {
 						if(tracks.size() > 0) {
-              playMedia(tracks.get(0));
+              fetchAndPlayMedia(tracks.get(0));
 						} else {
 							if(queries.size() > 0)
 								startup();
@@ -1755,12 +1775,6 @@ public class PlexSearchService extends Service {
           if(shuffle) {
             Collections.shuffle(tracks);
           }
-//					PlexTrack track = mc.tracks.get(0);
-//					track.server = album.server;
-//					track.thumb = album.thumb;
-//					track.grandparentTitle = album.parentTitle;
-//					track.parentTitle = album.title;
-//          track.art = album.art;
           if(client.isCastClient)
             castAlbum(tracks);
           else

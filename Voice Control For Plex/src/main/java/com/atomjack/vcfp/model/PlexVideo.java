@@ -49,7 +49,7 @@ public class PlexVideo extends PlexMedia {
 
   @Override
   public boolean isShow() {
-    return !type.equals("movie");
+    return type.equals("show");
   }
 
   @Override

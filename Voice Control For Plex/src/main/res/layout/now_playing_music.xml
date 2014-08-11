@@ -77,7 +77,7 @@
             android:layout_height="wrap_content"
             android:id="@+id/seekBar"
             android:layout_alignParentBottom="true"/>
-        <include layout="@layout/playback" />
+        <include layout="@layout/playback_music" />
     </LinearLayout>
 
 </RelativeLayout>

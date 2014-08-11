@@ -2,8 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
           xmlns:tools="http://schemas.android.com/tools"
     package="com.atomjack.vcfp"
-    android:versionCode="20"
-    android:versionName="1.9.0b1" >
+    android:versionCode="21"
+    android:versionName="1.9.0b2" >
 
     <uses-permission android:name="com.mohammadag.googlesearchapi.permission.ACCESS_GGOGLE_SEARCH_API" />
     <uses-permission android:name="android.permission.INTERNET" />
@@ -98,21 +98,6 @@
                 android:name="android.appwidget.provider"
                 android:resource="@layout/listener_widget" />
         </receiver>
-        <activity
-            android:name="com.google.sample.castcompanionlibrary.cast.player.VideoCastControllerActivity"
-            android:label="@string/app_name"
-            android:launchMode="singleTask"
-            android:parentActivityName="com.atomjack.vcfp.activities.CastActivity"
-            android:screenOrientation="portrait"
-            android:theme="@style/Theme.CastVideoOverlayYellow" >
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.google.sample.cast.refplayer.VideoBrowserActivity" />
-
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-            </intent-filter>
-        </activity>
         <service
             android:name=".services.PlexControlService"
             android:exported="false"/>
