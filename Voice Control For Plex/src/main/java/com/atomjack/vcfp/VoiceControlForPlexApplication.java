@@ -157,6 +157,14 @@ public class VoiceControlForPlexApplication extends Application
     plexSubscription = new PlexSubscription();
     castPlayerManager = new CastPlayerManager(getApplicationContext());
 
+    // Check for donate version, and if found, allow chromecast
+    PackageInfo pinfo;
+    try
+    {
+      pinfo = getPackageManager().getPackageInfo("com.atomjack.vcfpd", 0);
+      mHasChromecast = true;
+    } catch(Exception e) {}
+
     // If this build includes chromecast support, no need to setup purchasing
     if(!mHasChromecast)
       setupInAppPurchasing();
@@ -386,16 +394,20 @@ public class VoiceControlForPlexApplication extends Application
         protected Object doInBackground(Object[] objects) {
           if (client != null && media != null) {
             InputStream inputStream = media.getNotificationThumb(media instanceof PlexTrack ? PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB_MUSIC : key);
-            try {
-              inputStream.reset();
-            } catch (IOException e) {}
-            try {
-              Logger.d("image key: %s", media.getImageKey(key));
-              mSimpleDiskCache.put(media.getImageKey(key), inputStream);
-              inputStream.close();
-              Logger.d("Downloaded thumb. Redoing notification.");
-              setNotification(client, currentState, media, true);
-            } catch (Exception e) {}
+            if(inputStream != null) {
+              try {
+                inputStream.reset();
+              } catch (IOException e) {
+              }
+              try {
+                Logger.d("image key: %s", media.getImageKey(key));
+                mSimpleDiskCache.put(media.getImageKey(key), inputStream);
+                inputStream.close();
+                Logger.d("Downloaded thumb. Redoing notification.");
+                setNotification(client, currentState, media, true);
+              } catch (Exception e) {
+              }
+            }
           }
           return null;
         }

@@ -145,7 +145,15 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
 
     currentNetworkState = NetworkState.getCurrentNetworkState(this);
 
-
+    localScan = new LocalScan(this, MainActivity.class, new ScanHandler() {
+      @Override
+      public void onDeviceSelected(PlexDevice device, boolean resume) {
+        if(device instanceof PlexServer)
+          setServer((PlexServer) device);
+        else if(device instanceof PlexClient)
+          setClient((PlexClient)device);
+      }
+    });
 
     castPlayerManager = VoiceControlForPlexApplication.getInstance().castPlayerManager;
     castPlayerManager.setContext(this);
@@ -167,6 +175,7 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
 
   private void getPlayingMedia(final PlexServer server, final Timeline timeline) {
     Logger.d("[VCFPActivity] getPlayingMedia: %s", timeline.key);
+    // TODO: Find out why server can sometimes be null
 		server.findServerConnection(new ServerFindHandler() {
 			@Override
 			public void onSuccess() {
@@ -470,6 +479,7 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
             if(server == null) {
               // TODO: Scan servers for this server, then get playing media
               Logger.d("server is null");
+              localScan.searchForPlexServers(true);
             } else {
               getPlayingMedia(server, timeline);
             }
@@ -691,5 +701,11 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
   @Override
   public void onCastPlayerPlaylistAdvance(PlexMedia media) {
 
+  }
+
+  protected void setServer(PlexServer _server) {
+  }
+
+  protected void setClient(PlexClient _client) {
   }
 }

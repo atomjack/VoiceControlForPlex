@@ -136,16 +136,6 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 
 		client = gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.CLIENT, ""), PlexClient.class);
 
-		localScan = new LocalScan(this, MainActivity.class, new ScanHandler() {
-			@Override
-			public void onDeviceSelected(PlexDevice device, boolean resume) {
-				if(device instanceof PlexServer)
-					setServer((PlexServer) device);
-				else if(device instanceof PlexClient)
-					setClient((PlexClient)device);
-			}
-		});
-
 		initMainWithServer();
 	}
 
@@ -778,19 +768,22 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
         if(searchDialog != null)
           searchDialog.cancel();
         VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.SAVED_SERVERS, gsonWrite.toJson(VoiceControlForPlexApplication.servers));
-        if (VoiceControlForPlexApplication.servers.size() > 0) {
-          localScan.showPlexServers();
-        } else {
-          localScan.hideSearchDialog();
-          AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-          builder.setTitle(R.string.no_servers_found);
-          builder.setCancelable(false).setNeutralButton(R.string.ok, new DialogInterface.OnClickListener() {
+
+        if(intent.getBooleanExtra(VoiceControlForPlexApplication.Intent.EXTRA_SILENT, false) == false) {
+          if (VoiceControlForPlexApplication.servers.size() > 0) {
+            localScan.showPlexServers();
+          } else {
+            localScan.hideSearchDialog();
+            AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+            builder.setTitle(R.string.no_servers_found);
+            builder.setCancelable(false).setNeutralButton(R.string.ok, new DialogInterface.OnClickListener() {
               public void onClick(DialogInterface dialog, int id) {
                 dialog.cancel();
               }
             });
-          AlertDialog d = builder.create();
-          d.show();
+            AlertDialog d = builder.create();
+            d.show();
+          }
         }
       } else if(intent.getStringExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE).equals(VoiceControlForPlexApplication.Intent.SCAN_TYPE_CLIENT)) {
         ArrayList<PlexClient> clients = intent.getParcelableArrayListExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLIENTS);
@@ -825,8 +818,8 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 	}
 
 
-
-	private void setServer(PlexServer _server) {
+  @Override
+	protected void setServer(PlexServer _server) {
 		Logger.d("Setting Server %s", _server.name);
 		server = _server;
 		saveSettings();
@@ -839,7 +832,8 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 
 	}
 
-	private void setClient(PlexClient _client) {
+  @Override
+  protected void setClient(PlexClient _client) {
     if(!VoiceControlForPlexApplication.getInstance().hasChromecast() && _client.isCastClient) {
       showChromecastPurchase(_client, new Runnable() {
         @Override
@@ -1009,7 +1003,7 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
     @Override
 		public void onRouteAdded(MediaRouter router, MediaRouter.RouteInfo route)
 		{
-			Logger.d("onRouteAdded: %s", route);
+//			Logger.d("onRouteAdded: %s", route);
 			if(!VoiceControlForPlexApplication.castClients.containsKey(route.getName())) {
         PlexClient client = new PlexClient();
         client.isCastClient = true;

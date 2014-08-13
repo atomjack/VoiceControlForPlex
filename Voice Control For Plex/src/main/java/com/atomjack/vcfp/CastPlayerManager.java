@@ -169,6 +169,7 @@ public class CastPlayerManager {
     JSONObject obj = new JSONObject();
     try {
       obj.put(PARAMS.ACTION, PARAMS.ACTION_SEEK);
+      obj.put(PARAMS.OFFSET, seconds);
       if(nowPlayingMedia instanceof PlexVideo)
         obj.put(PARAMS.SRC, getTranscodeUrl(nowPlayingMedia, seconds));
       obj.put(PARAMS.RESUME, VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.RESUME, false));

@@ -209,8 +209,10 @@ public class CastActivity extends PlayerActivity {
 
 	@Override
 	protected void onPause() {
-		castManager.decrementUiCounter();
-		castManager.removeVideoCastConsumer(castConsumer);
+    if(castManager != null) {
+      castManager.decrementUiCounter();
+      castManager.removeVideoCastConsumer(castConsumer);
+    }
 		super.onPause();
 	}
 
