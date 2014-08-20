@@ -787,11 +787,12 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
         }
       } else if(intent.getStringExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE).equals(VoiceControlForPlexApplication.Intent.SCAN_TYPE_CLIENT)) {
         ArrayList<PlexClient> clients = intent.getParcelableArrayListExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLIENTS);
-        if(clients != null) {
+        if(clients != null || VoiceControlForPlexApplication.getInstance().castClients.size() > 0) {
           VoiceControlForPlexApplication.clients = new HashMap<String, PlexClient>();
-          for (PlexClient c : clients) {
-            VoiceControlForPlexApplication.clients.put(c.name, c);
-          }
+          if(clients != null)
+            for (PlexClient c : clients) {
+              VoiceControlForPlexApplication.clients.put(c.name, c);
+            }
           VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.SAVED_CLIENTS, gsonWrite.toJson(VoiceControlForPlexApplication.clients));
           boolean showConnectToClients = intent.getBooleanExtra(VoiceControlForPlexApplication.Intent.EXTRA_CONNECT_TO_CLIENT, false);
           Logger.d("showConnectToClients: %s", showConnectToClients);
