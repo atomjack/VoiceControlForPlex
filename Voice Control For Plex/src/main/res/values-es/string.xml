@@ -3,7 +3,7 @@
     <string name="action_settings">Ajustes</string>
     <string name="ok">OK</string>
     <string name="got_it">Recibido</string>
-    <string name="stream_video_from_server">Stream video desde el Servidor</string>
+    <string name="stream_video_from_server">Enviar video desde el Servidor</string>
     <string name="to_the_client">al Cliente</string>
     <string name="resume_if_in_progress">Continuar si hay en progreso</string>
     <string name="search">Búsqueda</string>
