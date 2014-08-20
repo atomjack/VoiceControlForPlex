@@ -9,7 +9,7 @@ adding translations, please do not modify (.*), $1, ([0-9]+), etc.
     a quite complicated regular expression. Plugging it into https://www.debuggex.com/ should help you figure out how
     it is constructed.
     -->
-    <item name="pattern_recognition" type="string">^(((ver|continuar viendo|escuchar|ver película) (.+)( en (.+))?( en modo aleatorio)?)|((offset|timecode) (.+)( en (.+))?)|((pausar|detener|continuar) reproducción( en (.+))?))|(conectar a (.+)|desconectar)$</item>
+    <item name="pattern_recognition" type="string">^(((ver|continuar viendo|escuchar|ver película) (.+)( en (.+))?( en modo aleatorio)?)|((posición) (.+)( en (.+))?)|((pausar|detener|continuar) reproducción( en (.+))?))|(conectar a (.+)|desconectar)$</item>
 
     <item name="pattern_on_client" type="string">(.+) en (.+)$</item>
     <item name="pattern_resume_watching" type="string">^continuar viendo (.+)</item>
@@ -63,5 +63,5 @@ adding translations, please do not modify (.*), $1, ([0-9]+), etc.
     The (hours?|minutes?|seconds?) means hour, with or without an s at the end (singular or plural), and the
     same for minutes and seconds (the | means "or").
     -->
-    <item name="pattern_offset" type="string">^(offset|timecode) ([0-9]) (horas?|minutos?|segundos?)(?: ([0-9]) (minutos?|segundos?))?(?: ([0-9]) (segundos?))?</item>
+    <item name="pattern_offset" type="string">^(posición) ([0-9]) (horas?|minutos?|segundos?)(?: ([0-9]) (minutos?|segundos?))?(?: ([0-9]) (segundos?))?</item>
 </resources>
