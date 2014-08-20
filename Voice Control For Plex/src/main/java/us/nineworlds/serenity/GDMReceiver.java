@@ -91,6 +91,8 @@ public class GDMReceiver extends BroadcastReceiver {
         Logger.d("Sending to activity");
         context.startActivity(i);
       }
+      // Clear the list of clients so the next scan sends a reinitialized list.
+      clients = new ArrayList<PlexClient>();
 		} else if(intent.getAction().equals(ACTION_CANCEL)) {
       Logger.d("[GDMReceiver] cancel");
       cancel = true;

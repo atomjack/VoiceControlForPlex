@@ -50,16 +50,16 @@ public class ShortcutProviderActivity extends Activity {
 		localScan = new LocalScan(this, ShortcutProviderActivity.class, new ScanHandler() {
 			@Override
 			public void onDeviceSelected(PlexDevice device, boolean _resume) {
-				Logger.d("chose %s", device.name);
-				if(device instanceof PlexServer) {
-					server = (PlexServer)device;
-					localScan.showPlexClients(true);
-				} else if(device instanceof PlexClient) {
-					client = (PlexClient)device;
-					resume = _resume;
-					Logger.d("checked: %s", resume);
-					createShortcut(false);
-				}
+        if(device != null) {
+          if (device instanceof PlexServer) {
+            server = (PlexServer) device;
+            localScan.showPlexClients(true);
+          } else if (device instanceof PlexClient) {
+            client = (PlexClient) device;
+            resume = _resume;
+            createShortcut(false);
+          }
+        }
 			}
 		});
 

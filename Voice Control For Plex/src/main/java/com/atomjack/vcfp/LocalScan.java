@@ -106,7 +106,7 @@ public class LocalScan {
   }
 
   public void searchForPlexClients(boolean connectToClient) {
-		Logger.d("searchForPlexClients()");
+		Logger.d("[LocalScan] searchForPlexClients()");
 		if(!VoiceControlForPlexApplication.isWifiConnected(context)) {
 			VoiceControlForPlexApplication.showNoWifiDialog(context);
 			return;

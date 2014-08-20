@@ -1,4 +1,6 @@
-<resources>
+<resources
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:ignore="MissingTranslation">
     <string name="app_name">Voice Control for Plex</string>
     <string name="action_settings">Settings</string>
     <string name="ok">OK</string>
