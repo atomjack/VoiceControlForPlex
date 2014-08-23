@@ -65,7 +65,7 @@ public class PlexControlService extends IntentService {
         };
         MediaContainer mc = PlexHttpClient.getSync(String.format("http://%s:%s/player/timeline/poll?commandID=0", client.address, client.port), headers);
         t = mc.getActiveTimeline();
-        currentState = PlayerState.getState(t.state);
+        currentState = PlayerState.getState(t);
       }
 
       PlexResponse response = null;

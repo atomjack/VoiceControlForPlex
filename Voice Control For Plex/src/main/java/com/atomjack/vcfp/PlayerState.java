@@ -1,5 +1,6 @@
 package com.atomjack.vcfp;
 
+import com.atomjack.vcfp.model.Timeline;
 import com.google.android.gms.cast.MediaStatus;
 
 public enum PlayerState {
@@ -18,6 +19,13 @@ public enum PlayerState {
     else
 			return STOPPED;
 	}
+
+  public static PlayerState getState(Timeline t) {
+    if(t == null)
+      return STOPPED;
+    else
+      return getState(t.state);
+  }
 
   public static PlayerState getState(int state) {
     if(state == MediaStatus.PLAYER_STATE_PLAYING)

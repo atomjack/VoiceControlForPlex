@@ -312,7 +312,7 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
                   searchDialog.dismiss();
                   localScan.showPlexServers();
                 } else
-                  localScan.searchForPlexServers(true);
+                  localScan.searchForPlexServers();
 							}
 
 							@Override
