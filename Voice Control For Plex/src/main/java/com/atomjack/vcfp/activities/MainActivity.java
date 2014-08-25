@@ -268,7 +268,7 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
       clientName = getString(R.string.this_device);
 		MainSetting setting_data[] = new MainSetting[] {
 			new MainSetting(MainListAdapter.SettingHolder.TAG_SERVER, getResources().getString(R.string.stream_video_from_server), server.owned ? server.name : server.sourceTitle),
-			new MainSetting(MainListAdapter.SettingHolder.TAG_CLIENT, getResources().getString(R.string.to_the_client), clientName),
+//			new MainSetting(MainListAdapter.SettingHolder.TAG_CLIENT, getResources().getString(R.string.to_the_client), clientName),
 			new MainSetting(MainListAdapter.SettingHolder.TAG_FEEDBACK, getResources().getString(R.string.feedback), VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.FEEDBACK, FEEDBACK_TOAST) == FEEDBACK_VOICE ? getResources().getString(R.string.voice) : getResources().getString(R.string.toast)),
 			new MainSetting(MainListAdapter.SettingHolder.TAG_ERRORS, getResources().getString(R.string.errors), VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.ERRORS, FEEDBACK_TOAST) == FEEDBACK_VOICE ? getResources().getString(R.string.voice) : getResources().getString(R.string.toast))
 		};
@@ -333,6 +333,7 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
             } else
   						localScan.searchForPlexServers();
 					}
+        /*
 				} else if (holder.tag.equals(holder.TAG_CLIENT)) {
           if(!currentNetworkState.equals(NetworkState.WIFI)) {
             if(currentNetworkState.equals(NetworkState.MOBILE)) {
@@ -345,6 +346,7 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
             VoiceControlForPlexApplication.clients = new HashMap<String, PlexClient>();
             localScan.searchForPlexClients();
           }
+        */
 				} else if (holder.tag.equals(holder.TAG_FEEDBACK)) {
 					selectFeedback();
 				} else if (holder.tag.equals(holder.TAG_ERRORS)) {
@@ -835,6 +837,8 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 
   @Override
   protected void setClient(PlexClient _client) {
+    super.setClient(_client);
+    Logger.d("[MainActivity] setClient");
     if(!VoiceControlForPlexApplication.getInstance().hasChromecast() && _client.isCastClient) {
       showChromecastPurchase(_client, new Runnable() {
         @Override

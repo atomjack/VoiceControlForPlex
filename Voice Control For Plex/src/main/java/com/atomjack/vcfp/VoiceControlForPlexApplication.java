@@ -360,10 +360,6 @@ public class VoiceControlForPlexApplication extends Application
     return new BigInteger(130, random).toString(32).substring(0, 12);
   }
 
-  public void setNotification(final PlexClient client, final PlayerState currentState, final PlexMedia media) {
-    setNotification(client, currentState, media, false);
-  }
-
   private Bitmap getCachedBitmap(String key) {
     if(key == null)
       return null;
@@ -414,7 +410,14 @@ public class VoiceControlForPlexApplication extends Application
       }.execute();
   }
 
+  public void setNotification(final PlexClient client, final PlayerState currentState, final PlexMedia media) {
+    setNotification(client, currentState, media, false);
+  }
+
   public void setNotification(final PlexClient client, final PlayerState currentState, final PlexMedia media, boolean skipThumb) {
+
+    if(client.isLocalDevice())
+      return;
     Logger.d("Setting notification, client: %s, media: %s", client, media);
     if(client == null) {
       Logger.d("Client is null for some reason");

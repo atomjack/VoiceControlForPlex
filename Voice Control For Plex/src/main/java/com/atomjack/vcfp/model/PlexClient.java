@@ -3,6 +3,7 @@ package com.atomjack.vcfp.model;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import com.atomjack.vcfp.Utils;
 import com.atomjack.vcfp.net.PlexHttpClient;
 import com.atomjack.vcfp.net.PlexHttpResponseHandler;
 import com.google.android.gms.cast.CastDevice;
@@ -108,7 +109,6 @@ public class PlexClient extends PlexDevice {
 
   public PlexResponse pause() {
     return adjustPlayback("pause");
-//    adjustPlayback("pause", responseHandler);
   }
 
   public PlexResponse stop() {
@@ -133,5 +133,10 @@ public class PlexClient extends PlexDevice {
       e.printStackTrace();
     }
     return null;
+  }
+
+  public boolean isLocalDevice() {
+    String localip = Utils.getIPAddress(true);
+    return localip.equals(address);
   }
 }

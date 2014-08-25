@@ -24,6 +24,8 @@ public class LocalScan {
 	private Dialog searchDialog;
 	private Dialog deviceSelectDialog = null;
 	private ScanHandler scanHandler;
+  private boolean cancelScan = false;
+  public boolean isScanning = false;
 
 	public LocalScan(Context ctx, Class cls, ScanHandler handler) {
 		context = ctx;
@@ -37,6 +39,7 @@ public class LocalScan {
 
 	public void searchForPlexServers(boolean silent) {
 		Logger.d("searchForPlexServers()");
+    isScanning = true;
 		if(!VoiceControlForPlexApplication.isWifiConnected(context)) {
 			VoiceControlForPlexApplication.showNoWifiDialog(context);
 			return;
@@ -74,6 +77,11 @@ public class LocalScan {
 	}
 
 	public void showPlexServers(ConcurrentHashMap<String, PlexServer> servers) {
+    isScanning = false;
+    if(cancelScan) {
+      cancelScan = false;
+      return;
+    }
 		if(searchDialog != null)
 			searchDialog.dismiss();
 		if(deviceSelectDialog == null) {
@@ -101,24 +109,36 @@ public class LocalScan {
 		});
 	}
 
+  public void cancelScan() {
+    Logger.d("[LocalScan] canceling scan");
+    cancelScan = true;
+  }
+
   public void searchForPlexClients() {
-    searchForPlexClients(false);
+    searchForPlexClients(false, true);
   }
 
   public void searchForPlexClients(boolean connectToClient) {
+    searchForPlexClients(connectToClient, true);
+  }
+
+  public void searchForPlexClients(boolean connectToClient, boolean showSearchDialog) {
 		Logger.d("[LocalScan] searchForPlexClients()");
+    isScanning = true;
 		if(!VoiceControlForPlexApplication.isWifiConnected(context)) {
 			VoiceControlForPlexApplication.showNoWifiDialog(context);
 			return;
 		}
 
-		searchDialog = new Dialog(context);
+    if(showSearchDialog) {
+      searchDialog = new Dialog(context);
 
-		searchDialog.setContentView(R.layout.search_popup);
-		searchDialog.setTitle(context.getResources().getString(R.string.searching_for_plex_clients));
-    searchDialog.setOnCancelListener(searchDialogCancel);
+      searchDialog.setContentView(R.layout.search_popup);
+      searchDialog.setTitle(context.getResources().getString(R.string.searching_for_plex_clients));
+      searchDialog.setOnCancelListener(searchDialogCancel);
 
-		searchDialog.show();
+      searchDialog.show();
+    }
 
 		Intent mServiceIntent = new Intent(context, GDMService.class);
 		mServiceIntent.putExtra(GDMService.PORT, 32412); // Port for clients
@@ -155,6 +175,11 @@ public class LocalScan {
   }
 
 	public void showPlexClients(boolean showResume, final ScanHandler onFinish) {
+    isScanning = false;
+    if(cancelScan) {
+      cancelScan = false;
+      return;
+    }
     if (searchDialog != null)
       searchDialog.dismiss();
     if (deviceSelectDialog == null) {

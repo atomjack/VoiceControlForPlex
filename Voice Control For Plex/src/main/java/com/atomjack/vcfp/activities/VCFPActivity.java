@@ -31,6 +31,7 @@ import com.atomjack.vcfp.NetworkMonitor;
 import com.atomjack.vcfp.PlayerState;
 import com.atomjack.vcfp.PlexHeaders;
 import com.atomjack.vcfp.PlexSubscription;
+import com.atomjack.vcfp.Preferences;
 import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.ScanHandler;
 import com.atomjack.vcfp.ServerFindHandler;
@@ -63,7 +64,6 @@ import cz.fhucho.android.util.SimpleDiskCache;
 
 public abstract class VCFPActivity extends ActionBarActivity implements PlexSubscription.PlexListener, CastPlayerManager.CastListener, VoiceControlForPlexApplication.NetworkChangeListener {
 	protected PlexMedia nowPlayingMedia;
-	protected boolean subscribed = false;
 	protected boolean subscribing = false;
 	protected PlexClient mClient;
 
@@ -229,8 +229,11 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
 					subscribing = true;
           if(VoiceControlForPlexApplication.clients.size() == 0 && !VoiceControlForPlexApplication.hasDoneClientScan) {
             localScan.searchForPlexClients(true);
-          } else
-  					localScan.showPlexClients(false, onClientChosen);
+          } else {
+            localScan.showPlexClients(false, onClientChosen);
+            // Kick off a client scan in the background
+            localScan.searchForPlexClients(true, false);
+          }
 				} else if(!subscribing) {
           // For some reason we sometimes lost mClient here, even though we're subscribed. If we do, let's try to get the client from the subscription manager
           if(mClient == null) {
@@ -275,10 +278,14 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
 	protected ScanHandler onClientChosen = new ScanHandler() {
 		@Override
 		public void onDeviceSelected(PlexDevice device, boolean resume) {
+      if(localScan.isScanning)
+        localScan.cancelScan();
       subscribing = false;
       if(device != null) {
         Logger.d("[VCFPActivity] onClientChosen: %s", device.name);
         PlexClient clientSelected = (PlexClient) device;
+
+        setClient(clientSelected);
 
         // Start animating the action bar icon
         final MenuItem castIcon = menu.findItem(R.id.action_cast);
@@ -707,5 +714,7 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
   }
 
   protected void setClient(PlexClient _client) {
+    Logger.d("[VCFPActivity] setClient");
+    VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.CLIENT, gsonWrite.toJson(_client));
   }
 }

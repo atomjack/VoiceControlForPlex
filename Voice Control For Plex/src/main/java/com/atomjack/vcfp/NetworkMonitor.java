@@ -45,12 +45,12 @@ public class NetworkMonitor {
             VoiceControlForPlexApplication.getInstance().onNetworkDisconnected();
           }
         } else {
-          connected = true;
           int type = activeNetwork.getType();
-          if (type != currentState) {
+          if (type != currentState || !connected) {
             currentState = type;
             VoiceControlForPlexApplication.getInstance().onNetworkConnected(currentState);
           }
+          connected = true;
         }
 
         /*
