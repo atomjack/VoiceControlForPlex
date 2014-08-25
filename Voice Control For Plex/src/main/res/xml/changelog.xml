@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog>
+    <release version="1.9.0b5" versioncode="24">
+        <change>Fixed client scan when logged in to Plex.</change>
+        <change>Moved client selection completely into cast icon.</change>
+        <change>Fixed hiding and showing of cast icon when network state toggles.</change>
+        <change>Don't show notification when the client is the local device.</change>
+    </release>
     <release version="1.8.4" versioncode="18">
         <change>Fixed crash when scanning all servers.</change>
     </release>
