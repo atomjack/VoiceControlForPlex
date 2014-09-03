@@ -268,7 +268,7 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
       clientName = getString(R.string.this_device);
 		MainSetting setting_data[] = new MainSetting[] {
 			new MainSetting(MainListAdapter.SettingHolder.TAG_SERVER, getResources().getString(R.string.stream_video_from_server), server.owned ? server.name : server.sourceTitle),
-//			new MainSetting(MainListAdapter.SettingHolder.TAG_CLIENT, getResources().getString(R.string.to_the_client), clientName),
+			new MainSetting(MainListAdapter.SettingHolder.TAG_CLIENT, String.format(getResources().getString(R.string.your_current_default_client_is), clientName), getString(R.string.tap_cast_icon_to_change_default_client)),
 			new MainSetting(MainListAdapter.SettingHolder.TAG_FEEDBACK, getResources().getString(R.string.feedback), VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.FEEDBACK, FEEDBACK_TOAST) == FEEDBACK_VOICE ? getResources().getString(R.string.voice) : getResources().getString(R.string.toast)),
 			new MainSetting(MainListAdapter.SettingHolder.TAG_ERRORS, getResources().getString(R.string.errors), VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.ERRORS, FEEDBACK_TOAST) == FEEDBACK_VOICE ? getResources().getString(R.string.voice) : getResources().getString(R.string.toast))
 		};

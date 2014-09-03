@@ -70,7 +70,7 @@ public class ShortcutProviderActivity extends Activity {
 
 		Logger.d("server: %s", servers);
 		boolean didScan = false;
-		if(servers != null && servers.size() > 0 && clients != null && clients.size() > 0)
+		if(servers != null && servers.size() > 0 && VoiceControlForPlexApplication.getAllClients().size() > 0)
 			didScan = true;
 
 		AlertDialog.Builder chooserDialog = new AlertDialog.Builder(ShortcutProviderActivity.this);

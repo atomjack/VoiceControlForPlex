@@ -26,7 +26,7 @@
     <string name="voice">Voix</string>
     <string name="toast">Toast</string>
     <string name="scan_all">Tout scanner</string>
-    <string name="not_set">Non défini</string>
+    <string name="not_set">non défini</string>
     <string name="feedback">Feedback</string>
     <string name="errors">Erreurs</string>
     <string name="help_server">Sélectionnez un Serveur Media Plex source. Si vous avez plus d\'un serveur, sélectionnez &quot;Tout scanner&quot; pour chercher tous les serveurs media disponibles. Si vous n\'en avez qu\'un, sélectionnez le ici pour éviter le temps de scan à chaque demande de lecture.</string>

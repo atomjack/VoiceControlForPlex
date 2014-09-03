@@ -49,7 +49,7 @@ public class PlexVideo extends PlexMedia {
 
   @Override
   public boolean isShow() {
-    return type.equals("show");
+    return type.equals("episode");
   }
 
   @Override
@@ -64,7 +64,7 @@ public class PlexVideo extends PlexMedia {
 
 	@Override
 	public String getEpisodeTitle() {
-		return type.equals("show") ? title : "";
+		return type.equals("episode") ? title : "";
 	}
 
 	@Override

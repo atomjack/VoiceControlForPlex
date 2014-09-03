@@ -26,7 +26,7 @@
     <string name="voice">Voice</string>
     <string name="toast">Toast</string>
     <string name="scan_all">Scan All</string>
-    <string name="not_set">Not Set</string>
+    <string name="not_set">not set</string>
     <string name="feedback">Feedback</string>
     <string name="errors">Errors</string>
     <string name="help_server">Select a Plex Media Server to stream from. If you have more than one media server, select &quot;Scan All&quot; to search all available servers for media. If you only have one, you should select it here as scanning all servers each time will take longer to trigger playback.</string>
@@ -120,4 +120,6 @@
     <string name="searching_for_the_album">Searching for the album %s.</string>
     <string name="connecting">Connecting</string>
     <string name="client_lost_connection">I lost the connection with %s.</string>
+    <string name="your_current_default_client_is">Your current default client is %s.</string>
+    <string name="tap_cast_icon_to_change_default_client">Tap the cast icon to change the default client.</string>
 </resources>

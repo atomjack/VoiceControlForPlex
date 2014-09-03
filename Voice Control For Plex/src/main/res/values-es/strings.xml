@@ -26,7 +26,7 @@
     <string name="voice">Voz</string>
     <string name="toast">Toast</string>
     <string name="scan_all">Escanear Todo</string>
-    <string name="not_set">No configurado</string>
+    <string name="not_set">no configurado</string>
     <string name="feedback">Feedback</string>
     <string name="errors">Errores</string>
     <string name="help_server">Selecciona un Servidor de Plex desde el que enviar los contenidos. Si tienes más de un servido, selecciona &quot;Escanear todo&quot; para buscar los servidores disponibles. Si solo tienes uno deberías seleccionarlo aquí ya que escanear todos los servidores cada vez ralentiza el activar la reproducción.</string>
