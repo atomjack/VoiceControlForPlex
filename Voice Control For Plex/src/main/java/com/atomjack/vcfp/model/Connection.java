@@ -42,9 +42,10 @@ public class Connection implements Parcelable {
 
 
 	public String toString() {
-		String out = String.format("Address: %s", address);
-		out += String.format("Port: %s", port);
-		out += String.format("Protocol: %s", protocol);
+    String out = String.format("%s://%s:%s", protocol, address, port);
+//		String out = String.format("Address: %s", address);
+//		out += String.format("Port: %s", port);
+//		out += String.format("Protocol: %s", protocol);
 		return out;
 	}
 

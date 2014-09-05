@@ -215,11 +215,20 @@ public class VoiceControlForPlexApplication extends Application
 		addPlexServer(server, null);
 	}
 
-	public static void addPlexServer(final PlexServer server, final Runnable onFinish) {
-		Logger.d("ADDING PLEX SERVER: %s, %s", server.name, server.address);
-		if(server.name.equals("") || server.address.equals("")) {
+	public static void addPlexServer(PlexServer addedServer, final Runnable onFinish) {
+		Logger.d("ADDING PLEX SERVER: %s, %s", addedServer.name, addedServer.address);
+		if(addedServer.name.equals("") || addedServer.address.equals("")) {
 			return;
 		}
+    PlexServer serverToAdd = null;
+    // First, see if we've already found this server from a remote scan. We'll want to use that one instead so the remote connections are included
+    for(PlexServer _server : VoiceControlForPlexApplication.servers.values()) {
+      if(_server.machineIdentifier.equals(addedServer.machineIdentifier)) {
+        serverToAdd = _server;
+        break;
+      }
+    }
+    final PlexServer server = serverToAdd == null ? addedServer : serverToAdd;
     try {
       server.findServerConnection(new ServerFindHandler() {
         @Override
