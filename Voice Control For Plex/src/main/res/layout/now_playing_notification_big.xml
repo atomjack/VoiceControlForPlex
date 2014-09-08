@@ -23,6 +23,7 @@
             android:minHeight="@dimen/notification_large_icon_height"
             android:orientation="vertical"
             android:paddingEnd="8dp"
+            android:paddingRight="8dp"
             android:paddingBottom="2dp"
             android:gravity="top"
             android:paddingLeft="8dp"
@@ -62,7 +63,7 @@
             android:orientation="horizontal"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            >
+            android:layout_weight="1">
 
             <ImageButton
                 android:layout_width="0dp"
@@ -70,8 +71,8 @@
                 android:id="@+id/rewindButton"
                 android:src="@drawable/button_rewind"
                 android:background="@null"
-                android:layout_gravity="center_vertical"
-                android:layout_weight="1"/>
+                android:layout_weight="1"
+                android:layout_marginTop="8dp"/>
 
             <FrameLayout
                 android:layout_width="1dp"
@@ -83,8 +84,9 @@
 
             <RelativeLayout
                 android:layout_width="0dp"
-                android:layout_height="50dp"
-                android:layout_weight="1">
+                android:layout_height="42dp"
+                android:layout_weight="1"
+                android:layout_marginTop="8dp">
 
                 <ImageButton
                     android:layout_width="fill_parent"

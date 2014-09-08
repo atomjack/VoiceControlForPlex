@@ -11,7 +11,7 @@
 
     <LinearLayout
         android:orientation="horizontal"
-        android:layout_width="wrap_content"
+        android:layout_width="130dp"
         android:layout_height="fill_parent"
         android:layout_gravity="center_vertical|right"
         >
@@ -20,13 +20,13 @@
             android:layout_width="42dp"
             android:layout_height="42dp"
             android:id="@+id/rewindButton"
-            android:src="@drawable/button_rewind"
             android:background="@null"
-            android:layout_marginTop="10dp"/>
+            android:src="@drawable/button_rewind"/>
 
         <RelativeLayout
-            android:layout_width="fill_parent"
-            android:layout_height="fill_parent">
+            android:layout_width="42dp"
+            android:layout_height="42dp"
+            android:layout_marginLeft="30dp">
 
             <ImageButton
                 android:layout_width="42dp"
@@ -34,13 +34,12 @@
                 android:id="@+id/playButton"
                 android:src="@drawable/button_play"
                 android:background="@null"
-                android:layout_marginTop="10dp"/>
+                />
 
             <ImageButton
                 android:layout_width="42dp"
                 android:layout_height="42dp"
                 android:id="@+id/pauseButton"
-                android:layout_marginTop="10dp"
                 android:background="@null"
                 android:src="@drawable/button_pause"/>
         </RelativeLayout>
@@ -52,13 +51,14 @@
         android:layout_height="64dp"
         android:layout_gravity="fill_vertical"
         android:layout_marginStart="@dimen/notification_icon_width"
+        android:layout_marginLeft="@dimen/notification_icon_width"
         android:minHeight="@dimen/notification_large_icon_height"
         android:orientation="vertical"
         android:paddingEnd="8dp"
         android:paddingTop="2dp"
         android:paddingBottom="2dp"
         android:gravity="top"
-        android:paddingRight="90dp"
+        android:paddingRight="130dp"
         android:paddingLeft="8dp">
         <TextView
             android:id="@+id/title"
