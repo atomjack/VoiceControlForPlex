@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog>
+    <release version="1.9.0b6" versioncode="25">
+        <change>Fixed detection of whether a video was a tv show or not.</change>
+        <change>Show curent default client in main settings screen, directing user to select one via cast icon.</change>
+        <change>When creating a shortcut, include chromecast clients when figuring out if a scan has already been done.</change>
+        <change>When adding locally found servers, if a server was already found via remote scan (via plex.tv), use that one so that its remote connections are included.</change>
+        <change>Adjusted display of playback controls in notifications.</change>
+    </release>
     <release version="1.9.0b5" versioncode="24">
         <change>Fixed client scan when logged in to Plex.</change>
         <change>Moved client selection completely into cast icon.</change>
