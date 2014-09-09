@@ -15,11 +15,11 @@
             android:orientation="vertical"
             android:gravity="center">
 
-            <ListView
+            <com.atomjack.vcfp.NonScrollListView
                 android:id="@+id/settingsList"
                 android:layout_height="fill_parent"
                 android:layout_width="match_parent">
-            </ListView>
+            </com.atomjack.vcfp.NonScrollListView>
 
             <CheckBox
                 android:id="@+id/resumeCheckbox"
