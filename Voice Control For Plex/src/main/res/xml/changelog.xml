@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog>
+    <release version="1.9.0" versioncode="26">
+        <change>Added Chromecast support.</change>
+        <change>Updated now playing screen to be a full fledged remote control.</change>
+        <change>Added Spanish translations (berzhot).</change>
+        <change>Various bug fixes.</change>
+    </release>
     <release version="1.9.0b6" versioncode="25">
         <change>Fixed detection of whether a video was a tv show or not.</change>
         <change>Show curent default client in main settings screen, directing user to select one via cast icon.</change>

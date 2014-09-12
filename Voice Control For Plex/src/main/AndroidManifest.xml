@@ -2,8 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
           xmlns:tools="http://schemas.android.com/tools"
     package="com.atomjack.vcfp"
-    android:versionCode="25"
-    android:versionName="1.9.0b6" >
+    android:versionCode="26"
+    android:versionName="1.9.0" >
 
     <uses-permission android:name="com.mohammadag.googlesearchapi.permission.ACCESS_GGOGLE_SEARCH_API" />
     <uses-permission android:name="android.permission.INTERNET" />
