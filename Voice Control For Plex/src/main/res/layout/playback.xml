@@ -20,28 +20,32 @@
         android:background="@android:color/transparent"
         android:onClick="doRewind"
         android:id="@+id/rewindButton" android:src="@drawable/button_rewind"
-        android:layout_weight="1" />
+        android:layout_weight="1"
+        android:layout_marginTop="10dp"/>
     <ImageButton
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:background="@android:color/transparent"
         android:onClick="doPlayPause"
         android:id="@+id/playPauseButton" android:src="@drawable/button_play"
-        android:layout_weight="1" />
+        android:layout_weight="1"
+        android:layout_marginTop="10dp"/>
     <ImageButton
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:background="@android:color/transparent"
         android:onClick="doStop"
         android:id="@+id/stopButton" android:src="@drawable/button_stop"
-        android:layout_weight="1" />
+        android:layout_weight="1"
+        android:layout_marginTop="10dp"/>
     <ImageButton
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:background="@android:color/transparent"
         android:onClick="doForward"
         android:id="@+id/forwardButton" android:src="@drawable/button_forward"
-        android:layout_weight="1" />
+        android:layout_weight="1"
+        android:layout_marginTop="10dp"/>
     <ImageButton
         android:layout_width="0dp"
         android:layout_height="wrap_content"
