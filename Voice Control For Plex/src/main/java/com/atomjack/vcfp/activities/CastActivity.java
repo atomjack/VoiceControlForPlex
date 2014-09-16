@@ -237,10 +237,19 @@ public class CastActivity extends PlayerActivity {
 	}
 
 	public void doRewind(View v) {
-
+    if(position > -1) {
+      nowPlayingMedia.viewOffset = Integer.toString(position - 15000);
+      if(Integer.parseInt(nowPlayingMedia.viewOffset) < 0) {
+        position = 0;
+        nowPlayingMedia.viewOffset = "0";
+      }
+      castPlayerManager.seekTo(Integer.parseInt(nowPlayingMedia.viewOffset) / 1000);
 	}
 
 	public void doForward(View v) {
+    if(position > -1) {
+      nowPlayingMedia.viewOffset = Integer.toString(position + 30000);
+      castPlayerManager.seekTo(Integer.parseInt(nowPlayingMedia.viewOffset) / 1000);
 	}
 
 	public void doStop(View v) {
@@ -305,6 +314,7 @@ public class CastActivity extends PlayerActivity {
 
   @Override
   public void onCastPlayerTimeUpdate(int seconds) {
+    position = seconds * 1000;
     if(!isSeeking)
       seekBar.setProgress(seconds*1000);
   }
