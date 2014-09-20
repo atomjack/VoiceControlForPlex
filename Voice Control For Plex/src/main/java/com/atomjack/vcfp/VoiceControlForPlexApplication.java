@@ -424,14 +424,13 @@ public class VoiceControlForPlexApplication extends Application
   }
 
   public void setNotification(final PlexClient client, final PlayerState currentState, final PlexMedia media, boolean skipThumb) {
-
-    if(client.isLocalDevice())
-      return;
-    Logger.d("Setting notification, client: %s, media: %s", client, media);
     if(client == null) {
       Logger.d("Client is null for some reason");
       return;
     }
+    if(client.isLocalDevice())
+      return;
+    Logger.d("Setting notification, client: %s, media: %s", client, media);
     if(notificationStatus == NOTIFICATION_STATUS.off) {
       notificationStatus = NOTIFICATION_STATUS.initializing;
       notificationBitmap = null;
