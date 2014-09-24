@@ -146,12 +146,6 @@ public class PlexSearchService extends Service {
       Logger.d("CAST MANAGER IS SUBSCRIBED");
     }
 
-    // TODO: Detect network connection here
-//		if(!VoiceControlForPlexApplication.isWifiConnected(this)) {
-//			feedback.e(getResources().getString(R.string.no_wifi_connection_message));
-//			return Service.START_NOT_STICKY;
-//		}
-
     currentNetworkState = VCFPActivity.NetworkState.getCurrentNetworkState(this);
 
 		Logger.d("action: %s", intent.getAction());
