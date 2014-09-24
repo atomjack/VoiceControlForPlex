@@ -103,16 +103,16 @@ public class Feedback implements TextToSpeech.OnInitListener {
 				// The text will be spoken when the tts is finished setting up (in onInit)
 				if (errors) {
 					errorsTts = new TextToSpeech(context, this);
-					errorsQueue = text;
+					errorsQueue = filterText(text);
           errorsTts.setOnUtteranceProgressListener(utteranceProgressListener);
 				} else {
 					feedbackTts = new TextToSpeech(context, this);
-					feedbackQueue = text;
+					feedbackQueue = filterText(text);
           feedbackTts.setOnUtteranceProgressListener(utteranceProgressListener);
 				}
 			} else {
         map.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, Integer.toString(utteranceId++));
-				tts.speak(text, TextToSpeech.QUEUE_FLUSH, map);
+				tts.speak(filterText(text), TextToSpeech.QUEUE_FLUSH, map);
 				if (errors)
 					errorsQueue = null;
 				else
@@ -125,6 +125,12 @@ public class Feedback implements TextToSpeech.OnInitListener {
       onFinish = null;
 		}
 	}
+
+  // Filter out some extraneous patterns, like when a connection is refused, strip out the uri.
+  private String filterText(String text) {
+    text = text.replaceAll("to https?://([0-9]+\\.){3}[0-9]+:[0-9]+ refused", " refused");
+    return text;
+  }
 
   private UtteranceProgressListener utteranceProgressListener = new UtteranceProgressListener() {
     @Override

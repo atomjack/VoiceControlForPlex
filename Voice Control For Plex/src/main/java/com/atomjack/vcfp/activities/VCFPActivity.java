@@ -107,17 +107,17 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
     MOBILE;
 
     public static NetworkState getCurrentNetworkState(Context context) {
-      NetworkState currentNetworkState;
+      NetworkState currentNetworkState = NetworkState.DISCONNECTED;
       ConnectivityManager cm =
               (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
 
       NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
-      if(activeNetwork.getType() == ConnectivityManager.TYPE_MOBILE)
-        currentNetworkState = NetworkState.MOBILE;
-      else if(activeNetwork.getType() == ConnectivityManager.TYPE_WIFI)
-        currentNetworkState = NetworkState.WIFI;
-      else
-        currentNetworkState = NetworkState.DISCONNECTED;
+      if(activeNetwork != null) {
+        if (activeNetwork.getType() == ConnectivityManager.TYPE_MOBILE)
+          currentNetworkState = NetworkState.MOBILE;
+        else if (activeNetwork.getType() == ConnectivityManager.TYPE_WIFI)
+          currentNetworkState = NetworkState.WIFI;
+      }
       return currentNetworkState;
     }
   };
