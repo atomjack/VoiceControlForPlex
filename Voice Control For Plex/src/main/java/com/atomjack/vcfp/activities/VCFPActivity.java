@@ -388,9 +388,10 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
   public void onSubscribed(PlexClient _client) {
     Logger.d("VCFPActivity: onSubscribed: %s", _client);
     mClient = _client;
+
+		subscribing = false;
     try {
       setCastIconActive();
-      subscribing = false;
     } catch (Exception e) {
       e.printStackTrace();
     }

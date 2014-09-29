@@ -16,6 +16,7 @@ import com.atomjack.vcfp.Logger;
 import com.atomjack.vcfp.Preferences;
 import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.ScanHandler;
+import com.atomjack.vcfp.UriDeserializer;
 import com.atomjack.vcfp.UriSerializer;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.model.PlexClient;
@@ -34,11 +35,12 @@ import us.nineworlds.serenity.GDMReceiver;
 public class ShortcutProviderActivity extends Activity {
 	private LocalScan localScan;
 
-	private Gson gson = new Gson();
 	private Gson gsonWrite = new GsonBuilder()
 					.registerTypeAdapter(Uri.class, new UriSerializer())
 					.create();
-
+	private Gson gsonRead = new GsonBuilder()
+					.registerTypeAdapter(Uri.class, new UriDeserializer())
+					.create();
 	private BroadcastReceiver gdmReceiver = new GDMReceiver();
 
 	private PlexServer server;
@@ -71,8 +73,8 @@ public class ShortcutProviderActivity extends Activity {
 
 		Type serverType = new TypeToken<ConcurrentHashMap<String, PlexServer>>(){}.getType();
 		Type clientType = new TypeToken<HashMap<String, PlexClient>>(){}.getType();
-		servers = gson.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.SAVED_SERVERS, ""), serverType);
-		clients = gson.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.SAVED_CLIENTS, ""), clientType);
+		servers = gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.SAVED_SERVERS, ""), serverType);
+		clients = gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.SAVED_CLIENTS, ""), clientType);
 
 		Logger.d("server: %s", servers);
 		boolean didScan = false;

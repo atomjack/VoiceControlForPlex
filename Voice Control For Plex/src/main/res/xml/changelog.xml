@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog>
+    <release version="1.9.2" versioncode="28">
+        <change>[Chromecast] Fixed rewind/fast forward buttons.</change>
+        <change>[Chromecast] Fixed crash when using a shortcut with a Chromecast specified as the client.</change>
+        <change>Bug fixes.</change>
+    </release>
     <release version="1.9.0" versioncode="26">
         <change>Added Chromecast support.</change>
         <change>Updated now playing screen to be a full fledged remote control.</change>

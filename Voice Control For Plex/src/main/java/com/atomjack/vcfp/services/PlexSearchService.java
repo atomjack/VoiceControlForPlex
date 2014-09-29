@@ -151,27 +151,30 @@ public class PlexSearchService extends Service {
 		Logger.d("action: %s", intent.getAction());
 		Logger.d("scan type: %s", intent.getStringExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE));
 		if(intent.getAction() != null && intent.getAction().equals(VoiceControlForPlexApplication.Intent.GDMRECEIVE)) {
-			if(intent.getStringExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE).equals(VoiceControlForPlexApplication.Intent.SCAN_TYPE_SERVER)) {
-				// We just scanned for servers and are returning from that, so set the servers we found
-				// and then figure out which mClient to play to
-				Logger.d("Got back from scanning for servers.");
-				videoPlayed = false;
-				plexmediaServers = VoiceControlForPlexApplication.servers;
-				didServerScan = true;
-				setClient();
-			} else if(intent.getStringExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE).equals(VoiceControlForPlexApplication.Intent.SCAN_TYPE_CLIENT)) {
-				// Got back from mClient scan, so set didClientScan to true so we don't do this again, and save the clients we got, then continue
-				didClientScan = true;
-				ArrayList<PlexClient> cs = intent.getParcelableArrayListExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLIENTS);
-        if(cs != null) {
-          VoiceControlForPlexApplication.clients = new HashMap<String, PlexClient>();
-          for (PlexClient c : cs) {
-            VoiceControlForPlexApplication.clients.put(c.name, c);
-          }
-          clients = (HashMap) VoiceControlForPlexApplication.clients;
-          clients.putAll(VoiceControlForPlexApplication.castClients);
-        }
-				startup();
+			Class receivedClass = (Class)intent.getSerializableExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLASS);
+			if(receivedClass == PlexSearchService.class) {
+				if (intent.getStringExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE).equals(VoiceControlForPlexApplication.Intent.SCAN_TYPE_SERVER)) {
+					// We just scanned for servers and are returning from that, so set the servers we found
+					// and then figure out which mClient to play to
+					Logger.d("Got back from scanning for servers.");
+					videoPlayed = false;
+					plexmediaServers = VoiceControlForPlexApplication.servers;
+					didServerScan = true;
+					setClient();
+				} else if (intent.getStringExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE).equals(VoiceControlForPlexApplication.Intent.SCAN_TYPE_CLIENT)) {
+					// Got back from mClient scan, so set didClientScan to true so we don't do this again, and save the clients we got, then continue
+					didClientScan = true;
+					ArrayList<PlexClient> cs = intent.getParcelableArrayListExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLIENTS);
+					if (cs != null) {
+						VoiceControlForPlexApplication.clients = new HashMap<String, PlexClient>();
+						for (PlexClient c : cs) {
+							VoiceControlForPlexApplication.clients.put(c.name, c);
+						}
+						clients = (HashMap) VoiceControlForPlexApplication.clients;
+						clients.putAll(VoiceControlForPlexApplication.castClients);
+					}
+					startup();
+				}
 			}
 		} else {
 			queryText = null;
