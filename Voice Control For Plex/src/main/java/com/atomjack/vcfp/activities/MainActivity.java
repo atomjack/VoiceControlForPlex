@@ -764,7 +764,7 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 	protected void onNewIntent(Intent intent) {
     Logger.d("MainActivity onNewIntent: %s", intent.getAction());
 
-		if(intent.getAction().equals(VoiceControlForPlexApplication.Intent.GDMRECEIVE)) {
+		if(intent.getAction().equals(VoiceControlForPlexApplication.Intent.GDMRECEIVE) && intent.getStringExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE) != null) {
       if(intent.getStringExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE).equals(VoiceControlForPlexApplication.Intent.SCAN_TYPE_SERVER)) {
         Logger.d("Got " + VoiceControlForPlexApplication.servers.size() + " servers");
         if(searchDialog != null)

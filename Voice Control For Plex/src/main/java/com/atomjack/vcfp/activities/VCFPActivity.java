@@ -600,6 +600,9 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
     } catch (IOException e) {
     }
 
+		if(layout == null)
+			return;
+		
     Drawable d = Drawable.createFromStream(is, "thumb");
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
       layout.setBackground(d);
