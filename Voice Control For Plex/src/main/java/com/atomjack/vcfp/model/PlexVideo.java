@@ -139,7 +139,7 @@ public class PlexVideo extends PlexMedia {
 }
 
 
-
+@Root(strict=false)
 class Genre implements Parcelable {
 	@Attribute
 	public String tag;
