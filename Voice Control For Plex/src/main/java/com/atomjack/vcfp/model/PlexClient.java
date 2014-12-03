@@ -139,4 +139,10 @@ public class PlexClient extends PlexDevice {
     String localip = Utils.getIPAddress(true);
     return localip.equals(address);
   }
+
+	public String toString() {
+		String output = String.format("Name: %s", name);
+
+		return output;
+	}
 }

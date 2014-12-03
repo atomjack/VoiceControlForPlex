@@ -79,7 +79,7 @@ public class GDMReceiver extends BroadcastReceiver {
 
       i.putExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE, intent.getStringExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE));
       i.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_CONNECT_TO_CLIENT, intent.getBooleanExtra(VoiceControlForPlexApplication.Intent.EXTRA_CONNECT_TO_CLIENT, false));
-
+      i.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLASS, theClass);
       i.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_SILENT, intent.getBooleanExtra(VoiceControlForPlexApplication.Intent.EXTRA_SILENT, false));
 
       i.addFlags(Intent.FLAG_FROM_BACKGROUND);

@@ -540,8 +540,7 @@ public class VoiceControlForPlexApplication extends Application
   public void setupInAppPurchasing() {
 
     mIabHelper = new IabHelper(this, base64EncodedPublicKey);
-    // TODO: Disable this before release!
-    mIabHelper.enableDebugLogging(true);
+    mIabHelper.enableDebugLogging(false);
 
     mIabHelper.startSetup(new IabHelper.OnIabSetupFinishedListener() {
       public void onIabSetupFinished(IabResult result) {
