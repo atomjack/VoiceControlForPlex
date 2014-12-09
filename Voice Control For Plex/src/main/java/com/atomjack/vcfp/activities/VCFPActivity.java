@@ -1,6 +1,7 @@
 package com.atomjack.vcfp.activities;
 
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -18,6 +19,9 @@ import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.CheckBox;
+import android.widget.ListView;
 
 import com.android.vending.billing.IabHelper;
 import com.android.vending.billing.IabResult;
@@ -25,7 +29,6 @@ import com.android.vending.billing.Purchase;
 import com.atomjack.vcfp.BuildConfig;
 import com.atomjack.vcfp.CastPlayerManager;
 import com.atomjack.vcfp.Feedback;
-import com.atomjack.vcfp.LocalScan;
 import com.atomjack.vcfp.Logger;
 import com.atomjack.vcfp.NetworkMonitor;
 import com.atomjack.vcfp.PlayerState;
@@ -38,6 +41,7 @@ import com.atomjack.vcfp.ServerFindHandler;
 import com.atomjack.vcfp.UriDeserializer;
 import com.atomjack.vcfp.UriSerializer;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
+import com.atomjack.vcfp.adapters.PlexListAdapter;
 import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexDevice;
@@ -48,6 +52,7 @@ import com.atomjack.vcfp.model.PlexVideo;
 import com.atomjack.vcfp.model.Timeline;
 import com.atomjack.vcfp.net.PlexHttpClient;
 import com.atomjack.vcfp.net.PlexHttpMediaContainerHandler;
+import com.atomjack.vcfp.services.PlexScannerService;
 import com.bugsense.trace.BugSenseHandler;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -59,6 +64,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 import cz.fhucho.android.util.SimpleDiskCache;
 
@@ -73,8 +79,6 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
 	protected Menu menu;
 
   protected Handler mHandler;
-
-	protected LocalScan localScan;
 
   protected PlexSubscription plexSubscription;
   protected CastPlayerManager castPlayerManager;
@@ -95,6 +99,10 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
 					.create();
 
   protected Feedback feedback;
+
+  public boolean isScanning = false;
+  private boolean cancelScan = false;
+  protected Dialog deviceSelectDialog = null;
 
   SimpleDiskCache mSimpleDiskCache;
 
@@ -123,6 +131,9 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
   };
   protected NetworkState currentNetworkState;
 
+  protected boolean serverScanCanceled = false;
+  protected boolean clientScanCanceled = false;
+
   @Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -144,16 +155,6 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
     VoiceControlForPlexApplication.getInstance().setNetworkChangeListener(this);
 
     currentNetworkState = NetworkState.getCurrentNetworkState(this);
-
-    localScan = new LocalScan(this, MainActivity.class, new ScanHandler() {
-      @Override
-      public void onDeviceSelected(PlexDevice device, boolean resume) {
-        if(device instanceof PlexServer)
-          setServer((PlexServer) device);
-        else if(device instanceof PlexClient)
-          setClient((PlexClient)device);
-      }
-    });
 
     castPlayerManager = VoiceControlForPlexApplication.getInstance().castPlayerManager;
     castPlayerManager.setContext(this);
@@ -226,16 +227,15 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
         Logger.d("[VCFPActivity] subscribed: %s", isSubscribed());
         Logger.d("[VCFPActivity] subscribing: %s", subscribing);
 				if(!isSubscribed() && !subscribing) {
-					subscribing = true;
           if(VoiceControlForPlexApplication.clients.size() == 0 && !VoiceControlForPlexApplication.hasDoneClientScan) {
-            localScan.searchForPlexClients(true);
+            searchForPlexClients(true);
           } else {
-            localScan.showPlexClients(false, onClientChosen);
+            showPlexClients(false, onClientChosen);
             // Kick off a client scan in the background
-            localScan.searchForPlexClients(true, false);
+            searchForPlexClients();
           }
 				} else if(!subscribing) {
-          // For some reason we sometimes lost mClient here, even though we're subscribed. If we do, let's try to get the client from the subscription manager
+          // For some reason we sometimes lose mClient here, even though we're subscribed. If we do, let's try to get the client from the subscription manager
           if(mClient == null) {
             Logger.d("[VCFPActivity] 0Lost subscribed client.");
             if(castPlayerManager.mClient != null)
@@ -278,9 +278,13 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
 	protected ScanHandler onClientChosen = new ScanHandler() {
 		@Override
 		public void onDeviceSelected(PlexDevice device, boolean resume) {
-      if(localScan.isScanning)
-        localScan.cancelScan();
-      subscribing = false;
+      Logger.d("[VCFPActivity] onClientChosen onDeviceSelected");
+
+      // Set this to true so that if a client is selected immediately upon the listview being shown, but before
+      // the listview is refreshed, it doesn't get shown again. It will be reset to false before the listview is shown again.
+      clientScanCanceled = true;
+
+      subscribing = true;
       if(device != null) {
         Logger.d("[VCFPActivity] onClientChosen: %s", device.name);
         PlexClient clientSelected = (PlexClient) device;
@@ -441,6 +445,7 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
 
   @Override
   public void onCastDisconnected() {
+    Logger.d("[VCFPActivity] onCastDisconnected");
     onUnsubscribed();
   }
 
@@ -483,14 +488,9 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
             }
           }
           if((!timeline.state.equals("stopped") && nowPlayingMedia == null) || continuing) {
-
-            if(server == null) {
-              // TODO: Scan servers for this server, then get playing media
-              Logger.d("server is null");
-              localScan.searchForPlexServers(true);
-            } else {
+            // TODO: Might need to refresh server?
+            if(server != null)
               getPlayingMedia(server, timeline);
-            }
           }
 
           if(nowPlayingMedia != null) {
@@ -720,5 +720,113 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
   protected void setClient(PlexClient _client) {
     Logger.d("[VCFPActivity] setClient");
     VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.CLIENT, gsonWrite.toJson(_client));
+  }
+
+  public void showPlexServers(ConcurrentHashMap<String, PlexServer> servers, final ScanHandler scanHandler) {
+    isScanning = false;
+    if(cancelScan) {
+      cancelScan = false;
+      return;
+    }
+//    if(searchDialog != null)
+//      searchDialog.dismiss();
+    if(deviceSelectDialog == null) {
+      deviceSelectDialog = new Dialog(this);
+    }
+    deviceSelectDialog.setContentView(R.layout.server_select);
+    deviceSelectDialog.setTitle("Select a Plex Server");
+    deviceSelectDialog.show();
+
+    final ListView serverListView = (ListView) deviceSelectDialog.findViewById(R.id.serverListView);
+    if(servers == null)
+      servers = new ConcurrentHashMap<String, PlexServer>(VoiceControlForPlexApplication.servers);
+    final PlexListAdapter adapter = new PlexListAdapter(this, PlexListAdapter.TYPE_SERVER);
+    adapter.setServers(servers);
+    serverListView.setAdapter(adapter);
+    serverListView.setOnItemClickListener(new ListView.OnItemClickListener() {
+
+      @Override
+      public void onItemClick(AdapterView<?> parentAdapter, View view, int position, long id) {
+        Logger.d("Clicked position %d", position);
+        PlexServer s = (PlexServer)parentAdapter.getItemAtPosition(position);
+        deviceSelectDialog.dismiss();
+        scanHandler.onDeviceSelected(s, false);
+      }
+    });
+  }
+
+  public void showPlexClients() {
+    showPlexClients(false, null);
+  }
+
+  public void showPlexClients(boolean showResume) {
+    showPlexClients(true, null);
+  }
+
+  public void showPlexClients(boolean showResume, final ScanHandler onFinish) {
+    isScanning = false;
+    if(cancelScan) {
+      cancelScan = false;
+      return;
+    }
+    if (deviceSelectDialog == null) {
+      deviceSelectDialog = new Dialog(this);
+    }
+    deviceSelectDialog.setContentView(R.layout.server_select);
+    deviceSelectDialog.setTitle(R.string.select_plex_client);
+    deviceSelectDialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
+      @Override
+      public void onCancel(DialogInterface dialogInterface) {
+        clientScanCanceled = true;
+        subscribing = false;
+      }
+    });
+    deviceSelectDialog.show();
+
+    if (showResume) {
+      CheckBox resumeCheckbox = (CheckBox) deviceSelectDialog.findViewById(R.id.serverListResume);
+      resumeCheckbox.setVisibility(View.VISIBLE);
+    }
+
+    final ListView clientListView = (ListView) deviceSelectDialog.findViewById(R.id.serverListView);
+    final PlexListAdapter adapter = new PlexListAdapter(this, PlexListAdapter.TYPE_CLIENT);
+    adapter.setClients(VoiceControlForPlexApplication.getAllClients());
+    clientListView.setAdapter(adapter);
+    clientListView.setOnItemClickListener(new ListView.OnItemClickListener() {
+
+      @Override
+      public void onItemClick(AdapterView<?> parentAdapter, View view, int position,
+                              long id) {
+        PlexClient s = (PlexClient) parentAdapter.getItemAtPosition(position);
+        deviceSelectDialog.dismiss();
+        CheckBox resumeCheckbox = (CheckBox) deviceSelectDialog.findViewById(R.id.serverListResume);
+//        if (onFinish == null)
+//          scanHandler.onDeviceSelected(s, resumeCheckbox.isChecked());
+//        else
+        if (onFinish != null)
+          onFinish.onDeviceSelected(s, resumeCheckbox.isChecked());
+      }
+
+    });
+  }
+
+  protected void searchForPlexClients() {
+    searchForPlexClients(false);
+  }
+
+  protected void searchForPlexClients(boolean connectToClient) {
+    Intent scannerIntent = new Intent(VCFPActivity.this, PlexScannerService.class);
+    scannerIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+    scannerIntent.putExtra(PlexScannerService.CLASS, MainActivity.class);
+    scannerIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_CONNECT_TO_CLIENT, connectToClient);
+    scannerIntent.setAction(PlexScannerService.ACTION_SCAN_CLIENTS);
+    startService(scannerIntent);
+  }
+
+  public void deviceSelectDialogRefresh() {
+    ListView serverListView = (ListView) deviceSelectDialog.findViewById(R.id.serverListView);
+    PlexListAdapter adapter = (PlexListAdapter)serverListView.getAdapter();
+    adapter.setClients(VoiceControlForPlexApplication.getAllClients());
+    adapter.notifyDataSetChanged();
   }
 }

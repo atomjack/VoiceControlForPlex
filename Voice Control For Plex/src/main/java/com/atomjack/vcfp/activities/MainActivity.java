@@ -3,11 +3,9 @@ package com.atomjack.vcfp.activities;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
@@ -16,7 +14,6 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.speech.tts.TextToSpeech;
-import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.media.MediaRouteSelector;
 import android.support.v7.media.MediaRouter;
 import android.view.LayoutInflater;
@@ -33,13 +30,10 @@ import android.widget.ListView;
 
 import com.atomjack.vcfp.BuildConfig;
 import com.atomjack.vcfp.FutureRunnable;
-import com.atomjack.vcfp.GDMService;
-import com.atomjack.vcfp.LocalScan;
 import com.atomjack.vcfp.Logger;
 import com.atomjack.vcfp.PlexHeaders;
 import com.atomjack.vcfp.Preferences;
 import com.atomjack.vcfp.R;
-import com.atomjack.vcfp.RemoteScan;
 import com.atomjack.vcfp.ScanHandler;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.adapters.MainListAdapter;
@@ -53,6 +47,7 @@ import com.atomjack.vcfp.model.PlexUser;
 import com.atomjack.vcfp.net.PlexHttpClient;
 import com.atomjack.vcfp.net.PlexHttpUserHandler;
 import com.atomjack.vcfp.net.PlexPinResponseHandler;
+import com.atomjack.vcfp.services.PlexScannerService;
 import com.atomjack.vcfp.tasker.TaskerPlugin;
 import com.cubeactive.martin.inscription.WhatsNewDialog;
 import com.google.android.gms.cast.CastDevice;
@@ -77,8 +72,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import us.nineworlds.serenity.GDMReceiver;
-
 public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitListener {
 
 	public final static int FEEDBACK_VOICE = 0;
@@ -87,8 +80,6 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 	private final static int RESULT_VOICE_FEEDBACK_SELECTED = 0;
 	private final static int RESULT_TASKER_PROJECT_IMPORTED = 1;
 	private final static int RESULT_SHORTCUT_CREATED = 2;
-
-	private BroadcastReceiver gdmReceiver;
 
 	private ArrayList<String> availableVoices;
 	private boolean settingErrorFeedback = false;
@@ -112,8 +103,6 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-
-    gdmReceiver = new GDMReceiver();
 
 		final WhatsNewDialog whatsNewDialog = new WhatsNewDialog(this);
 		whatsNewDialog.show();
@@ -291,19 +280,30 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 						feedback.e(R.string.no_wifi_connection_message);
 						return;
 					}
+
+          searchDialog = new Dialog(MainActivity.this);
+
+          searchDialog.setContentView(R.layout.search_popup);
+          searchDialog.setTitle(getResources().getString(R.string.searching_for_plex_servers));
+
+          searchDialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
+            @Override
+            public void onCancel(DialogInterface dialogInterface) {
+              serverScanCanceled = true;
+//              RemoteScan.cancelScan();
+            }
+          });
+          searchDialog.show();
+          Intent scannerIntent = new Intent(MainActivity.this, PlexScannerService.class);
+          scannerIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+          scannerIntent.putExtra(PlexScannerService.CLASS, MainActivity.class);
+          scannerIntent.setAction(PlexScannerService.ACTION_SCAN_SERVERS);
+          startService(scannerIntent);
+
+          /*
 					if(authToken != null) {
-						searchDialog = new Dialog(MainActivity.this);
 
-						searchDialog.setContentView(R.layout.search_popup);
-						searchDialog.setTitle(getResources().getString(R.string.searching_for_plex_servers));
 
-            searchDialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
-              @Override
-              public void onCancel(DialogInterface dialogInterface) {
-                RemoteScan.cancelScan();
-              }
-            });
-						searchDialog.show();
 						RemoteScan.refreshResources(authToken, new RemoteScan.RefreshResourcesResponseHandler() {
 							@Override
 							public void onSuccess() {
@@ -333,20 +333,7 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
             } else
   						localScan.searchForPlexServers();
 					}
-        /*
-				} else if (holder.tag.equals(holder.TAG_CLIENT)) {
-          if(!currentNetworkState.equals(NetworkState.WIFI)) {
-            if(currentNetworkState.equals(NetworkState.MOBILE)) {
-              feedback.m(R.string.mobile_network_connection_active);
-            } else {
-              feedback.e(R.string.network_connection_required);
-            }
-            return;
-          } else {
-            VoiceControlForPlexApplication.clients = new HashMap<String, PlexClient>();
-            localScan.searchForPlexClients();
-          }
-        */
+					*/
 				} else if (holder.tag.equals(holder.TAG_FEEDBACK)) {
 					selectFeedback();
 				} else if (holder.tag.equals(holder.TAG_ERRORS)) {
@@ -571,7 +558,7 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 								public void run() {
 									feedback.m(R.string.logged_in);
 									switchLogin();
-									RemoteScan.refreshResources(authToken, new RemoteScan.RefreshResourcesResponseHandler() {
+									PlexScannerService.refreshResources(authToken, new PlexScannerService.RefreshResourcesResponseHandler() {
 										@Override
 										public void onSuccess() {
 											feedback.t(R.string.servers_refreshed);
@@ -764,8 +751,12 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 	protected void onNewIntent(Intent intent) {
     Logger.d("MainActivity onNewIntent: %s", intent.getAction());
 
-		if(intent.getAction().equals(VoiceControlForPlexApplication.Intent.GDMRECEIVE) && intent.getStringExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE) != null) {
-      if(intent.getStringExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE).equals(VoiceControlForPlexApplication.Intent.SCAN_TYPE_SERVER)) {
+      if(intent.getAction().equals(PlexScannerService.ACTION_SERVER_SCAN_FINISHED)) {
+        if(serverScanCanceled) {
+          serverScanCanceled = false;
+          return;
+        }
+//      if(intent.getStringExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE).equals(VoiceControlForPlexApplication.Intent.SCAN_TYPE_SERVER)) {
         Logger.d("Got " + VoiceControlForPlexApplication.servers.size() + " servers");
         if(searchDialog != null)
           searchDialog.cancel();
@@ -773,9 +764,18 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 
         if(intent.getBooleanExtra(VoiceControlForPlexApplication.Intent.EXTRA_SILENT, false) == false) {
           if (VoiceControlForPlexApplication.servers.size() > 0) {
-            localScan.showPlexServers();
+            showPlexServers(VoiceControlForPlexApplication.servers, new ScanHandler() {
+              @Override
+              public void onDeviceSelected(PlexDevice device, boolean resume) {
+                if(device instanceof PlexServer)
+                  setServer((PlexServer) device);
+                else if(device instanceof PlexClient)
+                  setClient((PlexClient)device);
+              }
+            });
           } else {
-            localScan.hideSearchDialog();
+            searchDialog.dismiss();
+//            localScan.hideSearchDialog();
             AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
             builder.setTitle(R.string.no_servers_found);
             builder.setCancelable(false).setNeutralButton(R.string.ok, new DialogInterface.OnClickListener() {
@@ -787,7 +787,13 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
             d.show();
           }
         }
+        // TODO: Check this!
       } else if(intent.getStringExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE).equals(VoiceControlForPlexApplication.Intent.SCAN_TYPE_CLIENT)) {
+        Logger.d("clientScanCanceled: %s", clientScanCanceled);
+        if(clientScanCanceled) {
+          clientScanCanceled = false;
+          return;
+        }
         ArrayList<PlexClient> clients = intent.getParcelableArrayListExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLIENTS);
         if(clients != null || VoiceControlForPlexApplication.getInstance().castClients.size() > 0) {
           VoiceControlForPlexApplication.clients = new HashMap<String, PlexClient>();
@@ -798,12 +804,15 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
           VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.SAVED_CLIENTS, gsonWrite.toJson(VoiceControlForPlexApplication.clients));
           boolean showConnectToClients = intent.getBooleanExtra(VoiceControlForPlexApplication.Intent.EXTRA_CONNECT_TO_CLIENT, false);
           Logger.d("showConnectToClients: %s", showConnectToClients);
-          if(showConnectToClients) {
-            localScan.showPlexClients(false, onClientChosen);
-          } else
-            localScan.showPlexClients();
+//          if(showConnectToClients) {
+          clientScanCanceled = false;
+          showPlexClients(false, onClientChosen);
+//            localScan.showPlexClients(false, onClientChosen);
+//          } else
+//            showPlexClients();
+//            localScan.showPlexClients();
         } else {
-          localScan.hideSearchDialog();
+//          localScan.hideSearchDialog();
           AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
           builder.setTitle(R.string.no_clients_found);
           builder.setCancelable(false)
@@ -816,7 +825,7 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
           d.show();
         }
       }
-		}
+		//}
 		super.onNewIntent(intent);
 	}
 
@@ -828,7 +837,7 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 		saveSettings();
 
 		if(client == null) {
-			localScan.searchForPlexClients();
+			searchForPlexClients();
 		} else {
 			initMainWithServer();
 		}
@@ -896,9 +905,6 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 	@Override
 	protected void onDestroy() {
 		Logger.d("MainActivity onDestroy");
-		if(gdmReceiver != null) {
-			LocalBroadcastManager.getInstance(this).unregisterReceiver(gdmReceiver);
-		}
 
 		feedback.destroy();
 		if(tts != null)
@@ -914,9 +920,6 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 			mMediaRouter.removeCallback(mMediaRouterCallback);
 		}
 		VoiceControlForPlexApplication.applicationPaused();
-		if(gdmReceiver != null) {
-			LocalBroadcastManager.getInstance(this).unregisterReceiver(gdmReceiver);
-		}
 		super.onPause();
 	}
 
@@ -924,14 +927,6 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 	protected void onResume() {
 //		Logger.d("MainActivity onResume");
 		super.onResume();
-    if(gdmReceiver != null) {
-      IntentFilter filters = new IntentFilter();
-      filters.addAction(GDMService.MSG_RECEIVED);
-      filters.addAction(GDMService.SOCKET_CLOSED);
-      filters.addAction(GDMReceiver.ACTION_CANCEL);
-      LocalBroadcastManager.getInstance(this).registerReceiver(gdmReceiver,
-              filters);
-    }
 		VoiceControlForPlexApplication.applicationResumed();
     plexSubscription.setListener(this);
     castPlayerManager.setListener(this);
@@ -999,9 +994,10 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
         VoiceControlForPlexApplication.castClients.remove(route.getName());
         VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.SAVED_CAST_CLIENTS, gsonWrite.toJson(VoiceControlForPlexApplication.castClients));
         // If the "select a plex client" dialog is showing, refresh the list of clients
-        if(localScan.isDeviceDialogShowing()) {
-          localScan.deviceSelectDialogRefresh();
-        }
+        // TODO: Refresh device dialog if needed
+//        if(localScan.isDeviceDialogShowing()) {
+//          localScan.deviceSelectDialogRefresh();
+//        }
       }
     }
 
@@ -1018,8 +1014,9 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
         VoiceControlForPlexApplication.castClients.put(client.name, client);
         VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.SAVED_CAST_CLIENTS, gsonWrite.toJson(VoiceControlForPlexApplication.castClients));
         // If the "select a plex client" dialog is showing, refresh the list of clients
-        if(localScan.isDeviceDialogShowing()) {
-          localScan.deviceSelectDialogRefresh();
+        if(deviceSelectDialog != null && deviceSelectDialog.isShowing()) {
+//        if(localScan.isDeviceDialogShowing()) {
+          deviceSelectDialogRefresh();
         }
       }
 		}

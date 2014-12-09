@@ -1,14 +1,11 @@
 package com.atomjack.vcfp.services;
 
 import android.app.Service;
-import android.content.BroadcastReceiver;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.speech.RecognizerIntent;
-import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.media.MediaRouteSelector;
 import android.support.v7.media.MediaRouter;
 
@@ -16,7 +13,6 @@ import com.atomjack.vcfp.AfterTransientTokenRequest;
 import com.atomjack.vcfp.BuildConfig;
 import com.atomjack.vcfp.CastPlayerManager;
 import com.atomjack.vcfp.Feedback;
-import com.atomjack.vcfp.GDMService;
 import com.atomjack.vcfp.Logger;
 import com.atomjack.vcfp.PlexHeaders;
 import com.atomjack.vcfp.PlexSubscription;
@@ -65,8 +61,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import us.nineworlds.serenity.GDMReceiver;
-
 public class PlexSearchService extends Service {
 
 	private String queryText;
@@ -81,9 +75,6 @@ public class PlexSearchService extends Service {
 
 	private ConcurrentHashMap<String, PlexServer> plexmediaServers = new ConcurrentHashMap<String, PlexServer>();
 	private Map<String, PlexClient> clients;
-
-	private BroadcastReceiver gdmReceiver = new GDMReceiver();
-	private Intent mServiceIntent;
 
 	private PlexClient client = null;
 	private PlexServer specifiedServer = null;
@@ -150,32 +141,29 @@ public class PlexSearchService extends Service {
 
 		Logger.d("action: %s", intent.getAction());
 		Logger.d("scan type: %s", intent.getStringExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE));
-		if(intent.getAction() != null && intent.getAction().equals(VoiceControlForPlexApplication.Intent.GDMRECEIVE)) {
-			Class receivedClass = (Class)intent.getSerializableExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLASS);
-			if(receivedClass == PlexSearchService.class) {
-				if (intent.getStringExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE).equals(VoiceControlForPlexApplication.Intent.SCAN_TYPE_SERVER)) {
-					// We just scanned for servers and are returning from that, so set the servers we found
-					// and then figure out which mClient to play to
-					Logger.d("Got back from scanning for servers.");
-					videoPlayed = false;
-					plexmediaServers = VoiceControlForPlexApplication.servers;
-					didServerScan = true;
-					setClient();
-				} else if (intent.getStringExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE).equals(VoiceControlForPlexApplication.Intent.SCAN_TYPE_CLIENT)) {
-					// Got back from mClient scan, so set didClientScan to true so we don't do this again, and save the clients we got, then continue
-					didClientScan = true;
-					ArrayList<PlexClient> cs = intent.getParcelableArrayListExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLIENTS);
-					if (cs != null) {
-						VoiceControlForPlexApplication.clients = new HashMap<String, PlexClient>();
-						for (PlexClient c : cs) {
-							VoiceControlForPlexApplication.clients.put(c.name, c);
-						}
-						clients = (HashMap) VoiceControlForPlexApplication.clients;
-						clients.putAll(VoiceControlForPlexApplication.castClients);
-					}
-					startup();
-				}
-			}
+		if(intent.getAction() != null) {
+      if (intent.getAction().equals(PlexScannerService.ACTION_SERVER_SCAN_FINISHED)) {
+        // We just scanned for servers and are returning from that, so set the servers we found
+        // and then figure out which mClient to play to
+        Logger.d("Got back from scanning for servers.");
+        videoPlayed = false;
+        plexmediaServers = VoiceControlForPlexApplication.servers;
+        didServerScan = true;
+        setClient();
+      } else if (intent.getAction().equals(PlexScannerService.ACTION_CLIENT_SCAN_FINISHED)) {
+        // Got back from client scan, so set didClientScan to true so we don't do this again, and save the clients we got, then continue
+        didClientScan = true;
+        ArrayList<PlexClient> cs = intent.getParcelableArrayListExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLIENTS);
+        if (cs != null) {
+          VoiceControlForPlexApplication.clients = new HashMap<String, PlexClient>();
+          for (PlexClient c : cs) {
+            VoiceControlForPlexApplication.clients.put(c.name, c);
+          }
+          clients = (HashMap) VoiceControlForPlexApplication.clients;
+          clients.putAll(VoiceControlForPlexApplication.castClients);
+        }
+        startup();
+      }
 		} else {
 			queryText = null;
 			client = null;
@@ -250,11 +238,12 @@ public class PlexSearchService extends Service {
 			if(client == null)
 				client = gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.CLIENT, ""), PlexClient.class);
 
-			if(client == null) {
+			if(client == null && didClientScan) {
 				// No mClient set in options, and either none specified in the query or I just couldn't find it.
 				feedback.e(getResources().getString(R.string.client_not_specified));
 				return Service.START_NOT_STICKY;
 			}
+
 //      if(client.isCastClient)
 //        castPlayerManager.subscribe(client);
 			if (queries.size() > 0) {
@@ -269,8 +258,6 @@ public class PlexSearchService extends Service {
 	@Override
 	public void onDestroy() {
 		feedback.destroy();
-		if(gdmReceiver != null)
-			unregisterReceiver(gdmReceiver);
 		super.onDestroy();
 	}
 
@@ -279,13 +266,6 @@ public class PlexSearchService extends Service {
 		Logger.d("PlexSearch onCreate");
 		queryText = null;
 		feedback = new Feedback(this);
-		if(gdmReceiver != null) {
-			IntentFilter filters = new IntentFilter();
-			filters.addAction(GDMService.MSG_RECEIVED);
-			filters.addAction(GDMService.SOCKET_CLOSED);
-			LocalBroadcastManager.getInstance(this).registerReceiver(gdmReceiver,
-							filters);
-		}
 	}
 
 	@Override
@@ -348,13 +328,11 @@ public class PlexSearchService extends Service {
 					return;
 				}
 
-				if (mServiceIntent == null) {
-					mServiceIntent = new Intent(this, GDMService.class);
-				}
-				mServiceIntent.setAction(VoiceControlForPlexApplication.Intent.GDMRECEIVE);
-				mServiceIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLASS, PlexSearchService.class);
-				mServiceIntent.putExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE, VoiceControlForPlexApplication.Intent.SCAN_TYPE_SERVER);
-				startService(mServiceIntent);
+        Intent scannerIntent = new Intent(PlexSearchService.this, PlexScannerService.class);
+        scannerIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        scannerIntent.putExtra(PlexScannerService.CLASS, PlexSearchService.class);
+        scannerIntent.setAction(PlexScannerService.ACTION_SCAN_SERVERS);
+        startService(scannerIntent);
 				feedback.m("Scanning for Plex Servers");
 			}
 		}
@@ -1040,7 +1018,8 @@ public class PlexSearchService extends Service {
         qs.add("address", media.server.activeConnection.address);
         Logger.d("address: %s", media.server.activeConnection.address);
 
-        if ((VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.RESUME, false) || resumePlayback) && media.viewOffset != null)
+        // if ((VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.RESUME, false) || resumePlayback) && media.viewOffset != null)
+        if (resumePlayback && media.viewOffset != null)
           qs.add("viewOffset", media.viewOffset);
         if (transientToken != null)
           qs.add("token", transientToken);
@@ -1872,12 +1851,12 @@ public class PlexSearchService extends Service {
 	}
 
   private void sendClientScanIntent() {
-    Intent mServiceIntent = new Intent(this, GDMService.class);
-    mServiceIntent.putExtra(GDMService.PORT, 32412); // Port for clients
-    mServiceIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-    mServiceIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLASS, PlexSearchService.class);
-    mServiceIntent.putExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE, VoiceControlForPlexApplication.Intent.SCAN_TYPE_CLIENT);
-    startService(mServiceIntent);
+    Logger.d("Scanning for clients");
+    Intent scannerIntent = new Intent(PlexSearchService.this, PlexScannerService.class);
+    scannerIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+    scannerIntent.putExtra(PlexScannerService.CLASS, PlexSearchService.class);
+    scannerIntent.setAction(PlexScannerService.ACTION_SCAN_CLIENTS);
+    startService(scannerIntent);
   }
 
 }

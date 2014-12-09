@@ -34,7 +34,7 @@ android {
         release {
             signingConfig signingConfigs.release
             debuggable false
-            runProguard false
+            minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
             buildConfigField "boolean", "USE_BUGSENSE", "true"
             buildConfigField "boolean", "CHROMECAST_REQUIRES_PURCHASE", "true"
@@ -51,7 +51,7 @@ android {
         chromecast {
             signingConfig signingConfigs.release
             debuggable true
-            runProguard false
+            minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
             buildConfigField "boolean", "USE_BUGSENSE", "false"
             buildConfigField "boolean", "CHROMECAST_REQUIRES_PURCHASE", "true"
@@ -61,7 +61,7 @@ android {
         chromecastTest {
             signingConfig signingConfigs.release
             debuggable true
-            runProguard false
+            minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
             buildConfigField "boolean", "USE_BUGSENSE", "false"
             buildConfigField "boolean", "CHROMECAST_REQUIRES_PURCHASE", "true"

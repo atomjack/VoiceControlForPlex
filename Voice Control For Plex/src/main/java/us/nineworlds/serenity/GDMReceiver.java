@@ -12,6 +12,7 @@ import com.atomjack.vcfp.activities.VCFPActivity;
 import com.atomjack.vcfp.model.Connection;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexServer;
+import com.atomjack.vcfp.services.PlexScannerService;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -67,13 +68,18 @@ public class GDMReceiver extends BroadcastReceiver {
         Logger.d("[GDMReceiver] canceling");
         return;
       }
+
+      String scanType = intent.getStringExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE);
+
         // Send the reply back to whichever class called for it.
       Class theClass = (Class) intent.getSerializableExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLASS);
       Intent i = new Intent(context, theClass);
-      i.setAction(VoiceControlForPlexApplication.Intent.GDMRECEIVE);
+
+      i.setAction(scanType.equals(VoiceControlForPlexApplication.Intent.SCAN_TYPE_SERVER) ? PlexScannerService.ACTION_SERVER_SCAN_FINISHED : PlexScannerService.ACTION_CLIENT_SCAN_FINISHED);
+
       i.putExtra(VoiceControlForPlexApplication.Intent.SHOWRESOURCE, intent.getBooleanExtra(VoiceControlForPlexApplication.Intent.SHOWRESOURCE, false));
 
-      String scanType = intent.getStringExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE);
+
       if (clients.size() > 0 && scanType.equals(VoiceControlForPlexApplication.Intent.SCAN_TYPE_CLIENT))
         i.putParcelableArrayListExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLIENTS, clients);
 

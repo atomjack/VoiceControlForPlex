@@ -75,6 +75,9 @@
             </intent-filter>
         </activity>
         <service
+            android:name=".services.PlexScannerService"
+            android:exported="false" />
+        <service
             android:name=".GDMService"
             android:exported="false" />
 

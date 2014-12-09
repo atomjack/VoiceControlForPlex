@@ -1,17 +1,11 @@
 package com.atomjack.vcfp.activities;
 
-import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.BroadcastReceiver;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.v4.content.LocalBroadcastManager;
 
-import com.atomjack.vcfp.GDMService;
-import com.atomjack.vcfp.LocalScan;
 import com.atomjack.vcfp.Logger;
 import com.atomjack.vcfp.Preferences;
 import com.atomjack.vcfp.R;
@@ -30,18 +24,13 @@ import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
-import us.nineworlds.serenity.GDMReceiver;
-
-public class ShortcutProviderActivity extends Activity {
-	private LocalScan localScan;
-
+public class ShortcutProviderActivity extends VCFPActivity {
 	private Gson gsonWrite = new GsonBuilder()
 					.registerTypeAdapter(Uri.class, new UriSerializer())
 					.create();
 	private Gson gsonRead = new GsonBuilder()
 					.registerTypeAdapter(Uri.class, new UriDeserializer())
 					.create();
-	private BroadcastReceiver gdmReceiver = new GDMReceiver();
 
 	private PlexServer server;
 	private PlexClient client;
@@ -54,22 +43,6 @@ public class ShortcutProviderActivity extends Activity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		Logger.d("ShortcutProviderActivity onCreate");
-
-		localScan = new LocalScan(this, ShortcutProviderActivity.class, new ScanHandler() {
-			@Override
-			public void onDeviceSelected(PlexDevice device, boolean _resume) {
-        if(device != null) {
-          if (device instanceof PlexServer) {
-            server = (PlexServer) device;
-            localScan.showPlexClients(true);
-          } else if (device instanceof PlexClient) {
-            client = (PlexClient) device;
-            resume = _resume;
-            createShortcut(false);
-          }
-        }
-			}
-		});
 
 		Type serverType = new TypeToken<ConcurrentHashMap<String, PlexServer>>(){}.getType();
 		Type clientType = new TypeToken<HashMap<String, PlexClient>>(){}.getType();
@@ -88,7 +61,23 @@ public class ShortcutProviderActivity extends Activity {
 			chooserDialog.setPositiveButton(R.string.specify_now, new DialogInterface.OnClickListener() {
 				public void onClick(DialogInterface dialog, int id) {
 					dialog.dismiss();
-					localScan.showPlexServers(servers);
+          showPlexServers(servers, new ScanHandler() {
+            @Override
+            public void onDeviceSelected(PlexDevice device, boolean unused) {
+              // Set the server that was selected
+              server = (PlexServer) device;
+              showPlexClients(true, new ScanHandler() {
+                @Override
+                public void onDeviceSelected(PlexDevice device, boolean _resume) {
+                  // Set the client that was selected, and whether or not to resume
+                  client = (PlexClient)device;
+                  Logger.d("resume is set to %s", _resume);
+                  resume = _resume;
+                  createShortcut(false);
+                }
+              });
+            }
+          });
 				}
 			});
 		}
@@ -135,9 +124,6 @@ public class ShortcutProviderActivity extends Activity {
 
 	@Override
 	protected void onDestroy() {
-		if(gdmReceiver != null) {
-			LocalBroadcastManager.getInstance(this).unregisterReceiver(gdmReceiver);
-		}
 //		feedback.destroy();
 		super.onDestroy();
 	}
@@ -145,21 +131,10 @@ public class ShortcutProviderActivity extends Activity {
 	@Override
 	protected void onPause() {
 		super.onPause();
-		if(gdmReceiver != null) {
-			LocalBroadcastManager.getInstance(this).unregisterReceiver(gdmReceiver);
-		}
 	}
 
 	@Override
 	protected void onResume() {
 		super.onResume();
-		if(gdmReceiver != null) {
-			IntentFilter filters = new IntentFilter();
-			filters.addAction(GDMService.MSG_RECEIVED);
-			filters.addAction(GDMService.SOCKET_CLOSED);
-      filters.addAction(GDMReceiver.ACTION_CANCEL);
-			LocalBroadcastManager.getInstance(this).registerReceiver(gdmReceiver,
-							filters);
-		}
 	}
 }
