@@ -55,6 +55,8 @@ public class CastPlayerManager {
     public static final String ACTION_STOP = "stop";
     public static final String ACTION_SEEK = "seek";
     public static final String ACTION_GET_PLAYBACK_STATE = "getPlaybackState";
+    public static final String ACTION_NEXT = "next";
+    public static final String ACTION_PREV = "prev";
 
     public static final String PLEX_USERNAME = "plexUsername";
 
@@ -114,7 +116,8 @@ public class CastPlayerManager {
   public void unsubscribe() {
     try {
       Logger.d("is connected: %s", castManager.isConnected());
-      castManager.stopApplication();
+      if(castManager.isConnected())
+        castManager.stopApplication();
     } catch (Exception ex) {
       ex.printStackTrace();
     }
@@ -176,6 +179,26 @@ public class CastPlayerManager {
       sendMessage(obj);
     } catch (Exception ex) {}
 
+  }
+
+  public void doNext() {
+    JSONObject obj = new JSONObject();
+    try {
+      obj.put(PARAMS.ACTION, PARAMS.ACTION_NEXT);
+      sendMessage(obj);
+    } catch (Exception ex) {
+      ex.printStackTrace();
+    }
+  }
+
+  public void doPrevious() {
+    JSONObject obj = new JSONObject();
+    try {
+      obj.put(PARAMS.ACTION, PARAMS.ACTION_PREV);
+      sendMessage(obj);
+    } catch (Exception ex) {
+      ex.printStackTrace();
+    }
   }
 
   private void sendMessage(String action) {

@@ -46,11 +46,11 @@ public class NowPlayingActivity extends PlayerActivity {
 			Logger.d("found saved instance state");
 			nowPlayingMedia = savedInstanceState.getParcelable(VoiceControlForPlexApplication.Intent.EXTRA_MEDIA);
       mClient = savedInstanceState.getParcelable(VoiceControlForPlexApplication.Intent.EXTRA_CLIENT);
-      Logger.d("[NowPlaying] set mClient: %s", mClient);
+      Logger.d("[NowPlaying] set client: %s", mClient);
 		} else {
 			nowPlayingMedia = getIntent().getParcelableExtra(VoiceControlForPlexApplication.Intent.EXTRA_MEDIA);
       mClient = getIntent().getParcelableExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLIENT);
-      Logger.d("[NowPlayingActivity] 2 set mClient: %s", mClient);
+      Logger.d("[NowPlayingActivity] 2 set client: %s", mClient);
 		}
 
 		if(mClient == null || nowPlayingMedia == null)

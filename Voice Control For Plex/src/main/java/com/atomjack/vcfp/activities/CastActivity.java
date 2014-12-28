@@ -20,7 +20,6 @@ import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexMedia;
 import com.google.sample.castcompanionlibrary.cast.VideoCastManager;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -145,8 +144,8 @@ public class CastActivity extends PlayerActivity {
   }
 
 	private void beginPlayback() {
-		String url = castPlayerManager.getTranscodeUrl(nowPlayingMedia);
-		Logger.d("url: %s", url);
+//		String url = castPlayerManager.getTranscodeUrl(nowPlayingMedia);
+//		Logger.d("url: %s", url);
 		Logger.d("duration: %s", nowPlayingMedia.duration);
 
 		Logger.d("offset is %d", getOffset(nowPlayingMedia));
@@ -261,6 +260,16 @@ public class CastActivity extends PlayerActivity {
 			ex.printStackTrace();
 		}
 	}
+
+  public void doNext(View v) {
+    Logger.d("doNext");
+    castPlayerManager.doNext();
+  }
+
+  public void doPrevious(View v) {
+    Logger.d("doPrevious");
+    castPlayerManager.doPrevious();
+  }
 
 	@Override
 	public void onStopTrackingTouch(SeekBar _seekBar) {

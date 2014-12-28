@@ -321,10 +321,6 @@ public class PlexSubscription {
         Logger.d("PlexSubscription onSubscribed, client: %s, listener: %s", mClient, listener);
         if (listener != null && mClient != null) {
           listener.onSubscribed(mClient);
-//          Logger.d("Sending broadcast");
-//          Intent subscribedBroadcast = new Intent(ACTION_SUBSCRIBED);
-//          subscribedBroadcast.putExtra(EXTRA_CLIENT, mClient);
-//          LocalBroadcastManager.getInstance(listener).sendBroadcast(subscribedBroadcast);
         }
       }
     });
