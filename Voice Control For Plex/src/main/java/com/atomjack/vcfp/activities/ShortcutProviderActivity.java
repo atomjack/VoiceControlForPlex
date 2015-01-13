@@ -6,12 +6,12 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 
-import com.atomjack.vcfp.Logger;
-import com.atomjack.vcfp.Preferences;
+import com.atomjack.shared.Logger;
+import com.atomjack.shared.Preferences;
 import com.atomjack.vcfp.R;
-import com.atomjack.vcfp.ScanHandler;
-import com.atomjack.vcfp.UriDeserializer;
-import com.atomjack.vcfp.UriSerializer;
+import com.atomjack.vcfp.interfaces.ScanHandler;
+import com.atomjack.shared.UriDeserializer;
+import com.atomjack.shared.UriSerializer;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexDevice;
@@ -105,9 +105,9 @@ public class ShortcutProviderActivity extends VCFPActivity {
 		Intent launchIntent = new Intent(this, ShortcutActivity.class);
 		if(!use_current) {
 			Logger.d("setting client to %s", client.name);
-			launchIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_SERVER, gsonWrite.toJson(server));
-			launchIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLIENT, gsonWrite.toJson(client));
-			launchIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_RESUME, resume);
+			launchIntent.putExtra(com.atomjack.shared.Intent.EXTRA_SERVER, gsonWrite.toJson(server));
+			launchIntent.putExtra(com.atomjack.shared.Intent.EXTRA_CLIENT, gsonWrite.toJson(client));
+			launchIntent.putExtra(com.atomjack.shared.Intent.EXTRA_RESUME, resume);
 			String label = server.name.equals(client.name) ? server.name : (server.owned ? server.name : server.sourceTitle) + "/" + client.name;
 			sendIntent.putExtra(Intent.EXTRA_SHORTCUT_NAME, label);
 		} else

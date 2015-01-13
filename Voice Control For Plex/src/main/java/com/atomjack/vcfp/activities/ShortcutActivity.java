@@ -29,7 +29,7 @@ public class ShortcutActivity extends Activity {
       // Shortcuts created before multiple connections were supported will not have any connections at all. So let's add one to the server
       // this shortcut was created for, composed of the server's address and port.
       Gson gson = new Gson();
-      PlexServer server = gson.fromJson(getIntent().getStringExtra(VoiceControlForPlexApplication.Intent.EXTRA_SERVER), PlexServer.class);
+      PlexServer server = gson.fromJson(getIntent().getStringExtra(com.atomjack.shared.Intent.EXTRA_SERVER), PlexServer.class);
       if (server != null) {
         if (server.connections.size() == 0) {
           server.connections = new ArrayList<Connection>();
@@ -37,9 +37,9 @@ public class ShortcutActivity extends Activity {
         }
       }
 
-      serviceIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_SERVER, gson.toJson(server));
-      serviceIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLIENT, getIntent().getStringExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLIENT));
-      serviceIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_RESUME, getIntent().getBooleanExtra(VoiceControlForPlexApplication.Intent.EXTRA_RESUME, false));
+      serviceIntent.putExtra(com.atomjack.shared.Intent.EXTRA_SERVER, gson.toJson(server));
+      serviceIntent.putExtra(com.atomjack.shared.Intent.EXTRA_CLIENT, getIntent().getStringExtra(com.atomjack.shared.Intent.EXTRA_CLIENT));
+      serviceIntent.putExtra(com.atomjack.shared.Intent.EXTRA_RESUME, getIntent().getBooleanExtra(com.atomjack.shared.Intent.EXTRA_RESUME, false));
 
       SecureRandom random = new SecureRandom();
       serviceIntent.setData(Uri.parse(new BigInteger(130, random).toString(32)));

@@ -3,11 +3,16 @@ package com.atomjack.vcfp;
 import android.content.res.Resources;
 import android.os.Handler;
 
+import com.atomjack.shared.Logger;
+import com.atomjack.shared.PlayerState;
+import com.atomjack.shared.model.Timeline;
 import com.atomjack.vcfp.activities.VCFPActivity;
+import com.atomjack.vcfp.interfaces.PlayerStateHandler;
 import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexResponse;
 import com.atomjack.vcfp.net.PlexHttpClient;
+import com.atomjack.vcfp.net.PlexHttpMediaContainerHandler;
 import com.atomjack.vcfp.net.PlexHttpResponseHandler;
 
 import org.apache.http.Header;
@@ -340,6 +345,14 @@ public class PlexSubscription {
   };
 
   public void unsubscribe() {
+    unsubscribe(null);
+  }
+
+  public void unsubscribe(final Runnable onFinish) {
+    unsubscribe(true, onFinish);
+  }
+
+  public void unsubscribe(final boolean notify, final Runnable onFinish) {
     if(listener == null)
       return;
 
@@ -365,9 +378,10 @@ public class PlexSubscription {
           } catch (Exception ex) {
 //            ex.printStackTrace();
           }
-          onUnsubscribed();
-//          if (onFinish != null)
-//            onFinish.run();
+          if(notify)
+            onUnsubscribed();
+          if (onFinish != null)
+            onFinish.run();
         }
 
         @Override
@@ -415,4 +429,36 @@ public class PlexSubscription {
     void onTimelineReceived(MediaContainer mc);
     void onSubscribeError(String errorMessage);
   };
+
+  public PlexClient getClient() {
+    return mClient;
+  }
+
+  public Timeline getCurrentTimeline() {
+    Header[] headers = {
+            new BasicHeader(PlexHeaders.XPlexClientIdentifier, VoiceControlForPlexApplication.getInstance().prefs.getUUID())
+    };
+    MediaContainer mc = PlexHttpClient.getSync(String.format("http://%s:%s/player/timeline/poll?commandID=0", mClient.address, mClient.port), headers);
+    Timeline t = mc.getActiveTimeline();
+    return t;
+//    PlayerState currentState = PlayerState.getState(t);
+
+
+    /*
+    PlexHttpClient.get(String.format("http://%s:%s/player/timeline/poll?commandID=%d", mClient.address, mClient.port, commandId), headers, new PlexHttpMediaContainerHandler() {
+      @Override
+      public void onSuccess(MediaContainer mediaContainer) {
+        Timeline t = mediaContainer.getActiveTimeline();
+        if(playerStateHandler != null)
+            playerStateHandler.onSuccess(PlayerState.getState(t));
+          commandId++;
+      }
+
+      @Override
+      public void onFailure(Throwable error) {
+        commandId++;
+      }
+    });
+*/
+  }
 }

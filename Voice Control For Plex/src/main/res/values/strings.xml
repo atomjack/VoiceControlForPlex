@@ -122,4 +122,13 @@
     <string name="client_lost_connection">I lost the connection with %s.</string>
     <string name="your_current_default_client_is">Your current default client is %s.</string>
     <string name="tap_cast_icon_to_change_default_client">Tap the cast icon to change the default client.</string>
+    <string name="wear_detected_can_purchase">I have detected an Android Wear device. Wear support is available for %s. Would you like to proceed?</string>
+    <string name="wear_purchase_required">Wear support is available as an in-app purchase for %s. Would you like to proceed?</string>
+    <string name="wear_purchase_from_menu">Ok, I won\'t bother you again. If you change your mind, you can enable Wear support via the menu button.</string>
+    <string name="purchase_wear">Wear Support</string>
+    <string name="menu_wear_options">Wear Options</string>
+    <string name="wear_primary_function">Wear Notification Primary Function</string>
+    <string name="wear_primary_function_option_description">Please choose the primary function for the notification that will appear on your Wear device. You may choose between Voice Input or Play/Pause buttons. Whichever you do not choose will be a separate button (swipe up, then right).</string>
+    <string name="voice_input">Voice Input</string>
+    <string name="play_pause">Play/Pause</string>
 </resources>

@@ -28,25 +28,42 @@
             android:gravity="top"
             android:paddingLeft="8dp"
             android:paddingTop="2dp">
-            <TextView
-                android:id="@+id/title"
-                android:layout_width="wrap_content"
-                android:layout_height="25dp"
-                android:layout_toRightOf="@+id/thumb"
-                android:layout_marginTop="5sp"
-                android:textSize="18sp"
-                android:singleLine="true"
-                android:text="Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. "/>
 
-            <TextView
-                android:id="@+id/playingOn"
-                android:layout_width="wrap_content"
-                android:layout_height="27dp"
-                android:layout_below="@+id/title"
-                android:layout_toRightOf="@+id/thumb"
-                android:text="Playing on Plex"
-                android:layout_marginTop="5sp"
-                android:singleLine="true"/>
+            <RelativeLayout
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent">
+
+                <TextView
+                    android:id="@+id/playingOn"
+                    android:textAppearance="@style/NotificationText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="27dp"
+                    android:layout_below="@+id/title"
+                    android:text="Playing on Plex"
+                    android:textSize="14sp"
+                    android:layout_marginTop="5sp"
+                    android:singleLine="true"/>
+
+                <TextView
+                    android:id="@+id/title"
+                    android:textAppearance="@style/NotificationTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="25dp"
+                    android:layout_marginTop="5sp"
+                    android:textSize="18sp"
+                    android:singleLine="true"
+                    android:text="Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. "/>
+
+                <ImageButton
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/disconnectButton"
+                    android:src="@drawable/button_close"
+                    android:layout_alignParentTop="true"
+                    android:layout_alignParentRight="true"
+                    android:layout_alignParentEnd="true"
+                    android:background="@null"/>
+            </RelativeLayout>
 
 
         </LinearLayout>
@@ -55,8 +72,7 @@
             android:layout_width="fill_parent"
             android:layout_height="1dp"
             android:background="?android:attr/dividerVertical"
-            android:layout_marginLeft="4dp"
-            android:layout_marginRight="4dp">
+            >
         </FrameLayout>
 
         <LinearLayout
@@ -69,7 +85,7 @@
                 android:layout_width="0dp"
                 android:layout_height="42dp"
                 android:id="@+id/rewindButton"
-                android:src="@drawable/button_rewind"
+                android:src="@drawable/notif_back15"
                 android:background="@null"
                 android:layout_weight="1"
                 android:layout_marginTop="8dp"/>
@@ -80,6 +96,7 @@
                 android:layout_marginTop="4dp"
                 android:layout_marginBottom="4dp"
                 android:background="?android:attr/dividerHorizontal">
+
             </FrameLayout>
 
             <RelativeLayout
@@ -106,6 +123,23 @@
                     android:layout_gravity="center_vertical"
                     android:baselineAlignBottom="false"/>
             </RelativeLayout>
+
+            <FrameLayout
+                android:layout_width="1dp"
+                android:layout_height="fill_parent"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="4dp"
+                android:background="?android:attr/dividerHorizontal">
+            </FrameLayout>
+
+            <ImageButton
+                android:layout_width="0dp"
+                android:layout_height="42dp"
+                android:id="@+id/forwardButton"
+                android:src="@drawable/notif_ff30"
+                android:layout_marginTop="8dp"
+                android:background="@null"
+                android:layout_weight="1"/>
 
         </LinearLayout>
     </LinearLayout>

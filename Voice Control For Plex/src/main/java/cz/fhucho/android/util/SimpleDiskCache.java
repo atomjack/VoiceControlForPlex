@@ -1,12 +1,5 @@
 package cz.fhucho.android.util;
 
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-
-import com.jakewharton.disklrucache.DiskLruCache;
-
-import org.apache.commons.io.IOUtils;
-
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -25,6 +18,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+
+import com.jakewharton.disklrucache.DiskLruCache;
+
+import org.apache.commons.io.IOUtils;
 
 /**
  * Adapted from https://github.com/fhucho/simple-disk-cache

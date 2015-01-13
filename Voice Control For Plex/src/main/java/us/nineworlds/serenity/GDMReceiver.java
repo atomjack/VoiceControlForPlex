@@ -6,7 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 
 import com.atomjack.vcfp.GDMService;
-import com.atomjack.vcfp.Logger;
+import com.atomjack.shared.Logger;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.activities.VCFPActivity;
 import com.atomjack.vcfp.model.Connection;
@@ -69,24 +69,24 @@ public class GDMReceiver extends BroadcastReceiver {
         return;
       }
 
-      String scanType = intent.getStringExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE);
+      String scanType = intent.getStringExtra(com.atomjack.shared.Intent.SCAN_TYPE);
 
         // Send the reply back to whichever class called for it.
-      Class theClass = (Class) intent.getSerializableExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLASS);
+      Class theClass = (Class) intent.getSerializableExtra(com.atomjack.shared.Intent.EXTRA_CLASS);
       Intent i = new Intent(context, theClass);
 
-      i.setAction(scanType.equals(VoiceControlForPlexApplication.Intent.SCAN_TYPE_SERVER) ? PlexScannerService.ACTION_SERVER_SCAN_FINISHED : PlexScannerService.ACTION_CLIENT_SCAN_FINISHED);
+      i.setAction(scanType.equals(com.atomjack.shared.Intent.SCAN_TYPE_SERVER) ? PlexScannerService.ACTION_SERVER_SCAN_FINISHED : PlexScannerService.ACTION_CLIENT_SCAN_FINISHED);
 
-      i.putExtra(VoiceControlForPlexApplication.Intent.SHOWRESOURCE, intent.getBooleanExtra(VoiceControlForPlexApplication.Intent.SHOWRESOURCE, false));
+      i.putExtra(com.atomjack.shared.Intent.SHOWRESOURCE, intent.getBooleanExtra(com.atomjack.shared.Intent.SHOWRESOURCE, false));
 
 
-      if (clients.size() > 0 && scanType.equals(VoiceControlForPlexApplication.Intent.SCAN_TYPE_CLIENT))
-        i.putParcelableArrayListExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLIENTS, clients);
+      if (clients.size() > 0 && scanType.equals(com.atomjack.shared.Intent.SCAN_TYPE_CLIENT))
+        i.putParcelableArrayListExtra(com.atomjack.shared.Intent.EXTRA_CLIENTS, clients);
 
-      i.putExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE, intent.getStringExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE));
-      i.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_CONNECT_TO_CLIENT, intent.getBooleanExtra(VoiceControlForPlexApplication.Intent.EXTRA_CONNECT_TO_CLIENT, false));
-      i.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLASS, theClass);
-      i.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_SILENT, intent.getBooleanExtra(VoiceControlForPlexApplication.Intent.EXTRA_SILENT, false));
+      i.putExtra(com.atomjack.shared.Intent.SCAN_TYPE, intent.getStringExtra(com.atomjack.shared.Intent.SCAN_TYPE));
+      i.putExtra(com.atomjack.shared.Intent.EXTRA_CONNECT_TO_CLIENT, intent.getBooleanExtra(com.atomjack.shared.Intent.EXTRA_CONNECT_TO_CLIENT, false));
+      i.putExtra(com.atomjack.shared.Intent.EXTRA_CLASS, theClass);
+      i.putExtra(com.atomjack.shared.Intent.EXTRA_SILENT, intent.getBooleanExtra(com.atomjack.shared.Intent.EXTRA_SILENT, false));
 
       i.addFlags(Intent.FLAG_FROM_BACKGROUND);
       i.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);

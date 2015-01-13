@@ -2,7 +2,7 @@ package com.atomjack.vcfp.net;
 
 import android.content.res.Resources;
 
-import com.atomjack.vcfp.Logger;
+import com.atomjack.shared.Logger;
 import com.atomjack.vcfp.PlexHeaders;
 import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.Pin;

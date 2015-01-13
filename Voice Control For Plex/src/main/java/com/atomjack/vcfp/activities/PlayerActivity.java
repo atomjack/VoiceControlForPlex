@@ -10,8 +10,8 @@ import android.widget.ImageButton;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
-import com.atomjack.vcfp.Logger;
-import com.atomjack.vcfp.Preferences;
+import com.atomjack.shared.Logger;
+import com.atomjack.shared.Preferences;
 import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.model.PlexMedia;
@@ -47,9 +47,9 @@ public abstract class PlayerActivity extends VCFPActivity implements SeekBar.OnS
 		Logger.d("server: %s", server);
 		if(server != null) {
 
-			serviceIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_SERVER, gson.toJson(server));
-			serviceIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLIENT, gson.toJson(mClient));
-			serviceIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_RESUME, resumePlayback);
+			serviceIntent.putExtra(com.atomjack.shared.Intent.EXTRA_SERVER, gson.toJson(server));
+			serviceIntent.putExtra(com.atomjack.shared.Intent.EXTRA_CLIENT, gson.toJson(mClient));
+			serviceIntent.putExtra(com.atomjack.shared.Intent.EXTRA_RESUME, resumePlayback);
 
 			SecureRandom random = new SecureRandom();
 			serviceIntent.setData(Uri.parse(new BigInteger(130, random).toString(32)));
@@ -153,4 +153,6 @@ public abstract class PlayerActivity extends VCFPActivity implements SeekBar.OnS
 	@Override
 	public void onStopTrackingTouch(SeekBar seekBar) {
 	}
+
+  public abstract void doStop(View v);
 }

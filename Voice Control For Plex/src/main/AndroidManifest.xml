@@ -2,8 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
           xmlns:tools="http://schemas.android.com/tools"
     package="com.atomjack.vcfp"
-    android:versionCode="31"
-    android:versionName="1.9.4" >
+    android:versionCode="32"
+    android:versionName="2.0b1" >
 
     <uses-permission android:name="com.mohammadag.googlesearchapi.permission.ACCESS_GGOGLE_SEARCH_API" />
     <uses-permission android:name="android.permission.INTERNET" />
@@ -40,6 +40,12 @@
         </activity>
         <service android:name=".services.PlexSearchService"
                   android:label="Plex Search">
+        </service>
+        <service android:name=".services.WearListenerService"
+                 android:label="Wear Listener">
+            <intent-filter>
+                <action android:name="com.google.android.gms.wearable.BIND_LISTENER" />
+            </intent-filter>
         </service>
         <activity
             android:name=".activities.NowPlayingActivity"

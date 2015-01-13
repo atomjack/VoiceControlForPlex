@@ -22,6 +22,13 @@
           android:title="@string/menu_logout"
           android:onClick="logout"
           android:visible="false"></item>
+    <item android:id="@+id/menu_purchase_wear"
+          android:title="@string/purchase_wear"
+          android:onClick="purchaseWear"></item>
+    <item android:id="@+id/menu_wear_options"
+          android:title="@string/menu_wear_options"
+          android:onClick="showWearOptions"
+          android:visible="false"></item>
     <item android:id="@+id/menu_install_short"
           android:title="@string/menu_install_shortcut"
           android:onClick="installShortcut">

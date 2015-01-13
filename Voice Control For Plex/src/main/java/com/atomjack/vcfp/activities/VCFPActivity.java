@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Configuration;
+import android.graphics.Bitmap;
 import android.graphics.drawable.AnimationDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.ConnectivityManager;
@@ -26,20 +27,24 @@ import android.widget.ListView;
 import com.android.vending.billing.IabHelper;
 import com.android.vending.billing.IabResult;
 import com.android.vending.billing.Purchase;
+import com.atomjack.shared.SendToDataLayerThread;
+import com.atomjack.shared.WearConstants;
 import com.atomjack.vcfp.BuildConfig;
 import com.atomjack.vcfp.CastPlayerManager;
 import com.atomjack.vcfp.Feedback;
-import com.atomjack.vcfp.Logger;
+import com.atomjack.shared.Logger;
 import com.atomjack.vcfp.NetworkMonitor;
-import com.atomjack.vcfp.PlayerState;
+import com.atomjack.shared.PlayerState;
 import com.atomjack.vcfp.PlexHeaders;
 import com.atomjack.vcfp.PlexSubscription;
-import com.atomjack.vcfp.Preferences;
+import com.atomjack.shared.Preferences;
 import com.atomjack.vcfp.R;
-import com.atomjack.vcfp.ScanHandler;
-import com.atomjack.vcfp.ServerFindHandler;
-import com.atomjack.vcfp.UriDeserializer;
-import com.atomjack.vcfp.UriSerializer;
+import com.atomjack.vcfp.interfaces.BitmapHandler;
+import com.atomjack.vcfp.interfaces.PlayerStateHandler;
+import com.atomjack.vcfp.interfaces.ScanHandler;
+import com.atomjack.vcfp.interfaces.ServerFindHandler;
+import com.atomjack.shared.UriDeserializer;
+import com.atomjack.shared.UriSerializer;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.adapters.PlexListAdapter;
 import com.atomjack.vcfp.model.MediaContainer;
@@ -49,11 +54,13 @@ import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexServer;
 import com.atomjack.vcfp.model.PlexTrack;
 import com.atomjack.vcfp.model.PlexVideo;
-import com.atomjack.vcfp.model.Timeline;
+import com.atomjack.shared.model.Timeline;
 import com.atomjack.vcfp.net.PlexHttpClient;
 import com.atomjack.vcfp.net.PlexHttpMediaContainerHandler;
 import com.atomjack.vcfp.services.PlexScannerService;
+import com.atomjack.vcfp.services.WearListenerService;
 import com.bugsense.trace.BugSenseHandler;
+import com.google.android.gms.wearable.DataMap;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.loopj.android.http.BinaryHttpResponseHandler;
@@ -149,6 +156,8 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
       mClient = plexSubscription.mClient;
     } else {
       Logger.d("Not subscribed: %s", plexSubscription.mClient);
+      // In case the notification is still up due to a crash
+      VoiceControlForPlexApplication.getInstance().cancelNotification();
     }
 
     networkMonitor = new NetworkMonitor(this);
@@ -199,6 +208,7 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
               if (timeline.continuing != null && timeline.continuing.equals("1"))
                 continuing = true;
               onMediaChange();
+              sendWearPlaybackChange();
             }
 					}
 
@@ -227,6 +237,7 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
         Logger.d("[VCFPActivity] subscribed: %s", isSubscribed());
         Logger.d("[VCFPActivity] subscribing: %s", subscribing);
 				if(!isSubscribed() && !subscribing) {
+          clientScanCanceled = false;
           if(VoiceControlForPlexApplication.clients.size() == 0 && !VoiceControlForPlexApplication.hasDoneClientScan) {
             searchForPlexClients(true);
           } else {
@@ -236,13 +247,13 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
           }
 				} else if(!subscribing) {
           // For some reason we sometimes lose mClient here, even though we're subscribed. If we do, let's try to get the client from the subscription manager
-          if(mClient == null) {
-            Logger.d("[VCFPActivity] 0Lost subscribed client.");
+//          if(mClient == null) {
+//            Logger.d("[VCFPActivity] 0Lost subscribed client.");
             if(castPlayerManager.mClient != null)
               mClient = castPlayerManager.mClient;
             else if(plexSubscription.mClient != null)
               mClient = plexSubscription.mClient;
-          }
+//          }
           if(mClient == null) {
             Logger.d("Lost subscribed client.");
             setCastIconInactive();
@@ -339,6 +350,51 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
             }).create().show();
   }
 
+  protected void showWearPurchaseRequired() {
+    showWearPurchase(R.string.wear_purchase_required, false);
+  }
+
+  protected void showWearPurchase() {
+    showWearPurchase(R.string.wear_detected_can_purchase, true);
+  }
+
+  protected void showWearPurchase(boolean showPurchaseFromMenu) {
+    showWearPurchase(R.string.wear_detected_can_purchase, showPurchaseFromMenu);
+  }
+
+  protected void showWearPurchase(int stringResource, final boolean showPurchaseFromMenu) {
+    new AlertDialog.Builder(VCFPActivity.this)
+            .setMessage(String.format(getString(stringResource), VoiceControlForPlexApplication.getWearPrice()))
+            .setCancelable(false)
+            .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+              @Override
+              public void onClick(DialogInterface dialogInterface, int i) {
+                VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.HAS_SHOWN_WEAR_PURCHASE_POPUP, true);
+                dialogInterface.cancel();
+                VoiceControlForPlexApplication.getInstance().getIabHelper().launchPurchaseFlow(VCFPActivity.this,
+                        VoiceControlForPlexApplication.SKU_WEAR, 10001, mPurchaseFinishedListener,
+                        VoiceControlForPlexApplication.SKU_TEST_PURCHASED == VoiceControlForPlexApplication.SKU_WEAR ? VoiceControlForPlexApplication.getInstance().getEmailHash() : "");
+              }
+            })
+            .setNeutralButton(R.string.no_thanks, new DialogInterface.OnClickListener() {
+              public void onClick(DialogInterface dialog, int id) {
+                dialog.cancel();
+                VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.HAS_SHOWN_WEAR_PURCHASE_POPUP, true);
+                if(showPurchaseFromMenu) {
+                  new AlertDialog.Builder(VCFPActivity.this)
+                          .setMessage(R.string.wear_purchase_from_menu)
+                          .setCancelable(false)
+                          .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                              dialog.cancel();
+                            }
+                          }).create().show();
+                }
+              }
+            }).create().show();
+  }
+
   IabHelper.OnIabPurchaseFinishedListener mPurchaseFinishedListener
           = new IabHelper.OnIabPurchaseFinishedListener() {
     public void onIabPurchaseFinished(IabResult result, Purchase purchase)
@@ -359,9 +415,18 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
         if(postChromecastPurchaseAction != null) {
           postChromecastPurchaseAction.run();
         }
+      } else if(purchase.getSku().equals(VoiceControlForPlexApplication.SKU_WEAR)) {
+        Logger.d("Purchased Wear Support!");
+        VoiceControlForPlexApplication.getInstance().setHasWear(true);
+        hidePurchaseWearMenuItem();
+        // Send a message to the wear device that wear support has been purchased
+        new SendToDataLayerThread(WearConstants.WEAR_PURCHASED, VCFPActivity.this).start();
       }
     }
   };
+
+  protected void hidePurchaseWearMenuItem() {
+  }
 
 	@Override
 	protected void onDestroy() {
@@ -477,7 +542,7 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
     if(timelines != null) {
       for (Timeline timeline : timelines) {
         if (timeline.key != null) {
-//          Logger.d("state: %s", timeline.state);
+//          Logger.d("[VCFPActivity] onTimelineReceived: %s", timeline.state);
 //          Logger.d("nowPlayingMedia: %s", nowPlayingMedia);
           // Get this media's info
           PlexServer server = null;
@@ -501,11 +566,9 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
               mCurrentState = PlayerState.getState(timeline.state);
               nowPlayingMedia.viewOffset = Integer.toString(timeline.time);
               if(oldState != mCurrentState) {
+                sendWearPlaybackChange();
                 if(mCurrentState == PlayerState.PLAYING) {
                   Logger.d("mClient is now playing");
-                  if(mCurrentState == PlayerState.STOPPED) {
-                    // We're already subscribed and the mClient has started playing
-                  }
                 } else if(mCurrentState == PlayerState.PAUSED) {
                   Logger.d("mClient is now paused");
                 } else if(mCurrentState == PlayerState.STOPPED) {
@@ -541,6 +604,7 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
     setCastIconInactive();
     nowPlayingMedia = null;
     VoiceControlForPlexApplication.getInstance().cancelNotification();
+    sendWearPlaybackChange();
     feedback.m(R.string.disconnected);
   }
 
@@ -777,6 +841,7 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
     deviceSelectDialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
       @Override
       public void onCancel(DialogInterface dialogInterface) {
+        Logger.d("[VCFPActivity] setting clientScanCanceled to true");
         clientScanCanceled = true;
         subscribing = false;
       }
@@ -818,7 +883,7 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
     Intent scannerIntent = new Intent(VCFPActivity.this, PlexScannerService.class);
     scannerIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
     scannerIntent.putExtra(PlexScannerService.CLASS, MainActivity.class);
-    scannerIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_CONNECT_TO_CLIENT, connectToClient);
+    scannerIntent.putExtra(com.atomjack.shared.Intent.EXTRA_CONNECT_TO_CLIENT, connectToClient);
     scannerIntent.setAction(PlexScannerService.ACTION_SCAN_CLIENTS);
     startService(scannerIntent);
   }
@@ -828,5 +893,63 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
     PlexListAdapter adapter = (PlexListAdapter)serverListView.getAdapter();
     adapter.setClients(VoiceControlForPlexApplication.getAllClients());
     adapter.notifyDataSetChanged();
+  }
+
+
+  public void sendWearPlaybackChange() {
+    if(VoiceControlForPlexApplication.getInstance().hasWear()) {
+      Logger.d("[VCFPActivity] subscribed: %s", plexSubscription.isSubscribed());
+      if(!plexSubscription.isSubscribed() && !castPlayerManager.isSubscribed()) {
+        new SendToDataLayerThread(WearConstants.DISCONNECTED, this).start();
+      } else {
+        Logger.d("Sending Wear Notification: %s", mCurrentState);
+        final DataMap data = new DataMap();
+        String msg = null;
+        if (mCurrentState == PlayerState.PLAYING) {
+          data.putString(WearConstants.MEDIA_TITLE, nowPlayingMedia.title);
+//        data.putString(WearConstants.IMAGE, nowPlayingMedia.art);
+          msg = WearConstants.MEDIA_PLAYING;
+        } else if (mCurrentState == PlayerState.STOPPED) {
+          msg = WearConstants.MEDIA_STOPPED;
+        } else if (mCurrentState == PlayerState.PAUSED) {
+          msg = WearConstants.MEDIA_PAUSED;
+        }
+        if (msg != null) {
+          if (msg.equals(WearConstants.MEDIA_PLAYING)) {
+            VoiceControlForPlexApplication.getWearMediaImage(nowPlayingMedia, new BitmapHandler() {
+              @Override
+              public void onSuccess(Bitmap bitmap) {
+                DataMap binaryDataMap = new DataMap();
+                binaryDataMap.putAll(data);
+                binaryDataMap.putAsset(WearConstants.IMAGE, VoiceControlForPlexApplication.createAssetFromBitmap(bitmap));
+                new SendToDataLayerThread(WearConstants.RECEIVE_MEDIA_IMAGE, binaryDataMap, VCFPActivity.this).sendDataItem();
+              }
+            });
+          }
+          new SendToDataLayerThread(msg, data, this).start();
+        }
+      }
+    }
+  }
+
+  @Override
+  protected void onNewIntent(Intent intent) {
+    Logger.d("[VCFPActivity] onNewIntent: %s", intent.getAction());
+    if(intent.getAction() != null) {
+      if(intent.getAction().equals(com.atomjack.shared.Intent.ACTION_PAUSE) || intent.getAction().equals(com.atomjack.shared.Intent.ACTION_PLAY)) {
+        VoiceControlForPlexApplication.getInstance().plexSubscription.getListener().doPlayPause();
+      }
+    }
+  }
+
+  public PlexMedia getNowPlayingMedia() {
+    return nowPlayingMedia;
+  }
+
+  public void doPlayPause() {}
+  public void doPlayPause(View v) {}
+
+  public PlexClient getClient() {
+    return mClient;
   }
 }

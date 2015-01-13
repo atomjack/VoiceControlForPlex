@@ -6,11 +6,11 @@ import android.view.Menu;
 import android.view.View;
 import android.widget.SeekBar;
 
-import com.atomjack.vcfp.AfterTransientTokenRequest;
-import com.atomjack.vcfp.Logger;
-import com.atomjack.vcfp.PlayerState;
+import com.atomjack.vcfp.interfaces.AfterTransientTokenRequest;
+import com.atomjack.shared.Logger;
+import com.atomjack.shared.PlayerState;
 import com.atomjack.vcfp.PlexHeaders;
-import com.atomjack.vcfp.Preferences;
+import com.atomjack.shared.Preferences;
 import com.atomjack.vcfp.QueryString;
 import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.Utils;
@@ -39,10 +39,10 @@ public class CastActivity extends PlayerActivity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-    mClient = getIntent().getParcelableExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLIENT);
+    mClient = getIntent().getParcelableExtra(com.atomjack.shared.Intent.EXTRA_CLIENT);
     Logger.d("[CastActivity] set mClient: %s", mClient);
-    nowPlayingMedia = getIntent().getParcelableExtra(VoiceControlForPlexApplication.Intent.EXTRA_MEDIA);
-    nowPlayingAlbum = getIntent().getParcelableArrayListExtra(VoiceControlForPlexApplication.Intent.EXTRA_ALBUM);
+    nowPlayingMedia = getIntent().getParcelableExtra(com.atomjack.shared.Intent.EXTRA_MEDIA);
+    nowPlayingAlbum = getIntent().getParcelableArrayListExtra(com.atomjack.shared.Intent.EXTRA_ALBUM);
     resumePlayback = getIntent().getBooleanExtra("resume", false);
     castManager = castPlayerManager.getCastManager();
 
@@ -52,7 +52,7 @@ public class CastActivity extends PlayerActivity {
 
     Logger.d("[CastActivity] starting up, action: %s, current state: %s", getIntent().getAction(), castPlayerManager.getCurrentState());
     Logger.d("mClient: %s", mClient);
-		if(getIntent().getAction() != null && getIntent().getAction().equals(VoiceControlForPlexApplication.Intent.CAST_MEDIA)) {
+		if(getIntent().getAction() != null && getIntent().getAction().equals(com.atomjack.shared.Intent.CAST_MEDIA)) {
 
 			Logger.d("Casting %s", nowPlayingMedia.title);
 
@@ -65,7 +65,7 @@ public class CastActivity extends PlayerActivity {
       }
 		} else {
       Logger.d("[CastActivity] No action found.");
-      if(castPlayerManager.getCurrentState().equals(NowPlayingActivity.PlayerState.STOPPED))
+      if(castPlayerManager.getCurrentState().equals(PlayerState.STOPPED))
         finish();
       else {
         showNowPlaying();
@@ -224,6 +224,7 @@ public class CastActivity extends PlayerActivity {
 		super.onDestroy();
 	}
 
+  @Override
 	public void doPlayPause(View v) {
 		try {
       Logger.d("doPlayPause, currentState: %s", currentState);
@@ -253,6 +254,7 @@ public class CastActivity extends PlayerActivity {
     }
 	}
 
+  @Override
 	public void doStop(View v) {
 		try {
       castPlayerManager.stop();

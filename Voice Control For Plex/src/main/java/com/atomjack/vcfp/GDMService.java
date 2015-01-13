@@ -7,6 +7,8 @@ import android.net.DhcpInfo;
 import android.net.wifi.WifiManager;
 import android.support.v4.content.LocalBroadcastManager;
 
+import com.atomjack.shared.Logger;
+
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -50,7 +52,7 @@ public class GDMService extends IntentService {
               Intent packetBroadcast = new Intent(GDMService.MSG_RECEIVED);
               packetBroadcast.putExtra("data", packetData);
               packetBroadcast.putExtra("ipaddress", packet.getAddress().toString());
-              packetBroadcast.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLASS, intent.getSerializableExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLASS));
+              packetBroadcast.putExtra(com.atomjack.shared.Intent.EXTRA_CLASS, intent.getSerializableExtra(com.atomjack.shared.Intent.EXTRA_CLASS));
               LocalBroadcastManager.getInstance(this).sendBroadcast(packetBroadcast);
             }
           } catch (SocketTimeoutException e) {
@@ -58,10 +60,10 @@ public class GDMService extends IntentService {
             socket.close();
             listening = false;
             Intent socketBroadcast = new Intent(GDMService.SOCKET_CLOSED);
-            socketBroadcast.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_SILENT, intent.getBooleanExtra(VoiceControlForPlexApplication.Intent.EXTRA_SILENT, false));
-            socketBroadcast.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLASS, intent.getSerializableExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLASS));
-            socketBroadcast.putExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE, intent.getStringExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE));
-            socketBroadcast.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_CONNECT_TO_CLIENT, intent.getBooleanExtra(VoiceControlForPlexApplication.Intent.EXTRA_CONNECT_TO_CLIENT, false));
+            socketBroadcast.putExtra(com.atomjack.shared.Intent.EXTRA_SILENT, intent.getBooleanExtra(com.atomjack.shared.Intent.EXTRA_SILENT, false));
+            socketBroadcast.putExtra(com.atomjack.shared.Intent.EXTRA_CLASS, intent.getSerializableExtra(com.atomjack.shared.Intent.EXTRA_CLASS));
+            socketBroadcast.putExtra(com.atomjack.shared.Intent.SCAN_TYPE, intent.getStringExtra(com.atomjack.shared.Intent.SCAN_TYPE));
+            socketBroadcast.putExtra(com.atomjack.shared.Intent.EXTRA_CONNECT_TO_CLIENT, intent.getBooleanExtra(com.atomjack.shared.Intent.EXTRA_CONNECT_TO_CLIENT, false));
             LocalBroadcastManager.getInstance(this).sendBroadcast(socketBroadcast);
           }
         }

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Wear Control For Plex</string>
+    <string name="ready_to_cast_to">Ready to cast to %s</string>
+    <string name="hello_square">Hello Square World!</string>
+    <string name="purchase_required">Purchased Required</string>
+    <string name="wear_support_must_be_purchased">Wear Support must be purchased. Please check your handheld.</string>
+    <string name="pause">Pause</string>
+    <string name="play">Play</string>
+    <string name="voice_input_label">Speak now</string>
+    <string-array name="voice_input_examples">
+        <item>Pause Playback</item>
+        <item>Resume Playback</item>
+        <item>Stop Playback</item>
+    </string-array>
+</resources>

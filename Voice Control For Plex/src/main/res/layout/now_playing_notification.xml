@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
              android:layout_width="match_parent"
              android:layout_height="64dp">
@@ -14,7 +13,7 @@
         android:layout_width="130dp"
         android:layout_height="fill_parent"
         android:layout_gravity="center_vertical|right"
-        >
+        android:layout_marginTop="8sp">
 
         <ImageButton
             android:layout_width="42dp"

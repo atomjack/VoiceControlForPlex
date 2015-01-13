@@ -9,9 +9,9 @@ import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
 
 import com.atomjack.vcfp.GDMService;
-import com.atomjack.vcfp.Logger;
+import com.atomjack.shared.Logger;
 import com.atomjack.vcfp.PlexHeaders;
-import com.atomjack.vcfp.Preferences;
+import com.atomjack.shared.Preferences;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.model.Device;
 import com.atomjack.vcfp.model.MediaContainer;
@@ -64,9 +64,10 @@ public class PlexScannerService extends Service {
         scanForServers();
       } else if(action.equals(ACTION_SCAN_CLIENTS)) {
         setClass(intent);
-        scanForClients(intent.getBooleanExtra(VoiceControlForPlexApplication.Intent.EXTRA_CONNECT_TO_CLIENT, false));
+        scanForClients(intent.getBooleanExtra(com.atomjack.shared.Intent.EXTRA_CONNECT_TO_CLIENT, false));
       } else if(action.equals(ACTION_SERVER_SCAN_FINISHED)) {
         Logger.d("local server scan finished");
+        Logger.d("is logged in: %s", isLoggedIn());
         localServerScanFinished = true;
         if(remoteServerScanFinished || !isLoggedIn()) {
           onServerScanFinished();
@@ -127,9 +128,9 @@ public class PlexScannerService extends Service {
     Logger.d("Doing local scan for servers");
     Intent mServiceIntent = new Intent(this, GDMService.class);
     mServiceIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-//    mServiceIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_SILENT, silent);
-    mServiceIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLASS, PlexScannerService.class);
-    mServiceIntent.putExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE, VoiceControlForPlexApplication.Intent.SCAN_TYPE_SERVER);
+//    mServiceIntent.putExtra(com.atomjack.shared.Intent.EXTRA_SILENT, silent);
+    mServiceIntent.putExtra(com.atomjack.shared.Intent.EXTRA_CLASS, PlexScannerService.class);
+    mServiceIntent.putExtra(com.atomjack.shared.Intent.SCAN_TYPE, com.atomjack.shared.Intent.SCAN_TYPE_SERVER);
     startService(mServiceIntent);
 
   }
@@ -142,9 +143,9 @@ public class PlexScannerService extends Service {
     Intent mServiceIntent = new Intent(this, GDMService.class);
     mServiceIntent.putExtra(GDMService.PORT, 32412); // Port for clients
     mServiceIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-    mServiceIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLASS, callingClass);
-    mServiceIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_CONNECT_TO_CLIENT, connectToClient);
-    mServiceIntent.putExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE, VoiceControlForPlexApplication.Intent.SCAN_TYPE_CLIENT);
+    mServiceIntent.putExtra(com.atomjack.shared.Intent.EXTRA_CLASS, callingClass);
+    mServiceIntent.putExtra(com.atomjack.shared.Intent.EXTRA_CONNECT_TO_CLIENT, connectToClient);
+    mServiceIntent.putExtra(com.atomjack.shared.Intent.SCAN_TYPE, com.atomjack.shared.Intent.SCAN_TYPE_CLIENT);
     startService(mServiceIntent);
     VoiceControlForPlexApplication.hasDoneClientScan = true;
   }

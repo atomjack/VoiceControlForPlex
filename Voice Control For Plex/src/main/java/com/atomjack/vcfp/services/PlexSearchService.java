@@ -1,6 +1,7 @@
 package com.atomjack.vcfp.services;
 
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -9,19 +10,21 @@ import android.speech.RecognizerIntent;
 import android.support.v7.media.MediaRouteSelector;
 import android.support.v7.media.MediaRouter;
 
-import com.atomjack.vcfp.AfterTransientTokenRequest;
+import com.atomjack.shared.SendToDataLayerThread;
+import com.atomjack.shared.WearConstants;
+import com.atomjack.vcfp.interfaces.AfterTransientTokenRequest;
 import com.atomjack.vcfp.BuildConfig;
 import com.atomjack.vcfp.CastPlayerManager;
 import com.atomjack.vcfp.Feedback;
-import com.atomjack.vcfp.Logger;
+import com.atomjack.shared.Logger;
 import com.atomjack.vcfp.PlexHeaders;
 import com.atomjack.vcfp.PlexSubscription;
-import com.atomjack.vcfp.Preferences;
+import com.atomjack.shared.Preferences;
 import com.atomjack.vcfp.QueryString;
 import com.atomjack.vcfp.R;
-import com.atomjack.vcfp.ServerFindHandler;
-import com.atomjack.vcfp.UriDeserializer;
-import com.atomjack.vcfp.UriSerializer;
+import com.atomjack.vcfp.interfaces.ServerFindHandler;
+import com.atomjack.shared.UriDeserializer;
+import com.atomjack.shared.UriSerializer;
 import com.atomjack.vcfp.Utils;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.activities.CastActivity;
@@ -48,6 +51,8 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
+import com.google.android.gms.wearable.DataMap;
+import com.google.android.gms.wearable.Wearable;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -64,7 +69,7 @@ import java.util.regex.Pattern;
 public class PlexSearchService extends Service {
 
 	private String queryText;
-	private Feedback feedback;
+	private SearchFeedback feedback;
 	private Gson gsonRead = new GsonBuilder()
 					.registerTypeAdapter(Uri.class, new UriDeserializer())
 					.create();
@@ -97,6 +102,9 @@ public class PlexSearchService extends Service {
   private PlexSubscription plexSubscription;
 
   private VCFPActivity.NetworkState currentNetworkState;
+
+  private boolean fromWear = false;
+  GoogleApiClient googleApiClient;
 
 	// Chromecast
 	MediaRouter mMediaRouter;
@@ -137,10 +145,14 @@ public class PlexSearchService extends Service {
       Logger.d("CAST MANAGER IS SUBSCRIBED");
     }
 
+    if(intent.getBooleanExtra(WearConstants.FROM_WEAR, false) == true) {
+      fromWear = true;
+    }
+
     currentNetworkState = VCFPActivity.NetworkState.getCurrentNetworkState(this);
 
 		Logger.d("action: %s", intent.getAction());
-		Logger.d("scan type: %s", intent.getStringExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE));
+		Logger.d("scan type: %s", intent.getStringExtra(com.atomjack.shared.Intent.SCAN_TYPE));
 		if(intent.getAction() != null) {
       if (intent.getAction().equals(PlexScannerService.ACTION_SERVER_SCAN_FINISHED)) {
         // We just scanned for servers and are returning from that, so set the servers we found
@@ -153,7 +165,7 @@ public class PlexSearchService extends Service {
       } else if (intent.getAction().equals(PlexScannerService.ACTION_CLIENT_SCAN_FINISHED)) {
         // Got back from client scan, so set didClientScan to true so we don't do this again, and save the clients we got, then continue
         didClientScan = true;
-        ArrayList<PlexClient> cs = intent.getParcelableArrayListExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLIENTS);
+        ArrayList<PlexClient> cs = intent.getParcelableArrayListExtra(com.atomjack.shared.Intent.EXTRA_CLIENTS);
         if (cs != null) {
           VoiceControlForPlexApplication.clients = new HashMap<String, PlexClient>();
           for (PlexClient c : cs) {
@@ -205,13 +217,13 @@ public class PlexSearchService extends Service {
       clients.putAll(VoiceControlForPlexApplication.castClients);
 			resumePlayback = false;
 
-			specifiedServer = gsonRead.fromJson(intent.getStringExtra(VoiceControlForPlexApplication.Intent.EXTRA_SERVER), PlexServer.class);
+			specifiedServer = gsonRead.fromJson(intent.getStringExtra(com.atomjack.shared.Intent.EXTRA_SERVER), PlexServer.class);
 			if(specifiedServer != null)
 				Logger.d("specified server %s", specifiedServer);
-			PlexClient thisClient = gsonRead.fromJson(intent.getStringExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLIENT), PlexClient.class);
+			PlexClient thisClient = gsonRead.fromJson(intent.getStringExtra(com.atomjack.shared.Intent.EXTRA_CLIENT), PlexClient.class);
 			if(thisClient != null)
 				client = thisClient;
-			if(intent.getBooleanExtra(VoiceControlForPlexApplication.Intent.EXTRA_RESUME, false))
+			if(intent.getBooleanExtra(com.atomjack.shared.Intent.EXTRA_RESUME, false))
 				resumePlayback = true;
 
 			if (intent.getExtras().getStringArrayList(RecognizerIntent.EXTRA_RESULTS) != null) {
@@ -232,11 +244,13 @@ public class PlexSearchService extends Service {
 			} else {
 				// Received spoken query from Google Search API
 				Logger.d("Google Search API query");
-				queries.add(intent.getStringExtra(VoiceControlForPlexApplication.Intent.EXTRA_QUERYTEXT));
+				queries.add(intent.getStringExtra(com.atomjack.shared.Intent.EXTRA_QUERYTEXT));
 			}
 
-			if(client == null)
-				client = gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.CLIENT, ""), PlexClient.class);
+			if(client == null) {
+        client = gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.CLIENT, ""), PlexClient.class);
+        Logger.d("[PlexSearchService] set client to %s", client);
+      }
 
 			if(client == null && didClientScan) {
 				// No mClient set in options, and either none specified in the query or I just couldn't find it.
@@ -265,7 +279,7 @@ public class PlexSearchService extends Service {
 	public void onCreate() {
 		Logger.d("PlexSearch onCreate");
 		queryText = null;
-		feedback = new Feedback(this);
+		feedback = new SearchFeedback(this);
 	}
 
 	@Override
@@ -303,7 +317,7 @@ public class PlexSearchService extends Service {
 			setClient();
 		} else if(specifiedServer == null && defaultServer != null && !defaultServer.name.equals(getResources().getString(R.string.scan_all))) {
 			// Use the server specified in the main settings
-			Logger.d("Using server and mClient specified in main settings");
+			Logger.d("Using server and client specified in main settings");
 			plexmediaServers = new ConcurrentHashMap<String, PlexServer>();
 			plexmediaServers.put(defaultServer.name, defaultServer);
 			setClient();
@@ -818,7 +832,9 @@ public class PlexSearchService extends Service {
 				@Override
 				public void onSuccess() {
 					server.movieSectionsSearched = 0;
-					Logger.d("Searching server (for movies): %s, %d sections", server.name, server.movieSections.size());
+					Logger.d("!Searching server (for movies): %s, %d sections", server.name, server.movieSections.size());
+          Logger.d("Server active connection: %s", server.activeConnection);
+
 					if(server.movieSections.size() == 0) {
 						serversSearched++;
 						if(serversSearched == plexmediaServers.size()) {
@@ -950,6 +966,8 @@ public class PlexSearchService extends Service {
         if(theMedia != null) {
           theMedia.server = media.server;
           playMedia(theMedia);
+          onActionFinished(WearConstants.SPEECH_QUERY_RESULT, false, theMedia);
+
         } else {
           // TODO: Handle failure
         }
@@ -993,9 +1011,9 @@ public class PlexSearchService extends Service {
 
 			Logger.d("active connection: %s", media.server.activeConnection);
 			Intent sendIntent = new Intent(this, CastActivity.class);
-			sendIntent.setAction(VoiceControlForPlexApplication.Intent.CAST_MEDIA);
-      sendIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_MEDIA, media);
-      sendIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLIENT, client);
+			sendIntent.setAction(com.atomjack.shared.Intent.CAST_MEDIA);
+      sendIntent.putExtra(com.atomjack.shared.Intent.EXTRA_MEDIA, media);
+      sendIntent.putExtra(com.atomjack.shared.Intent.EXTRA_CLIENT, client);
 			sendIntent.putExtra("resume", resumePlayback);
 			sendIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 			startActivity(sendIntent);
@@ -1018,7 +1036,6 @@ public class PlexSearchService extends Service {
         qs.add("address", media.server.activeConnection.address);
         Logger.d("address: %s", media.server.activeConnection.address);
 
-        // if ((VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.RESUME, false) || resumePlayback) && media.viewOffset != null)
         if (resumePlayback && media.viewOffset != null)
           qs.add("viewOffset", media.viewOffset);
         if (transientToken != null)
@@ -1067,10 +1084,10 @@ public class PlexSearchService extends Service {
 
   private void castAlbum(List<PlexTrack> tracks) {
     Intent sendIntent = new Intent(this, CastActivity.class);
-    sendIntent.setAction(VoiceControlForPlexApplication.Intent.CAST_MEDIA);
-    sendIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_MEDIA, tracks.get(0));
-    sendIntent.putParcelableArrayListExtra(VoiceControlForPlexApplication.Intent.EXTRA_ALBUM, (ArrayList<PlexTrack>)tracks);
-    sendIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLIENT, client);
+    sendIntent.setAction(com.atomjack.shared.Intent.CAST_MEDIA);
+    sendIntent.putExtra(com.atomjack.shared.Intent.EXTRA_MEDIA, tracks.get(0));
+    sendIntent.putParcelableArrayListExtra(com.atomjack.shared.Intent.EXTRA_ALBUM, (ArrayList<PlexTrack>)tracks);
+    sendIntent.putExtra(com.atomjack.shared.Intent.EXTRA_CLIENT, client);
     sendIntent.putExtra("resume", resumePlayback);
     sendIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
     sendIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
@@ -1078,9 +1095,10 @@ public class PlexSearchService extends Service {
   }
 
 	private void showPlayingMedia(PlexMedia media) {
+    Logger.d("[PlexSearchService] nowPlayingMedia: %s", media.title);
 		Intent nowPlayingIntent = new Intent(this, NowPlayingActivity.class);
-		nowPlayingIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_MEDIA, media);
-		nowPlayingIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLIENT, client);
+		nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_MEDIA, media);
+		nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_CLIENT, client);
 		nowPlayingIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 		startActivity(nowPlayingIntent);
 	}
@@ -1774,8 +1792,8 @@ public class PlexSearchService extends Service {
 
 	private void showPlayingTrack(PlexTrack track) {
 		Intent nowPlayingIntent = new Intent(this, NowPlayingActivity.class);
-		nowPlayingIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_MEDIA, track);
-		nowPlayingIntent.putExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLIENT, client);
+		nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_MEDIA, track);
+		nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_CLIENT, client);
 		nowPlayingIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 		startActivity(nowPlayingIntent);
 	}
@@ -1857,6 +1875,40 @@ public class PlexSearchService extends Service {
     scannerIntent.putExtra(PlexScannerService.CLASS, PlexSearchService.class);
     scannerIntent.setAction(PlexScannerService.ACTION_SCAN_CLIENTS);
     startService(scannerIntent);
+  }
+
+  private void onActionFinished(String action, boolean error, PlexMedia media) {
+    if(fromWear) {
+      Logger.d("[PlexSearchService] onActionFinished: %s", action);
+      googleApiClient = new GoogleApiClient.Builder(this)
+              .addApi(Wearable.API)
+              .build();
+      googleApiClient.connect();
+
+      DataMap dataMap = new DataMap();
+      dataMap.putBoolean(WearConstants.SPEECH_QUERY_RESULT, !error);
+
+
+      new SendToDataLayerThread(action, dataMap, this).start();
+    }
+  }
+
+  // Feedback class that will also send a message to a connected wear device
+  private class SearchFeedback extends Feedback {
+    public SearchFeedback(Context ctx) {
+      super(ctx);
+    }
+
+    @Override
+    protected void feedback(String text, boolean errors) {
+      super.feedback(text, errors);
+      if(VoiceControlForPlexApplication.getInstance().hasWear()) {
+        DataMap dataMap = new DataMap();
+        dataMap.putString(WearConstants.INFORMATION, text);
+        new SendToDataLayerThread(WearConstants.SET_INFO, dataMap, PlexSearchService.this).start();
+      }
+    }
+
   }
 
 }

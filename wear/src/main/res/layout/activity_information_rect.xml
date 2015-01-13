@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:tools="http://schemas.android.com/tools"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="horizontal"
+                tools:context=".MainActivity"
+                android:id="@+id/framentContainer"
+                tools:deviceIds="wear_square">
+
+    <ImageView
+        android:layout_width="32sp"
+        android:layout_height="wrap_content"
+        android:id="@+id/imageView"
+        android:background="@null"
+        android:src="@drawable/ic_launcher"
+        android:layout_centerVertical="true"
+        android:layout_toStartOf="@+id/textView"
+        android:layout_alignParentEnd="false"
+        android:layout_gravity="center_vertical"/>
+
+    <TextView
+        android:layout_width="141dp"
+        android:layout_height="wrap_content"
+        android:text="Sorry, I didn&apos;t understand that."
+        android:id="@+id/textView"
+        android:layout_centerVertical="true"
+        android:paddingLeft="10sp"
+        android:layout_gravity="center_vertical"/>
+</LinearLayout>

@@ -4,12 +4,11 @@ import android.net.Uri;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import com.atomjack.vcfp.Logger;
+import com.atomjack.shared.Logger;
 import com.atomjack.vcfp.PlexHeaders;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.net.PlexHttpClient;
 
-import org.apache.http.NameValuePair;
 import org.simpleframework.xml.Attribute;
 import org.simpleframework.xml.ElementList;
 import org.simpleframework.xml.Root;
@@ -27,7 +26,8 @@ public abstract class PlexMedia implements Parcelable {
   public enum IMAGE_KEY {
     NOTIFICATION_THUMB,
     NOTIFICATION_THUMB_BIG,
-    NOTIFICATION_THUMB_MUSIC
+    NOTIFICATION_THUMB_MUSIC,
+    WEAR_BACKGROUND
   }
 
   public final static Map<IMAGE_KEY, int[]> IMAGE_SIZES = new HashMap<IMAGE_KEY, int[]>() {
@@ -35,6 +35,7 @@ public abstract class PlexMedia implements Parcelable {
       put(IMAGE_KEY.NOTIFICATION_THUMB, new int[] {114, 64});
       put(IMAGE_KEY.NOTIFICATION_THUMB_BIG, new int[] {87, 128});
       put(IMAGE_KEY.NOTIFICATION_THUMB_MUSIC, new int[] {64, 64});
+      put(IMAGE_KEY.WEAR_BACKGROUND, new int[] {320, 320});
     }
   };
 

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:tools="http://schemas.android.com/tools"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:orientation="vertical"
+              tools:context=".MainActivity"
+              tools:deviceIds="wear_rect"
+              android:gravity="center_vertical|center_horizontal">
+
+    <ImageView
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:id="@+id/imageView"
+    android:src="@drawable/ic_launcher"
+    android:layout_gravity="center_horizontal"/>
+    <TextView
+        android:layout_width="176dp"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_centerVertical="true"
+        android:text="@string/wear_support_must_be_purchased"
+        android:gravity="center_horizontal"/>
+
+</LinearLayout>

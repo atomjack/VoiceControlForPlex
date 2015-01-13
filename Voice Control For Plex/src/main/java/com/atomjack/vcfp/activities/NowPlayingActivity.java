@@ -7,27 +7,34 @@ import android.view.Menu;
 import android.view.View;
 import android.widget.SeekBar;
 
+import com.atomjack.shared.PlayerState;
+import com.atomjack.shared.SendToDataLayerThread;
+import com.atomjack.shared.WearConstants;
 import com.atomjack.vcfp.BuildConfig;
-import com.atomjack.vcfp.Logger;
+import com.atomjack.shared.Logger;
 import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
+import com.atomjack.vcfp.interfaces.PlayerStateHandler;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexResponse;
-import com.atomjack.vcfp.model.Timeline;
+import com.atomjack.shared.model.Timeline;
 import com.atomjack.vcfp.net.PlexHttpResponseHandler;
 import com.bugsense.trace.BugSenseHandler;
+import com.google.android.gms.wearable.DataMap;
 
 import org.codechimp.apprater.AppRater;
+
+import java.util.Hashtable;
 
 public class NowPlayingActivity extends PlayerActivity {
 	private boolean subscribed = false;
 
 	PlayerState state = PlayerState.STOPPED;
-	enum PlayerState {
-		PLAYING,
-		STOPPED,
-		PAUSED
-	};
+//	enum PlayerState {
+//		PLAYING,
+//		STOPPED,
+//		PAUSED
+//	};
 
 	protected void onCreate(Bundle savedInstanceState) {
 		Logger.d("on create NowPlayingActivity");
@@ -44,12 +51,12 @@ public class NowPlayingActivity extends PlayerActivity {
 
 		if(savedInstanceState != null) {
 			Logger.d("found saved instance state");
-			nowPlayingMedia = savedInstanceState.getParcelable(VoiceControlForPlexApplication.Intent.EXTRA_MEDIA);
-      mClient = savedInstanceState.getParcelable(VoiceControlForPlexApplication.Intent.EXTRA_CLIENT);
+			nowPlayingMedia = savedInstanceState.getParcelable(com.atomjack.shared.Intent.EXTRA_MEDIA);
+      mClient = savedInstanceState.getParcelable(com.atomjack.shared.Intent.EXTRA_CLIENT);
       Logger.d("[NowPlaying] set client: %s", mClient);
 		} else {
-			nowPlayingMedia = getIntent().getParcelableExtra(VoiceControlForPlexApplication.Intent.EXTRA_MEDIA);
-      mClient = getIntent().getParcelableExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLIENT);
+			nowPlayingMedia = getIntent().getParcelableExtra(com.atomjack.shared.Intent.EXTRA_MEDIA);
+      mClient = getIntent().getParcelableExtra(com.atomjack.shared.Intent.EXTRA_CLIENT);
       Logger.d("[NowPlayingActivity] 2 set client: %s", mClient);
 		}
 
@@ -82,7 +89,9 @@ public class NowPlayingActivity extends PlayerActivity {
 		}
 	}
 
-	public void doPlayPause(View v) {
+
+  @Override
+	public void doPlayPause() {
 		Logger.d("play pause clicked");
 		if(state == PlayerState.PLAYING) {
 			mClient.pause(new PlexHttpResponseHandler() {
@@ -111,6 +120,11 @@ public class NowPlayingActivity extends PlayerActivity {
 		}
 	}
 
+  @Override
+  public void doPlayPause(View v) {
+    doPlayPause();
+  }
+
 	public void doRewind(View v) {
 		if(position > -1) {
 			mClient.seekTo(position - 15000, null);
@@ -133,6 +147,7 @@ public class NowPlayingActivity extends PlayerActivity {
     mClient.previous(null);
   }
 
+  @Override
 	public void doStop(View v) {
     mClient.stop(new PlexHttpResponseHandler() {
       @Override
@@ -162,7 +177,18 @@ public class NowPlayingActivity extends PlayerActivity {
     plexSubscription.setListener(this);
     if(menu != null) {
       Logger.d("Now subscribing");
-      plexSubscription.subscribe(mClient);
+//      if(plexSubscription.isSubscribed()) {
+//        if(plexSubscription.mClient.machineIdentifier != mClient.machineIdentifier) {
+//          // We're already subscribed to another client, so unsubscribe from that one and subscribe to the new one
+//          plexSubscription.unsubscribe(new Runnable() {
+//            @Override
+//            public void run() {
+//              plexSubscription.subscribe(mClient);
+//            }
+//          });
+//        }
+//      } else
+        plexSubscription.subscribe(mClient);
     }
 	}
 
@@ -194,7 +220,6 @@ public class NowPlayingActivity extends PlayerActivity {
 	@Override
 	protected void onStop() {
 		Logger.d("NowPlaying onStop");
-
 		super.onStop();
 	}
 
@@ -202,13 +227,23 @@ public class NowPlayingActivity extends PlayerActivity {
 	protected void onSaveInstanceState(Bundle outState) {
 		super.onSaveInstanceState(outState);
 		Logger.d("Saving instance state");
-		outState.putParcelable(VoiceControlForPlexApplication.Intent.EXTRA_MEDIA, nowPlayingMedia);
-		outState.putParcelable(VoiceControlForPlexApplication.Intent.EXTRA_CLIENT, mClient);
+		outState.putParcelable(com.atomjack.shared.Intent.EXTRA_MEDIA, nowPlayingMedia);
+		outState.putParcelable(com.atomjack.shared.Intent.EXTRA_CLIENT, mClient);
 	}
 
 	@Override
 	protected void onNewIntent(Intent intent)
 	{
+    if(intent.getAction() != null) {
+      String action = intent.getAction();
+      if(action.equals(com.atomjack.shared.Intent.GET_PLAYING_MEDIA) && nowPlayingMedia != null) {
+        // Send information on the currently playing media to the wear device
+        DataMap data = new DataMap();
+        data.putString(WearConstants.MEDIA_TITLE, nowPlayingMedia.title);
+        data.putString(WearConstants.IMAGE, nowPlayingMedia.art);
+        new SendToDataLayerThread(WearConstants.GET_PLAYING_MEDIA, data, this).start();
+      }
+    }
 		super.onNewIntent(intent);
 		if(intent.getExtras() != null && intent.getExtras().getBoolean("finish") == true)
 			finish();
@@ -253,6 +288,7 @@ public class NowPlayingActivity extends PlayerActivity {
       if(timeline.continuing != null && timeline.continuing.equals("1")) {
         Logger.d("Continuing to next track");
       } else {
+        VoiceControlForPlexApplication.getInstance().cancelNotification();
         finish();
       }
     } else if(timeline.state.equals("playing")) {
@@ -285,9 +321,20 @@ public class NowPlayingActivity extends PlayerActivity {
     Logger.d("NowPlaying onCreateOptionsMenu: %s", _menu);
     getMenuInflater().inflate(R.menu.menu_playing, _menu);
     menu = _menu;
-    if(plexSubscription.isSubscribed())
-      setCastIconActive();
-    else
+    if(plexSubscription.isSubscribed()) {
+      if(plexSubscription.mClient.machineIdentifier != mClient.machineIdentifier) {
+        // We're already subscribed to another client, so unsubscribe from that one and subscribe to the new one
+        plexSubscription.unsubscribe(false, new Runnable() {
+          @Override
+          public void run() {
+            Logger.d("[NowPlayingActivity] now subscribing to %s", mClient.name);
+            plexSubscription.subscribe(mClient);
+            setCastIconActive();
+          }
+        });
+      } else
+        setCastIconActive();
+    } else
       plexSubscription.subscribe(mClient);
     return true;
   }

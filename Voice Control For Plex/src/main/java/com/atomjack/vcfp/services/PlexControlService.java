@@ -4,37 +4,31 @@ import android.app.IntentService;
 import android.content.Intent;
 import android.os.IBinder;
 
+import com.atomjack.shared.Logger;
+import com.atomjack.shared.PlayerState;
+import com.atomjack.shared.model.Timeline;
 import com.atomjack.vcfp.CastPlayerManager;
-import com.atomjack.vcfp.Logger;
-import com.atomjack.vcfp.PlayerState;
-import com.atomjack.vcfp.PlexHeaders;
+import com.atomjack.vcfp.PlexSubscription;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
-import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexResponse;
-import com.atomjack.vcfp.model.Timeline;
-import com.atomjack.vcfp.net.PlexHttpClient;
-
-import org.apache.http.Header;
-import org.apache.http.message.BasicHeader;
-import org.simpleframework.xml.Serializer;
-import org.simpleframework.xml.core.Persister;
 
 public class PlexControlService extends IntentService {
   public static final String ACTION_PLAY = "com.atomjack.vcfp.action_play";
   public static final String ACTION_PAUSE = "com.atomjack.vcfp.action_pause";
   public static final String ACTION_STOP = "com.atomjack.vcfp.action_stop";
   public static final String ACTION_REWIND = "com.atomjack.vcfp.action_rewind";
+  public static final String ACTION_FORWARD = "com.atomjack.vcfp.action_forward";
+  public static final String ACTION_DISCONNECT = "com.atomjack.vcfp.action_disconnect";
 
   public static final String CLIENT = "com.atomjack.vcfp.mClient";
   public static final String MEDIA = "com.atomjack.vcfp.media";
 
   private PlexClient client;
 
-  private static Serializer serial = new Persister();
-
   private CastPlayerManager castPlayerManager;
+  private PlexSubscription plexSubscription;
 
   public PlexControlService() {
     super("Plex Control Service");
@@ -50,25 +44,23 @@ public class PlexControlService extends IntentService {
 
     if(castPlayerManager == null)
       castPlayerManager = VoiceControlForPlexApplication.getInstance().castPlayerManager;
+    if(plexSubscription == null)
+      plexSubscription = VoiceControlForPlexApplication.getInstance().plexSubscription;
 
     if(intent.getAction() != null) {
       client = intent.getParcelableExtra(CLIENT);
       PlexMedia playingMedia = intent.getParcelableExtra(MEDIA);
-      PlayerState currentState;
+      PlayerState currentState = PlayerState.STOPPED;
       Timeline t = null;
 
       if(client.isCastClient) {
         currentState = castPlayerManager.getCurrentState();
       } else {
-        Header[] headers = {
-                new BasicHeader(PlexHeaders.XPlexClientIdentifier, VoiceControlForPlexApplication.getInstance().prefs.getUUID())
-        };
-        MediaContainer mc = PlexHttpClient.getSync(String.format("http://%s:%s/player/timeline/poll?commandID=0", client.address, client.port), headers);
-        t = mc.getActiveTimeline();
+        t = plexSubscription.getCurrentTimeline();
         currentState = PlayerState.getState(t);
       }
 
-      PlexResponse response = null;
+      PlexResponse response;
 
       if (intent.getAction().equals(ACTION_PLAY)) {
         if(client.isCastClient) {
@@ -94,18 +86,35 @@ public class PlexControlService extends IntentService {
           if (response.code.equals("200"))
             currentState = PlayerState.STOPPED;
         }
-      }
+      } else if (intent.getAction().equals(ACTION_REWIND)) {
+        if(client.isCastClient) {
 
+        } else {
+          if (t != null) {
+            int position = t.time;
+            client.seekTo(position - 15000);
+          }
+        }
+      } else if(intent.getAction().equals(ACTION_FORWARD)) {
+        if(client.isCastClient) {
 
-      if (intent.getAction().equals(ACTION_REWIND)) {
-        if(t != null) {
-          int position = t.time;
-          client.seekTo(position - 15000);
+        } else {
+          if (t != null) {
+            int position = t.time;
+            client.seekTo(position + 30000);
+          }
+        }
+      } else if(intent.getAction().equals(ACTION_DISCONNECT)) {
+        if(client.isCastClient) {
+
+        } else {
+          plexSubscription.unsubscribe();
         }
       }
 
-      Logger.d("state: %s", currentState);
-      VoiceControlForPlexApplication.getInstance().setNotification(client, currentState, playingMedia);
+      Logger.d("[PlexControlService] state: %s", currentState);
+      if(currentState != PlayerState.STOPPED)
+        VoiceControlForPlexApplication.getInstance().setNotification(client, currentState, playingMedia);
     }
   }
 }

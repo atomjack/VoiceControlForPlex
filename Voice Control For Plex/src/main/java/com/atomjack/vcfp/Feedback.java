@@ -5,6 +5,8 @@ import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
 import android.widget.Toast;
 
+import com.atomjack.shared.Logger;
+import com.atomjack.shared.Preferences;
 import com.atomjack.vcfp.activities.MainActivity;
 
 import java.util.HashMap;
@@ -90,11 +92,11 @@ public class Feedback implements TextToSpeech.OnInitListener {
 		feedback(context.getString(id), true, true);
 	}
 
-	private void feedback(String text, boolean errors) {
+	protected void feedback(String text, boolean errors) {
 		feedback(text, errors, false);
 	}
 
-	private void feedback(String text, boolean errors, boolean forceToast) {
+  protected void feedback(String text, boolean errors, boolean forceToast) {
 
 		if(!forceToast && VoiceControlForPlexApplication.getInstance().prefs.get(errors ? Preferences.ERRORS : Preferences.FEEDBACK, MainActivity.FEEDBACK_TOAST) == MainActivity.FEEDBACK_VOICE) {
 			TextToSpeech tts = errors ? errorsTts : feedbackTts;

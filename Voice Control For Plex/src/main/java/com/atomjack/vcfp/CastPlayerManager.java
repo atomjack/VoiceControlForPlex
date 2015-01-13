@@ -3,6 +3,9 @@ package com.atomjack.vcfp;
 import android.content.Context;
 import android.support.v7.media.MediaRouter;
 
+import com.atomjack.shared.Logger;
+import com.atomjack.shared.PlayerState;
+import com.atomjack.shared.Preferences;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexTrack;

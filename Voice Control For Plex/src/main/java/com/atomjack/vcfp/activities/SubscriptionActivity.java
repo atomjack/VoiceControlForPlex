@@ -4,7 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 
-import com.atomjack.vcfp.Logger;
+import com.atomjack.shared.Logger;
 import com.atomjack.vcfp.PlexSubscription;
 import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;

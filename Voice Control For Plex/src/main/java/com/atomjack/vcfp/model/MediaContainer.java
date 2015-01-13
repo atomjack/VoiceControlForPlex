@@ -1,5 +1,7 @@
 package com.atomjack.vcfp.model;
 
+import com.atomjack.shared.model.Timeline;
+
 import org.simpleframework.xml.Attribute;
 import org.simpleframework.xml.ElementList;
 import org.simpleframework.xml.Root;

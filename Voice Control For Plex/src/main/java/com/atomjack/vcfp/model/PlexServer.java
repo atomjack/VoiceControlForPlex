@@ -3,13 +3,13 @@ package com.atomjack.vcfp.model;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import com.atomjack.vcfp.AfterTransientTokenRequest;
-import com.atomjack.vcfp.Logger;
+import com.atomjack.shared.Logger;
+import com.atomjack.vcfp.interfaces.AfterTransientTokenRequest;
 import com.atomjack.vcfp.PlexHeaders;
-import com.atomjack.vcfp.Preferences;
+import com.atomjack.shared.Preferences;
 import com.atomjack.vcfp.QueryString;
-import com.atomjack.vcfp.ServerFindHandler;
-import com.atomjack.vcfp.ServerTestHandler;
+import com.atomjack.vcfp.interfaces.ServerFindHandler;
+import com.atomjack.vcfp.interfaces.ServerTestHandler;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.net.PlexHttpClient;
 import com.atomjack.vcfp.net.PlexHttpMediaContainerHandler;
@@ -141,6 +141,7 @@ public class PlexServer extends PlexDevice {
     machineIdentifier = in.readString();
 		in.readTypedList(connections, Connection.CREATOR);
 		activeConnection = in.readParcelable(Connection.class.getClassLoader());
+//    activeConnection = null;
 	}
 
 	public static final Parcelable.Creator<PlexServer> CREATOR = new Parcelable.Creator<PlexServer>() {

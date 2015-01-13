@@ -6,6 +6,8 @@ import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 
+import com.atomjack.shared.Logger;
+
 public class NetworkChangeReceiver extends BroadcastReceiver {
   private boolean wifiConnected;
 

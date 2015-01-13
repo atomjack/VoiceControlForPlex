@@ -12,7 +12,6 @@ import android.content.DialogInterface;
 import android.content.pm.PackageInfo;
 import android.content.res.Resources.NotFoundException;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
@@ -28,14 +27,28 @@ import com.android.vending.billing.IabResult;
 import com.android.vending.billing.Inventory;
 import com.android.vending.billing.Purchase;
 import com.android.vending.billing.SkuDetails;
+import com.atomjack.shared.Intent;
+import com.atomjack.shared.Logger;
+import com.atomjack.shared.PlayerState;
+import com.atomjack.shared.Preferences;
+import com.atomjack.shared.SendToDataLayerThread;
+import com.atomjack.shared.UriDeserializer;
+import com.atomjack.shared.UriSerializer;
+import com.atomjack.shared.WearConstants;
 import com.atomjack.vcfp.activities.CastActivity;
 import com.atomjack.vcfp.activities.NowPlayingActivity;
+import com.atomjack.vcfp.interfaces.BitmapHandler;
+import com.atomjack.vcfp.interfaces.ServerFindHandler;
 import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexServer;
 import com.atomjack.vcfp.model.PlexTrack;
 import com.atomjack.vcfp.services.PlexControlService;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.wearable.Asset;
+import com.google.android.gms.wearable.DataMap;
+import com.google.android.gms.wearable.Wearable;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
@@ -46,6 +59,7 @@ import org.apache.http.Header;
 import org.simpleframework.xml.Serializer;
 import org.simpleframework.xml.core.Persister;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Type;
@@ -92,34 +106,6 @@ public class VoiceControlForPlexApplication extends Application
   private Bitmap notificationBitmap = null;
   private Bitmap notificationBitmapBig = null;
 
-	public final static class Intent {
-			public final static String GDMRECEIVE = "com.atomjack.vcfp.intent.gdmreceive";
-
-			public final static String EXTRA_SERVER = "com.atomjack.vcfp.intent.extra_server";
-			public final static String EXTRA_CLIENT = "com.atomjack.vcfp.intent.extra_client";
-			public final static String EXTRA_RESUME = "com.atomjack.vcfp.intent.extra_resume";
-			public final static String EXTRA_SILENT = "com.atomjack.vcfp.intent.extra_silent";
-
-
-      public final static String SCAN_TYPE = "com.atomjack.vcfp.intent.scan_type";
-      public final static String SCAN_TYPE_CLIENT = "com.atomjack.vcfp.intent.scan_type_client";
-      public final static String SCAN_TYPE_SERVER = "com.atomjack.vcfp.intent.scan_type_server";
-			public final static String EXTRA_SERVERS = "com.atomjack.vcfp.intent.extra_servers";
-			public final static String EXTRA_CLIENTS = "com.atomjack.vcfp.intent.extra_clients";
-      public final static String ARGUMENTS = "com.atomjack.vcfp.intent.ARGUMENTS";
-
-			public final static String SHOWRESOURCE = "com.atomjack.vcfp.intent.SHOWRESOURCE";
-
-			public final static String CAST_MEDIA = "com.atomjack.vcfp.intent.CAST_MEDIA";
-      public final static String EXTRA_MEDIA = "com.atomjack.vcfp.intent.EXTRA_MEDIA";
-      public final static String EXTRA_ALBUM = "com.atomjack.vcfp.intent.EXTRA_ALBUM";
-      public final static String EXTRA_CLASS = "com.atomjack.vcfp.intent.EXTRA_CLASS";
-      public final static String EXTRA_CONNECT_TO_CLIENT = "com.atomjack.vcfp.intent.EXTRA_CONNECT_TO_CLIENT";
-      public final static String SUBSCRIBED = "com.atomjack.vcfp.intent.SUBSCRIBED";
-
-      public final static String EXTRA_QUERYTEXT = "com.atomjack.vcfp.intent.EXTRA_QUERYTEXT";
-	};
-
 	public static ConcurrentHashMap<String, PlexServer> servers = new ConcurrentHashMap<String, PlexServer>();
 	public static Map<String, PlexClient> clients = new HashMap<String, PlexClient>();
 	public static Map<String, PlexClient> castClients = new HashMap<String, PlexClient>();
@@ -137,41 +123,50 @@ public class VoiceControlForPlexApplication extends Application
   // TODO: Obfuscate this somehow:
   String base64EncodedPublicKey = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAlgV+Gdi4nBVn2rRqi+oVLhenzbWcEVyUf1ulhvAElEf6c8iuX3OB4JZRYVhCE690mFaYUdEb8OG8p8wT7IrQmlZ0DRfP2X9csBJKd3qB+l9y11Ggujivythvoiz+uvDPhz54O6wGmUB8+oZXN+jk9MT5Eia3BZxJDvgFcmDe/KQTTKZoIk1Qs/4PSYFP8jaS/lc71yDyRmvAM+l1lv7Ld8h69hVvKFUr9BT/20lHQGohCIc91CJvKIP5DaptbE98DAlrTxjZRRpbi+wrLGKVbJpUOBgPC78qo3zPITn6M6N0tHkv1tHkGOeyLUbxOC0wFdXj33mUldV/rp3tHnld1wIDAQAB";
 
-  // Has the user purchased chromecast support?
+  // Has the user purchased chromecast/wear support?
   // This is the default value.
   private boolean mHasChromecast = !BuildConfig.CHROMECAST_REQUIRES_PURCHASE;
+  private boolean mHasWear = !BuildConfig.WEAR_REQUIRES_PURCHASE;
   // Only the release build will use the actual Chromecast SKU
   public static final String SKU_CHROMECAST = BuildConfig.SKU_CHROMECAST;
+  public static final String SKU_WEAR = BuildConfig.SKU_WEAR;
   public static final String SKU_TEST_PURCHASED = "android.test.purchased";
   private static String mChromecastPrice = "$0.99"; // Default price, just in case
+  private static String mWearPrice = "$2.00"; // Default price, just in case
 
   public static boolean hasDoneClientScan = false;
+
+  GoogleApiClient googleApiClient;
 
   @Override
   public void onCreate() {
     super.onCreate();
     instance = this;
 
+    googleApiClient = new GoogleApiClient.Builder(this)
+            .addApi(Wearable.API)
+            .build();
+    googleApiClient.connect();
+
     prefs = new Preferences(getApplicationContext());
 
     plexSubscription = new PlexSubscription();
     castPlayerManager = new CastPlayerManager(getApplicationContext());
 
-    // Check for donate version, and if found, allow chromecast
+    // Check for donate version, and if found, allow chromecast & wear
     PackageInfo pinfo;
     try
     {
       pinfo = getPackageManager().getPackageInfo("com.atomjack.vcfpd", 0);
       mHasChromecast = true;
+      mHasWear = true;
     } catch(Exception e) {}
 
-    // If this build includes chromecast support, no need to setup purchasing
-    if(!mHasChromecast)
+    // If this build includes chromecast and wear support, no need to setup purchasing
+    if(!mHasChromecast || !mHasWear)
       setupInAppPurchasing();
 
     mNotifyMgr = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-
-
 
     // Load saved clients and servers
     Type clientType = new TypeToken<HashMap<String, PlexClient>>(){}.getType();
@@ -191,6 +186,10 @@ public class VoiceControlForPlexApplication extends Application
 
   public boolean hasChromecast() {
     return mHasChromecast;
+  }
+
+  public boolean hasWear() {
+    return mHasWear;
   }
 
   public static VoiceControlForPlexApplication getInstance() {
@@ -369,15 +368,15 @@ public class VoiceControlForPlexApplication extends Application
     return new BigInteger(130, random).toString(32).substring(0, 12);
   }
 
-  private Bitmap getCachedBitmap(String key) {
+  public Bitmap getCachedBitmap(String key) {
     if(key == null)
       return null;
 
     Bitmap bitmap = null;
     try {
-      Logger.d("Trying to get cached thumb: %s", key);
+//      Logger.d("Trying to get cached thumb: %s", key);
       SimpleDiskCache.BitmapEntry bitmapEntry = mSimpleDiskCache.getBitmap(key);
-      Logger.d("bitmapEntry: %s", bitmapEntry);
+//      Logger.d("bitmapEntry: %s", bitmapEntry);
       if(bitmapEntry != null) {
         bitmap = bitmapEntry.getBitmap();
       }
@@ -419,6 +418,30 @@ public class VoiceControlForPlexApplication extends Application
       }.execute();
   }
 
+  public void fetchNotificationBitmap(final PlexMedia.IMAGE_KEY key, final PlexMedia media, final Runnable onFinish) {
+    new AsyncTask() {
+      @Override
+      protected Object doInBackground(Object[] params) {
+        InputStream inputStream = media.getNotificationThumb(key);
+        if(inputStream != null) {
+          try {
+            inputStream.reset();
+          } catch (IOException e) {
+          }
+          try {
+            Logger.d("image key: %s", media.getImageKey(key));
+            mSimpleDiskCache.put(media.getImageKey(key), inputStream);
+            inputStream.close();
+            if(onFinish != null)
+              onFinish.run();
+          } catch (Exception e) {
+          }
+        }
+        return null;
+      }
+    }.execute();
+  }
+
   public void setNotification(final PlexClient client, final PlayerState currentState, final PlexMedia media) {
     setNotification(client, currentState, media, false);
   }
@@ -444,13 +467,17 @@ public class VoiceControlForPlexApplication extends Application
     if(notificationBitmapBig == null && notificationStatus == NOTIFICATION_STATUS.initializing && !skipThumb)
       fetchNotificationBitmap(PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB_BIG, client, media, currentState);
 
-
-    Logger.d("Setting up notification");
     android.content.Intent rewindIntent = new android.content.Intent(VoiceControlForPlexApplication.this, PlexControlService.class);
     rewindIntent.setAction(PlexControlService.ACTION_REWIND);
     rewindIntent.putExtra(PlexControlService.CLIENT, client);
     rewindIntent.putExtra(PlexControlService.MEDIA, media);
     PendingIntent piRewind = PendingIntent.getService(VoiceControlForPlexApplication.this, 0, rewindIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+    android.content.Intent forwardIntent = new android.content.Intent(VoiceControlForPlexApplication.this, PlexControlService.class);
+    forwardIntent.setAction(PlexControlService.ACTION_FORWARD);
+    forwardIntent.putExtra(PlexControlService.CLIENT, client);
+    forwardIntent.putExtra(PlexControlService.MEDIA, media);
+    PendingIntent piForward = PendingIntent.getService(VoiceControlForPlexApplication.this, 0, forwardIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
     android.content.Intent playIntent = new android.content.Intent(VoiceControlForPlexApplication.this, PlexControlService.class);
     playIntent.setAction(PlexControlService.ACTION_PLAY);
@@ -463,6 +490,12 @@ public class VoiceControlForPlexApplication extends Application
     pauseIntent.putExtra(PlexControlService.CLIENT, client);
     pauseIntent.putExtra(PlexControlService.MEDIA, media);
     PendingIntent pausePendingIntent = PendingIntent.getService(VoiceControlForPlexApplication.this, 0, pauseIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+    android.content.Intent disconnectIntent = new android.content.Intent(VoiceControlForPlexApplication.this, PlexControlService.class);
+    disconnectIntent.setAction(PlexControlService.ACTION_DISCONNECT);
+    disconnectIntent.putExtra(PlexControlService.CLIENT, client);
+    disconnectIntent.putExtra(PlexControlService.MEDIA, media);
+    PendingIntent piDisconnect = PendingIntent.getService(VoiceControlForPlexApplication.this, 0, disconnectIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
     android.content.Intent nowPlayingIntent;
     if(client.isCastClient) {
@@ -483,17 +516,25 @@ public class VoiceControlForPlexApplication extends Application
                       .setOngoing(true)
                       .setOnlyAlertOnce(true)
                       .setContentIntent(piNowPlaying)
-                      .setContent(getNotificationView(media.isMusic() ? R.layout.now_playing_notification_music : R.layout.now_playing_notification, notificationBitmap, media, client, playPendingIntent, pausePendingIntent, piRewind, currentState == PlayerState.PLAYING))
+                      .setContent(getNotificationView(
+                              media.isMusic() ? R.layout.now_playing_notification_music : R.layout.now_playing_notification,
+                              notificationBitmap, media, client, playPendingIntent, pausePendingIntent,
+                              piRewind, piForward, piDisconnect, currentState == PlayerState.PLAYING))
                       .setDefaults(Notification.DEFAULT_ALL);
       Notification n = mBuilder.build();
       if (Build.VERSION.SDK_INT >= 16)
-        n.bigContentView = getNotificationView(media.isMusic() ? R.layout.now_playing_notification_big_music : R.layout.now_playing_notification_big, notificationBitmapBig, media, client, playPendingIntent, pausePendingIntent, piRewind, currentState == PlayerState.PLAYING);
+        n.bigContentView = getNotificationView(
+                media.isMusic() ? R.layout.now_playing_notification_big_music : R.layout.now_playing_notification_big,
+                notificationBitmapBig, media, client, playPendingIntent, pausePendingIntent,
+                piRewind, piForward, piDisconnect, currentState == PlayerState.PLAYING);
 
       // Disable notification sound
       n.defaults = 0;
       mNotifyMgr.notify(nowPlayingNotificationId, n);
       notificationStatus = NOTIFICATION_STATUS.on;
       Logger.d("Notification set");
+
+//      sendWearNotification(media);
     } catch (Exception ex) {
       ex.printStackTrace();
     }
@@ -503,6 +544,9 @@ public class VoiceControlForPlexApplication extends Application
 
   public void cancelNotification() {
     mNotifyMgr.cancel(nowPlayingNotificationId);
+//    if(hasWear()) {
+//      new SendToDataLayerThread(WearConstants.MEDIA_STOPPED, this).start();
+//    }
     notificationStatus = NOTIFICATION_STATUS.off;
   }
 
@@ -511,7 +555,8 @@ public class VoiceControlForPlexApplication extends Application
   }
 
   private RemoteViews getNotificationView(int layoutId, Bitmap thumb, PlexMedia media, PlexClient client,
-                                          PendingIntent playPendingIntent, PendingIntent pausePendingIntent, PendingIntent rewindIntent, boolean isPlaying) {
+                                          PendingIntent playPendingIntent, PendingIntent pausePendingIntent, PendingIntent rewindIntent,
+                                          PendingIntent forwardIntent, PendingIntent disconnectIntent, boolean isPlaying) {
     RemoteViews remoteViews = new RemoteViews(getPackageName(), layoutId);
     remoteViews.setImageViewBitmap(R.id.thumb, thumb);
     String title = media.title; // Movie title
@@ -534,6 +579,9 @@ public class VoiceControlForPlexApplication extends Application
       remoteViews.setViewVisibility(R.id.pauseButton, View.GONE);
     }
     remoteViews.setOnClickPendingIntent(R.id.rewindButton, rewindIntent);
+    remoteViews.setOnClickPendingIntent(R.id.forwardButton, forwardIntent);
+    remoteViews.setOnClickPendingIntent(R.id.disconnectButton, disconnectIntent);
+
     return remoteViews;
   }
 
@@ -580,31 +628,49 @@ public class VoiceControlForPlexApplication extends Application
       Logger.d("Query inventory was successful.");
 
       // Get the price for chromecast support
-      mIabHelper.queryInventoryAsync(true, new ArrayList<String>(Arrays.asList(SKU_CHROMECAST)), new IabHelper.QueryInventoryFinishedListener() {
+      mIabHelper.queryInventoryAsync(true, new ArrayList<String>(Arrays.asList(SKU_CHROMECAST, SKU_WEAR)), new IabHelper.QueryInventoryFinishedListener() {
         @Override
         public void onQueryInventoryFinished(IabResult result, Inventory inv) {
           SkuDetails skuDetails = inv.getSkuDetails(SKU_CHROMECAST);
           if(skuDetails != null) {
             mChromecastPrice = skuDetails.getPrice();
           }
+          skuDetails = inv.getSkuDetails(SKU_WEAR);
+          if(skuDetails != null) {
+            mWearPrice = skuDetails.getPrice();
+          }
 
           // If the SKU being used is the test sku, consume it so that it has to be bought each time the app is run
-          if(SKU_CHROMECAST == SKU_TEST_PURCHASED) {
+          if(SKU_CHROMECAST == SKU_TEST_PURCHASED || SKU_WEAR == SKU_TEST_PURCHASED) {
             if (inventory.hasPurchase(SKU_TEST_PURCHASED))
               mIabHelper.consumeAsync(inventory.getPurchase(SKU_TEST_PURCHASED),null);
           } else {
             Purchase chromecastPurchase = inventory.getPurchase(SKU_CHROMECAST);
             mHasChromecast = (chromecastPurchase != null && verifyDeveloperPayload(chromecastPurchase));
+
+            Purchase wearPurchase = inventory.getPurchase(SKU_WEAR);
+            mHasWear = (wearPurchase != null && verifyDeveloperPayload(wearPurchase));
           }
 
           Logger.d("Has Chromecast: %s", mHasChromecast);
+          Logger.d("Has Wear: %s", mHasWear);
           Logger.d("Initial inventory query finished.");
+          onInventoryQueryFinished();
         }
       });
 
 
     }
   };
+
+  // This runs once we have queried the play store to see if chromecast or wear support have been purchased.
+  // If Wear support has not been purchased, we can attempt to contact a connected Wear device, and if we hear back,
+  // we can throw a popup alerting the user that the app supports Wear
+  private void onInventoryQueryFinished() {
+    Logger.d("[VoiceControlForPlexApplication] Sending ping");
+    if(!mHasWear)
+      new SendToDataLayerThread(WearConstants.PING, this).start();
+  }
 
   boolean verifyDeveloperPayload(Purchase p) {
     return p.getDeveloperPayload().equals(SKU_TEST_PURCHASED == SKU_CHROMECAST ? getEmailHash() : "");
@@ -646,8 +712,16 @@ public class VoiceControlForPlexApplication extends Application
     mHasChromecast = hasChromecast;
   }
 
+  public void setHasWear(boolean hasWear) {
+    mHasWear = hasWear;
+  }
+
   public static String getChromecastPrice() {
     return mChromecastPrice;
+  }
+
+  public static String getWearPrice() {
+    return mWearPrice;
   }
 
   public static Map<String, PlexClient> getAllClients() {
@@ -675,5 +749,29 @@ public class VoiceControlForPlexApplication extends Application
 
   public void setNetworkChangeListener(NetworkChangeListener listener) {
     networkChangeListener = listener;
+  }
+
+  public static void getWearMediaImage(final PlexMedia media, final BitmapHandler onFinished) {
+    Bitmap bitmap = VoiceControlForPlexApplication.getInstance().getCachedBitmap(media.getImageKey(PlexMedia.IMAGE_KEY.WEAR_BACKGROUND));
+    if(bitmap == null) {
+      VoiceControlForPlexApplication.getInstance().fetchNotificationBitmap(PlexMedia.IMAGE_KEY.WEAR_BACKGROUND, media, new Runnable() {
+        @Override
+        public void run() {
+          Bitmap bitmap = VoiceControlForPlexApplication.getInstance().getCachedBitmap(media.getImageKey(PlexMedia.IMAGE_KEY.WEAR_BACKGROUND));
+          Logger.d("Done fetching bitmap from cache, got: %s", bitmap);
+          onFinished.onSuccess(bitmap);
+        }
+      });
+    } else {
+      Logger.d("Bitmap was already in cache: %s", bitmap);
+      onFinished.onSuccess(bitmap);
+
+    }
+  }
+
+  public static Asset createAssetFromBitmap(Bitmap bitmap) {
+    final ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+    bitmap.compress(Bitmap.CompressFormat.PNG, 100, byteStream);
+    return Asset.createFromBytes(byteStream.toByteArray());
   }
 }

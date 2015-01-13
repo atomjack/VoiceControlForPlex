@@ -28,13 +28,15 @@ import android.widget.EditText;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 
+import com.atomjack.shared.Logger;
+import com.atomjack.shared.SendToDataLayerThread;
+import com.atomjack.shared.WearConstants;
 import com.atomjack.vcfp.BuildConfig;
 import com.atomjack.vcfp.FutureRunnable;
-import com.atomjack.vcfp.Logger;
 import com.atomjack.vcfp.PlexHeaders;
-import com.atomjack.vcfp.Preferences;
+import com.atomjack.shared.Preferences;
 import com.atomjack.vcfp.R;
-import com.atomjack.vcfp.ScanHandler;
+import com.atomjack.vcfp.interfaces.ScanHandler;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.adapters.MainListAdapter;
 import com.atomjack.vcfp.model.MainSetting;
@@ -52,6 +54,7 @@ import com.atomjack.vcfp.tasker.TaskerPlugin;
 import com.cubeactive.martin.inscription.WhatsNewDialog;
 import com.google.android.gms.cast.CastDevice;
 import com.google.android.gms.cast.CastMediaControlIntent;
+import com.google.android.gms.wearable.DataMap;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
 import com.loopj.android.http.RequestParams;
@@ -114,12 +117,11 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 		mMediaRouterCallback = new MediaRouterCallback();
 		mMediaRouter.addCallback(mMediaRouteSelector, mMediaRouterCallback, MediaRouter.CALLBACK_FLAG_PERFORM_ACTIVE_SCAN);
 
-
 		authToken = VoiceControlForPlexApplication.getInstance().prefs.getString(Preferences.AUTHENTICATION_TOKEN);
 
 		setContentView(R.layout.main);
 
-		server = gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.SERVER, ""), PlexServer.class);
+    server = gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.SERVER, ""), PlexServer.class);
 		if(server == null)
 			server = new PlexServer(getString(R.string.scan_all));
 
@@ -451,6 +453,10 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 		feedback.m(R.string.logged_out);
 	}
 
+  public void purchaseWear(MenuItem item) {
+    showWearPurchaseRequired();
+  }
+
 	public void showLogin(MenuItem item) {
 		showLogin();
 	}
@@ -753,16 +759,17 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 
       if(intent.getAction().equals(PlexScannerService.ACTION_SERVER_SCAN_FINISHED)) {
         if(serverScanCanceled) {
+          Logger.d("Server scan was canceled.");
           serverScanCanceled = false;
           return;
         }
-//      if(intent.getStringExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE).equals(VoiceControlForPlexApplication.Intent.SCAN_TYPE_SERVER)) {
+//      if(intent.getStringExtra(com.atomjack.shared.Intent.SCAN_TYPE).equals(com.atomjack.shared.Intent.SCAN_TYPE_SERVER)) {
         Logger.d("Got " + VoiceControlForPlexApplication.servers.size() + " servers");
         if(searchDialog != null)
           searchDialog.cancel();
         VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.SAVED_SERVERS, gsonWrite.toJson(VoiceControlForPlexApplication.servers));
 
-        if(intent.getBooleanExtra(VoiceControlForPlexApplication.Intent.EXTRA_SILENT, false) == false) {
+        if(intent.getBooleanExtra(com.atomjack.shared.Intent.EXTRA_SILENT, false) == false) {
           if (VoiceControlForPlexApplication.servers.size() > 0) {
             showPlexServers(VoiceControlForPlexApplication.servers, new ScanHandler() {
               @Override
@@ -788,13 +795,13 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
           }
         }
         // TODO: Check this!
-      } else if(intent.getStringExtra(VoiceControlForPlexApplication.Intent.SCAN_TYPE).equals(VoiceControlForPlexApplication.Intent.SCAN_TYPE_CLIENT)) {
+      } else if(intent.getStringExtra(com.atomjack.shared.Intent.SCAN_TYPE) != null && intent.getStringExtra(com.atomjack.shared.Intent.SCAN_TYPE).equals(com.atomjack.shared.Intent.SCAN_TYPE_CLIENT)) {
         Logger.d("clientScanCanceled: %s", clientScanCanceled);
         if(clientScanCanceled) {
           clientScanCanceled = false;
           return;
         }
-        ArrayList<PlexClient> clients = intent.getParcelableArrayListExtra(VoiceControlForPlexApplication.Intent.EXTRA_CLIENTS);
+        ArrayList<PlexClient> clients = intent.getParcelableArrayListExtra(com.atomjack.shared.Intent.EXTRA_CLIENTS);
         if(clients != null || VoiceControlForPlexApplication.getInstance().castClients.size() > 0) {
           VoiceControlForPlexApplication.clients = new HashMap<String, PlexClient>();
           if(clients != null)
@@ -802,17 +809,11 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
               VoiceControlForPlexApplication.clients.put(c.name, c);
             }
           VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.SAVED_CLIENTS, gsonWrite.toJson(VoiceControlForPlexApplication.clients));
-          boolean showConnectToClients = intent.getBooleanExtra(VoiceControlForPlexApplication.Intent.EXTRA_CONNECT_TO_CLIENT, false);
+          boolean showConnectToClients = intent.getBooleanExtra(com.atomjack.shared.Intent.EXTRA_CONNECT_TO_CLIENT, false);
           Logger.d("showConnectToClients: %s", showConnectToClients);
-//          if(showConnectToClients) {
           clientScanCanceled = false;
           showPlexClients(false, onClientChosen);
-//            localScan.showPlexClients(false, onClientChosen);
-//          } else
-//            showPlexClients();
-//            localScan.showPlexClients();
         } else {
-//          localScan.hideSearchDialog();
           AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
           builder.setTitle(R.string.no_clients_found);
           builder.setCancelable(false)
@@ -824,6 +825,17 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
           AlertDialog d = builder.create();
           d.show();
         }
+      } else if(intent.getAction() != null && intent.getAction().equals(com.atomjack.shared.Intent.SHOW_WEAR_PURCHASE)) {
+        // An Android Wear device was successfully pinged, so show popup alerting the
+        // user that they can purchase wear support, but only if we've never shown the popup before.
+        if(VoiceControlForPlexApplication.getInstance().hasWear()) {
+          hidePurchaseWearMenuItem();
+        } else {
+          if (VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.HAS_SHOWN_WEAR_PURCHASE_POPUP, false) == false)
+            showWearPurchase();
+        }
+      } else if(intent.getAction() != null && intent.getAction().equals(com.atomjack.shared.Intent.SHOW_WEAR_PURCHASE_REQUIRED)) {
+        showWearPurchaseRequired();
       }
 		//}
 		super.onNewIntent(intent);
@@ -832,7 +844,7 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 
   @Override
 	protected void setServer(PlexServer _server) {
-		Logger.d("Setting Server %s", _server.name);
+		Logger.d("Setting Server %s with %d connections.", _server.name, server.connections.size());
 		server = _server;
 		saveSettings();
 
@@ -878,6 +890,9 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 
     if(plexSubscription.isSubscribed() || castPlayerManager.isSubscribed())
       setCastIconActive();
+
+    if(VoiceControlForPlexApplication.getInstance().hasWear())
+      hidePurchaseWearMenuItem();
 
 		if(authToken != null) {
 			_menu.findItem(R.id.menu_login).setVisible(false);
@@ -938,9 +953,9 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 		{
 			Bundle bundle = new Bundle();
 			// Pass the entire string of what was said into autovoice
-			bundle.putString(VoiceControlForPlexApplication.Intent.ARGUMENTS, "%avcomm");
+			bundle.putString(com.atomjack.shared.Intent.ARGUMENTS, "%avcomm");
 			if (TaskerPlugin.Setting.hostSupportsOnFireVariableReplacement(this))
-				TaskerPlugin.Setting.setVariableReplaceKeys(bundle, new String[]{VoiceControlForPlexApplication.Intent.ARGUMENTS});
+				TaskerPlugin.Setting.setVariableReplaceKeys(bundle, new String[]{com.atomjack.shared.Intent.ARGUMENTS});
 
 			Intent i = new Intent();
 			i.putExtras(bundle);
@@ -1041,7 +1056,38 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
   @Override
   public void onDisconnected() {
     super.onDisconnected();
+  }
 
+  @Override
+  protected void hidePurchaseWearMenuItem() {
+    MenuItem wearItem = menu.findItem(R.id.menu_purchase_wear);
+    wearItem.setVisible(false);
+    MenuItem wearOptionsItem = menu.findItem(R.id.menu_wear_options);
+    wearOptionsItem.setVisible(true);
+
+  }
+
+  public void showWearOptions(MenuItem item) {
+    AlertDialog.Builder chooserDialog = new AlertDialog.Builder(this);
+    chooserDialog.setTitle(R.string.wear_primary_function);
+    chooserDialog.setMessage(R.string.wear_primary_function_option_description);
+    chooserDialog.setPositiveButton(R.string.voice_input, new DialogInterface.OnClickListener() {
+      public void onClick(DialogInterface dialog, int id) {
+        DataMap dataMap = new DataMap();
+        dataMap.putBoolean(WearConstants.PRIMARY_FUNCTION_VOICE_INPUT, true);
+        new SendToDataLayerThread(WearConstants.SET_WEAR_OPTIONS, dataMap, MainActivity.this).start();
+        dialog.dismiss();
+      }
+    });
+    chooserDialog.setNeutralButton(R.string.play_pause, new DialogInterface.OnClickListener() {
+      public void onClick(DialogInterface dialog, int id) {
+        DataMap dataMap = new DataMap();
+        dataMap.putBoolean(WearConstants.PRIMARY_FUNCTION_VOICE_INPUT, false);
+        new SendToDataLayerThread(WearConstants.SET_WEAR_OPTIONS, dataMap, MainActivity.this).start();
+        dialog.dismiss();
+      }
+    });
+    chooserDialog.show();
   }
 }
 
