@@ -14,7 +14,6 @@ import com.atomjack.vcfp.BuildConfig;
 import com.atomjack.shared.Logger;
 import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
-import com.atomjack.vcfp.interfaces.PlayerStateHandler;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexResponse;
 import com.atomjack.shared.model.Timeline;
@@ -24,20 +23,13 @@ import com.google.android.gms.wearable.DataMap;
 
 import org.codechimp.apprater.AppRater;
 
-import java.util.Hashtable;
-
 public class NowPlayingActivity extends PlayerActivity {
 	private boolean subscribed = false;
 
 	PlayerState state = PlayerState.STOPPED;
-//	enum PlayerState {
-//		PLAYING,
-//		STOPPED,
-//		PAUSED
-//	};
 
 	protected void onCreate(Bundle savedInstanceState) {
-		Logger.d("on create NowPlayingActivity");
+		Logger.d("[NowPlayingActivity] onCreate");
 		super.onCreate(savedInstanceState);
 
     plexSubscription.setListener(this);
@@ -63,19 +55,27 @@ public class NowPlayingActivity extends PlayerActivity {
 		if(mClient == null || nowPlayingMedia == null)
 			finish();
 
+    if(plexSubscription.isSubscribed()) {
+        state = plexSubscription.getCurrentState();
+        if(state == PlayerState.STOPPED) {
+          VoiceControlForPlexApplication.getInstance().cancelNotification();
+          finish();
+        } else {
+          Logger.d("mClient: %s", mClient);
+          Logger.d("nowPlayingMedia: %s", nowPlayingMedia);
+          showNowPlaying();
+          seekBar = (SeekBar) findViewById(R.id.seekBar);
+          seekBar.setOnSeekBarChangeListener(NowPlayingActivity.this);
+          seekBar.setMax(nowPlayingMedia.duration);
+          seekBar.setProgress(Integer.parseInt(nowPlayingMedia.viewOffset));
 
-    Logger.d("mClient: %s", mClient);
-    Logger.d("nowPlayingMedia: %s", nowPlayingMedia);
-		state = PlayerState.PLAYING;
-		showNowPlaying();
-		seekBar = (SeekBar)findViewById(R.id.seekBar);
-    seekBar.setOnSeekBarChangeListener(this);
-    seekBar.setMax(nowPlayingMedia.duration);
-    seekBar.setProgress(Integer.parseInt(nowPlayingMedia.viewOffset));
-
-		setCurrentTimeDisplay(getOffset(nowPlayingMedia));
-		durationDisplay.setText(VoiceControlForPlexApplication.secondsToTimecode(nowPlayingMedia.duration / 1000));
-
+          setCurrentTimeDisplay(getOffset(nowPlayingMedia));
+          durationDisplay.setText(VoiceControlForPlexApplication.secondsToTimecode(nowPlayingMedia.duration / 1000));
+        }
+    } else {
+      VoiceControlForPlexApplication.getInstance().cancelNotification();
+      finish();
+    }
 
 	}
 

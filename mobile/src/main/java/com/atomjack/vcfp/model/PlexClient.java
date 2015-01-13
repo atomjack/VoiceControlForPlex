@@ -107,6 +107,16 @@ public class PlexClient extends PlexDevice {
 		}
 	}
 
+  private PlexResponse adjustPlayback(String which) {
+    try {
+      String url = String.format("http://%s:%s/player/playback/%s", address, port, which);
+      return PlexHttpClient.getSync(url);
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+    return null;
+  }
+
   public PlexResponse pause() {
     return adjustPlayback("pause");
   }
@@ -122,17 +132,6 @@ public class PlexClient extends PlexDevice {
   public PlexResponse seekTo(int offset) {
     String url = String.format("http://%s:%s/player/playback/seekTo?offset=%s", address, port, offset);
     return PlexHttpClient.getSync(url);
-  }
-
-  private PlexResponse adjustPlayback(String which) {
-    try {
-      String url = String.format("http://%s:%s/player/playback/%s", address, port, which);
-      PlexResponse r = PlexHttpClient.getSync(url);
-      return r;
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
-    return null;
   }
 
   public boolean isLocalDevice() {

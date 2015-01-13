@@ -50,14 +50,14 @@ public class PlexControlService extends IntentService {
     if(intent.getAction() != null) {
       client = intent.getParcelableExtra(CLIENT);
       PlexMedia playingMedia = intent.getParcelableExtra(MEDIA);
-      PlayerState currentState = PlayerState.STOPPED;
+      PlayerState currentState;
       Timeline t = null;
 
       if(client.isCastClient) {
         currentState = castPlayerManager.getCurrentState();
       } else {
         t = plexSubscription.getCurrentTimeline();
-        currentState = PlayerState.getState(t);
+        currentState = plexSubscription.getCurrentState();
       }
 
       PlexResponse response;

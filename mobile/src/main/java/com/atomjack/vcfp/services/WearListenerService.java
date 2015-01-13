@@ -135,12 +135,7 @@ public class WearListenerService extends WearableListenerService {
         if (plexSubscription.isSubscribed()) {
 //          PlexClient client = plexSubscription.mClient;
 
-          Header[] headers = {
-                  new BasicHeader(PlexHeaders.XPlexClientIdentifier, VoiceControlForPlexApplication.getInstance().prefs.getUUID())
-          };
-          MediaContainer mc = PlexHttpClient.getSync(String.format("http://%s:%s/player/timeline/poll?commandID=0", client.address, client.port), headers);
-          Timeline t = mc.getActiveTimeline();
-          PlayerState currentState = PlayerState.getState(t);
+          PlayerState currentState = plexSubscription.getCurrentState();
           Logger.d("[WearListenerService] current State: %s", currentState);
 
 

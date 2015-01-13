@@ -7,12 +7,10 @@ import com.atomjack.shared.Logger;
 import com.atomjack.shared.PlayerState;
 import com.atomjack.shared.model.Timeline;
 import com.atomjack.vcfp.activities.VCFPActivity;
-import com.atomjack.vcfp.interfaces.PlayerStateHandler;
 import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexResponse;
 import com.atomjack.vcfp.net.PlexHttpClient;
-import com.atomjack.vcfp.net.PlexHttpMediaContainerHandler;
 import com.atomjack.vcfp.net.PlexHttpResponseHandler;
 
 import org.apache.http.Header;
@@ -71,6 +69,9 @@ public class PlexSubscription {
   private final int failedHeartbeatMax = 5;
 
   private Handler mHandler;
+
+  private PlayerState currentState;
+  private Timeline currentTimeline;
 
   public PlexSubscription() {
     mHandler = new Handler();
@@ -186,6 +187,11 @@ public class PlexSubscription {
             e.printStackTrace();
           } catch (Exception e) {
             e.printStackTrace();
+          }
+
+          currentTimeline = mediaContainer.getActiveTimeline();
+          if(currentTimeline != null) {
+            currentState = PlayerState.getState(currentTimeline);
           }
 
           onMessage(mediaContainer);
@@ -434,31 +440,11 @@ public class PlexSubscription {
     return mClient;
   }
 
+  public PlayerState getCurrentState() {
+    return currentState;
+  }
+
   public Timeline getCurrentTimeline() {
-    Header[] headers = {
-            new BasicHeader(PlexHeaders.XPlexClientIdentifier, VoiceControlForPlexApplication.getInstance().prefs.getUUID())
-    };
-    MediaContainer mc = PlexHttpClient.getSync(String.format("http://%s:%s/player/timeline/poll?commandID=0", mClient.address, mClient.port), headers);
-    Timeline t = mc.getActiveTimeline();
-    return t;
-//    PlayerState currentState = PlayerState.getState(t);
-
-
-    /*
-    PlexHttpClient.get(String.format("http://%s:%s/player/timeline/poll?commandID=%d", mClient.address, mClient.port, commandId), headers, new PlexHttpMediaContainerHandler() {
-      @Override
-      public void onSuccess(MediaContainer mediaContainer) {
-        Timeline t = mediaContainer.getActiveTimeline();
-        if(playerStateHandler != null)
-            playerStateHandler.onSuccess(PlayerState.getState(t));
-          commandId++;
-      }
-
-      @Override
-      public void onFailure(Throwable error) {
-        commandId++;
-      }
-    });
-*/
+    return currentTimeline;
   }
 }
