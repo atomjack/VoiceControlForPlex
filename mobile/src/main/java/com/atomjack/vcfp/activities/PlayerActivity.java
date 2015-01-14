@@ -111,7 +111,7 @@ public abstract class PlayerActivity extends VCFPActivity implements SeekBar.OnS
         TextView showTitle = (TextView)findViewById(R.id.nowPlayingShowTitle);
         showTitle.setText(video.grandparentTitle);
         TextView episodeTitle = (TextView)findViewById(R.id.nowPlayingEpisodeTitle);
-        episodeTitle.setText(video.title);
+        episodeTitle.setText(String.format("%s (s%02de%02d)", video.title, Integer.parseInt(video.parentIndex), Integer.parseInt(video.index)));
         TextView year = (TextView)findViewById(R.id.nowPlayingYear);
         year.setText(video.year);
         TextView duration = (TextView)findViewById(R.id.nowPlayingDuration);

@@ -85,8 +85,7 @@ public class WearApplication extends Application {
             .build();
 
     Intent intent = new Intent(this, MainActivity.class);
-    intent.setAction(MainActivity.START_SPEECH_RECOGNITION);
-    intent.putExtra(WearConstants.CLIENT_NAME, nowPlayingMedia.getString(WearConstants.CLIENT_NAME));
+    intent.setAction(MainActivity.RECEIVE_VOICE_INPUT);
     intent.addFlags(Intent.FLAG_FROM_BACKGROUND);
     intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);

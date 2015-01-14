@@ -2,6 +2,7 @@ package com.atomjack.wear;
 
 import android.app.Activity;
 import android.app.NotificationManager;
+import android.app.RemoteInput;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -25,6 +26,8 @@ import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
 import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
@@ -34,6 +37,8 @@ public class MainActivity extends Activity implements
   public static final String SHOW_WEAR_UNAUTHORIZED = "com.atomjack.vcfp.intent.show_wear_unauthorized";
   public static final String FINISH = "com.atomjack.vcfp.intent.finish";
   public static final String START_SPEECH_RECOGNITION = "com.atomjack.vcfp.intent.start_speech_recognition";
+  public static final String RECEIVE_VOICE_INPUT = "com.atomjack.vcfp.intent.receive_voice_input";
+
   private static final int SPEECH_RECOGNIZER_REQUEST_CODE = 0;
 
   GoogleApiClient googleApiClient;
@@ -42,7 +47,7 @@ public class MainActivity extends Activity implements
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    Logger.d("[MainActivity] onCreate: %s", savedInstanceState);
+    Logger.d("[MainActivity] onCreate: %s", getIntent().getAction());
 
     setMainView();
 
@@ -61,10 +66,24 @@ public class MainActivity extends Activity implements
       } else if(action.equals(WearConstants.SET_INFO)) {
         Logger.d("[MainActivity] setting info to %s", getIntent().getStringExtra(WearConstants.INFORMATION));
         setInformationView(getIntent().getStringExtra(WearConstants.INFORMATION));
+      } else if(action.equals(RECEIVE_VOICE_INPUT)) {
+        String query = getMessageText(getIntent());
+        DataMap dataMap = new DataMap();
+        dataMap.putStringArrayList(WearConstants.SPEECH_QUERY, new ArrayList<>(Arrays.asList(query)));
+        new SendToDataLayerThread(WearConstants.SPEECH_QUERY, dataMap, this).start();
+        finish();
       }
     }
   }
 
+  private String getMessageText(Intent intent) {
+    Bundle remoteInput = RemoteInput.getResultsFromIntent(intent);
+    if (remoteInput != null) {
+      CharSequence charSequence = remoteInput.getCharSequence(WearConstants.SPEECH_QUERY);
+      return new StringBuilder(charSequence.length()).append(charSequence).toString();
+    }
+    return null;
+  }
   @Override
   protected void onPause() {
     super.onPause();

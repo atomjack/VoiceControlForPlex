@@ -78,16 +78,21 @@ public class NowPlayingActivity extends PlayerActivity {
     }, 3000);
 
 
-    Logger.d("mClient: %s", mClient);
-    Logger.d("nowPlayingMedia: %s", nowPlayingMedia);
-    showNowPlaying();
-    seekBar = (SeekBar) findViewById(R.id.seekBar);
-    seekBar.setOnSeekBarChangeListener(NowPlayingActivity.this);
-    seekBar.setMax(nowPlayingMedia.duration);
-    seekBar.setProgress(Integer.parseInt(nowPlayingMedia.viewOffset));
+    if(nowPlayingMedia == null) {
+      VoiceControlForPlexApplication.getInstance().cancelNotification();
+      finish();
+    } else {
+      Logger.d("mClient: %s", mClient);
+      Logger.d("nowPlayingMedia: %s", nowPlayingMedia);
+      showNowPlaying();
+      seekBar = (SeekBar) findViewById(R.id.seekBar);
+      seekBar.setOnSeekBarChangeListener(NowPlayingActivity.this);
+      seekBar.setMax(nowPlayingMedia.duration);
+      seekBar.setProgress(Integer.parseInt(nowPlayingMedia.viewOffset));
 
-    setCurrentTimeDisplay(getOffset(nowPlayingMedia));
-    durationDisplay.setText(VoiceControlForPlexApplication.secondsToTimecode(nowPlayingMedia.duration / 1000));
+      setCurrentTimeDisplay(getOffset(nowPlayingMedia));
+      durationDisplay.setText(VoiceControlForPlexApplication.secondsToTimecode(nowPlayingMedia.duration / 1000));
+    }
 	}
 
 

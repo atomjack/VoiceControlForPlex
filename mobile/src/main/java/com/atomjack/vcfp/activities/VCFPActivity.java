@@ -911,6 +911,7 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
           msg = WearConstants.MEDIA_STOPPED;
         } else if (mCurrentState == PlayerState.PAUSED) {
           msg = WearConstants.MEDIA_PAUSED;
+          VoiceControlForPlexApplication.SetWearMediaTitles(data, nowPlayingMedia);
         }
         if (msg != null) {
           if (msg.equals(WearConstants.MEDIA_PLAYING)) {

@@ -17,6 +17,8 @@ import java.util.concurrent.TimeUnit;
 public class PlexVideo extends PlexMedia {
 	@Attribute(required=false)
 	public String index;
+  @Attribute(required=false)
+  public String parentIndex;
 
 
 	@Attribute(required=false)
@@ -103,6 +105,7 @@ public class PlexVideo extends PlexMedia {
 	public void writeToParcel(Parcel out, int flags) {
     super.writeToParcel(out, flags);
 		out.writeString(index);
+    out.writeString(parentIndex);
 		out.writeString(type);
 		out.writeString(year);
 		out.writeString(summary);
@@ -114,6 +117,7 @@ public class PlexVideo extends PlexMedia {
 	public PlexVideo(Parcel in) {
     super(in);
 		index = in.readString();
+    parentIndex = in.readString();
 		type = in.readString();
 		year = in.readString();
 		summary = in.readString();

@@ -14,15 +14,15 @@
         android:maxLines="1"
         android:layout_weight="1"
         android:paddingLeft="15sp"
-        android:layout_marginTop="10dp"/>
+        android:layout_marginTop="18dp"/>
     <ImageButton
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:background="@android:color/transparent"
         android:onClick="doRewind"
-        android:id="@+id/rewindButton" android:src="@drawable/button_rewind"
+        android:id="@+id/rewindButton" android:src="@drawable/notif_back15"
         android:layout_weight="1"
-        android:layout_marginTop="10dp"/>
+        android:layout_marginTop="13dp"/>
     <ImageButton
         android:layout_width="0dp"
         android:layout_height="wrap_content"
@@ -44,9 +44,9 @@
         android:layout_height="wrap_content"
         android:background="@android:color/transparent"
         android:onClick="doForward"
-        android:id="@+id/forwardButton" android:src="@drawable/button_forward"
+        android:id="@+id/forwardButton" android:src="@drawable/notif_ff30"
         android:layout_weight="1"
-        android:layout_marginTop="10dp"/>
+        android:layout_marginTop="13dp"/>
     <ImageButton
         android:layout_width="0dp"
         android:layout_height="wrap_content"
@@ -62,5 +62,5 @@
         android:id="@+id/durationView"
         android:maxLines="1"
         android:layout_weight="1"
-        android:layout_marginTop="10dp"/>
+        android:layout_marginTop="18dp"/>
 </LinearLayout>

@@ -147,7 +147,7 @@ public class WearListenerService extends WearableListenerService {
 
           if(listener != null && listener.getNowPlayingMedia() != null) {
             Logger.d("now playing: %s", listener.getNowPlayingMedia().title);
-            dataMap.putString(WearConstants.MEDIA_TITLE, listener.getNowPlayingMedia().title);
+            VoiceControlForPlexApplication.SetWearMediaTitles(dataMap, listener.getNowPlayingMedia());
             dataMap.putString(WearConstants.MEDIA_TYPE, listener.getNowPlayingMedia().getType());
             final PlexMedia media = plexSubscription.getListener().getNowPlayingMedia();
             VoiceControlForPlexApplication.getWearMediaImage(media, new BitmapHandler() {
