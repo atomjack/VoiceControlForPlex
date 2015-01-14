@@ -57,6 +57,19 @@ public abstract class PlexMedia implements Parcelable {
 
   public boolean isClip() { return false; }
 
+  public String getType() {
+    if(isMovie())
+      return "movie";
+    else if(isMusic())
+      return "music";
+    else if(isShow())
+      return "show";
+    else if(isClip())
+      return "clip";
+    else
+      return "unknown";
+  }
+
   @Attribute
 	public String key;
   @Attribute

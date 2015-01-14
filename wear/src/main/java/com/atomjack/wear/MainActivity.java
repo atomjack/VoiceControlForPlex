@@ -56,9 +56,10 @@ public class MainActivity extends Activity implements
       if (action.equals(Intent.ACTION_MAIN)) {
         // Send a message to the paired device asking if it's connected to a Plex Client that is currently playing
         DataMap dataMap = new DataMap();
-//      dataMap.putBoolean(WearConstants.LAUNCHED, true);
-        new SendToDataLayerThread(WearConstants.GET_PLAYBACK_STATE, this).start();
+        dataMap.putBoolean(WearConstants.LAUNCHED, true);
+        new SendToDataLayerThread(WearConstants.GET_PLAYBACK_STATE, dataMap, this).start();
       } else if(action.equals(WearConstants.SET_INFO)) {
+        Logger.d("[MainActivity] setting info to %s", getIntent().getStringExtra(WearConstants.INFORMATION));
         setInformationView(getIntent().getStringExtra(WearConstants.INFORMATION));
       }
     }
@@ -139,6 +140,7 @@ public class MainActivity extends Activity implements
     watchViewStub.setRectLayout(R.layout.activity_information_rect);
     watchViewStub.setRoundLayout(R.layout.activity_information_round);
     TextView textView = (TextView)findViewById(R.id.textView);
+    Logger.d("[MainActivity] Setting Information View: %s", info);
     textView.setText(info);
   }
 

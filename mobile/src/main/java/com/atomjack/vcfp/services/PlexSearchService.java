@@ -52,7 +52,6 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.wearable.DataMap;
-import com.google.android.gms.wearable.Wearable;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -104,7 +103,6 @@ public class PlexSearchService extends Service {
   private VCFPActivity.NetworkState currentNetworkState;
 
   private boolean fromWear = false;
-  GoogleApiClient googleApiClient;
 
 	// Chromecast
 	MediaRouter mMediaRouter;
@@ -145,7 +143,7 @@ public class PlexSearchService extends Service {
       Logger.d("CAST MANAGER IS SUBSCRIBED");
     }
 
-    if(intent.getBooleanExtra(WearConstants.FROM_WEAR, false) == true) {
+    if(intent.getBooleanExtra(WearConstants.FROM_WEAR, false) == true && VoiceControlForPlexApplication.getInstance().hasWear()) {
       fromWear = true;
     }
 
@@ -967,7 +965,6 @@ public class PlexSearchService extends Service {
           theMedia.server = media.server;
           playMedia(theMedia);
           onActionFinished(WearConstants.SPEECH_QUERY_RESULT, false, theMedia);
-
         } else {
           // TODO: Handle failure
         }
@@ -1097,6 +1094,7 @@ public class PlexSearchService extends Service {
 	private void showPlayingMedia(PlexMedia media) {
     Logger.d("[PlexSearchService] nowPlayingMedia: %s", media.title);
 		Intent nowPlayingIntent = new Intent(this, NowPlayingActivity.class);
+    nowPlayingIntent.putExtra(WearConstants.FROM_WEAR, fromWear);
 		nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_MEDIA, media);
 		nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_CLIENT, client);
 		nowPlayingIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -1880,10 +1878,6 @@ public class PlexSearchService extends Service {
   private void onActionFinished(String action, boolean error, PlexMedia media) {
     if(fromWear) {
       Logger.d("[PlexSearchService] onActionFinished: %s", action);
-      googleApiClient = new GoogleApiClient.Builder(this)
-              .addApi(Wearable.API)
-              .build();
-      googleApiClient.connect();
 
       DataMap dataMap = new DataMap();
       dataMap.putBoolean(WearConstants.SPEECH_QUERY_RESULT, !error);
@@ -1900,15 +1894,13 @@ public class PlexSearchService extends Service {
     }
 
     @Override
-    protected void feedback(String text, boolean errors) {
-      super.feedback(text, errors);
-      if(VoiceControlForPlexApplication.getInstance().hasWear()) {
+    protected void feedback(String text, boolean error) {
+      super.feedback(text, error);
+      if(VoiceControlForPlexApplication.getInstance().hasWear() && error) {
         DataMap dataMap = new DataMap();
         dataMap.putString(WearConstants.INFORMATION, text);
         new SendToDataLayerThread(WearConstants.SET_INFO, dataMap, PlexSearchService.this).start();
       }
     }
-
   }
-
 }

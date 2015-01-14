@@ -28,6 +28,8 @@ public class WearConstants {
   // This is used to know whether or not the voice input was triggered from an initial launch of the app
   public final static String LAUNCHED = "com.atomjack.vcfp.launched";
 
+  public final static String FINISH = "com.atomjack.vcfp.finish";
+
   public final static String SPEECH_QUERY_RESULT = "com.atomjack.vcfp.speech_query_result";
 
   public final static String SEARCHING_FOR = "com.atomjack.vcfp.searching_for";
@@ -48,6 +50,7 @@ public class WearConstants {
   // media metadata
   public final static String MEDIA_TYPE = "com.atomjack.vcfp.media_type";
   public final static String MEDIA_TITLE = "com.atomjack.vcfp.media_title";
+  public final static String MEDIA_SUBTITLE = "com.atomjack.vcfp.media_episode_title";
   public final static String IMAGE = "com.atomjack.vcfp.image";
   public final static String CLIENT_NAME = "com.atomjack.vcfp.client_name";
 }

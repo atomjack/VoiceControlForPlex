@@ -3,6 +3,7 @@ package com.atomjack.vcfp.activities;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
+import android.os.Handler;
 import android.view.Menu;
 import android.view.View;
 import android.widget.SeekBar;
@@ -25,6 +26,8 @@ import org.codechimp.apprater.AppRater;
 
 public class NowPlayingActivity extends PlayerActivity {
 	private boolean subscribed = false;
+  private boolean fromWear = false;
+  private final Handler handler = new Handler();
 
 	PlayerState state = PlayerState.STOPPED;
 
@@ -45,38 +48,46 @@ public class NowPlayingActivity extends PlayerActivity {
 			Logger.d("found saved instance state");
 			nowPlayingMedia = savedInstanceState.getParcelable(com.atomjack.shared.Intent.EXTRA_MEDIA);
       mClient = savedInstanceState.getParcelable(com.atomjack.shared.Intent.EXTRA_CLIENT);
+      fromWear = savedInstanceState.getBoolean(WearConstants.FROM_WEAR, false);
       Logger.d("[NowPlaying] set client: %s", mClient);
 		} else {
 			nowPlayingMedia = getIntent().getParcelableExtra(com.atomjack.shared.Intent.EXTRA_MEDIA);
       mClient = getIntent().getParcelableExtra(com.atomjack.shared.Intent.EXTRA_CLIENT);
+      fromWear = getIntent().getBooleanExtra(WearConstants.FROM_WEAR, false);
+      if(fromWear) {
+        new SendToDataLayerThread(WearConstants.FINISH, this).start();
+      }
       Logger.d("[NowPlayingActivity] 2 set client: %s", mClient);
 		}
 
 		if(mClient == null || nowPlayingMedia == null)
 			finish();
 
-    if(plexSubscription.isSubscribed()) {
-        state = plexSubscription.getCurrentState();
-        if(state == PlayerState.STOPPED) {
+    // If we're not subscribed, or the current state of the PlexClient is stopped, finish the activity.
+    // However, we need to wait a few seconds before checking this as if we're not subscribed when playback
+    // is triggered, getting subscribed will take a small amount of time
+    handler.postDelayed(new Runnable() {
+      @Override
+      public void run() {
+        Logger.d("[NowPlayingActivity] subscribed: %s", plexSubscription.isSubscribed());
+        if(!plexSubscription.isSubscribed() || plexSubscription.getCurrentState() == PlayerState.STOPPED) {
           VoiceControlForPlexApplication.getInstance().cancelNotification();
           finish();
-        } else {
-          Logger.d("mClient: %s", mClient);
-          Logger.d("nowPlayingMedia: %s", nowPlayingMedia);
-          showNowPlaying();
-          seekBar = (SeekBar) findViewById(R.id.seekBar);
-          seekBar.setOnSeekBarChangeListener(NowPlayingActivity.this);
-          seekBar.setMax(nowPlayingMedia.duration);
-          seekBar.setProgress(Integer.parseInt(nowPlayingMedia.viewOffset));
-
-          setCurrentTimeDisplay(getOffset(nowPlayingMedia));
-          durationDisplay.setText(VoiceControlForPlexApplication.secondsToTimecode(nowPlayingMedia.duration / 1000));
         }
-    } else {
-      VoiceControlForPlexApplication.getInstance().cancelNotification();
-      finish();
-    }
+      }
+    }, 3000);
 
+
+    Logger.d("mClient: %s", mClient);
+    Logger.d("nowPlayingMedia: %s", nowPlayingMedia);
+    showNowPlaying();
+    seekBar = (SeekBar) findViewById(R.id.seekBar);
+    seekBar.setOnSeekBarChangeListener(NowPlayingActivity.this);
+    seekBar.setMax(nowPlayingMedia.duration);
+    seekBar.setProgress(Integer.parseInt(nowPlayingMedia.viewOffset));
+
+    setCurrentTimeDisplay(getOffset(nowPlayingMedia));
+    durationDisplay.setText(VoiceControlForPlexApplication.secondsToTimecode(nowPlayingMedia.duration / 1000));
 	}
 
 

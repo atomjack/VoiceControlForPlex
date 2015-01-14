@@ -131,17 +131,21 @@ public class WearApplication extends Application {
       extender = new NotificationCompat.WearableExtender()
               .addAction(getPlayPauseAction())
               .addAction(getVoiceInputAction())
+              .addAction(getStopAction())
               .setContentAction(prefs.get(WearConstants.PRIMARY_FUNCTION_VOICE_INPUT, false) ? 1 : 0)
               .setHintHideIcon(true);
     }
 
+    String title = nowPlayingMedia.getString(WearConstants.MEDIA_TITLE);
+    String subtitle = nowPlayingMedia.getString(WearConstants.MEDIA_SUBTITLE);
     // Create the notification
     NotificationCompat.Builder notificationBuilder =
             new NotificationCompat.Builder(this)
-                    .setContentTitle(nowPlayingMedia.getString(WearConstants.MEDIA_TITLE))
-//                    .setContentText(dataMap.getString(WearConstants.MEDIA_TITLE))
+                    .setContentTitle(title)
                     .setSmallIcon(R.drawable.ic_launcher)
                     .extend(extender);
+    if(subtitle != null)
+      notificationBuilder.setContentText(subtitle);
 
     // Build the notification and show it
     mNotifyMgr.cancel(NOTIFICATION_ID);

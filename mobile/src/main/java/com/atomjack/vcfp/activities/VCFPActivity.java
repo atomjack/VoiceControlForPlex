@@ -904,8 +904,8 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
         final DataMap data = new DataMap();
         String msg = null;
         if (mCurrentState == PlayerState.PLAYING) {
-          data.putString(WearConstants.MEDIA_TITLE, nowPlayingMedia.title);
-//        data.putString(WearConstants.IMAGE, nowPlayingMedia.art);
+          data.putString(WearConstants.MEDIA_TYPE, nowPlayingMedia.getType());
+          VoiceControlForPlexApplication.SetWearMediaTitles(data, nowPlayingMedia);
           msg = WearConstants.MEDIA_PLAYING;
         } else if (mCurrentState == PlayerState.STOPPED) {
           msg = WearConstants.MEDIA_STOPPED;
@@ -920,6 +920,7 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
                 DataMap binaryDataMap = new DataMap();
                 binaryDataMap.putAll(data);
                 binaryDataMap.putAsset(WearConstants.IMAGE, VoiceControlForPlexApplication.createAssetFromBitmap(bitmap));
+                binaryDataMap.putString(WearConstants.PLAYBACK_STATE, mCurrentState.name());
                 new SendToDataLayerThread(WearConstants.RECEIVE_MEDIA_IMAGE, binaryDataMap, VCFPActivity.this).sendDataItem();
               }
             });

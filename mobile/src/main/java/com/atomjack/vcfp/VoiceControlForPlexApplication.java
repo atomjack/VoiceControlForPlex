@@ -774,4 +774,19 @@ public class VoiceControlForPlexApplication extends Application
     bitmap.compress(Bitmap.CompressFormat.PNG, 100, byteStream);
     return Asset.createFromBytes(byteStream.toByteArray());
   }
+
+  public static void SetWearMediaTitles(DataMap dataMap, PlexMedia media) {
+    if(media.isShow()) {
+      dataMap.putString(WearConstants.MEDIA_TITLE, media.getTitle());
+      Logger.d("[VCFPActivity] got show title: %s", media.getTitle());
+      dataMap.putString(WearConstants.MEDIA_SUBTITLE, media.getEpisodeTitle());
+    } else if(media.isMovie()) {
+      dataMap.putString(WearConstants.MEDIA_TITLE, media.title);
+      dataMap.remove(WearConstants.MEDIA_SUBTITLE);
+    } else if(media.isMusic()) {
+      Logger.d("[VCFPActivity] got music: %s by %s", media.title, media.grandparentTitle);
+      dataMap.putString(WearConstants.MEDIA_TITLE, media.grandparentTitle);
+      dataMap.putString(WearConstants.MEDIA_SUBTITLE, media.title);
+    }
+  }
 }

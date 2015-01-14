@@ -66,7 +66,7 @@ public class WearListenerService extends WearableListenerService {
       if(message.equals(WearConstants.GET_PLAYBACK_STATE)) {
 
         PlayerState state = PlayerState.getState(dataMap.getString(WearConstants.PLAYBACK_STATE));
-        Logger.d("state: %s", state);
+        Logger.d("[WearListenerService] state: %s", state);
         if(state == PlayerState.STOPPED) {
           Intent intent = new Intent(this, MainActivity.class);
           intent.setAction(MainActivity.START_SPEECH_RECOGNITION);
@@ -82,15 +82,9 @@ public class WearListenerService extends WearableListenerService {
           Logger.d("nowPlayingMedia: %s", nowPlayingMedia);
           WearApplication.getInstance().setNowPlayingMedia(nowPlayingMedia);
           WearApplication.getInstance().showNowPlaying();
-          Intent intent = new Intent(this, MainActivity.class);
-          intent.addFlags(Intent.FLAG_FROM_BACKGROUND);
-          intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-          intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-          intent.setAction(MainActivity.FINISH);
-          startActivity(intent);
+          finishMain();
         }
       } else if(message.equals(WearConstants.PING)) {
-        // Send a pong back
         new SendToDataLayerThread(WearConstants.PONG, this).start();
       } else if(message.equals(WearConstants.WEAR_UNAUTHORIZED)) {
         Intent intent = new Intent(this, MainActivity.class);
@@ -109,6 +103,9 @@ public class WearListenerService extends WearableListenerService {
       } else if(message.equals(WearConstants.MEDIA_STOPPED)) {
         mNotifyMgr.cancel(NOTIFICATION_ID);
       } else if(message.equals(WearConstants.MEDIA_PLAYING) || message.equals(WearConstants.MEDIA_PAUSED)) {
+        if(dataMap.getBoolean(WearConstants.LAUNCHED, false)) {
+          finishMain();
+        }
         nowPlayingMedia = WearApplication.getInstance().nowPlayingMedia;
         nowPlayingMedia.putAll(dataMap);
         nowPlayingMedia.putString(WearConstants.PLAYBACK_STATE, message.equals(WearConstants.MEDIA_PLAYING) ? PlayerState.PLAYING.name() : PlayerState.PAUSED.name());
@@ -138,7 +135,18 @@ public class WearListenerService extends WearableListenerService {
         intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(intent);
+      } else if(message.equals(WearConstants.FINISH)) {
+        finishMain();
       }
     }
+  }
+
+  private void finishMain() {
+    Intent intent = new Intent(this, MainActivity.class);
+    intent.addFlags(Intent.FLAG_FROM_BACKGROUND);
+    intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    intent.setAction(MainActivity.FINISH);
+    startActivity(intent);
   }
 }

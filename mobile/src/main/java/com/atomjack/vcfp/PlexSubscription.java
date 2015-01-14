@@ -70,7 +70,7 @@ public class PlexSubscription {
 
   private Handler mHandler;
 
-  private PlayerState currentState;
+  private PlayerState currentState = PlayerState.STOPPED;
   private Timeline currentTimeline;
 
   public PlexSubscription() {
