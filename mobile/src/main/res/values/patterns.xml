@@ -9,22 +9,22 @@ adding translations, please do not modify (.*), $1, ([0-9]+), etc.
     a quite complicated regular expression. Plugging it into https://www.debuggex.com/ should help you figure out how
     it is constructed.
     -->
-    <item name="pattern_recognition" type="string">^(((watch|resume watching|listen to|watch movie) (.+)( on (.+))?( on shuffle)?)|((offset|timecode) (.+)( on (.+))?)|((pause|stop|resume) playback( on (.+))?))|(connect to (.+)|disconnect)$</item>
+    <item name="pattern_recognition" type="string">^(((watch|play|resume watching|listen to|watch movie|play movie) (.+)( on (.+))?( on shuffle)?)|((offset|timecode) (.+)( on (.+))?)|((pause|stop|resume) playback( on (.+))?))|(connect to (.+)|disconnect)$</item>
 
     <item name="pattern_on_client" type="string">(.+) on (.+)$</item>
-    <item name="pattern_resume_watching" type="string">^resume watching (.+)</item>
+    <item name="pattern_resume_watching" type="string">^resume (watching|playing) (.+)</item>
     <item name="pattern_on_shuffle" type="string"> on shuffle$</item>
-    <item name="pattern_watch" type="string">watch $1</item>
-    <item name="pattern_watch_movie" type="string">watch movie (.+)</item>
-    <item name="pattern_watch_season_episode_of_show" type="string">watch season ([0-9]+) episode ([0-9]+) of (.+)</item>
-    <item name="pattern_watch_show_season_episode" type="string">watch (.+) season ([0-9]+) episode ([0-9]+)</item>
-    <item name="pattern_watch_episode_of_show" type="string">watch episode (.+) of (.+)</item>
-    <item name="pattern_watch_next_episode_of_show" type="string">watch the next episode of (.+)</item>
-    <item name="pattern_watch_latest_episode_of_show" type="string">watch( the)? latest episode of (.+)</item>
-    <item name="pattern_watch_show_episode_named" type="string">watch (.+) episode (.+)</item>
+    <item name="pattern_watch" type="string">watch|play $1</item>
+    <item name="pattern_watch_movie" type="string">watch|play movie (.+)</item>
+    <item name="pattern_watch_season_episode_of_show" type="string">watch|play season ([0-9]+) episode ([0-9]+) of (.+)</item>
+    <item name="pattern_watch_show_season_episode" type="string">watch|play (.+) season ([0-9]+) episode ([0-9]+)</item>
+    <item name="pattern_watch_episode_of_show" type="string">watch|play episode (.+) of (.+)</item>
+    <item name="pattern_watch_next_episode_of_show" type="string">watch|play the next episode of (.+)</item>
+    <item name="pattern_watch_latest_episode_of_show" type="string">watch|play( the)? latest episode of (.+)</item>
+    <item name="pattern_watch_show_episode_named" type="string">watch|play (.+) episode (.+)</item>
     <item name="pattern_connect_to" type="string">^connect to (.+)</item>
     <item name="pattern_disconnect" type="string">^disconnect$</item>
-    <item name="pattern_watch2" type="string">watch (.+)</item>
+    <item name="pattern_watch2" type="string">watch|play (.+)</item>
 
     <!--
     The following pattern lets the user say "listen to <album> by <artist>" or

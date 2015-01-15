@@ -103,6 +103,7 @@ android {
 }
 
 dependencies {
+    wearApp project(':wear')
     compile 'com.loopj.android:android-async-http:1.4.4'
     compile files('libs/bugsense-3.6.jar')
     compile('org.simpleframework:simple-xml:2.7.1') {

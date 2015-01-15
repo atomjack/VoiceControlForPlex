@@ -1,18 +1,14 @@
-package com.atomjack.wear;
+package com.atomjack.vcfp;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
 import android.speech.RecognizerIntent;
 
 import com.atomjack.shared.Logger;
 import com.atomjack.shared.SendToDataLayerThread;
-import com.atomjack.shared.UriSerializer;
 import com.atomjack.shared.WearConstants;
 import com.google.android.gms.wearable.DataMap;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 
 public class VoiceInputActivity extends Activity {
   public static final String START_SPEECH_RECOGNITION = "com.atomjack.vcfp.intent.start_speech_recognition";

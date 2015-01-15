@@ -1,14 +1,11 @@
-package com.atomjack.wear;
+package com.atomjack.vcfp;
 
 import android.app.Activity;
-import android.app.NotificationManager;
 import android.app.RemoteInput;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
 import android.speech.RecognizerIntent;
 import android.support.wearable.view.WatchViewStub;
-import android.view.View;
 import android.widget.TextView;
 
 import com.atomjack.shared.Logger;
@@ -18,18 +15,9 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.wearable.DataMap;
 import com.google.android.gms.wearable.Wearable;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonPrimitive;
-import com.google.gson.JsonSerializationContext;
-import com.google.gson.JsonSerializer;
 
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
 
 public class MainActivity extends Activity implements
         GoogleApiClient.ConnectionCallbacks,

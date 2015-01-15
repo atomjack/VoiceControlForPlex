@@ -1,4 +1,4 @@
-package com.atomjack.wear;
+package com.atomjack.vcfp;
 
 import android.app.NotificationManager;
 import android.content.Intent;
