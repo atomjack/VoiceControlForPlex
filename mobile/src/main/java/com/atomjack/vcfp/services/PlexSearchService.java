@@ -431,7 +431,7 @@ public class PlexSearchService extends Service {
 		p = Pattern.compile( getString(R.string.pattern_watch_movie), Pattern.DOTALL);
 		matcher = p.matcher(queryText);
 		if(matcher.find()) {
-			final String queryTerm = matcher.group(1);
+			final String queryTerm = matcher.group(2);
 			return new myRunnable() {
 				@Override
 				public void run() {
@@ -444,9 +444,9 @@ public class PlexSearchService extends Service {
 		matcher = p.matcher(queryText);
 
 		if(matcher.find()) {
-			final String queryTerm = matcher.group(3);
-			final String season = matcher.group(1);
-			final String episode = matcher.group(2);
+			final String queryTerm = matcher.group(4);
+			final String season = matcher.group(2);
+			final String episode = matcher.group(3);
 			return new myRunnable() {
 				@Override
 				public void run() {
@@ -459,9 +459,9 @@ public class PlexSearchService extends Service {
 		matcher = p.matcher(queryText);
 
 		if(matcher.find()) {
-			final String queryTerm = matcher.group(1);
-			final String season = matcher.group(2);
-			final String episode = matcher.group(3);
+			final String queryTerm = matcher.group(2);
+			final String season = matcher.group(3);
+			final String episode = matcher.group(4);
 			return new myRunnable() {
 				@Override
 				public void run() {
@@ -473,8 +473,8 @@ public class PlexSearchService extends Service {
 		p = Pattern.compile(getString(R.string.pattern_watch_episode_of_show));
 		matcher = p.matcher(queryText);
 		if(matcher.find()) {
-			final String episodeSpecified = matcher.group(1);
-			final String showSpecified = matcher.group(2);
+			final String episodeSpecified = matcher.group(2);
+			final String showSpecified = matcher.group(3);
 			return new myRunnable() {
 				@Override
 				public void run() {
@@ -488,7 +488,7 @@ public class PlexSearchService extends Service {
 		matcher = p.matcher(queryText);
 
 		if(matcher.find()) {
-			final String queryTerm = matcher.group(1);
+			final String queryTerm = matcher.group(2);
 			return new myRunnable() {
 				@Override
 				public void run() {
@@ -501,7 +501,7 @@ public class PlexSearchService extends Service {
 		matcher = p.matcher(queryText);
 
 		if(matcher.find()) {
-			final String queryTerm = matcher.group(2);
+			final String queryTerm = matcher.group(3);
 			Logger.d("found latest: %s", queryTerm);
 			return new myRunnable() {
 				@Override
@@ -514,8 +514,8 @@ public class PlexSearchService extends Service {
 		p = Pattern.compile(getString(R.string.pattern_watch_show_episode_named));
 		matcher = p.matcher(queryText);
 		if(matcher.find()) {
-			final String episodeSpecified = matcher.group(2);
-			final String showSpecified = matcher.group(1);
+			final String episodeSpecified = matcher.group(3);
+			final String showSpecified = matcher.group(2);
 			return new myRunnable() {
 				@Override
 				public void run() {
@@ -528,7 +528,7 @@ public class PlexSearchService extends Service {
 		matcher = p.matcher(queryText);
 
 		if(matcher.find()) {
-			final String queryTerm = matcher.group(1);
+			final String queryTerm = matcher.group(2);
 			return new myRunnable() {
 				@Override
 				public void run() {
