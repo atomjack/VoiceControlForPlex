@@ -36,6 +36,7 @@ import com.atomjack.shared.UriDeserializer;
 import com.atomjack.shared.UriSerializer;
 import com.atomjack.shared.WearConstants;
 import com.atomjack.vcfp.activities.CastActivity;
+import com.atomjack.vcfp.activities.MainActivity;
 import com.atomjack.vcfp.activities.NowPlayingActivity;
 import com.atomjack.vcfp.interfaces.BitmapHandler;
 import com.atomjack.vcfp.interfaces.ServerFindHandler;
@@ -122,6 +123,7 @@ public class VoiceControlForPlexApplication extends Application
   private IabHelper mIabHelper;
   // TODO: Obfuscate this somehow:
   String base64EncodedPublicKey = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAlgV+Gdi4nBVn2rRqi+oVLhenzbWcEVyUf1ulhvAElEf6c8iuX3OB4JZRYVhCE690mFaYUdEb8OG8p8wT7IrQmlZ0DRfP2X9csBJKd3qB+l9y11Ggujivythvoiz+uvDPhz54O6wGmUB8+oZXN+jk9MT5Eia3BZxJDvgFcmDe/KQTTKZoIk1Qs/4PSYFP8jaS/lc71yDyRmvAM+l1lv7Ld8h69hVvKFUr9BT/20lHQGohCIc91CJvKIP5DaptbE98DAlrTxjZRRpbi+wrLGKVbJpUOBgPC78qo3zPITn6M6N0tHkv1tHkGOeyLUbxOC0wFdXj33mUldV/rp3tHnld1wIDAQAB";
+  private boolean inventoryQueried = false;
 
   // Has the user purchased chromecast/wear support?
   // This is the default value.
@@ -137,6 +139,9 @@ public class VoiceControlForPlexApplication extends Application
   public static boolean hasDoneClientScan = false;
 
   GoogleApiClient googleApiClient;
+
+  // This is needed so that we can let the main activity know that wear support is enabled, after querying the inventory from Google
+  private MainActivity mainActivity;
 
   @Override
   public void onCreate() {
@@ -627,7 +632,7 @@ public class VoiceControlForPlexApplication extends Application
 
       Logger.d("Query inventory was successful.");
 
-      // Get the price for chromecast support
+      // Get the price for chromecast & wear support
       mIabHelper.queryInventoryAsync(true, new ArrayList<String>(Arrays.asList(SKU_CHROMECAST, SKU_WEAR)), new IabHelper.QueryInventoryFinishedListener() {
         @Override
         public void onQueryInventoryFinished(IabResult result, Inventory inv) {
@@ -655,6 +660,7 @@ public class VoiceControlForPlexApplication extends Application
           Logger.d("Has Chromecast: %s", mHasChromecast);
           Logger.d("Has Wear: %s", mHasWear);
           Logger.d("Initial inventory query finished.");
+          inventoryQueried = true;
           onInventoryQueryFinished();
         }
       });
@@ -663,13 +669,26 @@ public class VoiceControlForPlexApplication extends Application
     }
   };
 
+  public boolean getInventoryQueried() {
+    return inventoryQueried;
+  }
+
   // This runs once we have queried the play store to see if chromecast or wear support have been purchased.
   // If Wear support has not been purchased, we can attempt to contact a connected Wear device, and if we hear back,
   // we can throw a popup alerting the user that the app supports Wear
   private void onInventoryQueryFinished() {
-    Logger.d("[VoiceControlForPlexApplication] Sending ping");
-    if(!mHasWear)
+    if(!mHasWear) {
+      Logger.d("[VoiceControlForPlexApplication] Sending ping");
       new SendToDataLayerThread(WearConstants.PING, this).start();
+    } else {
+      if(mainActivity != null) {
+        mainActivity.hidePurchaseWearMenuItem();
+      }
+    }
+  }
+
+  public void setOnHasWearActivity(MainActivity activity) {
+    mainActivity = activity;
   }
 
   boolean verifyDeveloperPayload(Purchase p) {
@@ -778,13 +797,11 @@ public class VoiceControlForPlexApplication extends Application
   public static void SetWearMediaTitles(DataMap dataMap, PlexMedia media) {
     if(media.isShow()) {
       dataMap.putString(WearConstants.MEDIA_TITLE, media.getTitle());
-      Logger.d("[VCFPActivity] got show title: %s", media.getTitle());
       dataMap.putString(WearConstants.MEDIA_SUBTITLE, media.getEpisodeTitle());
     } else if(media.isMovie()) {
       dataMap.putString(WearConstants.MEDIA_TITLE, media.title);
       dataMap.remove(WearConstants.MEDIA_SUBTITLE);
     } else if(media.isMusic()) {
-      Logger.d("[VCFPActivity] got music: %s by %s", media.title, media.grandparentTitle);
       dataMap.putString(WearConstants.MEDIA_TITLE, media.grandparentTitle);
       dataMap.putString(WearConstants.MEDIA_SUBTITLE, media.title);
     }

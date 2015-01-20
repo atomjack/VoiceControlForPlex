@@ -63,7 +63,11 @@ public class WearListenerService extends WearableListenerService {
       DataMap dataMap = DataMap.fromByteArray(messageEvent.getData());
       Logger.d("[WearListenerService] data: %s", dataMap);
 
-      if(message.equals(WearConstants.GET_PLAYBACK_STATE)) {
+      if(message.equals(WearConstants.RETRY_GET_PLAYBACK_STATE)) {
+        DataMap dataMap1 = new DataMap();
+        dataMap1.putBoolean(WearConstants.LAUNCHED, true);
+        new SendToDataLayerThread(WearConstants.GET_PLAYBACK_STATE, dataMap1, this).start();
+      } else if(message.equals(WearConstants.GET_PLAYBACK_STATE)) {
 
         PlayerState state = PlayerState.getState(dataMap.getString(WearConstants.PLAYBACK_STATE));
         Logger.d("[WearListenerService] state: %s", state);

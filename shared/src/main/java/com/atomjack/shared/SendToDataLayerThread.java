@@ -47,7 +47,7 @@ public class SendToDataLayerThread extends Thread {
 
   public void sendDataItem() {
     sendDataItem = true;
-    this.start();
+    start();
   }
 
   public void run() {

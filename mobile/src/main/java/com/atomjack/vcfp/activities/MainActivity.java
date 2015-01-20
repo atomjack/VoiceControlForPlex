@@ -106,6 +106,11 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+    Logger.d("[MainActivity] onCreate");
+
+    // This will enable the UI to be updated (Wear Support hidden/Wear Options shown)
+    // once inventory is queried via Google, if wear support has been purchased
+    VoiceControlForPlexApplication.getInstance().setOnHasWearActivity(this);
 
 		final WhatsNewDialog whatsNewDialog = new WhatsNewDialog(this);
 		whatsNewDialog.show();
@@ -1059,7 +1064,7 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
   }
 
   @Override
-  protected void hidePurchaseWearMenuItem() {
+  public void hidePurchaseWearMenuItem() {
     MenuItem wearItem = menu.findItem(R.id.menu_purchase_wear);
     wearItem.setVisible(false);
     MenuItem wearOptionsItem = menu.findItem(R.id.menu_wear_options);
@@ -1089,6 +1094,8 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
     });
     chooserDialog.show();
   }
+
+
 }
 
 

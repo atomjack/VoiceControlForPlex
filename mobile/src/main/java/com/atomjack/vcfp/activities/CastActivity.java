@@ -212,6 +212,7 @@ public class CastActivity extends PlayerActivity {
       castManager.decrementUiCounter();
       castManager.removeVideoCastConsumer(castConsumer);
     }
+    VoiceControlForPlexApplication.applicationPaused();
 		super.onPause();
 	}
 

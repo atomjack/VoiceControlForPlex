@@ -27,6 +27,8 @@ public class WearConstants {
 
   // This is used to know whether or not the voice input was triggered from an initial launch of the app
   public final static String LAUNCHED = "com.atomjack.vcfp.launched";
+  public final static String RETRY_GET_PLAYBACK_STATE = "com.atomjack.vcfp.retry_get_playback_state";
+
 
   public final static String FINISH = "com.atomjack.vcfp.finish";
 

@@ -158,13 +158,15 @@ public class MainActivity extends Activity implements
 
   @Override
   protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-    Logger.d("[VoiceInputActivity] onActivityResult: %s", requestCode);
+    Logger.d("[MainActivity] onActivityResult. requestCode: %d, resultCode: %d", requestCode, resultCode);
     if (requestCode == SPEECH_RECOGNIZER_REQUEST_CODE) {
       // When the speech recognizer finishes its work, Android invokes this callback with requestCode equal to SPEECH_RECOGNIZER_REQUEST_CODE
       if (resultCode == RESULT_OK) {
         DataMap dataMap = new DataMap();
         dataMap.putStringArrayList(WearConstants.SPEECH_QUERY, data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS));
         new SendToDataLayerThread(WearConstants.SPEECH_QUERY, dataMap, MainActivity.this).start();
+        finish();
+      } else if(resultCode == RESULT_CANCELED) {
         finish();
       }
     }
