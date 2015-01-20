@@ -15,7 +15,6 @@ public class WearConstants {
   public final static String WEAR_PURCHASED = "/purchased";
   // The handheld app will ping the wearable to see if it exists, if the wearable purchase has not been made.
   // If the handheld receives a pong back, it will show a popup alerting the user to the option to purchase Wear support
-  // TODO: Do this
   public final static String PING = "/ping";
   public final static String PONG = "/pong";
 

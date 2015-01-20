@@ -6,6 +6,8 @@ import android.view.Menu;
 import android.view.View;
 import android.widget.SeekBar;
 
+import com.atomjack.shared.SendToDataLayerThread;
+import com.atomjack.shared.WearConstants;
 import com.atomjack.vcfp.interfaces.AfterTransientTokenRequest;
 import com.atomjack.shared.Logger;
 import com.atomjack.shared.PlayerState;
@@ -46,6 +48,9 @@ public class CastActivity extends PlayerActivity {
     resumePlayback = getIntent().getBooleanExtra("resume", false);
     castManager = castPlayerManager.getCastManager();
 
+    if(getIntent().getBooleanExtra(WearConstants.FROM_WEAR, false)) {
+      new SendToDataLayerThread(WearConstants.FINISH, this).start();
+    }
     // If just playing a single track, put the media into an array
     if(nowPlayingMedia.isMusic() && nowPlayingAlbum == null)
       nowPlayingAlbum = Arrays.asList(nowPlayingMedia);

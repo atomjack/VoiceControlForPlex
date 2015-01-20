@@ -12,6 +12,8 @@ import android.widget.TextView;
 
 import com.atomjack.shared.Logger;
 import com.atomjack.shared.Preferences;
+import com.atomjack.shared.SendToDataLayerThread;
+import com.atomjack.shared.WearConstants;
 import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.model.PlexMedia;
@@ -19,6 +21,7 @@ import com.atomjack.vcfp.model.PlexServer;
 import com.atomjack.vcfp.model.PlexTrack;
 import com.atomjack.vcfp.model.PlexVideo;
 import com.atomjack.vcfp.services.PlexSearchService;
+import com.google.android.gms.wearable.DataMap;
 import com.google.gson.Gson;
 
 import java.math.BigInteger;
@@ -155,4 +158,19 @@ public abstract class PlayerActivity extends VCFPActivity implements SeekBar.OnS
 	}
 
   public abstract void doStop(View v);
+
+  @Override
+  protected void onNewIntent(Intent intent) {
+    super.onNewIntent(intent);
+    if(intent.getAction() != null) {
+      String action = intent.getAction();
+      if(action.equals(com.atomjack.shared.Intent.GET_PLAYING_MEDIA) && nowPlayingMedia != null) {
+        // Send information on the currently playing media to the wear device
+        DataMap data = new DataMap();
+        data.putString(WearConstants.MEDIA_TITLE, nowPlayingMedia.title);
+        data.putString(WearConstants.IMAGE, nowPlayingMedia.art);
+        new SendToDataLayerThread(WearConstants.GET_PLAYING_MEDIA, data, this).start();
+      }
+    }
+  }
 }

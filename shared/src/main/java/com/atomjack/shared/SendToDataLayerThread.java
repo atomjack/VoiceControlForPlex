@@ -56,7 +56,6 @@ public class SendToDataLayerThread extends Thread {
       for (Node node : nodes.getNodes()) {
         // Construct a DataRequest and send over the data layer
         PutDataMapRequest putDMR = PutDataMapRequest.create(path);
-        // TODO: Remove this?
         dataMap.putString("timestamp", new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(new Date()));
         putDMR.getDataMap().putAll(dataMap);
         PutDataRequest request = putDMR.asPutDataRequest();

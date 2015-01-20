@@ -1009,6 +1009,7 @@ public class PlexSearchService extends Service {
 			Logger.d("active connection: %s", media.server.activeConnection);
 			Intent sendIntent = new Intent(this, CastActivity.class);
 			sendIntent.setAction(com.atomjack.shared.Intent.CAST_MEDIA);
+      sendIntent.putExtra(WearConstants.FROM_WEAR, fromWear);
       sendIntent.putExtra(com.atomjack.shared.Intent.EXTRA_MEDIA, media);
       sendIntent.putExtra(com.atomjack.shared.Intent.EXTRA_CLIENT, client);
 			sendIntent.putExtra("resume", resumePlayback);

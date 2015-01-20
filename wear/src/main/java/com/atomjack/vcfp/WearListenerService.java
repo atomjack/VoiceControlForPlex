@@ -112,9 +112,9 @@ public class WearListenerService extends WearableListenerService {
           finishMain();
         }
         // First, remove previous title and subtitle, if there are any
+        nowPlayingMedia = WearApplication.getInstance().nowPlayingMedia;
         nowPlayingMedia.remove(WearConstants.MEDIA_TITLE);
         nowPlayingMedia.remove(WearConstants.MEDIA_SUBTITLE);
-        nowPlayingMedia = WearApplication.getInstance().nowPlayingMedia;
         nowPlayingMedia.putAll(dataMap);
         nowPlayingMedia.putString(WearConstants.PLAYBACK_STATE, message.equals(WearConstants.MEDIA_PLAYING) ? PlayerState.PLAYING.name() : PlayerState.PAUSED.name());
         WearApplication.getInstance().setNowPlayingMedia(nowPlayingMedia);

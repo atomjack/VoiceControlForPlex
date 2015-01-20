@@ -108,7 +108,7 @@ public class WearApplication extends Application {
 
   public void showNowPlaying() {
     Logger.d("[WearApplication] showNowPlaying: %s", nowPlayingMedia.getString(WearConstants.MEDIA_TITLE));
-    Logger.d("Data: %s", nowPlayingMedia);
+    Logger.d("[WearApplication] Media: %s", nowPlayingMedia);
     Intent notificationIntent = new Intent(this, NotificationActivity.class);
     notificationIntent.putExtra(
             WearConstants.MEDIA_TITLE, nowPlayingMedia.getString(WearConstants.MEDIA_TITLE));

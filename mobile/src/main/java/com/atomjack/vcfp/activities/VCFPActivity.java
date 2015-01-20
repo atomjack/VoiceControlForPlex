@@ -501,9 +501,9 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
     if(!mCurrentState.equals(PlayerState.STOPPED) && media != null) {
       nowPlayingMedia = media;
       mClient = castPlayerManager.mClient;
-      // TODO: only set notification here if it's already on?
       VoiceControlForPlexApplication.getInstance().setNotification(mClient, mCurrentState, nowPlayingMedia);
     }
+    sendWearPlaybackChange();
   }
 
   @Override
@@ -524,6 +524,7 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
         // TODO: only set notification here if it's already on?
         VoiceControlForPlexApplication.getInstance().setNotification(mClient, mCurrentState, nowPlayingMedia);
       }
+      sendWearPlaybackChange();
     }
   }
 

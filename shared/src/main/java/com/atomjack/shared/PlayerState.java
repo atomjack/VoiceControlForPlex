@@ -21,6 +21,15 @@ public enum PlayerState {
 		return STOPPED;
 	}
 
+  public String getWearConstant() {
+    String con = WearConstants.MEDIA_STOPPED;
+    if(this == PAUSED)
+      con = WearConstants.MEDIA_PAUSED;
+    else if(this == PLAYING)
+      con = WearConstants.MEDIA_PLAYING;
+    return con;
+  }
+
   public static PlayerState getState(Timeline t) {
     if(t == null)
       return STOPPED;

@@ -135,6 +135,10 @@ public class CastPlayerManager {
 //      notificationListener = _listener;
   }
 
+  public CastListener getListener() {
+    return listener;
+  }
+
   public interface CastListener {
     void onCastConnected(PlexClient client);
     void onCastDisconnected();
@@ -142,6 +146,7 @@ public class CastPlayerManager {
     void onCastPlayerTimeUpdate(int seconds);
     void onCastPlayerPlaylistAdvance(PlexMedia media);
     void onCastPlayerState(PlayerState state, PlexMedia media);
+    PlexMedia getNowPlayingMedia();
   };
 
   public VideoCastManager getCastManager() {
@@ -376,7 +381,6 @@ public class CastPlayerManager {
     } catch (Exception ex) {
       ex.printStackTrace();
     }
-    // TODO: Fix this
     if(VoiceControlForPlexApplication.getInstance().prefs.getString(Preferences.PLEX_USERNAME) != null)
       qs.add(PlexHeaders.XPlexUsername, VoiceControlForPlexApplication.getInstance().prefs.getString(Preferences.PLEX_USERNAME));
     return url + qs.toString();

@@ -54,11 +54,12 @@ public class NowPlayingActivity extends PlayerActivity {
 			nowPlayingMedia = getIntent().getParcelableExtra(com.atomjack.shared.Intent.EXTRA_MEDIA);
       mClient = getIntent().getParcelableExtra(com.atomjack.shared.Intent.EXTRA_CLIENT);
       fromWear = getIntent().getBooleanExtra(WearConstants.FROM_WEAR, false);
-      if(fromWear) {
-        new SendToDataLayerThread(WearConstants.FINISH, this).start();
-      }
       Logger.d("[NowPlayingActivity] 2 set client: %s", mClient);
 		}
+
+    if(fromWear) {
+      new SendToDataLayerThread(WearConstants.FINISH, this).start();
+    }
 
 		if(mClient == null || nowPlayingMedia == null)
 			finish();
@@ -250,16 +251,6 @@ public class NowPlayingActivity extends PlayerActivity {
 	@Override
 	protected void onNewIntent(Intent intent)
 	{
-    if(intent.getAction() != null) {
-      String action = intent.getAction();
-      if(action.equals(com.atomjack.shared.Intent.GET_PLAYING_MEDIA) && nowPlayingMedia != null) {
-        // Send information on the currently playing media to the wear device
-        DataMap data = new DataMap();
-        data.putString(WearConstants.MEDIA_TITLE, nowPlayingMedia.title);
-        data.putString(WearConstants.IMAGE, nowPlayingMedia.art);
-        new SendToDataLayerThread(WearConstants.GET_PLAYING_MEDIA, data, this).start();
-      }
-    }
 		super.onNewIntent(intent);
 		if(intent.getExtras() != null && intent.getExtras().getBoolean("finish") == true)
 			finish();
