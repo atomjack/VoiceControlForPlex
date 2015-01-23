@@ -38,8 +38,9 @@ import com.atomjack.shared.WearConstants;
 import com.atomjack.vcfp.activities.CastActivity;
 import com.atomjack.vcfp.activities.MainActivity;
 import com.atomjack.vcfp.activities.NowPlayingActivity;
+import com.atomjack.vcfp.interfaces.ActiveConnectionHandler;
 import com.atomjack.vcfp.interfaces.BitmapHandler;
-import com.atomjack.vcfp.interfaces.ServerFindHandler;
+import com.atomjack.vcfp.model.Connection;
 import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexMedia;
@@ -234,11 +235,11 @@ public class VoiceControlForPlexApplication extends Application
     }
     final PlexServer server = serverToAdd == null ? addedServer : serverToAdd;
     try {
-      server.findServerConnection(new ServerFindHandler() {
+      server.findServerConnection(new ActiveConnectionHandler() {
         @Override
-        public void onSuccess() {
-          Logger.d("active connection: %s", server.activeConnection);
-          String url = String.format("http://%s:%s/library/sections/", server.activeConnection.address, server.activeConnection.port);
+        public void onSuccess(Connection connection) {
+          Logger.d("active connection: %s", connection);
+          String url = String.format("http://%s:%s/library/sections/", connection.address, connection.port);
           if(server.accessToken != null)
             url += String.format("?%s=%s", PlexHeaders.XPlexToken, server.accessToken);
           AsyncHttpClient httpClient = new AsyncHttpClient();

@@ -4,11 +4,11 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 import com.atomjack.shared.Logger;
+import com.atomjack.vcfp.interfaces.ActiveConnectionHandler;
 import com.atomjack.vcfp.interfaces.AfterTransientTokenRequest;
 import com.atomjack.vcfp.PlexHeaders;
 import com.atomjack.shared.Preferences;
 import com.atomjack.vcfp.QueryString;
-import com.atomjack.vcfp.interfaces.ServerFindHandler;
 import com.atomjack.vcfp.interfaces.ServerTestHandler;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.net.PlexHttpClient;
@@ -21,6 +21,7 @@ import org.apache.http.Header;
 import org.simpleframework.xml.Root;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 
 @Root(strict=false)
@@ -39,7 +40,8 @@ public class PlexServer extends PlexDevice {
 	public boolean owned = true;
 	public String accessToken;
 
-	public Connection activeConnection;
+	private Connection activeConnection;
+  private Calendar activeConnectionExpires;
 
 	public boolean local;
 
@@ -153,40 +155,36 @@ public class PlexServer extends PlexDevice {
 		}
 	};
 
+  public void findServerConnection(final ActiveConnectionHandler activeConnectionHandler) {
+    Logger.d("[PlexServer] finding server connection, current active connection expires %s", activeConnectionExpires);
+    if(activeConnectionExpires != null && activeConnectionExpires.after(Calendar.getInstance())) {
+      activeConnectionHandler.onSuccess(activeConnection);
+    } else {
+      findServerConnection(0, activeConnectionHandler);
+    }
+  }
 
-	public void findServerConnection(final ServerFindHandler handler) {
-		// If this server already has an active connection, just return it without trying it again.
-		if(activeConnection != null)
-			handler.onSuccess();
-		else {
-			// If this server has no connections, create one with the server's address and port.
-			// This can happen if a user was using the app before multiple connections were supported.
-			if(connections.size() == 0)
-				connections.add(new Connection("http", address, port));
-			findServerConnection(0, handler);
-		}
-	}
-
-	private void findServerConnection(final int connectionIndex, final ServerFindHandler handler) {
-		Logger.d("findServerConnection: index %d", connectionIndex);
-		final Connection connection = connections.get(connectionIndex);
-		testServerConnection(connection, new ServerTestHandler() {
-			@Override
-			public void onFinish(int statusCode, boolean available) {
-				if(available) {
-					// This connection replied, so let's use it
-					activeConnection = connections.get(connectionIndex);
-					handler.onSuccess();
-				} else {
-					int newConnectionIndex = connectionIndex + 1;
-					if(connections.size() <= newConnectionIndex)
-						handler.onFailure(statusCode);
-					else
-						findServerConnection(newConnectionIndex, handler);
-				}
-			}
-		});
-	}
+  private void findServerConnection(final int connectionIndex, final ActiveConnectionHandler activeConnectionHandler) {
+    final Connection connection = connections.get(connectionIndex);
+    testServerConnection(connection, new ServerTestHandler() {
+      @Override
+      public void onFinish(int statusCode, boolean available) {
+        if(available) {
+          // This connection replied, so let's use it
+          activeConnection = connections.get(connectionIndex);
+          activeConnectionExpires = Calendar.getInstance();
+          activeConnectionExpires.set(Calendar.HOUR, 1);
+          activeConnectionHandler.onSuccess(activeConnection);
+        } else {
+          int newConnectionIndex = connectionIndex + 1;
+          if(connections.size() <= newConnectionIndex)
+            activeConnectionHandler.onFailure(statusCode);
+          else
+            findServerConnection(newConnectionIndex, activeConnectionHandler);
+        }
+      }
+    });
+  }
 
 	private void testServerConnection(final Connection connection, final ServerTestHandler handler) {
 		AsyncHttpClient httpClient = new AsyncHttpClient();

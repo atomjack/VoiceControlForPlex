@@ -6,6 +6,8 @@ import android.support.v7.media.MediaRouter;
 import com.atomjack.shared.Logger;
 import com.atomjack.shared.PlayerState;
 import com.atomjack.shared.Preferences;
+import com.atomjack.vcfp.interfaces.ActiveConnectionHandler;
+import com.atomjack.vcfp.model.Connection;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexTrack;
@@ -154,10 +156,20 @@ public class CastPlayerManager {
   }
 
   // This will send a message to the cast device to load the passed in media
-  public void loadMedia(PlexMedia media, List<PlexMedia> album, int offset) {
+  public void loadMedia(PlexMedia media, List<PlexMedia> album, final int offset) {
     nowPlayingMedia = media;
     nowPlayingAlbum = album;
-    sendMessage(buildMedia(offset));
+    nowPlayingMedia.server.findServerConnection(new ActiveConnectionHandler() {
+      @Override
+      public void onSuccess(Connection connection) {
+        sendMessage(buildMedia(connection, offset));
+      }
+
+      @Override
+      public void onFailure(int statusCode) {
+
+      }
+    });
   }
 
   public void getPlaybackState() {
@@ -176,17 +188,26 @@ public class CastPlayerManager {
     sendMessage(PARAMS.ACTION_STOP);
   }
 
-  public void seekTo(int seconds) {
-    JSONObject obj = new JSONObject();
-    try {
-      obj.put(PARAMS.ACTION, PARAMS.ACTION_SEEK);
-      obj.put(PARAMS.OFFSET, seconds);
-      if(nowPlayingMedia instanceof PlexVideo)
-        obj.put(PARAMS.SRC, getTranscodeUrl(nowPlayingMedia, seconds));
-      obj.put(PARAMS.RESUME, VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.RESUME, false));
-      sendMessage(obj);
-    } catch (Exception ex) {}
+  public void seekTo(final int seconds) {
+    nowPlayingMedia.server.findServerConnection(new ActiveConnectionHandler() {
+      @Override
+      public void onSuccess(Connection connection) {
+        JSONObject obj = new JSONObject();
+        try {
+          obj.put(PARAMS.ACTION, PARAMS.ACTION_SEEK);
+          obj.put(PARAMS.OFFSET, seconds);
+          if(nowPlayingMedia instanceof PlexVideo)
+            obj.put(PARAMS.SRC, getTranscodeUrl(nowPlayingMedia, connection, seconds));
+          obj.put(PARAMS.RESUME, VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.RESUME, false));
+          sendMessage(obj);
+        } catch (Exception ex) {}
+      }
 
+      @Override
+      public void onFailure(int statusCode) {
+
+      }
+    });
   }
 
   public void doNext() {
@@ -347,12 +368,12 @@ public class CastPlayerManager {
     };
   }
 
-  public String getTranscodeUrl(PlexMedia media) {
-    return getTranscodeUrl(media, 0);
+  public String getTranscodeUrl(PlexMedia media, Connection connection) {
+    return getTranscodeUrl(media, connection, 0);
   }
 
-  public String getTranscodeUrl(PlexMedia media, int offset) {
-    String url = media.server.activeConnection.uri;
+  public String getTranscodeUrl(PlexMedia media, Connection connection, int offset) {
+    String url = connection.uri;
     url += String.format("/%s/:/transcode/universal/start?", media instanceof PlexVideo ? "video" : "audio");
     QueryString qs = new QueryString("path", String.format("http://127.0.0.1:32400%s", media.key));
     qs.add("mediaIndex", "0");
@@ -390,11 +411,11 @@ public class CastPlayerManager {
     this.transientToken = transientToken;
   }
 
-  public JSONObject buildMedia() {
-    return buildMedia(0);
+  public JSONObject buildMedia(Connection connection) {
+    return buildMedia(connection, 0);
   }
 
-  public JSONObject buildMedia(int offset) {
+  public JSONObject buildMedia(Connection connection, int offset) {
     JSONObject data = new JSONObject();
     try {
       data.put(PARAMS.ACTION, PARAMS.ACTION_LOAD);
@@ -404,7 +425,7 @@ public class CastPlayerManager {
       data.put(PARAMS.MEDIA_TYPE, nowPlayingMedia instanceof PlexVideo ? PARAMS.MEDIA_TYPE_VIDEO : PARAMS.MEDIA_TYPE_AUDIO);
       data.put(PARAMS.RESUME, VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.RESUME, false));
       data.put(PARAMS.CLIENT, VoiceControlForPlexApplication.gsonWrite.toJson(mClient));
-      data.put(PARAMS.SRC, getTranscodeUrl(nowPlayingMedia, offset));
+      data.put(PARAMS.SRC, getTranscodeUrl(nowPlayingMedia, connection, offset));
       data.put(PARAMS.PLAYLIST, getPlaylistJson());
     } catch (Exception ex) {
       ex.printStackTrace();

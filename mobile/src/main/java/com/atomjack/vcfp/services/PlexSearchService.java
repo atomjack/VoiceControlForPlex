@@ -12,6 +12,7 @@ import android.support.v7.media.MediaRouter;
 
 import com.atomjack.shared.SendToDataLayerThread;
 import com.atomjack.shared.WearConstants;
+import com.atomjack.vcfp.interfaces.ActiveConnectionHandler;
 import com.atomjack.vcfp.interfaces.AfterTransientTokenRequest;
 import com.atomjack.vcfp.BuildConfig;
 import com.atomjack.vcfp.CastPlayerManager;
@@ -22,7 +23,6 @@ import com.atomjack.vcfp.PlexSubscription;
 import com.atomjack.shared.Preferences;
 import com.atomjack.vcfp.QueryString;
 import com.atomjack.vcfp.R;
-import com.atomjack.vcfp.interfaces.ServerFindHandler;
 import com.atomjack.shared.UriDeserializer;
 import com.atomjack.shared.UriSerializer;
 import com.atomjack.vcfp.Utils;
@@ -32,6 +32,7 @@ import com.atomjack.vcfp.activities.MainActivity;
 import com.atomjack.vcfp.activities.NowPlayingActivity;
 import com.atomjack.vcfp.activities.SubscriptionActivity;
 import com.atomjack.vcfp.activities.VCFPActivity;
+import com.atomjack.vcfp.model.Connection;
 import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexDirectory;
@@ -826,12 +827,12 @@ public class PlexSearchService extends Service {
 		feedback.m(getString(R.string.searching_for), queryTerm);
 		serversSearched = 0;
 		for(final PlexServer server : plexmediaServers.values()) {
-			server.findServerConnection(new ServerFindHandler() {
+			server.findServerConnection(new ActiveConnectionHandler() {
 				@Override
-				public void onSuccess() {
+				public void onSuccess(Connection connection) {
 					server.movieSectionsSearched = 0;
 					Logger.d("!Searching server (for movies): %s, %d sections", server.name, server.movieSections.size());
-          Logger.d("Server active connection: %s", server.activeConnection);
+//          Logger.d("Server active connection: %s", server.activeConnection);
 
 					if(server.movieSections.size() == 0) {
 						serversSearched++;
@@ -1001,12 +1002,11 @@ public class PlexSearchService extends Service {
 		}
 	}
 
-	private void playMedia(final PlexMedia media, PlexDirectory album, String transientToken) {
+	private void playMedia(final PlexMedia media, final PlexDirectory album, final String transientToken) {
 		Logger.d("Playing media: %s", media.title);
 		Logger.d("Client: %s", client);
 		if(client.isCastClient) {
-
-			Logger.d("active connection: %s", media.server.activeConnection);
+//			Logger.d("active connection: %s", media.server.activeConnection);
 			Intent sendIntent = new Intent(this, CastActivity.class);
 			sendIntent.setAction(com.atomjack.shared.Intent.CAST_MEDIA);
       sendIntent.putExtra(WearConstants.FROM_WEAR, fromWear);
@@ -1023,60 +1023,69 @@ public class PlexSearchService extends Service {
       media.server.localPlay(media, resumePlayback, transientToken);
     } else if(currentNetworkState == VCFPActivity.NetworkState.WIFI) {
 
+      media.server.findServerConnection(new ActiveConnectionHandler() {
+        @Override
+        public void onSuccess(Connection connection) {
+          try {
+            QueryString qs = new QueryString("machineIdentifier", media.server.machineIdentifier);
+            Logger.d("machine id: %s", media.server.machineIdentifier);
+            qs.add("key", media.key);
+            Logger.d("key: %s", media.key);
+            qs.add("port", connection.port);
+            Logger.d("port: %s", connection.port);
+            qs.add("address", connection.address);
+            Logger.d("address: %s", connection.address);
 
-      try {
-        QueryString qs = new QueryString("machineIdentifier", media.server.machineIdentifier);
-        Logger.d("machine id: %s", media.server.machineIdentifier);
-        qs.add("key", media.key);
-        Logger.d("key: %s", media.key);
-        qs.add("port", media.server.activeConnection.port);
-        Logger.d("port: %s", media.server.activeConnection.port);
-        qs.add("address", media.server.activeConnection.address);
-        Logger.d("address: %s", media.server.activeConnection.address);
+            if (resumePlayback && media.viewOffset != null)
+              qs.add("viewOffset", media.viewOffset);
+            if (transientToken != null)
+              qs.add("token", transientToken);
+            if (media.server.accessToken != null)
+              qs.add(PlexHeaders.XPlexToken, media.server.accessToken);
 
-        if (resumePlayback && media.viewOffset != null)
-          qs.add("viewOffset", media.viewOffset);
-        if (transientToken != null)
-          qs.add("token", transientToken);
-        if (media.server.accessToken != null)
-          qs.add(PlexHeaders.XPlexToken, media.server.accessToken);
+            if (album != null)
+              qs.add("containerKey", album.key);
 
-        if (album != null)
-          qs.add("containerKey", album.key);
-
-        String url = String.format("http://%s:%s/player/playback/playMedia?%s", client.address, client.port, qs);
-        PlexHttpClient.get(url, new PlexHttpResponseHandler() {
-          @Override
-          public void onSuccess(PlexResponse r) {
-            // If the host we're playing on is this device, we don't wanna do anything else here.
-            if (Utils.getIPAddress(true).equals(client.address) || r == null)
-              return;
-            feedback.m(getResources().getString(R.string.now_watching_video), media.isMovie() ? media.title : media.grandparentTitle, client.name);
-            Boolean passed = true;
-            if (r.code != null) {
-              if (!r.code.equals("200")) {
-                passed = false;
+            String url = String.format("http://%s:%s/player/playback/playMedia?%s", client.address, client.port, qs);
+            PlexHttpClient.get(url, new PlexHttpResponseHandler() {
+              @Override
+              public void onSuccess(PlexResponse r) {
+                // If the host we're playing on is this device, we don't wanna do anything else here.
+                if (Utils.getIPAddress(true).equals(client.address) || r == null)
+                  return;
+                feedback.m(getResources().getString(R.string.now_watching_video), media.isMovie() ? media.title : media.grandparentTitle, client.name);
+                Boolean passed = true;
+                if (r.code != null) {
+                  if (!r.code.equals("200")) {
+                    passed = false;
+                  }
+                }
+                Logger.d("Playback response: %s", r.code);
+                if (passed) {
+                  videoPlayed = true;
+                  showPlayingMedia(media);
+                } else {
+                  feedback.e(getResources().getString(R.string.http_status_code_error), r.code);
+                }
               }
-            }
-            Logger.d("Playback response: %s", r.code);
-            if (passed) {
-              videoPlayed = true;
-              showPlayingMedia(media);
-            } else {
-              feedback.e(getResources().getString(R.string.http_status_code_error), r.code);
-            }
-          }
 
-          @Override
-          public void onFailure(Throwable error) {
-            feedback.e(getResources().getString(R.string.got_error), error.getMessage());
+              @Override
+              public void onFailure(Throwable error) {
+                feedback.e(getResources().getString(R.string.got_error), error.getMessage());
+              }
+            });
+          } catch (Exception e) {
+            feedback.e(getResources().getString(R.string.got_error), e.getMessage());
+            Logger.e("Exception trying to play video: %s", e.toString());
+            e.printStackTrace();
           }
-        });
-      } catch (Exception e) {
-        feedback.e(getResources().getString(R.string.got_error), e.getMessage());
-        Logger.e("Exception trying to play video: %s", e.toString());
-        e.printStackTrace();
-      }
+        }
+
+        @Override
+        public void onFailure(int statusCode) {
+          // TODO: Handle no connection?
+        }
+      });
     }
 	}
 
@@ -1106,9 +1115,9 @@ public class PlexSearchService extends Service {
 		feedback.m(getString(R.string.searching_for), queryTerm);
 		serversSearched = 0;
 		for(final PlexServer server : plexmediaServers.values()) {
-			server.findServerConnection(new ServerFindHandler() {
+			server.findServerConnection(new ActiveConnectionHandler() {
 				@Override
-				public void onSuccess() {
+				public void onSuccess(Connection connection) {
 					server.showSectionsSearched = 0;
 					if (server.tvSections.size() == 0) {
 						serversSearched++;
@@ -1199,9 +1208,9 @@ public class PlexSearchService extends Service {
 		Logger.d("doLatestEpisodeSearch: %s", queryTerm);
 		serversSearched = 0;
 		for(final PlexServer server : plexmediaServers.values()) {
-			server.findServerConnection(new ServerFindHandler() {
+			server.findServerConnection(new ActiveConnectionHandler() {
 				@Override
-				public void onSuccess() {
+				public void onSuccess(Connection connection) {
 					server.showSectionsSearched = 0;
 					Logger.d("Searching server %s", server.name);
 					if (server.tvSections.size() == 0) {
@@ -1324,9 +1333,9 @@ public class PlexSearchService extends Service {
 		feedback.m(getString(R.string.searching_for_episode), showSpecified, episodeSpecified);
 		serversSearched = 0;
 		for(final PlexServer server : plexmediaServers.values()) {
-			server.findServerConnection(new ServerFindHandler() {
+			server.findServerConnection(new ActiveConnectionHandler() {
 				@Override
-				public void onSuccess() {
+				public void onSuccess(Connection connection) {
 					server.showSectionsSearched = 0;
 					if (server.tvSections.size() == 0) {
 						serversSearched++;
@@ -1415,9 +1424,9 @@ public class PlexSearchService extends Service {
 		Logger.d("doShowSearch: %s s%s e%s", queryTerm, season, episode);
 		serversSearched = 0;
 		for(final PlexServer server : plexmediaServers.values()) {
-			server.findServerConnection(new ServerFindHandler() {
+			server.findServerConnection(new ActiveConnectionHandler() {
 				@Override
-				public void onSuccess() {
+				public void onSuccess(Connection connection) {
 					server.showSectionsSearched = 0;
 					Logger.d("Searching server %s", server.name);
 					if (server.tvSections.size() == 0) {
@@ -1558,9 +1567,9 @@ public class PlexSearchService extends Service {
 		serversSearched = 0;
 		Logger.d("Servers: %d", plexmediaServers.size());
 		for(final PlexServer server : plexmediaServers.values()) {
-			server.findServerConnection(new ServerFindHandler() {
+			server.findServerConnection(new ActiveConnectionHandler() {
 				@Override
-				public void onSuccess() {
+				public void onSuccess(Connection connection) {
 					server.musicSectionsSearched = 0;
 					if(server.musicSections.size() == 0) {
 						serversSearched++;
@@ -1655,9 +1664,9 @@ public class PlexSearchService extends Service {
 		feedback.m(getString(R.string.searching_for_album), track, artist);
 		Logger.d("Servers: %d", plexmediaServers.size());
 		for(final PlexServer server : plexmediaServers.values()) {
-			server.findServerConnection(new ServerFindHandler() {
+			server.findServerConnection(new ActiveConnectionHandler() {
 				@Override
-				public void onSuccess() {
+				public void onSuccess(Connection connection) {
 					server.musicSectionsSearched = 0;
 					if(server.musicSections.size() == 0) {
 						serversSearched++;

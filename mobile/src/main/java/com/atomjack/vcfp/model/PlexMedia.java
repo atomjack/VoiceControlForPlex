@@ -5,7 +5,6 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 import com.atomjack.shared.Logger;
-import com.atomjack.vcfp.PlexHeaders;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.net.PlexHttpClient;
 
@@ -117,23 +116,6 @@ public abstract class PlexMedia implements Parcelable {
     return VoiceControlForPlexApplication.secondsToTimecode(duration/1000);
   }
 
-  public String getArtUri() {
-    String uri = String.format("%s%s", server.activeConnection.uri, art);
-    return uri;
-  }
-
-	public String getThumbUri() {
-		return String.format("%s%s", server.activeConnection.uri, thumb);
-	}
-
-	public String getThumbUri(int width, int height) {
-		String url = String.format("%s/photo/:/transcode?width=%d&height=%d&url=%s", server.activeConnection.uri,
-			width, height, Uri.encode(String.format("127.0.0.1:32400%s", thumb)));
-		if(server.accessToken != null)
-			url += String.format("&%s=%s", PlexHeaders.XPlexToken, server.accessToken);
-		return url;
-	}
-
   public InputStream getNotificationThumb(IMAGE_KEY key) {
     int width;
     width = IMAGE_SIZES.get(key)[0];
@@ -204,13 +186,6 @@ public abstract class PlexMedia implements Parcelable {
     } catch (Exception ex) {}
     return s;
   }
-
-  public String getPartUri() {
-    Media m = media.get(0);
-    return String.format("%s%s", server.activeConnection.uri, m.parts.get(0).key);
-  }
-
-
 
   public PlexMedia() {
 

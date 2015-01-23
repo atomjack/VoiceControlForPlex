@@ -4,6 +4,8 @@ import android.content.res.Resources;
 
 import com.atomjack.shared.Logger;
 import com.atomjack.vcfp.PlexHeaders;
+import com.atomjack.vcfp.interfaces.ActiveConnectionHandler;
+import com.atomjack.vcfp.model.Connection;
 import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.Pin;
 import com.atomjack.vcfp.model.PlexError;
@@ -41,47 +43,65 @@ public class PlexHttpClient
     return client;
   }
 
-	public static void get(PlexServer server, String path, final BinaryHttpResponseHandler responseHandler) {
-		String url = String.format("%s%s", server.activeConnection.uri, path);
-		if(server.accessToken != null)
-			url += String.format("%s%s=%s", (url.contains("?") ? "&" : "?"), PlexHeaders.XPlexToken, server.accessToken);
-		Logger.d("url: %s", url);
-		client.get(url, responseHandler);
-	}
-
-	public static void get(PlexServer server, String path, final PlexHttpMediaContainerHandler responseHandler) {
-		if(server.activeConnection == null) {
-			responseHandler.onFailure(new Throwable());
-			return;
-		}
-		String url = String.format("%s%s", server.activeConnection.uri, path);
-		if(server.accessToken != null)
-			url += String.format("%s%s=%s", (url.contains("?") ? "&" : "?"), PlexHeaders.XPlexToken, server.accessToken);
-    Logger.d("Fetching %s", url);
-    client.get(url, new RequestParams(), new AsyncHttpResponseHandler() {
+	public static void get(final PlexServer server, final String path, final BinaryHttpResponseHandler responseHandler) {
+    server.findServerConnection(new ActiveConnectionHandler() {
       @Override
-      public void onSuccess(int statusCode, org.apache.http.Header[] headers, byte[] responseBody) {
-        try {
-          MediaContainer mediaContainer = new MediaContainer();
-
-          try {
-            mediaContainer = serial.read(MediaContainer.class, new String(responseBody, "UTF-8"));
-          } catch (Resources.NotFoundException e) {
-            e.printStackTrace();
-          } catch (Exception e) {
-            e.printStackTrace();
-          }
-
-          responseHandler.onSuccess(mediaContainer);
-        } catch (Exception e) {
-          e.printStackTrace();
-        }
+      public void onSuccess(Connection connection) {
+        String url = String.format("%s%s", connection.uri, path);
+        if(server.accessToken != null)
+          url += String.format("%s%s=%s", (url.contains("?") ? "&" : "?"), PlexHeaders.XPlexToken, server.accessToken);
+        Logger.d("url: %s", url);
+        client.get(url, responseHandler);
       }
 
-			@Override
-			public void onFailure(int statusCode, org.apache.http.Header[] headers, byte[] responseBody, java.lang.Throwable error) {
-				responseHandler.onFailure(error);
-			}
+      @Override
+      public void onFailure(int statusCode) {
+      }
+    });
+
+	}
+
+	public static void get(final PlexServer server, final String path, final PlexHttpMediaContainerHandler responseHandler) {
+    server.findServerConnection(new ActiveConnectionHandler() {
+      @Override
+      public void onSuccess(Connection connection) {
+        String url = String.format("%s%s", connection.uri, path);
+        if(server.accessToken != null)
+          url += String.format("%s%s=%s", (url.contains("?") ? "&" : "?"), PlexHeaders.XPlexToken, server.accessToken);
+        Logger.d("Fetching %s", url);
+        client.get(url, new RequestParams(), new AsyncHttpResponseHandler() {
+          @Override
+          public void onSuccess(int statusCode, org.apache.http.Header[] headers, byte[] responseBody) {
+            try {
+              MediaContainer mediaContainer = new MediaContainer();
+
+              try {
+                mediaContainer = serial.read(MediaContainer.class, new String(responseBody, "UTF-8"));
+              } catch (Resources.NotFoundException e) {
+                e.printStackTrace();
+              } catch (Exception e) {
+                e.printStackTrace();
+              }
+
+              responseHandler.onSuccess(mediaContainer);
+            } catch (Exception e) {
+              e.printStackTrace();
+            }
+          }
+
+          @Override
+          public void onFailure(int statusCode, org.apache.http.Header[] headers, byte[] responseBody, java.lang.Throwable error) {
+            if(responseHandler != null)
+              responseHandler.onFailure(error);
+          }
+        });
+      }
+
+      @Override
+      public void onFailure(int statusCode) {
+        if(responseHandler != null)
+          responseHandler.onFailure(new Throwable());
+      }
     });
   }
 

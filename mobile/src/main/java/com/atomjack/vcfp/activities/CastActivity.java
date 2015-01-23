@@ -11,11 +11,8 @@ import com.atomjack.shared.WearConstants;
 import com.atomjack.vcfp.interfaces.AfterTransientTokenRequest;
 import com.atomjack.shared.Logger;
 import com.atomjack.shared.PlayerState;
-import com.atomjack.vcfp.PlexHeaders;
 import com.atomjack.shared.Preferences;
-import com.atomjack.vcfp.QueryString;
 import com.atomjack.vcfp.R;
-import com.atomjack.vcfp.Utils;
 import com.atomjack.vcfp.VCFPCastConsumer;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.model.PlexClient;
@@ -30,8 +27,6 @@ public class CastActivity extends PlayerActivity {
 	private VCFPCastConsumer castConsumer;
 
 	private PlayerState currentState = PlayerState.STOPPED;
-
-	private String transientToken;
 
   private List<PlexMedia> nowPlayingAlbum;
 
@@ -112,7 +107,6 @@ public class CastActivity extends PlayerActivity {
         @Override
         public void success(String token) {
           Logger.d("Got transient token: %s", token);
-          transientToken = token;
           castPlayerManager.setTransientToken(token);
           beginPlayback();
         }
@@ -149,8 +143,6 @@ public class CastActivity extends PlayerActivity {
   }
 
 	private void beginPlayback() {
-//		String url = castPlayerManager.getTranscodeUrl(nowPlayingMedia);
-//		Logger.d("url: %s", url);
 		Logger.d("duration: %s", nowPlayingMedia.duration);
 
 		Logger.d("offset is %d", getOffset(nowPlayingMedia));
@@ -160,43 +152,6 @@ public class CastActivity extends PlayerActivity {
 		if(castManager.isConnected()) {
         castPlayerManager.loadMedia(nowPlayingMedia, nowPlayingAlbum, getOffset(nowPlayingMedia));
 		}
-	}
-
-	private String getTranscodeUrl(PlexMedia media, String transientToken) {
-		String url = media.server.activeConnection.uri;
-		url += "/video/:/transcode/universal/start?";
-		QueryString qs = new QueryString("path", String.format("http://127.0.0.1:32400%s", media.key));
-		qs.add("mediaIndex", "0");
-		qs.add("partIndex", "0");
-		qs.add("protocol", "http");
-		qs.add("offset", Integer.toString(getOffset(media)));
-		qs.add("fastSeek", "1");
-		qs.add("directPlay", "0");
-		qs.add("directStream", "1");
-		qs.add("videoQuality", "60");
-		qs.add("videoResolution", "1024x768");
-		qs.add("maxVideoBitrate", "2000");
-		qs.add("subtitleSize", "100");
-		qs.add("audioBoost", "100");
-    // TODO: Fix this
-		qs.add("session", Utils.generateRandomString());
-		qs.add(PlexHeaders.XPlexClientIdentifier, VoiceControlForPlexApplication.getInstance().prefs.getUUID());
-		qs.add(PlexHeaders.XPlexProduct, String.format("%s Chromecast", getString(R.string.app_name)));
-		qs.add(PlexHeaders.XPlexDevice, mClient.castDevice.getModelName());
-		qs.add(PlexHeaders.XPlexDeviceName, mClient.castDevice.getModelName());
-		qs.add(PlexHeaders.XPlexPlatform, mClient.castDevice.getModelName());
-		if(transientToken != null)
-			qs.add(PlexHeaders.XPlexToken, transientToken);
-		qs.add(PlexHeaders.XPlexPlatformVersion, "1.0");
-		try {
-			qs.add(PlexHeaders.XPlexVersion, getPackageManager().getPackageInfo(getPackageName(), 0).versionName);
-		} catch (Exception ex) {
-			ex.printStackTrace();
-		}
-		// TODO: Fix this
-		if(VoiceControlForPlexApplication.getInstance().prefs.getString(Preferences.PLEX_USERNAME) != null)
-			qs.add(PlexHeaders.XPlexUsername, VoiceControlForPlexApplication.getInstance().prefs.getString(Preferences.PLEX_USERNAME));
-		return url + qs.toString();
 	}
 
 	@Override

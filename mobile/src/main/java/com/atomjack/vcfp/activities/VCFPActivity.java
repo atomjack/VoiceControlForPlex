@@ -39,13 +39,14 @@ import com.atomjack.vcfp.PlexHeaders;
 import com.atomjack.vcfp.PlexSubscription;
 import com.atomjack.shared.Preferences;
 import com.atomjack.vcfp.R;
+import com.atomjack.vcfp.interfaces.ActiveConnectionHandler;
 import com.atomjack.vcfp.interfaces.BitmapHandler;
 import com.atomjack.vcfp.interfaces.ScanHandler;
-import com.atomjack.vcfp.interfaces.ServerFindHandler;
 import com.atomjack.shared.UriDeserializer;
 import com.atomjack.shared.UriSerializer;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.adapters.PlexListAdapter;
+import com.atomjack.vcfp.model.Connection;
 import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexDevice;
@@ -184,44 +185,34 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
   private void getPlayingMedia(final PlexServer server, final Timeline timeline) {
     Logger.d("[VCFPActivity] getPlayingMedia: %s", timeline.key);
     // TODO: Find out why server can sometimes be null
-		server.findServerConnection(new ServerFindHandler() {
-			@Override
-			public void onSuccess() {
-				PlexHttpClient.get(server, timeline.key, new PlexHttpMediaContainerHandler() {
-					@Override
-					public void onSuccess(MediaContainer mediaContainer) {
-            if(timeline.type.equals("video"))
-						  nowPlayingMedia = mediaContainer.videos.get(0);
-            else if(timeline.type.equals("music"))
-              nowPlayingMedia = mediaContainer.tracks.get(0);
-            else {
-              // TODO: Handle failure
-              Logger.d("Failed to get media with type %s", timeline.type);
-            }
+    PlexHttpClient.get(server, timeline.key, new PlexHttpMediaContainerHandler() {
+      @Override
+      public void onSuccess(MediaContainer mediaContainer) {
+        if(timeline.type.equals("video"))
+          nowPlayingMedia = mediaContainer.videos.get(0);
+        else if(timeline.type.equals("music"))
+          nowPlayingMedia = mediaContainer.tracks.get(0);
+        else {
+          // TODO: Handle failure
+          Logger.d("Failed to get media with type %s", timeline.type);
+        }
 
-            if(nowPlayingMedia != null) {
-              nowPlayingMedia.server = server;
+        if(nowPlayingMedia != null) {
+          nowPlayingMedia.server = server;
 
-              VoiceControlForPlexApplication.getInstance().setNotification(mClient, mCurrentState, nowPlayingMedia);
-              if (timeline.continuing != null && timeline.continuing.equals("1"))
-                continuing = true;
-              onMediaChange();
-              sendWearPlaybackChange();
-            }
-					}
+          VoiceControlForPlexApplication.getInstance().setNotification(mClient, mCurrentState, nowPlayingMedia);
+          if (timeline.continuing != null && timeline.continuing.equals("1"))
+            continuing = true;
+          onMediaChange();
+          sendWearPlaybackChange();
+        }
+      }
 
-					@Override
-					public void onFailure(Throwable error) {
-						// TODO: Handle failure
-					}
-				});
-			}
-
-			@Override
-			public void onFailure(int statusCode) {
-
-			}
-		});
+      @Override
+      public void onFailure(Throwable error) {
+        // TODO: Handle failure
+      }
+    });
 	}
 
   private boolean isSubscribed() {
@@ -608,32 +599,42 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
   }
 
   private void getThumb(final String thumb, final PlexMedia media) {
-    String url = String.format("http://%s:%s%s", media.server.activeConnection.address, media.server.activeConnection.port, thumb);
-    if(media.server.accessToken != null)
-      url += String.format("?%s=%s", PlexHeaders.XPlexToken, media.server.accessToken);
-
-    PlexHttpClient.getClient().get(url, new BinaryHttpResponseHandler() {
+    media.server.findServerConnection(new ActiveConnectionHandler() {
       @Override
-      public void onSuccess(int i, Header[] headers, byte[] imageData) {
-        InputStream is = new ByteArrayInputStream(imageData);
+      public void onSuccess(Connection connection) {
+        String url = String.format("http://%s:%s%s", connection.address, connection.port, thumb);
+        if(media.server.accessToken != null)
+          url += String.format("?%s=%s", PlexHeaders.XPlexToken, media.server.accessToken);
 
-        try {
-          is.reset();
-        } catch (IOException e) {
-          e.printStackTrace();
-        }
+        PlexHttpClient.getClient().get(url, new BinaryHttpResponseHandler() {
+          @Override
+          public void onSuccess(int i, Header[] headers, byte[] imageData) {
+            InputStream is = new ByteArrayInputStream(imageData);
 
-        // Save the downloaded image into the disk cache so we don't have to download it again
-        try {
-          mSimpleDiskCache.put(media.getCacheKey(thumb), is);
-        } catch (Exception ex) {
-          ex.printStackTrace();
-        }
-        setThumb(is);
+            try {
+              is.reset();
+            } catch (IOException e) {
+              e.printStackTrace();
+            }
+
+            // Save the downloaded image into the disk cache so we don't have to download it again
+            try {
+              mSimpleDiskCache.put(media.getCacheKey(thumb), is);
+            } catch (Exception ex) {
+              ex.printStackTrace();
+            }
+            setThumb(is);
+          }
+
+          @Override
+          public void onFailure(int i, Header[] headers, byte[] bytes, Throwable throwable) {
+
+          }
+        });
       }
 
       @Override
-      public void onFailure(int i, Header[] headers, byte[] bytes, Throwable throwable) {
+      public void onFailure(int statusCode) {
 
       }
     });
