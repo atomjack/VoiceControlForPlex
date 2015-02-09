@@ -532,6 +532,8 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
     if(timelines != null) {
       for (Timeline timeline : timelines) {
         if (timeline.key != null) {
+          if(timeline.state == null)
+            timeline.state = "stopped";
 //          Logger.d("[VCFPActivity] onTimelineReceived: %s", timeline.state);
 //          Logger.d("nowPlayingMedia: %s", nowPlayingMedia);
           // Get this media's info
@@ -902,7 +904,7 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
       if(!plexSubscription.isSubscribed() && !castPlayerManager.isSubscribed()) {
         new SendToDataLayerThread(WearConstants.DISCONNECTED, this).start();
       } else {
-        Logger.d("Sending Wear Notification: %s", mCurrentState);
+        Logger.d("[VCFPActivity] Sending Wear Notification: %s", mCurrentState);
         final DataMap data = new DataMap();
         String msg = null;
         if (mCurrentState == PlayerState.PLAYING) {

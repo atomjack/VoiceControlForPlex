@@ -8,13 +8,13 @@ import org.simpleframework.xml.ElementList;
 import java.util.List;
 
 public abstract class PlexDevice implements Parcelable {
-  @Attribute
+  @Attribute(required=false)
   public String name;
-  @Attribute
+  @Attribute(required=false)
 	public String address;
-  @Attribute
+  @Attribute(required=false)
 	public String port;
-  @Attribute
+  @Attribute(required=false)
 	public String version;
   @Attribute(required=false)
 	public String product;
@@ -24,7 +24,7 @@ public abstract class PlexDevice implements Parcelable {
 	public String lastSeenAt;
 	@ElementList(required=false, inline=true)
 	public List<Connection> connections;
-	@Attribute
+	@Attribute(required=false)
 	public String machineIdentifier;
 
 

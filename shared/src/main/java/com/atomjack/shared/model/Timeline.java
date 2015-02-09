@@ -8,7 +8,7 @@ import org.simpleframework.xml.Root;
 
 @Root(strict=false)
 public class Timeline implements Parcelable {
-	@Attribute
+	@Attribute(required=false)
 	public String state;
 	@Attribute(required=false)
 	public int time;

@@ -65,7 +65,7 @@ public class MediaContainer {
 
   public Timeline getActiveTimeline() {
     for(Timeline t : timelines) {
-      if(!t.state.equals("stopped"))
+      if(t.state != null && !t.state.equals("stopped"))
         return t;
     }
     return null;

@@ -12,13 +12,13 @@ import java.util.List;
 
 @Root(strict=false)
 public class Device {
-	@Attribute
+	@Attribute(required=false)
 	public String name;
-	@Attribute
+	@Attribute(required=false)
 	public String product;
-	@Attribute
+	@Attribute(required=false)
 	public String productVersion;
-	@Attribute
+	@Attribute(required=false)
 	public String clientIdentifier;
 	@Attribute(required=false)
 	public String sourceTitle;

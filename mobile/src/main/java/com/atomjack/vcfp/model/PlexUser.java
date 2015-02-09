@@ -6,7 +6,7 @@ import org.simpleframework.xml.Root;
 
 @Root(strict=false)
 public class PlexUser {
-	@Attribute
+	@Attribute(required=false)
 	public String authenticationToken;
 	@Element
 	public String username;

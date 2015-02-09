@@ -69,11 +69,11 @@ public abstract class PlexMedia implements Parcelable {
       return "unknown";
   }
 
-  @Attribute
+  @Attribute(required=false)
 	public String key;
-  @Attribute
+  @Attribute(required=false)
   public String ratingKey;
-	@Attribute
+	@Attribute(required=false)
 	public String title;
   @Attribute(required=false)
   public String art;
