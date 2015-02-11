@@ -150,9 +150,13 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
     feedback = new Feedback(this);
 
     plexSubscription = VoiceControlForPlexApplication.getInstance().plexSubscription;
+    castPlayerManager = VoiceControlForPlexApplication.getInstance().castPlayerManager;
     if(plexSubscription.isSubscribed()) {
-      Logger.d("VCFPActivity setting client to %s", plexSubscription.mClient);
+      Logger.d("[VCFPActivity] setting client to %s", plexSubscription.mClient);
       mClient = plexSubscription.mClient;
+    } else if(castPlayerManager.isSubscribed()) {
+      Logger.d("[VCFPActivity] setting client to %s", castPlayerManager.mClient);
+      mClient = castPlayerManager.mClient;
     } else {
       Logger.d("Not subscribed: %s", plexSubscription.mClient);
       // In case the notification is still up due to a crash
@@ -164,11 +168,8 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
 
     currentNetworkState = NetworkState.getCurrentNetworkState(this);
 
-    castPlayerManager = VoiceControlForPlexApplication.getInstance().castPlayerManager;
+
     castPlayerManager.setContext(this);
-    if(castPlayerManager.isSubscribed()) {
-      mClient = castPlayerManager.mClient;
-    }
 
 		if(BuildConfig.USE_BUGSENSE)
 			BugSenseHandler.initAndStartSession(getApplicationContext(), BUGSENSE_APIKEY);

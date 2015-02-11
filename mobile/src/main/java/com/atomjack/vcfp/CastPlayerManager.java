@@ -64,6 +64,7 @@ public class CastPlayerManager {
     public static final String ACTION_PREV = "prev";
 
     public static final String PLEX_USERNAME = "plexUsername";
+    public static final String ACCESS_TOKEN = "accessToken";
 
   };
 
@@ -426,6 +427,7 @@ public class CastPlayerManager {
       data.put(PARAMS.RESUME, VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.RESUME, false));
       data.put(PARAMS.CLIENT, VoiceControlForPlexApplication.gsonWrite.toJson(mClient));
       data.put(PARAMS.SRC, getTranscodeUrl(nowPlayingMedia, connection, offset));
+      data.put(PARAMS.ACCESS_TOKEN, nowPlayingMedia.server.accessToken);
       data.put(PARAMS.PLAYLIST, getPlaylistJson());
     } catch (Exception ex) {
       ex.printStackTrace();

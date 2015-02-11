@@ -33,6 +33,8 @@ public class PlexVideo extends PlexMedia {
   @Attribute(required=false)
   public String originallyAvailableAt;
   public String showTitle;
+  @Attribute(required=false)
+  public String guid;
 
 	public Date airDate() {
     SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
@@ -112,6 +114,7 @@ public class PlexVideo extends PlexMedia {
 		out.writeString(originallyAvailableAt);
 		out.writeString(showTitle);
 		out.writeTypedList(genre);
+    out.writeString(guid);
 	}
 
 	public PlexVideo(Parcel in) {
@@ -125,6 +128,7 @@ public class PlexVideo extends PlexMedia {
 		showTitle = in.readString();
     genre = new ArrayList<Genre>();
 		in.readTypedList(genre, Genre.CREATOR);
+    guid = in.readString();
 	}
 
 	public int describeContents() {
