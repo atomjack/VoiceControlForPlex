@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog>
+    <release version="2.0" versioncode="38">
+        <change>Added Android Wear Support.</change>
+        <change>Consolidated Server/Client scanning, which will run smoother.</change>
+        <change>Plex Server Connections will now expire an hour after discovery. This allows using a local server then moving to another location and accessing that server remotely (previously, you'd have to scan for servers again so that the remote connection would be used instead of local).</change>
+        <change>Various bug fixes and enhancements.</change>
+    </release>
     <release version="1.9.4" versioncode="31">
         <change>Specifying a client in the spoken query now works again.</change>
     </release>
