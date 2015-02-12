@@ -593,7 +593,7 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
 
   @Override
   public void onUnsubscribed() {
-    Logger.d("VCFPActivity onUnsubscribed");
+    Logger.d("[VCFPActivity] onUnsubscribed");
     setCastIconInactive();
     nowPlayingMedia = null;
     VoiceControlForPlexApplication.getInstance().cancelNotification();

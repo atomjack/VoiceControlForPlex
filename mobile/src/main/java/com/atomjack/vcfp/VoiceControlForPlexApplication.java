@@ -227,10 +227,12 @@ public class VoiceControlForPlexApplication extends Application
 		}
     PlexServer serverToAdd = null;
     // First, see if we've already found this server from a remote scan. We'll want to use that one instead so the remote connections are included
-    for(PlexServer _server : VoiceControlForPlexApplication.servers.values()) {
-      if(_server.machineIdentifier.equals(addedServer.machineIdentifier)) {
-        serverToAdd = _server;
-        break;
+    if(onFinish == null) { // onFinish is null when called from a local server scan - otherwise it's from a remote scan
+      for (PlexServer _server : VoiceControlForPlexApplication.servers.values()) {
+        if (_server.machineIdentifier.equals(addedServer.machineIdentifier)) {
+          serverToAdd = _server;
+          break;
+        }
       }
     }
     final PlexServer server = serverToAdd == null ? addedServer : serverToAdd;

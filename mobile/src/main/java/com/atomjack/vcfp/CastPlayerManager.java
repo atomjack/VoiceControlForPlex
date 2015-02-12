@@ -10,6 +10,7 @@ import com.atomjack.vcfp.interfaces.ActiveConnectionHandler;
 import com.atomjack.vcfp.model.Connection;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexMedia;
+import com.atomjack.vcfp.model.PlexServer;
 import com.atomjack.vcfp.model.PlexTrack;
 import com.atomjack.vcfp.model.PlexVideo;
 import com.google.android.gms.cast.ApplicationMetadata;
@@ -19,6 +20,7 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class CastPlayerManager {
   private PlexMedia nowPlayingMedia;
@@ -66,6 +68,9 @@ public class CastPlayerManager {
     public static final String PLEX_USERNAME = "plexUsername";
     public static final String ACCESS_TOKEN = "accessToken";
 
+    public static final String RECEIVE_SERVERS = "receiveServers";
+    public static final String SERVERS = "servers";
+
   };
 
   private Context mContext;
@@ -98,7 +103,7 @@ public class CastPlayerManager {
     if(castManager.isConnected()) {
       castManager.disconnect();
     }
-    castManager.setDevice(_client.castDevice, false);
+    castManager.setDevice(_client.castDevice);
     castConsumer.setOnConnected(new Runnable() {
       @Override
       public void run() {
@@ -106,6 +111,25 @@ public class CastPlayerManager {
 //        currentState = castManager.getPlaybackStatus();
         Logger.d("castConsumer connected to %s", mClient.name);
         getPlaybackState();
+
+        //
+        JSONObject obj = new JSONObject();
+        try {
+          obj.put(PARAMS.ACTION, PARAMS.RECEIVE_SERVERS);
+
+          PlexServer server = VoiceControlForPlexApplication.gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.SERVER, ""), PlexServer.class);
+          if(server.name.equals(mContext.getString(R.string.scan_all)))
+            obj.put(PARAMS.SERVERS, VoiceControlForPlexApplication.gsonWrite.toJson(VoiceControlForPlexApplication.getInstance().servers));
+          else {
+            ConcurrentHashMap<String, PlexServer> map = new ConcurrentHashMap<String, PlexServer>();
+            map.put(server.name, server);
+            obj.put(PARAMS.SERVERS, VoiceControlForPlexApplication.gsonWrite.toJson(map));
+          }
+          sendMessage(obj);
+        } catch (Exception ex) {}
+
+
+
         subscribed = true;
         if(listener != null)
           listener.onCastConnected(_client);
@@ -116,18 +140,21 @@ public class CastPlayerManager {
   }
 
   public boolean isSubscribed() {
+    Logger.d("[CastPlayerManager] subscribed: %s, mClient: %s", subscribed, mClient);
     return subscribed && mClient != null;
   }
 
   public void unsubscribe() {
     try {
       Logger.d("is connected: %s", castManager.isConnected());
-      if(castManager.isConnected())
-        castManager.stopApplication();
+      if(castManager.isConnected()) {
+        castManager.disconnect();
+      }
     } catch (Exception ex) {
       ex.printStackTrace();
     }
     subscribed = false;
+    mClient = null;
     if(listener != null)
       listener.onCastDisconnected();
   }
@@ -257,8 +284,8 @@ public class CastPlayerManager {
                       VideoCastManager.FEATURE_DEBUGGING);
 
     }
-    castManager.setContext(context);
-    castManager.setStopOnDisconnect(false);
+//    castManager.setContext(context);
+    castManager.setStopOnDisconnect(true);
     return castManager;
   }
 
