@@ -87,19 +87,6 @@
         </LinearLayout>
     </ScrollView>
 
-    <LinearLayout
-        android:layout_width="fill_parent"
-        android:layout_height="120dp"
-        android:orientation="vertical"
-        android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true"
-        android:id="@+id/nowPlayingMusic">
-        <SeekBar
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:id="@+id/seekBar"
-            android:paddingBottom="10dp"/>
-        <include layout="@layout/playback" />
-    </LinearLayout>
+    <include layout="@layout/playback" />
 
 </RelativeLayout>
