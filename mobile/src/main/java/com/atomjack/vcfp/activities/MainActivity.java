@@ -458,6 +458,22 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 		feedback.m(R.string.logged_out);
 	}
 
+  public void cinemaTrailers(MenuItem item) {
+    AlertDialog.Builder builder = new AlertDialog.Builder(this);
+    builder.setTitle(getString(R.string.cinema_trailers_title));
+    final CharSequence[] items = {getString(R.string.none), "1", "2", "3", "4", "5"};
+    int numTrailers = VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.NUM_CINEMA_TRAILERS, 0);
+    builder.setSingleChoiceItems(items, numTrailers, new DialogInterface.OnClickListener() {
+      @Override
+      public void onClick(DialogInterface dialog, int which) {
+        Logger.d("clicked %d", which);
+        VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.NUM_CINEMA_TRAILERS, which);
+        dialog.dismiss();
+      }
+    });
+    builder.create().show();
+  }
+
   public void purchaseWear(MenuItem item) {
     showWearPurchaseRequired();
   }

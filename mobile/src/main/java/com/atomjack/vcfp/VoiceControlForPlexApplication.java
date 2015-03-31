@@ -73,6 +73,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import cz.fhucho.android.util.SimpleDiskCache;
@@ -808,5 +809,14 @@ public class VoiceControlForPlexApplication extends Application
       dataMap.putString(WearConstants.MEDIA_TITLE, media.grandparentTitle);
       dataMap.putString(WearConstants.MEDIA_SUBTITLE, media.title);
     }
+  }
+
+  public static String getUUID() {
+    String uuid = VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.UUID, null);
+    if(uuid == null) {
+      uuid = UUID.randomUUID().toString();
+      VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.UUID, uuid);
+    }
+    return uuid;
   }
 }

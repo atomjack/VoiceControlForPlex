@@ -131,4 +131,8 @@
     <string name="wear_primary_function_option_description">Please choose the primary function for the notification that will appear on your Wear device. You may choose between Voice Input or Play/Pause buttons. Whichever you do not choose will be a separate button (swipe up, then right).</string>
     <string name="voice_input">Voice Input</string>
     <string name="play_pause">Play/Pause</string>
+    <string name="cinema_trailers">Cinema Trailers</string>
+    <string name="cinema_trailers_title">Number of Cinema Trailers to play before a Movie</string>
+    <string name="none">None</string>
+    <string name="couldnt_connect_to">Sorry, I couldn\'t connect to %s.</string>
 </resources>

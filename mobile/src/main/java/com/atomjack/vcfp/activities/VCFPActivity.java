@@ -487,6 +487,15 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
   }
 
   @Override
+  public void onCastConnectionFailed() {
+    Logger.d("[VCFPActivity] onCastConnectionFailed");
+    setCastIconActive();
+    if(castPlayerManager.mClient != null)
+      feedback.e(getString(R.string.couldnt_connect_to), castPlayerManager.mClient.name);
+    subscribing = false;
+  }
+
+  @Override
   public void onCastPlayerState(PlayerState state, PlexMedia media) {
     mCurrentState = state;
     Logger.d("[VCFPActivity] mCurrentState: %s, media: %s", mCurrentState, media);

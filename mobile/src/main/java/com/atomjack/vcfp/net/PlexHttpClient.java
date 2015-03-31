@@ -3,12 +3,17 @@ package com.atomjack.vcfp.net;
 import android.content.res.Resources;
 
 import com.atomjack.shared.Logger;
+import com.atomjack.shared.Preferences;
 import com.atomjack.vcfp.PlexHeaders;
+import com.atomjack.vcfp.QueryString;
+import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.interfaces.ActiveConnectionHandler;
+import com.atomjack.vcfp.interfaces.PlexPlayQueueHandler;
 import com.atomjack.vcfp.model.Connection;
 import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.Pin;
 import com.atomjack.vcfp.model.PlexError;
+import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexResponse;
 import com.atomjack.vcfp.model.PlexServer;
 import com.atomjack.vcfp.model.PlexUser;
@@ -24,6 +29,7 @@ import org.apache.http.StatusLine;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicHeader;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
@@ -169,6 +175,49 @@ public class PlexHttpClient
         removeHeaders(theseHeaders);
         if(responseHandler != null)
           responseHandler.onFailure(error);
+      }
+    });
+  }
+
+  public static void createPlayQueue(Connection connection, PlexMedia media, String transientToken, final PlexPlayQueueHandler responseHandler) {
+    QueryString qs = new QueryString("type", media.getType());
+    qs.add("next", "0");
+    if(media.isMovie()) {
+      qs.add("extrasPrefixCount", Integer.toString(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.NUM_CINEMA_TRAILERS, 0)));
+    }
+    qs.add("uri", String.format("library://%s/item/%%2flibrary%%2fmetadata%%2f%s", media.server.machineIdentifier, media.key));
+    qs.add("window", "50"); // no idea what this is for
+    if (transientToken != null)
+      qs.add("token", transientToken);
+    if (media.server.accessToken != null)
+      qs.add(PlexHeaders.XPlexToken, media.server.accessToken);
+
+    Header[] headers = {
+            new BasicHeader(PlexHeaders.XPlexClientIdentifier, VoiceControlForPlexApplication.getUUID())
+    };
+    String url = String.format("http://%s:%s/playQueues?%s", connection.address, connection.port, qs);
+    addHeaders(headers);
+    client.post(url, new RequestParams(), new AsyncHttpResponseHandler() {
+      @Override
+      public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+        MediaContainer mediaContainer = new MediaContainer();
+
+        try {
+          mediaContainer = serial.read(MediaContainer.class, new String(responseBody, "UTF-8"));
+        } catch (Resources.NotFoundException e) {
+          e.printStackTrace();
+        } catch (Exception e) {
+          e.printStackTrace();
+        }
+
+        if(responseHandler != null)
+          responseHandler.onSuccess(mediaContainer);
+
+      }
+
+      @Override
+      public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+        Logger.d("createPlayQueue failure: %s", new String(responseBody));
       }
     });
   }

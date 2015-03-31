@@ -6,49 +6,26 @@
               android:layout_alignParentBottom="true"
               android:layout_centerHorizontal="true"
               android:id="@+id/nowPlayingControls">
-
-    <LinearLayout
-        android:orientation="horizontal"
+    <SeekBar
         android:layout_width="fill_parent"
-        android:layout_height="40dp"
-        android:weightSum="100"
-        android:layout_marginLeft="5dp"
-        android:layout_marginRight="5dp">
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:textAppearance="?android:attr/textAppearanceSmall"
-            android:text="00:00:00"
-            android:id="@+id/currentTimeView"
-            android:maxLines="1"
-            android:layout_weight="16"
-            android:gravity="left"/>
-
-        <SeekBar
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:id="@+id/seekBar"
-            android:paddingBottom="10dp"
-            android:layout_weight="68"/>
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:textAppearance="?android:attr/textAppearanceSmall"
-            android:text="00:00:00"
-            android:id="@+id/durationView"
-            android:maxLines="1"
-            android:layout_weight="16"
-            />
-
-    </LinearLayout>
-
+        android:layout_height="wrap_content"
+        android:id="@+id/seekBar"
+        android:paddingBottom="10dp"/>
     <LinearLayout
         android:orientation="horizontal"
         android:layout_width="match_parent"
-        android:layout_height="80dp">
-
+        android:layout_height="match_parent">
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:text="00:00"
+            android:id="@+id/currentTimeView"
+            android:gravity="center_vertical"
+            android:maxLines="1"
+            android:layout_weight="1"
+            android:paddingLeft="15sp"
+            android:layout_marginTop="18dp"/>
         <ImageButton
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -88,5 +65,14 @@
             android:onClick="doMic"
             android:id="@+id/micButton" android:src="@drawable/button_microphone"
             android:layout_weight="1" />
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:text="00:00"
+            android:id="@+id/durationView"
+            android:maxLines="1"
+            android:layout_weight="1"
+            android:layout_marginTop="18dp"/>
     </LinearLayout>
 </LinearLayout>

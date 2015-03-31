@@ -47,7 +47,7 @@ public class CastActivity extends PlayerActivity {
       new SendToDataLayerThread(WearConstants.FINISH, this).start();
     }
     // If just playing a single track, put the media into an array
-    if(nowPlayingMedia.isMusic() && nowPlayingAlbum == null)
+    if(nowPlayingAlbum == null)
       nowPlayingAlbum = Arrays.asList(nowPlayingMedia);
 
     Logger.d("[CastActivity] starting up, action: %s, current state: %s", getIntent().getAction(), castPlayerManager.getCurrentState());

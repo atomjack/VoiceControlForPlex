@@ -22,6 +22,9 @@
           android:title="@string/menu_logout"
           android:onClick="logout"
           android:visible="false"></item>
+    <item android:id="@+id/menu_cinema_trailers"
+          android:title="@string/cinema_trailers"
+          android:onClick="cinemaTrailers"></item>
     <item android:id="@+id/menu_purchase_wear"
           android:title="@string/purchase_wear"
           android:onClick="purchaseWear"></item>

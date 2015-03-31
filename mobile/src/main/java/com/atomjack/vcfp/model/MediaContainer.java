@@ -53,6 +53,9 @@ public class MediaContainer {
   @Attribute(required=false)
   public String art;
 
+  @Attribute(required=false)
+  public String playQueueID;
+
 	public Timeline getTimeline(String type) {
 		if(timelines != null) {
 			for (Timeline t : timelines) {

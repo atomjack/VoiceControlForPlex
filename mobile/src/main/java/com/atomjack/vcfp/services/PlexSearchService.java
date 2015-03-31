@@ -12,6 +12,7 @@ import android.support.v7.media.MediaRouter;
 
 import com.atomjack.shared.SendToDataLayerThread;
 import com.atomjack.shared.WearConstants;
+import com.atomjack.vcfp.Utils;
 import com.atomjack.vcfp.interfaces.ActiveConnectionHandler;
 import com.atomjack.vcfp.interfaces.AfterTransientTokenRequest;
 import com.atomjack.vcfp.BuildConfig;
@@ -25,13 +26,13 @@ import com.atomjack.vcfp.QueryString;
 import com.atomjack.vcfp.R;
 import com.atomjack.shared.UriDeserializer;
 import com.atomjack.shared.UriSerializer;
-import com.atomjack.vcfp.Utils;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.activities.CastActivity;
 import com.atomjack.vcfp.activities.MainActivity;
 import com.atomjack.vcfp.activities.NowPlayingActivity;
 import com.atomjack.vcfp.activities.SubscriptionActivity;
 import com.atomjack.vcfp.activities.VCFPActivity;
+import com.atomjack.vcfp.interfaces.PlexPlayQueueHandler;
 import com.atomjack.vcfp.model.Connection;
 import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.PlexClient;
@@ -1005,18 +1006,6 @@ public class PlexSearchService extends Service {
 	private void playMedia(final PlexMedia media, final PlexDirectory album, final String transientToken) {
 		Logger.d("Playing media: %s", media.title);
 		Logger.d("Client: %s", client);
-		if(client.isCastClient) {
-//			Logger.d("active connection: %s", media.server.activeConnection);
-			Intent sendIntent = new Intent(this, CastActivity.class);
-			sendIntent.setAction(com.atomjack.shared.Intent.CAST_MEDIA);
-      sendIntent.putExtra(WearConstants.FROM_WEAR, fromWear);
-      sendIntent.putExtra(com.atomjack.shared.Intent.EXTRA_MEDIA, media);
-      sendIntent.putExtra(com.atomjack.shared.Intent.EXTRA_CLIENT, client);
-			sendIntent.putExtra("resume", resumePlayback);
-			sendIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-			startActivity(sendIntent);
-			return;
-		}
 
     Logger.d("currentNetworkState: %s", currentNetworkState);
     if(currentNetworkState == VCFPActivity.NetworkState.MOBILE) {
@@ -1025,53 +1014,75 @@ public class PlexSearchService extends Service {
 
       media.server.findServerConnection(new ActiveConnectionHandler() {
         @Override
-        public void onSuccess(Connection connection) {
+        public void onSuccess(final Connection connection) {
           try {
-            QueryString qs = new QueryString("machineIdentifier", media.server.machineIdentifier);
-            Logger.d("machine id: %s", media.server.machineIdentifier);
-            qs.add("key", media.key);
-            Logger.d("key: %s", media.key);
-            qs.add("port", connection.port);
-            Logger.d("port: %s", connection.port);
-            qs.add("address", connection.address);
-            Logger.d("address: %s", connection.address);
-
-            if (resumePlayback && media.viewOffset != null)
-              qs.add("viewOffset", media.viewOffset);
-            if (transientToken != null)
-              qs.add("token", transientToken);
-            if (media.server.accessToken != null)
-              qs.add(PlexHeaders.XPlexToken, media.server.accessToken);
-
-            if (album != null)
-              qs.add("containerKey", album.key);
-
-            String url = String.format("http://%s:%s/player/playback/playMedia?%s", client.address, client.port, qs);
-            PlexHttpClient.get(url, new PlexHttpResponseHandler() {
+            PlexHttpClient.createPlayQueue(connection, media, transientToken, new PlexPlayQueueHandler() {
               @Override
-              public void onSuccess(PlexResponse r) {
-                // If the host we're playing on is this device, we don't wanna do anything else here.
-                if (Utils.getIPAddress(true).equals(client.address) || r == null)
-                  return;
-                feedback.m(getResources().getString(R.string.now_watching_video), media.isMovie() ? media.title : media.grandparentTitle, client.name);
-                Boolean passed = true;
-                if (r.code != null) {
-                  if (!r.code.equals("200")) {
-                    passed = false;
-                  }
+              public void onSuccess(MediaContainer mediaContainer) {
+                // Insert the server into each video in the playlist
+                for(int i=0;i<mediaContainer.videos.size();i++) {
+                  mediaContainer.videos.get(i).server = media.server;
+                  if(mediaContainer.videos.get(i).isClip())
+                    mediaContainer.videos.get(i).setClipDuration();
                 }
-                Logger.d("Playback response: %s", r.code);
-                if (passed) {
-                  videoPlayed = true;
-                  showPlayingMedia(media);
+                QueryString qs = new QueryString("machineIdentifier", media.server.machineIdentifier);
+                qs.add("key", media.key);
+                qs.add("containerKey", String.format("/playQueues/%s", mediaContainer.playQueueID));
+                qs.add("port", connection.port);
+                qs.add("address", connection.address);
+
+                if (resumePlayback && media.viewOffset != null)
+                  qs.add("viewOffset", media.viewOffset);
+                if (transientToken != null)
+                  qs.add("token", transientToken);
+                if (media.server.accessToken != null)
+                  qs.add(PlexHeaders.XPlexToken, media.server.accessToken);
+
+                if (album != null)
+                  qs.add("containerKey", album.key);
+
+                if(client.isCastClient) {
+                  Logger.d("playQueueID: %s", mediaContainer.playQueueID);
+                  Logger.d("num videos: %d", mediaContainer.videos.size());
+                  Intent sendIntent = new Intent(PlexSearchService.this, CastActivity.class);
+                  sendIntent.setAction(com.atomjack.shared.Intent.CAST_MEDIA);
+                  sendIntent.putExtra(WearConstants.FROM_WEAR, fromWear);
+                  sendIntent.putExtra(com.atomjack.shared.Intent.EXTRA_MEDIA, mediaContainer.videos.get(0));
+                  sendIntent.putParcelableArrayListExtra(com.atomjack.shared.Intent.EXTRA_ALBUM, (ArrayList)mediaContainer.videos);
+                  sendIntent.putExtra(com.atomjack.shared.Intent.EXTRA_CLIENT, client);
+                  sendIntent.putExtra("resume", resumePlayback);
+                  sendIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                  startActivity(sendIntent);
                 } else {
-                  feedback.e(getResources().getString(R.string.http_status_code_error), r.code);
-                }
-              }
+                  String url = String.format("http://%s:%s/player/playback/playMedia?%s", client.address, client.port, qs);
+                  PlexHttpClient.get(url, new PlexHttpResponseHandler() {
+                    @Override
+                    public void onSuccess(PlexResponse r) {
+                      // If the host we're playing on is this device, we don't wanna do anything else here.
+                      if (Utils.getIPAddress(true).equals(client.address) || r == null)
+                        return;
+                      feedback.m(getResources().getString(R.string.now_watching_video), media.isMovie() ? media.title : media.grandparentTitle, client.name);
+                      Boolean passed = true;
+                      if (r.code != null) {
+                        if (!r.code.equals("200")) {
+                          passed = false;
+                        }
+                      }
+                      Logger.d("Playback response: %s", r.code);
+                      if (passed) {
+                        videoPlayed = true;
+                        showPlayingMedia(media);
+                      } else {
+                        feedback.e(getResources().getString(R.string.http_status_code_error), r.code);
+                      }
+                    }
 
-              @Override
-              public void onFailure(Throwable error) {
-                feedback.e(getResources().getString(R.string.got_error), error.getMessage());
+                    @Override
+                    public void onFailure(Throwable error) {
+                      feedback.e(getResources().getString(R.string.got_error), error.getMessage());
+                    }
+                  });
+                }
               }
             });
           } catch (Exception e) {

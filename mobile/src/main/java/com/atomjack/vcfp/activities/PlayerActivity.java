@@ -94,19 +94,19 @@ public abstract class PlayerActivity extends VCFPActivity implements SeekBar.OnS
   public void showNowPlaying(boolean setView) {
     if (nowPlayingMedia instanceof PlexVideo) {
       PlexVideo video = (PlexVideo)nowPlayingMedia;
-      if(video.isMovie()) {
-        if(setView)
+      if(video.isMovie() || video.isClip()) {
+        if (setView)
           setContentView(R.layout.now_playing_movie);
 
-        TextView title = (TextView)findViewById(R.id.nowPlayingTitle);
+        TextView title = (TextView) findViewById(R.id.nowPlayingTitle);
         title.setText(video.title);
-        TextView genre = (TextView)findViewById(R.id.nowPlayingGenre);
+        TextView genre = (TextView) findViewById(R.id.nowPlayingGenre);
         genre.setText(video.getGenres());
-        TextView year = (TextView)findViewById(R.id.nowPlayingYear);
+        TextView year = (TextView) findViewById(R.id.nowPlayingYear);
         year.setText(video.year);
-        TextView duration = (TextView)findViewById(R.id.nowPlayingDuration);
+        TextView duration = (TextView) findViewById(R.id.nowPlayingDuration);
         duration.setText(video.getDuration());
-        TextView summary = (TextView)findViewById(R.id.nowPlayingSummary);
+        TextView summary = (TextView) findViewById(R.id.nowPlayingSummary);
         summary.setText(video.summary);
       } else {
         if(setView)

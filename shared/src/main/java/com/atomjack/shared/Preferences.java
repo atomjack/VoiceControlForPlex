@@ -23,6 +23,7 @@ public class Preferences {
   public final static String ERRORS = "errors";
   public final static String PLEX_USERNAME = "pref.plex_username";
   public final static String HAS_SHOWN_WEAR_PURCHASE_POPUP = "pref.has_shown_wear_purchase_popup";
+  public final static String NUM_CINEMA_TRAILERS = "pref.num_cinema_trailers";
 
   public Preferences(Context context) {
     mPrefs = context.getSharedPreferences(PREFS, context.MODE_PRIVATE);

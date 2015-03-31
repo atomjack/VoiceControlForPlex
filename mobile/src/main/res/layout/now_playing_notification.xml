@@ -20,7 +20,7 @@
             android:layout_height="42dp"
             android:id="@+id/rewindButton"
             android:background="@null"
-            android:src="@drawable/button_rewind"/>
+            android:src="@drawable/notif_back15"/>
 
         <RelativeLayout
             android:layout_width="42dp"

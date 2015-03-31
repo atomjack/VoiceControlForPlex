@@ -144,6 +144,11 @@ public class PlexVideo extends PlexMedia {
 			return new PlexVideo[size];
 		}
 	};
+
+  public void setClipDuration() {
+    if(isClip())
+      duration = media.get(0).parts.get(0).duration;
+  }
 }
 
 
@@ -187,4 +192,3 @@ class Genre implements Parcelable {
 		}
 	};
 }
-

@@ -282,6 +282,8 @@ class Part implements Parcelable {
   public List<Stream> streams = new ArrayList<Stream>();
   @Attribute(required=false)
   public String key;
+  @Attribute(required=false)
+  public int duration;
 
   public Part() {
 
@@ -292,6 +294,7 @@ class Part implements Parcelable {
     streams = new ArrayList<Stream>();
     in.readTypedList(streams, Stream.CREATOR);
     key = in.readString();
+    duration = in.readInt();
   }
 
   @Override
@@ -304,6 +307,7 @@ class Part implements Parcelable {
     out.writeString(id);
     out.writeTypedList(streams);
     out.writeString(key);
+    out.writeInt(duration);
   }
 
   public static final Parcelable.Creator<Part> CREATOR = new Parcelable.Creator<Part>() {
