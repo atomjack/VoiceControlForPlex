@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog>
+    <release version="2.0.2" versioncode="41">
+        <change>Added support for Cinema Trailers. Number of trailers to show before playing a movie can be set in the Options menu. Default is 0 (disabled).</change>
+    </release>
     <release version="2.0.1" versioncode="39">
         <change>Added Android Wear Support.</change>
         <change>Consolidated Server/Client scanning, which will run smoother.</change>
