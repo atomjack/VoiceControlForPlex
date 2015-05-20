@@ -37,9 +37,10 @@ adding translations, please do not modify (.*), $1, ([0-9]+), etc.
 
     <!--
     The following three patterns allow for pause/resume/stop of playback. If your language reverses the order of the
-    words ("pause" and "playback", for example), make sure to reverse the order of the corresponding phrase in the pattern_recognition pattern above:
+    words ("pause" and "playback", for example - see the German translation for an example), make sure to reverse the order
+    of the corresponding phrase in the pattern_recognition pattern above:
     (pause|stop|resume)( playback)?
-    The given example pattern matches pause or stop or resume, and optionally playback (so:pause, pause playback, resume, resume playback, stop, stop playback)
+    The given example pattern matches pause or stop or resume, and optionally playback (so, pause, pause playback, resume, resume playback, stop, stop playback)
     -->
     <item name="pattern_pause_playback" type="string">pausar|pausar reproducción</item>
     <item name="pattern_resume_playback" type="string">continuar|continuar reproducción</item>

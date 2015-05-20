@@ -41,9 +41,9 @@ adding translations, please do not modify (.*), $1, ([0-9]+), etc.
     (pause|stop|resume)( playback)?
     The given example pattern matches pause or stop or resume, and optionally playback (so, pause, pause playback, resume, resume playback, stop, stop playback)
     -->
-    <item name="pattern_pause_playback" type="string">pause( playback)?</item>
-    <item name="pattern_resume_playback" type="string">resume( playback)?</item>
-    <item name="pattern_stop_playback" type="string">stop( playback)?</item>
+    <item name="pattern_pause_playback" type="string">pause|pause playback</item>
+    <item name="pattern_resume_playback" type="string">resume|resume playback</item>
+    <item name="pattern_stop_playback" type="string">stop|stop playback</item>
 
     <!--
     The following are used in conjunction with the pattern_offset below. These should match the
