@@ -9,7 +9,7 @@ adding translations, please do not modify (.*), $1, ([0-9]+), etc.
     a quite complicated regular expression. Plugging it into https://www.debuggex.com/ should help you figure out how
     it is constructed.
     -->
-    <item name="pattern_recognition" type="string">^(((watch|play|resume watching|listen to|watch movie|play movie) (.+)( on (.+))?( on shuffle)?)|((offset|timecode) (.+)( on (.+))?)|((pause|stop|resume) playback( on (.+))?))|(connect to (.+)|disconnect)$</item>
+    <item name="pattern_recognition" type="string">^(((watch|play|resume watching|listen to|watch movie|play movie) (.+)( on (.+))?( on shuffle)?)|((offset|timecode) (.+)( on (.+))?)|((pause|stop|resume)( playback)?( on (.+))?))|(connect to (.+)|disconnect)$</item>
 
     <item name="pattern_on_client" type="string">(.+) on (.+)$</item>
     <item name="pattern_resume_watching" type="string">^resume (watching|playing) (.+)</item>
@@ -35,9 +35,15 @@ adding translations, please do not modify (.*), $1, ([0-9]+), etc.
     <item name="pattern_listen_to_album" type="string">listen to the album (.+)</item>
     <item name="pattern_listen_to_song_by_artist" type="string">listen to (.+) by (.+)</item>
 
-    <item name="pattern_pause_playback" type="string">pause playback</item>
-    <item name="pattern_resume_playback" type="string">resume playback</item>
-    <item name="pattern_stop_playback" type="string">stop playback</item>
+    <!--
+    The following three patterns allow for pause/resume/stop of playback. If your language reverses the order of the
+    words ("pause" and "playback", for example), make sure to reverse the order of the corresponding phrase in the pattern_recognition pattern above:
+    (pause|stop|resume)( playback)?
+    The given example pattern matches pause or stop or resume, and optionally playback (so, pause, pause playback, resume, resume playback, stop, stop playback)
+    -->
+    <item name="pattern_pause_playback" type="string">pause( playback)?</item>
+    <item name="pattern_resume_playback" type="string">resume( playback)?</item>
+    <item name="pattern_stop_playback" type="string">stop( playback)?</item>
 
     <!--
     The following are used in conjunction with the pattern_offset below. These should match the

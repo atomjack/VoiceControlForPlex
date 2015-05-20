@@ -9,7 +9,7 @@ adding translations, please do not modify (.*), $1, ([0-9]+), etc.
     a quite complicated regular expression. Plugging it into https://www.debuggex.com/ should help you figure out how
     it is constructed.
     -->
-    <item name="pattern_recognition" type="string">^(((ver|continuar viendo|escuchar|ver película) (.+)( en (.+))?( en modo aleatorio)?)|((posición) (.+)( en (.+))?)|((pausar|detener|continuar) reproducción( en (.+))?))|(conectar a (.+)|desconectar)$</item>
+    <item name="pattern_recognition" type="string">^(((ver|continuar viendo|escuchar|ver película) (.+)( en (.+))?( en modo aleatorio)?)|((posición) (.+)( en (.+))?)|((pausar|detener|continuar)( reproducción)?( en (.+))?))|(conectar a (.+)|desconectar)$</item>
 
     <item name="pattern_on_client" type="string">(.+) en (.+)$</item>
     <item name="pattern_resume_watching" type="string">^continuar (viendo) (.+)</item>
@@ -35,9 +35,15 @@ adding translations, please do not modify (.*), $1, ([0-9]+), etc.
     <item name="pattern_listen_to_album" type="string">escuchar el álbum (.+)</item>
     <item name="pattern_listen_to_song_by_artist" type="string">escuchar (.+) de (.+)</item>
 
-    <item name="pattern_pause_playback" type="string">pausar reproducción</item>
-    <item name="pattern_resume_playback" type="string">continuar reproducción</item>
-    <item name="pattern_stop_playback" type="string">detener reproducción</item>
+    <!--
+    The following three patterns allow for pause/resume/stop of playback. If your language reverses the order of the
+    words ("pause" and "playback", for example), make sure to reverse the order of the corresponding phrase in the pattern_recognition pattern above:
+    (pause|stop|resume)( playback)?
+    The given example pattern matches pause or stop or resume, and optionally playback (so:pause, pause playback, resume, resume playback, stop, stop playback)
+    -->
+    <item name="pattern_pause_playback" type="string">pausar|pausar reproducción</item>
+    <item name="pattern_resume_playback" type="string">continuar|continuar reproducción</item>
+    <item name="pattern_stop_playback" type="string">detener|detener reproducción</item>
 
     <!--
     The following are used in conjunction with the pattern_offset below. These should match the

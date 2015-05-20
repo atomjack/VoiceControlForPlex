@@ -9,7 +9,7 @@ adding translations, please do not modify (.*), $1, ([0-9]+), etc.
     a quite complicated regular expression. Plugging it into https://www.debuggex.com/ should help you figure out how
     it is constructed.
     -->
-    <item name="pattern_recognition" type="string">^(((schaue|spiele|wiedergabe fortsetzen|höre|schaue film|spiele film) (.+)( auf (.+))?( auf zufallswiedergabe)?)|((offset|zeitcode) (.+)( auf (.+))?)|((pausieren|anhalten|fortsetzen) wiedergabe( auf (.+))?))|(verbinde mit (.+)|trenne)$</item>
+    <item name="pattern_recognition" type="string">^(((schaue|spiele|wiedergabe fortsetzen|höre|schaue film|spiele film) (.+)( auf (.+))?( auf zufallswiedergabe)?)|((offset|zeitcode) (.+)( auf (.+))?)|(( wiedergabe)?(pausieren|anhalten|fortsetzen)( auf (.+))?))|(verbinde mit (.+)|trenne)$</item>
 
     <item name="pattern_on_client" type="string">(.+) auf (.+)$</item>
     <item name="pattern_resume_watching" type="string">^wiedergabe fortsetzen (.+)</item>
@@ -35,9 +35,15 @@ adding translations, please do not modify (.*), $1, ([0-9]+), etc.
     <item name="pattern_listen_to_album" type="string">höre das album (.+)</item>
     <item name="pattern_listen_to_song_by_artist" type="string">höre (.+) von (.+)</item>
 
-    <item name="pattern_pause_playback" type="string">wiedergabe pausieren</item>
-    <item name="pattern_resume_playback" type="string">wiedergabe fortsetzen</item>
-    <item name="pattern_stop_playback" type="string">wiedergabe anhalten</item>
+    <!--
+    The following three patterns allow for pause/resume/stop of playback. If your language reverses the order of the
+    words ("pause" and "playback", for example), make sure to reverse the order of the corresponding phrase in the pattern_recognition pattern above:
+    (pause|stop|resume)( playback)?
+    The given example pattern matches pause or stop or resume, and optionally playback (so, pause, pause playback, resume, resume playback, stop, stop playback)
+    -->
+    <item name="pattern_pause_playback" type="string">pausieren|wiedergabe pausieren</item>
+    <item name="pattern_resume_playback" type="string">fortsetzen|wiedergabe fortsetzen</item>
+    <item name="pattern_stop_playback" type="string">anhalten|wiedergabe anhalten</item>
 
     <!--
     The following are used in conjunction with the pattern_offset below. These should match the
