@@ -29,16 +29,12 @@
     <string name="not_set">nicht gesetzt</string>
     <string name="feedback">Feedback</string>
     <string name="errors">Fehler</string>
-    <string name="help_server">Wähle einen Plex Server als Quelle. Wenn sie mehr als einen Server haben wählen sie &quot;Alle scannen&quot; um alle Server nach medien zu durchsuchen. Wenn sie nur einen haben wählen sie diesen aus. Das suchen nach verfügbaren medien führt eventuell zu verzögerungen vor der wiedergabe des mediums</string>
-    <string name="help_client">Wähle den Empfänger der standardmäßig verwendet werden soll. Sie können dies auch einfach ändern indem die anfrage mit \&quot;auf &lt;Empfänger&gt;\&quot; endet. Hierbei steht &lt;Empfänger&gt; für den Namen des Plex Empfängers.</string>
-    <string name="help_feedback">Wählen sie die Art von Feedback die ich ihnen geben soll.</string>
-    <string name="help_errors">Wählen sie die Art von Feedback die ich ihnen geben soll wenn ich auf problem stoße (z.b. wenn etwas nicht abgespielt werden kann, etc).</string>
+    <string name="help_server">Wähle einen Plex Server als Quelle. Wenn sie mehr als einen Server haben wählen sie &quot;Alle scannen&quot; um alle Server nach medien zu durchsuchen. Wenn sie nur einen haben wählen sie diesen hier explizit aus. Das suchen nach verfügbaren servern führt eventuell zu verzögerungen der wiedergabe der medien</string>
+    <string name="help_client">Wähle den Empfänger der standardmäßig verwendet werden soll. Dies kann auch durch die Spracheingabe festgelegt werden indem diese \&quot;auf &lt;Empfänger&gt;\&quot; endet. Hierbei steht &lt;Empfänger&gt; für den Namen des Plex Empfängers.</string>
+    <string name="help_feedback">Wählen sie die Art von Feedback welches die App verwendenn soll.</string>
+    <string name="help_errors">Wählen sie die Art von Feedback welches die App verwendenn soll wenn sie auf probleme stößt (z.b. wenn etwas nicht abgespielt werden kann, etc).</string>
     <string name="help_button_desc">Hilfe Button</string>
-    <string name="help_usage">
-        
-        Here are some examples to trigger playback:\n\nWatch V For Vendetta\nWatch Season 1 Episode 1 of Homeland\nWatch Breaking Bad Season 5 Episode 8\nWatch episode Once More With Feeling of Buffy The Vampire Slayer\nWatch the next episode of The Walking Dead\nWatch the latest episode of The Daily Show with Jon Stewart\n\nFor Music:\n"Listen to Black Sands by Bonobo" (to play a single song)\nListen to the album Drink The Sea by The Glitch Mob\nListen to the album Music Has The Right To Children (Artist is optional. Specify if more than one match is found)\n\nFor playback:\nPause Playback\nResume Playback\nStop Playback\n\nSeeking:\nOffset 1 hour 15 minutes 30 seconds\nOffset 30 minutes 5 seconds\n(Any combination of hours, minutes, and/or seconds, in that order)\n(You may also use \'timecode\' instead of \'offset\')\n\nIf you don\'t have \&quot;Resume if in progress\&quot; checked, you can selectively resume by saying \&quot;Resume watching\&quot; instead of \&quot;Watch\&quot;\n\nYou can also specify a client by adding \&quot;on &lt;client name&gt;\&quot; to your spoken query.
-
-    </string>
+    <string name="help_usage">Beispiele zur Verwendung:\n\n Filme und Serien:\nSchaue V Wie Vendetta\nSchaue Staffel 1 Episode 1 von Homeland\nSchaue Breaking Bad Staffel 5 Episode 8\nSchaue die Episode Mit Gefühl von Buffy der Vamirjägerin ein weiteres mal\nSpiele die nächste Episode von The Walking Dead\nSpiele die neuste Episode von The Walking Dead\n\nFür Musik:\nHöre Black Sands von Bonobo (einzelner song)\nHöre das Album Drink The Sea von The Glitch Mob\nHöre das Album Music Has The Right To Children (Künster ist optional und nur notwendig wenn mehr als ein Match gefunden wurde)\n\nWiedergabe:\n Pausieren, Wiedergabe pausieren\n Fortsetzen, Wiedergabe fortsetzen\n Anhalten, Wiedergabe anhalten\n\n Suchen:\n Offset 1 Stunde 15 Minuten 30 Sekunden\n Offset 30 Minuten 5 Sekunden\n(Jegliche Kombination von Stunden, Minuten, Sekunden)\n (Sie können auch \'zeitcode\' an Stelle von \'offset\' verwenden)\n\n Wenn sie \&quot;Fortsetzen wenn in Bearbeitung\&quot; nicht verwenden, können sie auch selektiv fortsetzen indem sie \&quot;Wiedergabe fotsetzen\&quot; anstelle von \&quot;Schaue\&quot; sagen\n\nSie können auch einen Empfäger bestimmen inden sie \&quot;auf &lt;Empfängername&gt;\&quot; zu Ihrem Sprachbefehl hinzufügen.</string>
     <string name="help_usage_button">Verwendungsbeispiele</string>
     <string name="tasker_instructions">Voice Control for Plex funktioniert auch mit utter! und AutoVoice, in Kombination mit Tasker. Klicke auf die Buttons unten um die Apps im Play Store anzusehen.</string>
     <string name="tasker_import_header">Voice Control for Plex funktioniert auch mit utter! und AutoVoice, in Kombination mit Tasker. Verwende den Button unten für den import des nötigen Tasker Projektes.</string>
@@ -46,22 +42,22 @@
     <string name="install_utter">Instsalliere utter!</string>
     <string name="install_autovoice">Instsalliere AutoVoice</string>
     <string name="import_tasker_project">Importiere Tasker Project</string>
-    <string name="import_tasker_instructions">Tasker Projekt importiert. Ich werde nun tasker öfnnen. Bitt drücke dort auf das Haus Icon und dann Import. Dann kannst du Voice Control for Plex auswählen.\n\nBei der 
+    <string name="import_tasker_instructions">Tasker Projekt importiert. Ich werde nun tasker öfnnen. Bitt drücke dort auf das Haus Symbol und dann Import. Dann kannst du Voice Control for Plex auswählen.\n\nBei der 
         verwendung von utter!, muss unter Settings&#8209;>Advanced&#8209;>Try Again&#8209;>Select \"Send to Tasker\" ausgewählt werden.</string>
     <string name="select_voice">Stimmauswahl</string>
     <string name="cancel">Abbruch</string>
-    <string name="nothing_to_play">Entschuldigung. Nichts zum abspielen gefunden.</string>
-    <string name="http_status_code_error">Entschuldigung. Ein Fehler ist aufgetreten. HTTP status code: %s</string>
-    <string name="got_error">Entschuldigung. Ein fehler ist aufgetreten: %s</string>
-    <string name="client_not_specified">Entschuldigung. Es ist kein  Empfänger spezifiziert oder ich kann ihn nicht finden.</string>
+    <string name="nothing_to_play">Nichts zum abspielen gefunden.</string>
+    <string name="http_status_code_error">Ein Fehler ist aufgetreten. HTTP status code: %s</string>
+    <string name="got_error">Ein fehler ist aufgetreten: %s</string>
+    <string name="client_not_specified">Es ist kein  Empfänger spezifiziert oder ich kann ihn nicht finden.</string>
     <string name="found_more_than_one_album">Ich habe mehr als ein passendes Album gefunden. Spezifiziere den Künstler.</string>
-    <string name="couldnt_find_album">Entschuldigung. Konnte kein Album zum abspielen finden.</string>
+    <string name="couldnt_find_album">Konnte kein Album zum abspielen finden.</string>
     <string name="couldnt_find_track">Entschuldigung, Konnte kein Stück zum abspielen finden.</string>
     <string name="couldnt_find_episode">Entschuldigung, Konnte die angegebene Episode nicht finden.</string>
     <string name="found_more_than_one_show">Entschuldigung, Mehr als nur eine Serie gefunden. Bitte genauer werden.</string>
     <string name="couldnt_find">Entschuldigung, Konnte %s nicht finden.</string>
     <string name="couldnt_find_next">Entschuldigung, Konnte %1$s nicht finden, oder es sind keine Episoden auf Deck.</string>
-    <string name="couldnt_find_season">Entschuldigung. Konnte diese Season nicht finden.</string>
+    <string name="couldnt_find_season">Konnte diese Staffel nicht finden.</string>
     <string name="found_more_than_one_movie">Ich habe mehr als einen passenden Film gefunden. Bitte genauer werden.</string>
     <string name="now_watching_video">Jetzt schauen %1$s auf %2$s.</string>
     <string name="playback_paused">Wiedergabe pausiert.</string>
@@ -74,8 +70,8 @@
     <string name="no_wifi_connection_message">Eine Wlan Verbindung wird benötigt. Bitte überprüfen und nochmal versuchen.</string>
     <string name="voice_prompt">Voice Control for Plex hört zu</string>
     <string name="searching_for_plex_servers">Suche nach Plex Servern</string>
-    <string name="didnt_understand">Entschuldigung. Ich habe %s nicht verstanden</string>
-    <string name="didnt_understand_that">Entschuldigung. Das habe ich nicht verstanden.</string>
+    <string name="didnt_understand">Ich habe %s nicht verstanden</string>
+    <string name="didnt_understand_that">Das habe ich nicht verstanden.</string>
     <string name="create_shortcut">Shortcut anlegen</string>
     <string name="create_shortcut_blurb">Sie können einen shortcut anlegen der einen spezifischen Server und Empfäger verwendet. Oder einen shortcut der immer die im moment aktiven settings verwendet. Was möchten sie tun?</string>
     <string name="create_shortcut_blurb_no_servers">Sie können einen shortcut anlegen der einen spezifischen Server und Empfäger verwendet. Oder einen shortcut der immer die im moment aktiven settings verwendet. Jedoch haben sie noch nicht nach Servern oder Empängern gesucht und können so im Moment nur einen Shortcut verwenden der den aktuellen Server und Empfänger verwendet. Fortsetzen?</string>
@@ -92,32 +88,32 @@
     <string name="sections">Sektionen</string>
     <string name="searching_for">Suche nach %s.</string>
     <string name="searching_for_episode">Suche nach %1$s Episode %2$s.</string>
-    <string name="searching_for_show_season_episode">Suche nach %1$s Season %2$s Episode %3$s.</string>
+    <string name="searching_for_show_season_episode">Suche nach %1$s Staffel %2$s Episode %3$s.</string>
     <string name="searching_for_album">Suche nach %1$s von %2$s.</string>
     <string name="pin_title">Plex login</string>
     <string name="pin_message">Bitte besuche visit http://plex.tv/pin from your computer and enter the following code: %s.</string>
     <string name="button_manual">Anleitung</string>
     <string name="button_pin">Pin</string>
-    <string name="login_unauthorized">Entschuldigung. Unauthorized login Fehler. Bitt noch mal einloggen.</string>
-    <string name="remote_scan_error">Entschuldigung. Fehler beim Zugriff auf myPlex. Bitt einmal aus und wieder einloggen.</string>
+    <string name="login_unauthorized">Unauthorisierter Login Fehler. Bitt noch mal einloggen.</string>
+    <string name="remote_scan_error">Fehler beim Zugriff auf myPlex. Bitt einmal aus- und wieder einloggen.</string>
     <string name="searching_for_plex_clients">Suche nach Plex Empfängern</string>
     <string name="select_plex_client">Wähle einen Plex Empfänger</string>
     <string name="no_servers_found">Keine Plex Server gefunden.</string>
     <string name="no_clients_found">Keine Plex Empfänger gefunden.</string>
     <string name="servers_refreshed">Server neu geladen.</string>
-    <string name="error_seeking">Entschuldigung. Es gab einen Fehler beim Suchen: %s.</string>
+    <string name="error_seeking">Es gab einen Fehler beim Suchen: %s.</string>
     <string name="connected_to">Verbunden mit</string>
     <string name="disconnect">Trennen</string>
     <string name="play">Spiele</string>
     <string name="pause">Pausiere</string>
     <string name="rewind">Zurück</string>
     <string name="playing_on">Spielt auf %s</string>
-    <string name="client_not_found">Entschuldigung. Ich konnte den angegebenen Empfänger nicht finden.</string>
+    <string name="client_not_found">Ich konnte den angegebenen Empfänger nicht finden.</string>
     <string name="connected_to2">Verbunden mit %s.</string>
     <string name="disconnected">Getrennt</string>
-    <string name="must_purchase_chromecast">Chromecast Unterstützung ist verfügbar als in-app Kauf %s. Weiter? </string>
+    <string name="must_purchase_chromecast">Chromecast unterstützung für %s erwerben. Weiter? </string>
     <string name="no_thanks">Nein Danke</string>
-    <string name="must_purchase_chromecast_error">Entschuldigung. Die Chromecast Unterstützung ist nur per in app Kauf verfügbar. Zum Kauf wählen sie ihren Chromecast in den Haupteinstellungen aus.</string>
+    <string name="must_purchase_chromecast_error">Die Chromecast Unterstützung ist per in app Kauf verfügbar. Zum Kauf wählen sie bitte ihren Chromecast in den Haupteinstellungen aus.</string>
     <string name="this_device">Dieses Gerät</string>
     <string name="network_connection_required">Eine Netzwerkverbindung wird benötigt</string>
     <string name="mobile_network_connection_active">Während die mobile Datenverbindung aktiv ist wird die wiedergabe nur auf diesem Gerät unterstützt durch den offiziellen plex client.</string>
@@ -139,5 +135,5 @@
     <string name="cinema_trailers">Kino Trailer</string>
     <string name="cinema_trailers_title">Anzahl von Kino Trailern die vor einem Film gespielt werden</string>
     <string name="none">Keine</string>
-    <string name="couldnt_connect_to">Entschuldigung. Konnte nicht zu %s verbinden.</string>
+    <string name="couldnt_connect_to">Konnte nicht zu %s verbinden.</string>
 </resources>
