@@ -9,7 +9,8 @@ adding translations, please do not modify (.*), $1, ([0-9]+), etc.
     a quite complicated regular expression. Plugging it into https://www.debuggex.com/ should help you figure out how
     it is constructed.
     -->
-    <item name="pattern_recognition" type="string">^(((schaue|spiele|wiedergabe fortsetzen|höre|schaue film|spiele film) (.+)( auf (.+))?( auf zufallswiedergabe)?)|((offset|zeitcode) (.+)( auf (.+))?)|(( wiedergabe)?(pausieren|anhalten|fortsetzen)( auf (.+))?))|(verbinde mit (.+)|trenne)$</item>
+
+    <item name="pattern_recognition" type="string">^(((schaue|spiele|wiedergabe fortsetzen|höre|schaue film|spiele film) (.+)( auf (.+))?( auf zufallswiedergabe)?)|((springe) (.+)( auf (.+))?)|(( wiedergabe)?(pausieren|anhalten|fortsetzen)( auf (.+))?))|(verbinde mit (.+)|trenne)$</item>
 
     <item name="pattern_on_client" type="string">(.+) auf (.+)$</item>
     <item name="pattern_resume_watching" type="string">^wiedergabe fortsetzen (.+)</item>
@@ -57,7 +58,7 @@ adding translations, please do not modify (.*), $1, ([0-9]+), etc.
     <item name="pattern_seconds" type="string">^sekunden?</item>
 
     <!--
-    Offset pattern. This lets the user start with with "offset" or "zeitcode", followed by:
+    Offset pattern. This lets the user start with with "springe", followed by:
         any number followed by "hour(s)" or "minute(s)" or "second(s)", and optionally followed by:
         any number followed by "minute(s)" or "second(s)", and optionally followed by:
         any number followed by "second(s)"
@@ -70,5 +71,5 @@ adding translations, please do not modify (.*), $1, ([0-9]+), etc.
     The (hours?|minutes?|seconds?) means hour, with or without an s at the end (singular or plural), and the
     same for minutes and seconds (the | means "or").
     -->
-    <item name="pattern_offset" type="string">^(offset|zeitcode) ([0-9]) (stunden?|minuten?|sekunden?)(?: ([0-9]) (minuten?|sekunden?))?(?: ([0-9]) (sekunden?))?</item>
+    <item name="pattern_offset" type="string">^(springe) ([0-9]) (stunden?|minuten?|sekunden?)(?: ([0-9]) (minuten?|sekunden?))?(?: ([0-9]) (sekunden?))?</item>
 </resources>
