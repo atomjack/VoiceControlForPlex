@@ -1,19 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-This file contains the regular expressions patterns used for figuring out what action the user wishes to take. When
-adding translations, please do not modify (.*), $1, ([0-9]+), etc.
+Diese Datei enthält reguläre Ausdrücke die verwendet werden um herauszufinden welche Aktion der Benutzer verwenden möchte. 
+Wenn du eine Übersetzung hinzufügst bitte modifiziere nicht die Muster (.*), $1, ([0-9]+) etc ausser du weißt was du tust.
 -->
 <resources>
     <!--
-    This pattern is the main pattern that will need to be matched in order for anything to be done. As you can see it is
-    a quite complicated regular expression. Plugging it into https://www.debuggex.com/ should help you figure out how
-    it is constructed.
+    Dies ist das Hauptmuster welches verwendet wird um festzustellen was getan werden soll. Es handelt sich um ein relativ
+    complexen regulären Ausdruck. Der Dienst https://www.debuggex.com/ cann zur Visualisierung des Musters verwendet werden.
     -->
 
-    <item name="pattern_recognition" type="string">^(((schaue|spiele|wiedergabe fortsetzen|höre|schaue film|spiele film) (.+)( auf (.+))?( mit zufallswiedergabe)?)|((springe) (.+)( auf (.+))?)|(( wiedergabe)?(pausieren|anhalten|fortsetzen)( auf (.+))?))|(verbinde mit (.+)|trenne)$</item>
+    <item name="pattern_recognition" type="string">^(((schaue|spiele|weiterschauen|höre|schaue film|spiele film) (.+)( auf (.+))?( mit zufallswiedergabe)?)|((springe) (.+)( auf (.+))?)|(( wiedergabe)?(pausieren|anhalten|fortsetzen)( auf (.+))?))|(verbinde mit (.+)|trenne)$</item>
 
     <item name="pattern_on_client" type="string">(.+) auf (.+)$</item>
-    <item name="pattern_resume_watching" type="string">^wiedergabe fortsetzen (.+)</item>
+    <item name="pattern_resume_watching" type="string">^weiterschauen (.+)</item>
     <item name="pattern_on_shuffle" type="string"> mit zufallswiedergabe$</item>
     <item name="pattern_watch" type="string">(schaue|spiele) $1</item>
     <item name="pattern_watch_movie" type="string">(schaue|spiele) film (.+)</item>
@@ -33,7 +32,7 @@ adding translations, please do not modify (.*), $1, ([0-9]+), etc.
     -->
     <item name="pattern_listen_to_album_by_artist" type="string">höre( das)? album (.+) von (.+)</item>
     <item name="pattern_listen_to_album" type="string">höre( das)? album (.+)</item>
-    <item name="pattern_listen_to_song_by_artist" type="string">höre (.+) von (.+)</item>
+    <item name="pattern_listen_to_song_by_artist" type="string">höre( den titel)? (.+) von (.+)</item>
 
     <!--
     The following three patterns allow for pause/resume/stop of playback. If your language reverses the order of the
