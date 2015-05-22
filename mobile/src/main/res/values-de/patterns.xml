@@ -32,8 +32,7 @@ adding translations, please do not modify (.*), $1, ([0-9]+), etc.
     "höre das album <name> von <künstler>".
     -->
     <item name="pattern_listen_to_album_by_artist" type="string">höre( das)? album (.+) von (.+)</item>
-
-    <item name="pattern_listen_to_album" type="string">höre das album (.+)</item>
+    <item name="pattern_listen_to_album" type="string">höre( das)? album (.+)</item>
     <item name="pattern_listen_to_song_by_artist" type="string">höre (.+) von (.+)</item>
 
     <!--
