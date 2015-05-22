@@ -28,8 +28,8 @@ adding translations, please do not modify (.*), $1, ([0-9]+), etc.
     <item name="pattern_watch2" type="string">(schaue|spiele) (.+)</item>
 
     <!--
-    Das folgende muster erlaubt sprachbefehle wie "höre to <album> by <artist>" or
-    "listen to the album <album> by <artist>".
+    Die folgenden Muster erlauben Sprachbefehle wie "höre album <name> von  <künstler>" oder 
+    "höre das album <name> von <künstler>".
     -->
     <item name="pattern_listen_to_album_by_artist" type="string">höre( das)? album (.+) von (.+)</item>
 
