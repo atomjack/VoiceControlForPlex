@@ -10,17 +10,17 @@ adding translations, please do not modify (.*), $1, ([0-9]+), etc.
     it is constructed.
     -->
 
-    <item name="pattern_recognition" type="string">^(((schaue|spiele|wiedergabe fortsetzen|höre|schaue film|spiele film) (.+)( auf (.+))?( auf zufallswiedergabe)?)|((springe) (.+)( auf (.+))?)|(( wiedergabe)?(pausieren|anhalten|fortsetzen)( auf (.+))?))|(verbinde mit (.+)|trenne)$</item>
+    <item name="pattern_recognition" type="string">^(((schaue|spiele|wiedergabe fortsetzen|höre|schaue film|spiele film) (.+)( auf (.+))?( mit zufallswiedergabe)?)|((springe) (.+)( auf (.+))?)|(( wiedergabe)?(pausieren|anhalten|fortsetzen)( auf (.+))?))|(verbinde mit (.+)|trenne)$</item>
 
     <item name="pattern_on_client" type="string">(.+) auf (.+)$</item>
     <item name="pattern_resume_watching" type="string">^wiedergabe fortsetzen (.+)</item>
-    <item name="pattern_on_shuffle" type="string">auf zufallswiedergabe$</item>
+    <item name="pattern_on_shuffle" type="string"> mit zufallswiedergabe$</item>
     <item name="pattern_watch" type="string">(schaue|spiele) $1</item>
     <item name="pattern_watch_movie" type="string">(schaue|spiele) film (.+)</item>
     <item name="pattern_watch_season_episode_of_show" type="string">(schaue|spiele) staffel ([0-9]+) episode ([0-9]+) von (.+)</item>
     <item name="pattern_watch_show_season_episode" type="string">(schaue|spiele) (.+) staffel ([0-9]+) episode ([0-9]+)</item>
     <item name="pattern_watch_episode_of_show" type="string">(schaue|spiele) episode (.+) von (.+)</item>
-    <item name="pattern_watch_next_episode_of_show" type="string">(schaue|spiele) die nächste episode von (.+)</item>
+    <item name="pattern_watch_next_episode_of_show" type="string">(schaue|spiele)( die)? nächste episode von (.+)</item>
     <item name="pattern_watch_latest_episode_of_show" type="string">(schaue|spiele)( die)? neuste episode von (.+)</item>
     <item name="pattern_watch_show_episode_named" type="string">(schaue|spiele) (.+) episode (.+)</item>
     <item name="pattern_connect_to" type="string">^verbinde mit (.+)</item>
@@ -28,17 +28,17 @@ adding translations, please do not modify (.*), $1, ([0-9]+), etc.
     <item name="pattern_watch2" type="string">(schaue|spiele) (.+)</item>
 
     <!--
-    The following pattern lets the user say "listen to <album> by <artist>" or
+    Das folgende muster erlaubt sprachbefehle wie "höre to <album> by <artist>" or
     "listen to the album <album> by <artist>".
     -->
-    <item name="pattern_listen_to_album_by_artist" type="string">höre das album (.+) von (.+)</item>
+    <item name="pattern_listen_to_album_by_artist" type="string">höre( das)? album (.+) von (.+)</item>
 
     <item name="pattern_listen_to_album" type="string">höre das album (.+)</item>
     <item name="pattern_listen_to_song_by_artist" type="string">höre (.+) von (.+)</item>
 
     <!--
     The following three patterns allow for pause/resume/stop of playback. If your language reverses the order of the
-    words ("pause" and "playback", for example - see the German translation for an example), make sure to reverse the order
+    words ("pause" and "playback", for example - see the German translation), make sure to reverse the order
     of the corresponding phrase in the pattern_recognition pattern above:
     (pause|stop|resume)( playback)?
     The given example pattern matches pause or stop or resume, and optionally playback (so, pause, pause playback, resume, resume playback, stop, stop playback)
@@ -71,5 +71,5 @@ adding translations, please do not modify (.*), $1, ([0-9]+), etc.
     The (hours?|minutes?|seconds?) means hour, with or without an s at the end (singular or plural), and the
     same for minutes and seconds (the | means "or").
     -->
-    <item name="pattern_offset" type="string">^(springe) ([0-9]) (stunden?|minuten?|sekunden?)(?: ([0-9]) (minuten?|sekunden?))?(?: ([0-9]) (sekunden?))?</item>
+    <item name="pattern_offset" type="string">^(springe) ([0-9]+) (stunden?|minuten?|sekunden?)(?: ([0-9]+) (minuten?|sekunden?))?(?: ([0-9]+) (sekunden?))?</item>
 </resources>
