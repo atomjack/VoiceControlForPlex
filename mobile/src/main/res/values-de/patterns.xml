@@ -5,8 +5,8 @@ Wenn du eine Übersetzung hinzufügst bitte modifiziere nicht die Muster (.*), $
 -->
 <resources>
     <!--
-    Dies ist das Hauptmuster welches verwendet wird um festzustellen was getan werden soll. Es handelt sich um ein relativ
-    complexen regulären Ausdruck. Der Dienst https://www.debuggex.com/ cann zur Visualisierung des Musters verwendet werden.
+    Dies ist das Hauptmuster. Es wird verwendetum festzustellen was getan werden soll. Es handelt sich um ein relativ
+    complexen regulären Ausdruck. Der Dienst https://www.debuggex.com/ kann zur Visualisierung des Musters verwendet werden.
     -->
 
     <item name="pattern_recognition" type="string">^(((schaue|spiele|weiterschauen|höre|schaue film|spiele film) (.+)( auf (.+))?( mit zufallswiedergabe)?)|((springe) (.+)( auf (.+))?)|(( wiedergabe)?(pausieren|anhalten|fortsetzen)( auf (.+))?))|(verbinde mit (.+)|trenne)$</item>
@@ -27,7 +27,7 @@ Wenn du eine Übersetzung hinzufügst bitte modifiziere nicht die Muster (.*), $
     <item name="pattern_watch2" type="string">(schaue|spiele) (.+)</item>
 
     <!--
-    Die folgenden Muster erlauben Sprachbefehle wie "höre album <name> von  <künstler>" oder 
+    Die folgenden Muster erlauben Sprachbefehle wie "höre album <name> von <künstler>" oder 
     "höre das album <name> von <künstler>".
     -->
     <item name="pattern_listen_to_album_by_artist" type="string">höre( das)? album (.+) von (.+)</item>
@@ -35,39 +35,47 @@ Wenn du eine Übersetzung hinzufügst bitte modifiziere nicht die Muster (.*), $
     <item name="pattern_listen_to_song_by_artist" type="string">höre( den titel)? (.+) von (.+)</item>
 
     <!--
-    The following three patterns allow for pause/resume/stop of playback. If your language reverses the order of the
-    words ("pause" and "playback", for example - see the German translation), make sure to reverse the order
-    of the corresponding phrase in the pattern_recognition pattern above:
-    (pause|stop|resume)( playback)?
-    The given example pattern matches pause or stop or resume, and optionally playback (so, pause, pause playback, resume, resume playback, stop, stop playback)
+    Die folgenden drei Muster erlauben die Befehle pausieren, fortsetzen, anhalten
+    als auch die etwas längeren Formen wie wiedergabe pausieren, wiedergabe
+    fortsetzen, wiedergabe anhalten. Das hauptmuster ganz oben ist im Englischen
+    original so angelegt dass es diese Muster nicht erkennen kann. Denn dort ist
+    die Reihenfolge umgekehrt. Hier heißt es resume playback usw. Daher muss das
+    Muster für Sprachen wie Deutsch angepasst werden. Vergleiche den regulären
+    haupt Ausruck hier in der Datei mit dem Englischen orgiginal.
+
+        Englisch:
+            (pause|stop|resume)( playback)?
+        Deutsch:
+            ( wiedergabe)?(pausieren|anhalten|fortsetzen)
+
     -->
     <item name="pattern_pause_playback" type="string">pausieren|wiedergabe pausieren</item>
     <item name="pattern_resume_playback" type="string">fortsetzen|wiedergabe fortsetzen</item>
     <item name="pattern_stop_playback" type="string">anhalten|wiedergabe anhalten</item>
 
     <!--
-    The following are used in conjunction with the pattern_offset below. These should match the
-    (hours?minutes?seconds?), with the addition of the ^ character (to indicate that in the matching
-    pattern group starts with (hours or minutes or seconds). Unreliable behavior may result if
-    these to not match the corresponding groups in pattern_offset.
+    Die folgenden Muster werden im Zusammenspiel mit dem darunter aufgeführten Muster "pattern_offset"
+    verwendet. Diese muster matchen Stunden, Minuten und Sekunden. Das Fragezeichen am Ende des Musters
+    macht den letzten Buchstaben optional. Also funktionierent hier auch die eingabe in singular (Stunde,
+    Minute, Sekunde). Mit dem "^" am Anfang wird signalisiert das die Gruppe des Musters mit diesen Wörtern 
+    anfängt. Diese Worte hier müssen mit denen weiter unten in pattern_offset übereinstimmen da es sonst 
+    nicht funktioniert.
     -->
     <item name="pattern_hours" type="string">^stunden?</item>
     <item name="pattern_minutes" type="string">^minuten?</item>
     <item name="pattern_seconds" type="string">^sekunden?</item>
 
     <!--
-    Offset pattern. This lets the user start with with "springe", followed by:
-        any number followed by "hour(s)" or "minute(s)" or "second(s)", and optionally followed by:
-        any number followed by "minute(s)" or "second(s)", and optionally followed by:
-        any number followed by "second(s)"
-    The ([0-9]+|two|to) pattern will most likely only need to be ([0-9]+) for other languages, as in English,
-    the number 2 sounds the same as "to" and "two", so sometimes the Voice Recognition engine will confuse the
-    number 2 with "to" or "two". If your language has numbers that sound exactly like other words that the
-    Voice Recognition will sometimes mis-translate, please contact Chris Bellew as some further changes will need
-    to be made to the code to accommodate this.
-
-    The (hours?|minutes?|seconds?) means hour, with or without an s at the end (singular or plural), and the
-    same for minutes and seconds (the | means "or").
+    Das offset Muster erlaubt die eingabe von Sprachbefehlen zum vorwärts springen im Medienstream.
+    Es erlaubt Sprachbefehle, beginnend mit "Springe, gefolgt von:
+        einer zahl gefolgt von "stunde(n)" oder "minute(n)" oder "sekunden(n)", und optional gefolgt von:
+        einer zahl gefolgt von "minute(n)" oder "sekunde(n)", und optional gefolgt von:
+        einer zahl gefolgt von "sekunde(n)"
+    Wenn in deiner Sprache eine Zahl ähnlich anderen Worten klingt solltest du das Muster dahingehend anpassen.
+    Zum Beispiel im Englischen ([0-9]+|two|to) weil bei der Spracherkennung 2 auch oft als "two" und "to" erkannt 
+    wird. Sollte das nicht der Fall sein wie im Deutschen dann kann das Muster für Zahlen bei ([0-9]+) belassen werden. 
+    Der Ausdruck (stunden?|minuten?|sekunden?) matcht die Worte Stunden, Minuten, Sekunden im Singular oder Plural und 
+    die "|" steht für oder. 
     -->
     <item name="pattern_offset" type="string">^(springe) ([0-9]+) (stunden?|minuten?|sekunden?)(?: ([0-9]+) (minuten?|sekunden?))?(?: ([0-9]+) (sekunden?))?</item>
 </resources>
