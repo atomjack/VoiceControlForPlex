@@ -34,7 +34,7 @@
     <string name="help_feedback">Wählen sie die Art von Feedback welches die App verwendenn soll.</string>
     <string name="help_errors">Wählen sie die Art von Feedback welches die App verwendenn soll wenn sie auf probleme stößt (z.b. wenn etwas nicht abgespielt werden kann, etc).</string>
     <string name="help_button_desc">Hilfe Button</string>
-    <string name="help_usage">Beispiele zur Verwendung:\n\n Filme und Serien:\nSchaue V Wie Vendetta\nSchaue Staffel 1 Episode 1 von Homeland\nSchaue Breaking Bad Staffel 5 Episode 8\nSchaue die Episode Mit Gefühl von Buffy der Vamirjägerin ein weiteres mal\nSpiele die nächste Episode von The Walking Dead\nSpiele die neuste Episode von The Walking Dead\n\nFür Musik:\nHöre Black Sands von Bonobo (einzelner song)\nHöre das Album Drink The Sea von The Glitch Mob\nHöre das Album Music Has The Right To Children (Künster ist optional und nur notwendig wenn mehr als ein Match gefunden wurde)\n\nWiedergabe:\n Pausieren, Wiedergabe pausieren\n Fortsetzen, Wiedergabe fortsetzen\n Anhalten, Wiedergabe anhalten\n\n Suchen:\n Offset 1 Stunde 15 Minuten 30 Sekunden\n Offset 30 Minuten 5 Sekunden\n(Jegliche Kombination von Stunden, Minuten, Sekunden)\n (Sie können auch \'zeitcode\' an Stelle von \'offset\' verwenden)\n\n Wenn sie \&quot;Fortsetzen wenn in Bearbeitung\&quot; nicht verwenden, können sie auch selektiv fortsetzen indem sie \&quot;Wiedergabe fotsetzen\&quot; anstelle von \&quot;Schaue\&quot; sagen\n\nSie können auch einen Empfäger bestimmen inden sie \&quot;auf &lt;Empfängername&gt;\&quot; zu Ihrem Sprachbefehl hinzufügen.</string>
+    <string name="help_usage">Beispiele zur Verwendung:\n\n Filme und Serien:\nSchaue V Wie Vendetta\nSchaue Staffel 1 Episode 1 von Homeland\nSchaue Breaking Bad Staffel 5 Episode 8\nSchaue die Episode Mit Gefühl von Buffy der Vamirjägerin ein weiteres mal\nSpiele die nächste Episode von The Walking Dead\nSpiele die neuste Episode von The Walking Dead\n\nFür Musik:\nHöre Black Sands von Bonobo (einzelner song)\nHöre das Album Drink The Sea von The Glitch Mob\nHöre das Album Music Has The Right To Children (Künster ist optional und nur notwendig wenn mehr als ein Match gefunden wurde)\n\nWiedergabe:\n Pausieren, Wiedergabe pausieren\n Fortsetzen, Wiedergabe fortsetzen\n Anhalten, Wiedergabe anhalten\n\n Suchen:\n Springe 1 Stunde 15 Minuten 30 Sekunden\n Springe 30 Minuten 5 Sekunden\n(Jegliche Kombination von Stunden, Minuten, Sekunden)\n\n Wenn sie \&quot;Fortsetzen wenn in Bearbeitung\&quot; nicht verwenden, können sie auch selektiv fortsetzen indem sie \&quot;weiterschauen\&quot; anstelle von \&quot;Schaue\&quot; sagen\n\nZudem können sie auch einen Empfäger bestimmen inden sie \&quot;auf &lt;Empfängername&gt;\&quot; zu Ihrem Sprachbefehl hinzufügen.</string>
     <string name="help_usage_button">Verwendungsbeispiele</string>
     <string name="tasker_instructions">Voice Control for Plex funktioniert auch mit utter! und AutoVoice, in Kombination mit Tasker. Klicke auf die Buttons unten um die Apps im Play Store anzusehen.</string>
     <string name="tasker_import_header">Voice Control for Plex funktioniert auch mit utter! und AutoVoice, in Kombination mit Tasker. Verwende den Button unten für den import des nötigen Tasker Projektes.</string>
@@ -63,10 +63,10 @@
     <string name="playback_paused">Wiedergabe pausiert.</string>
     <string name="playback_resumed">Wiedergabe forgesetzt.</string>
     <string name="playback_stopped">Wiedergabe gestoppt.</string>
-    <string name="trigger_instructions">Um die Spracherfassung zu starten fügen sich einfach  den <b>Voice Control for Plex</b> shortcut ihrem homescreen hinzu.</string>
+    <string name="trigger_instructions">Um die Spracherfassung zu starten fügen sie einfach den <b>Voice Control for Plex</b> shortcut ihrem homescreen hinzu.</string>
     <string name="title_changelog">Was gibts neues</string>
     <string name="changelog_close">Schließen</string>
-    <string name="no_wifi_connection">Kein Wlan</string>
+    <string name="no_wifi_connection">Keine Wlan Verbindung</string>
     <string name="no_wifi_connection_message">Eine Wlan Verbindung wird benötigt. Bitte überprüfen und nochmal versuchen.</string>
     <string name="voice_prompt">Voice Control for Plex hört zu</string>
     <string name="searching_for_plex_servers">Suche nach Plex Servern</string>
@@ -121,8 +121,8 @@
     <string name="searching_for_the_album">Suche nach dem Album %s.</string>
     <string name="connecting">Verbinde</string>
     <string name="client_lost_connection">Verbindung mit %s verloren.</string>
-    <string name="your_current_default_client_is">Der aktuelle standard Empfänger ist %s.</string>
-    <string name="tap_cast_icon_to_change_default_client">Verwenden sie das Cast Icon um den Empfänger zu wechseln.</string>
+    <string name="your_current_default_client_is">Aktueller standard Empfänger ist %s.</string>
+    <string name="tap_cast_icon_to_change_default_client">Verwenden sie das Cast Symbol um den Empfänger zu wechseln.</string>
     <string name="wear_detected_can_purchase">Ich habe eine Android Wear gefunden. Die Unterstützung ist Verfügbar für %s. Fortsetzen?</string>
     <string name="wear_purchase_required">Android Wear Unterstützung ist als an in-app Kauf für %s verfügbar . Weiter?</string>
     <string name="wear_purchase_from_menu">OK Ich wede sie nicht mehr behelligen. Sollten sie Ihre Meinung ändern können sie die Wear Unterstützung über den Menü Button aktivieren.</string>
