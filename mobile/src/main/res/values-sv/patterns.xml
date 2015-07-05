@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Den här filen innehåller reguljära uttryck som används för att räkna ut vilka åtgärder användaren vill ta. När
+översättningar läggs till ska du inte ändra (.*), $1, ([0-9]+) etc.
+-->
+<resources>
+    <!--
+    Denna mall är huvudmallen som måste matchas för att något ska hända. Som ni kan se det är
+    ett ganska komplicerat reguljärt uttryck. Tjänsten https://www.debuggex.com/ bör hjälpa dig att räkna ut hur
+    detta är uppbyggt.
+    -->
+
+    <item name="pattern_recognition" type="string">^(((titta|spela|fortsätt titta|lyssna|titta på filmen|spela filmen) (.+)( på (.+))?( med blandad uppspelning)?)|((spola fram) (.+)( på (.+))?)|((pausa|stoppa|återuppta|fortsätt)( uppspelingen)?( på (.+))?))|(anslut till (.+)|koppla från)$</item>
+
+    <item name="pattern_on_client" type="string">(.+) på (.+)$</item>
+    <item name="pattern_resume_watching" type="string">^fortsätt (titta|spela) (.+)</item>
+    <item name="pattern_on_shuffle" type="string"> med blandad uppspelning$</item>
+    <item name="pattern_watch" type="string">(titta|spela) $1</item>
+    <item name="pattern_watch_movie" type="string">(titta på|spela) filmen (.+)</item>
+    <item name="pattern_watch_season_episode_of_show" type="string">(titta på|spela) säsong ([0-9]+) avsnitt ([0-9]+) av (.+)</item>
+    <item name="pattern_watch_show_season_episode" type="string">(titta på|spela) (.+) säsong ([0-9]+) avsnitt ([0-9]+)</item>
+    <item name="pattern_watch_episode_of_show" type="string">(titta på|spela) avsnitt (.+) av (.+)</item>
+    <item name="pattern_watch_next_episode_of_show" type="string">(titta på|spela) nästa avsnittet av (.+)</item>
+    <item name="pattern_watch_latest_episode_of_show" type="string">(titta på|spela)senaste avsnittet av (.+)</item>
+    <item name="pattern_watch_show_episode_named" type="string">(titta på|spela) (.+) avsnitt (.+)</item>
+    <item name="pattern_connect_to" type="string">^anslut till (.+)</item>
+    <item name="pattern_disconnect" type="string">^koppla från$</item>
+    <item name="pattern_watch2" type="string">(titta på|spela) (.+)</item>
+
+    <!--
+    Följande mall låter användaren säga "lyssna på <album> från <artist>" eller 
+    "lyssna på albumet <album> från <artist>".
+    -->
+    <item name="pattern_listen_to_album_by_artist" type="string">lyssna på albumet (.+) från (.+)</item>
+    <item name="pattern_listen_to_album" type="string">lyssna på albumet (.+)</item>
+    <item name="pattern_listen_to_song_by_artist" type="string">lyssna på ( låten)? (.+) från (.+)</item>
+
+    <!--
+    Följande tre mallar tillåter pausa / återuppta / stopp av uppspelning. Om ditt språk vänder på ordningen för
+    ord ("pausa" och "uppspelning", till exempel), se till att vända ordningen på motsvarande fras i pattern_recognition mallen ovan:
+    (pausa | stoppa | återuppta) (uppspelning)?
+    Den givna exemplet mönstret matcher pausa eller stoppa eller återuppta, och eventuellt uppspelning (så, pausa, pausa uppspelningen, återuppta, återuppta			uppspelningen, stoppa, stoppa uppspelningen)
+    -->
+    <item name="pattern_pause_playback" type="string">pausa|pausa uppspelingen</item>
+    <item name="pattern_resume_playback" type="string">återuppta|fortsätt</item>
+    <item name="pattern_stop_playback" type="string">stoppa|stoppa uppspelingen</item>
+
+    <!--
+    Die folgenden Muster werden im Zusammenspiel mit dem darunter aufgeführten Muster "pattern_offset"
+    verwendet. Diese muster matchen Stunden, Minuten und Sekunden. Das Fragezeichen am Ende des Musters
+    macht den letzten Buchstaben optional. Also funktionierent hier auch die eingabe in singular (Stunde,
+    Minute, Sekunde). Mit dem "^" am Anfang wird signalisiert das die Gruppe des Musters mit diesen Wörtern 
+    anfängt. Diese Worte hier müssen mit denen weiter unten in pattern_offset übereinstimmen da es sonst 
+    nicht funktioniert.
+    -->
+    <item name="pattern_hours" type="string">^timmar?</item>
+    <item name="pattern_minutes" type="string">^minuter?</item>
+    <item name="pattern_seconds" type="string">^sekunder?</item>
+
+    <!--
+    Mallen förskjutning. Detta låter användaren börja med "hoppa fram", följt av:
+	valfritt nummer följt av "timme(ar)" eller "minut(er)" eller "sekund(er)", och eventuellt följt av:
+	valfritt nummer följt av "minut(er)" eller "sekund(er)", och eventuellt följt av:
+	valfritt nummer följt av "sekund(er)"
+	([0-9]+|two|to) mallen kommer sannolikt bara behöva vara ([0-9]+) för andra språk än engelska,
+	då nummer 2 låter likadant som "till" och "två", ibland kan Röstigenkänning förväxla
+	nummer 2 med "till" eller "två". Om ditt språk har siffror som låter precis som andra ord som
+	Röstigenkänning feltolkar, kontakta Chris Bellew eftersom ytterligare ändringar behöver
+	göras i koden för att åtgärda detta.
+
+	(timmar |? Minuter |? Sekunder) innebär timme, med eller utan ar på slutet (singular eller plural), och
+	samma för minuter och sekunder (| betyder "eller").
+    -->
+    <item name="pattern_offset" type="string">^(spola fram) ([0-9]+) (timmar?|minuter?|sekunder?)(?: ([0-9]+) (minuter?|sekunder?))?(?: ([0-9]+) (sekunder?))?</item>
+</resources>
