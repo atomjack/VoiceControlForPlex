@@ -2,6 +2,8 @@
 <!--
 This file contains the regular expressions patterns used for figuring out what action the user wishes to take. When
 adding translations, please do not modify (.*), $1, ([0-9]+), etc.
+
+Also, you don't need to translate these comments.
 -->
 <resources>
     <!--

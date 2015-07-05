@@ -182,7 +182,8 @@ public class PlexHttpClient
   public static void createPlayQueue(Connection connection, PlexMedia media, String transientToken, final PlexPlayQueueHandler responseHandler) {
     QueryString qs = new QueryString("type", media.getType());
     qs.add("next", "0");
-    if(media.isMovie()) {
+    boolean hasOffset = media.viewOffset != null && Integer.parseInt(media.viewOffset) > 0;
+    if(media.isMovie() && !hasOffset) {
       qs.add("extrasPrefixCount", Integer.toString(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.NUM_CINEMA_TRAILERS, 0)));
     }
     qs.add("uri", String.format("library://%s/item/%%2flibrary%%2fmetadata%%2f%s", media.server.machineIdentifier, media.key));

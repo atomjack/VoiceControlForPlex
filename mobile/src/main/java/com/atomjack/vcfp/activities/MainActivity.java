@@ -362,7 +362,7 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 
 		if(helpButtonClicked.equals("server")) {
 			helpDialog.setMessage(R.string.help_server);
-		} else if(helpButtonClicked.equals("mClient")) {
+		} else if(helpButtonClicked.equals("client")) {
 			helpDialog.setMessage(R.string.help_client);
 		} else if(helpButtonClicked.equals("feedback")) {
 			helpDialog.setMessage(R.string.help_feedback);
