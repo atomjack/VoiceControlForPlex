@@ -63,6 +63,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -307,8 +308,7 @@ public class PlexSearchService extends Service {
 		videos = new ArrayList<PlexVideo>();
 		shows = new ArrayList<PlexDirectory>();
 
-		Gson gson = new Gson();
-		final PlexServer defaultServer = gson.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.SERVER, ""), PlexServer.class);
+		final PlexServer defaultServer = gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.SERVER, ""), PlexServer.class);
 		if(specifiedServer != null && client != null && !specifiedServer.name.equals(getResources().getString(R.string.scan_all))) {
 			// got a specified server and mClient from a shortcut
 			Logger.d("Got hardcoded server and mClient from shortcut");
@@ -564,15 +564,28 @@ public class PlexSearchService extends Service {
 			};
 		}
 
-    p = Pattern.compile(getString(R.string.pattern_listen_to_song_by_artist));
+		p = Pattern.compile(getString(R.string.pattern_listen_to_song_by_artist));
+		matcher = p.matcher(queryText);
+		if(matcher.find()) {
+			final String track = matcher.group(1);
+			final String artist = matcher.group(2);
+			return new myRunnable() {
+				@Override
+				public void run() {
+					searchForSong(artist, track);
+				}
+			};
+		}
+
+    p = Pattern.compile(getString(R.string.pattern_listen_to_artist));
     matcher = p.matcher(queryText);
     if(matcher.find()) {
-      final String track = matcher.group(1);
-      final String artist = matcher.group(2);
+      final String artist = matcher.group(1);
+      shuffle = true; // when specifying just an artist, shuffle all that artist's songs
       return new myRunnable() {
         @Override
         public void run() {
-          searchForSong(artist, track);
+          searchForArtist(artist);
         }
       };
     }
@@ -643,6 +656,69 @@ public class PlexSearchService extends Service {
 				}
 			};
 		}
+
+    p = Pattern.compile(getString(R.string.pattern_forward), Pattern.DOTALL);
+    matcher = p.matcher(queryText);
+    if(matcher.find()) {
+      final String amount = matcher.group(1) != null && matcher.group(1).matches("two|to") ? "2" : matcher.group(1);
+      final String del = matcher.group(2);
+      Logger.d("[ffr] del = %s", del);
+      int mul = 1; // default multiplier, for seconds
+      if(del.matches("minutes?"))
+        mul = 60;
+      else if(del.matches("hours?"))
+        mul = 60*60;
+      Logger.d("[ffr] mul = %d", mul);
+      final int seconds = Integer.parseInt(amount) * mul;
+      return new StopRunnable() {
+        @Override
+        public void run() {
+          Logger.d("[ffr] Skipping ahead %d seconds", seconds);
+          int currentOffset = 0;
+          if(client.isCastClient) {
+            currentOffset = Integer.parseInt(castPlayerManager.getNowPlayingMedia().viewOffset);
+          } else {
+            NowPlayingActivity listener = (NowPlayingActivity)plexSubscription.getListener();
+            if (listener != null) {
+              currentOffset = Integer.parseInt(listener.getNowPlayingMedia().viewOffset);
+            }
+          }
+          Logger.d("[ffr] currentOffset: %d", currentOffset);
+          seekTo((currentOffset + seconds) * 1000);
+        }
+      };
+    }
+
+    p = Pattern.compile(getString(R.string.pattern_rewind), Pattern.DOTALL);
+    matcher = p.matcher(queryText);
+    if(matcher.find()) {
+      final String amount = matcher.group(2) != null && matcher.group(2).matches("two|to") ? "2" : matcher.group(2);
+      final String del = matcher.group(3);
+      Logger.d("[ffr] del = %s", del);
+      int mul = 1; // default multiplier, for seconds
+      if(del.matches("minutes?"))
+        mul = 60;
+      else if(del.matches("hours?"))
+        mul = 60*60;
+      final int seconds = Integer.parseInt(amount) * mul;
+      return new StopRunnable() {
+        @Override
+        public void run() {
+          Logger.d("[ffr] Rewinding %d seconds", seconds);
+          int currentOffset = 0;
+          if(client.isCastClient) {
+            currentOffset = Integer.parseInt(castPlayerManager.getNowPlayingMedia().viewOffset);
+          } else {
+            NowPlayingActivity listener = (NowPlayingActivity)plexSubscription.getListener();
+            if (listener != null) {
+              currentOffset = Integer.parseInt(listener.getNowPlayingMedia().viewOffset);
+            }
+          }
+          Logger.d("[ffr] currentOffset: %d", currentOffset);
+          seekTo((currentOffset - seconds) * 1000);
+        }
+      };
+    }
 
     p = Pattern.compile(getString(R.string.pattern_connect_to), Pattern.DOTALL);
     matcher = p.matcher(queryText);
@@ -715,7 +791,12 @@ public class PlexSearchService extends Service {
     }
 
 
-		if(queries.size() > 0)
+
+
+
+
+
+    if(queries.size() > 0)
 			return null;
 		else {
 			return new myRunnable() {
@@ -799,29 +880,35 @@ public class PlexSearchService extends Service {
 		int offset = 1000*((hours*60*60)+(minutes*60)+seconds);
 		Logger.d("offset: %d milliseconds", offset);
 
-		client.seekTo(offset, new PlexHttpResponseHandler()
-		{
-			@Override
-			public void onSuccess(PlexResponse r)
-			{
-				Boolean passed = true;
-				if(r.code != null) {
-					if(!r.code.equals("200")) {
-						passed = false;
-					}
-				}
-				Logger.d("Playback response: %s", r.code);
-				if(!passed) {
-					feedback.e(getResources().getString(R.string.http_status_code_error), r.code);
-				}
-			}
-
-			@Override
-			public void onFailure(Throwable error) {
-				feedback.e(getResources().getString(R.string.got_error), error.getMessage());
-			}
-		});
+    seekTo(offset);
 	}
+
+  private void seekTo(int offset) {
+    if(client.isCastClient) {
+      castPlayerManager.seekTo(offset / 1000);
+    } else {
+      client.seekTo(offset, new PlexHttpResponseHandler() {
+        @Override
+        public void onSuccess(PlexResponse r) {
+          Boolean passed = true;
+          if (r.code != null) {
+            if (!r.code.equals("200")) {
+              passed = false;
+            }
+          }
+          Logger.d("Playback response: %s", r.code);
+          if (!passed) {
+            feedback.e(getResources().getString(R.string.http_status_code_error), r.code);
+          }
+        }
+
+        @Override
+        public void onFailure(Throwable error) {
+          feedback.e(getResources().getString(R.string.got_error), error.getMessage());
+        }
+      });
+    }
+  }
 
 	private void doMovieSearch(final String queryTerm) {
 		Logger.d("Doing movie search. %d servers", plexmediaServers.size());
@@ -1019,11 +1106,15 @@ public class PlexSearchService extends Service {
             PlexHttpClient.createPlayQueue(connection, media, transientToken, new PlexPlayQueueHandler() {
               @Override
               public void onSuccess(MediaContainer mediaContainer) {
-                // Insert the server into each video in the playlist
-                for(int i=0;i<mediaContainer.videos.size();i++) {
-                  mediaContainer.videos.get(i).server = media.server;
-                  if(mediaContainer.videos.get(i).isClip())
-                    mediaContainer.videos.get(i).setClipDuration();
+                if(media instanceof PlexTrack) {
+
+                } else {
+                  // Insert the server into each video in the playlist
+                  for (int i = 0; i < mediaContainer.videos.size(); i++) {
+                    mediaContainer.videos.get(i).server = media.server;
+                    if (mediaContainer.videos.get(i).isClip())
+                      mediaContainer.videos.get(i).setClipDuration();
+                  }
                 }
                 QueryString qs = new QueryString("machineIdentifier", media.server.machineIdentifier);
                 qs.add("key", media.key);
@@ -1043,12 +1134,12 @@ public class PlexSearchService extends Service {
 
                 if(client.isCastClient) {
                   Logger.d("playQueueID: %s", mediaContainer.playQueueID);
-                  Logger.d("num videos: %d", mediaContainer.videos.size());
+                  Logger.d("num videos/tracks: %d", media instanceof PlexTrack ? mediaContainer.tracks.size() : mediaContainer.videos.size());
                   Intent sendIntent = new Intent(PlexSearchService.this, CastActivity.class);
                   sendIntent.setAction(com.atomjack.shared.Intent.CAST_MEDIA);
                   sendIntent.putExtra(WearConstants.FROM_WEAR, fromWear);
                   sendIntent.putExtra(com.atomjack.shared.Intent.EXTRA_MEDIA, mediaContainer.videos.get(0));
-                  sendIntent.putParcelableArrayListExtra(com.atomjack.shared.Intent.EXTRA_ALBUM, (ArrayList)mediaContainer.videos);
+                  sendIntent.putParcelableArrayListExtra(com.atomjack.shared.Intent.EXTRA_ALBUM, media instanceof PlexTrack ? (ArrayList)mediaContainer.tracks : (ArrayList)mediaContainer.videos);
                   sendIntent.putExtra(com.atomjack.shared.Intent.EXTRA_CLIENT, client);
                   sendIntent.putExtra("resume", resumePlayback);
                   sendIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -1061,7 +1152,10 @@ public class PlexSearchService extends Service {
                       // If the host we're playing on is this device, we don't wanna do anything else here.
                       if (Utils.getIPAddress(true).equals(client.address) || r == null)
                         return;
-                      feedback.m(getResources().getString(R.string.now_watching_video), media.isMovie() ? media.title : media.grandparentTitle, client.name);
+                      if(media instanceof PlexTrack)
+                        feedback.m(getResources().getString(R.string.now_listening_to), media.title, ((PlexTrack)media).artist, client.name);
+                      else
+                        feedback.m(getResources().getString(R.string.now_watching_video), media.isMovie() ? media.title : media.grandparentTitle, client.name);
                       Boolean passed = true;
                       if (r.code != null) {
                         if (!r.code.equals("200")) {
@@ -1765,6 +1859,183 @@ public class PlexSearchService extends Service {
 			});
 		}
 	}
+
+
+	private void searchForArtist(final String artist) {
+		serversSearched = 0;
+		feedback.m(getString(R.string.searching_for_artist), artist);
+		Logger.d("Servers: %d", plexmediaServers.size());
+		for(final PlexServer server : plexmediaServers.values()) {
+			server.findServerConnection(new ActiveConnectionHandler() {
+				@Override
+				public void onSuccess(Connection connection) {
+					server.musicSectionsSearched = 0;
+					if(server.musicSections.size() == 0) {
+						serversSearched++;
+						if(serversSearched == plexmediaServers.size()) {
+							if(tracks.size() > 0) {
+								fetchAndPlayMedia(tracks.get(0));
+							} else {
+								if(queries.size() > 0)
+									startup();
+								else
+									feedback.e(getResources().getString(R.string.couldnt_find_track));
+								return;
+							}
+						}
+					}
+					for(int i=0;i<server.musicSections.size();i++) {
+						String section = server.musicSections.get(i);
+						String path = String.format("/library/sections/%s/search?type=8&query=%s", section, artist);
+						PlexHttpClient.get(server, path, new PlexHttpMediaContainerHandler()
+						{
+							@Override
+							public void onSuccess(MediaContainer mc)
+							{
+								server.musicSectionsSearched++;
+                PlexDirectory theFoundArtist = null;
+								for(int j=0;j<mc.directories.size();j++) {
+                  PlexDirectory thisArtist = mc.directories.get(j);
+//									thisTrack.artist = thisTrack.grandparentTitle;
+//									thisTrack.album = thisTrack.parentTitle;
+									Logger.d("Artist: %s.", thisArtist.title);
+									if(compareTitle(thisArtist.title, artist)) {
+                    thisArtist.server = server;
+                    theFoundArtist = thisArtist;
+                    break;
+									}
+								}
+                if(theFoundArtist != null)
+                  foundArtist(theFoundArtist);
+                else
+                  feedback.e(String.format(getResources().getString(R.string.couldnt_find_artist), artist));
+							}
+
+              public void foundArtist(PlexDirectory thisArtist) {
+                getAllTracksFromArtist(thisArtist, new Runnable() {
+                  @Override
+                  public void run() {
+                    if(server.musicSections.size() == server.musicSectionsSearched) {
+                      serversSearched++;
+                      if(serversSearched == plexmediaServers.size()) {
+                        Logger.d("found music to play.");
+                        if(tracks.size() > 0) {
+                          fetchAndPlayMedia(tracks.get(0));
+                          return;
+                        } else {
+                          Boolean exactMatch = false;
+                          for(int k=0;k<albums.size();k++) {
+                            if(tracks.get(k).artist.toLowerCase().equals(artist.toLowerCase())) {
+                              exactMatch = true;
+                              playMedia(tracks.get(0));
+//                              fetchAndPlayMedia(tracks.get(k));
+                            }
+                          }
+                          if(!exactMatch) {
+                            if(queries.size() > 0)
+                              startup();
+                            else
+                              feedback.e(getResources().getString(R.string.couldnt_find_track));
+                            return;
+                          }
+                        }
+                      }
+                    }
+                  }
+                });
+              }
+
+							@Override
+							public void onFailure(Throwable error) {
+								feedback.e(getResources().getString(R.string.got_error), error.getMessage());
+							}
+						});
+					}
+				}
+
+				@Override
+				public void onFailure(int statusCode) {
+					serversSearched++;
+					if(serversSearched == plexmediaServers.size()) {
+						if(tracks.size() > 0) {
+							fetchAndPlayMedia(tracks.get(0));
+						} else {
+							if(queries.size() > 0)
+								startup();
+							else
+								feedback.e(getResources().getString(R.string.couldnt_find_track));
+							return;
+						}
+					}
+				}
+			});
+		}
+	}
+
+  private void getAllTracksFromArtist(final PlexDirectory artist, final Runnable onFinished) {
+    String path = String.format("%s", artist.key);
+    PlexHttpClient.get(artist.server, path, new PlexHttpMediaContainerHandler()
+    {
+      final int[] numAlbumsToQuery = new int[1];
+      final int[] numAlbumsQueried = new int[1];
+      @Override
+      public void onSuccess(MediaContainer mediaContainer) {
+        numAlbumsToQuery[0] = mediaContainer.directories.size();
+        numAlbumsQueried[0] = 0;
+        Logger.d("numAlbumsToQuery: %d", numAlbumsToQuery[0]);
+        for(int i=0;i<numAlbumsToQuery[0];i++) {
+          PlexDirectory album = mediaContainer.directories.get(i);
+
+          PlexHttpClient.get(artist.server, String.format("%s", album.key), new PlexHttpMediaContainerHandler() {
+            @Override
+            public void onSuccess(MediaContainer mediaContainer) {
+              for(int j=0;j<mediaContainer.tracks.size();j++) {
+                mediaContainer.tracks.get(j).artist = mediaContainer.tracks.get(j).grandparentTitle;
+                mediaContainer.tracks.get(j).server = artist.server;
+                tracks.add(mediaContainer.tracks.get(j));
+                Logger.d("Added %s by %s", mediaContainer.tracks.get(j).title, mediaContainer.tracks.get(j).artist);
+              }
+              numAlbumsQueried[0]++;
+              Logger.d("Num albums queried: %d", numAlbumsQueried[0]);
+              if(numAlbumsQueried[0] == numAlbumsToQuery[0]) {
+                Logger.d("Done adding tracks.");
+                onAllAlbumsQueried();
+              }
+
+            }
+
+            @Override
+            public void onFailure(Throwable error) {
+              // TODO: Handle failure
+              numAlbumsQueried[0]++;
+              if(numAlbumsQueried[0] == numAlbumsToQuery[0]) {
+                Logger.d("Done adding tracks.");
+                onAllAlbumsQueried();
+              }
+            }
+          });
+
+        }
+      }
+
+      public void onAllAlbumsQueried() {
+        if(shuffle) {
+          Collections.shuffle(tracks, new Random(System.nanoTime()));
+        }
+        onFinished.run();
+      }
+
+      @Override
+      public void onFailure(Throwable error) {
+        error.printStackTrace();
+        // TODO: Handle failure
+        numAlbumsQueried[0]++;
+        if(numAlbumsQueried[0] == numAlbumsToQuery[0]) {
+          onAllAlbumsQueried();
+        }
+      }
+    });
+  }
 
 	private void playAlbum(final PlexDirectory album) {
     Logger.d("[PlexSearchService] playing album %s", album.key);

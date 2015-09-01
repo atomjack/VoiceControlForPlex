@@ -42,8 +42,7 @@
     <string name="install_utter">Instsalliere utter!</string>
     <string name="install_autovoice">Instsalliere AutoVoice</string>
     <string name="import_tasker_project">Importiere Tasker Project</string>
-    <string name="import_tasker_instructions">Tasker Projekt importiert. Ich werde nun tasker öfnnen. Bitt drücke dort auf das Haus Symbol und dann Import. Dann kannst du Voice Control for Plex auswählen.\n\nBei der 
-        verwendung von utter!, muss unter Settings&#8209;>Advanced&#8209;>Try Again&#8209;>Select \"Send to Tasker\" ausgewählt werden.</string>
+    <string name="import_tasker_instructions">Tasker Projekt importiert. Ich werde nun tasker öfnnen. Bitt drücke dort auf das Haus Symbol und dann Import. Dann kannst du Voice Control for Plex auswählen.\n\nBei der verwendung von utter!, muss unter Settings&#8209;>Advanced&#8209;>Try Again&#8209;>Select \"Send to Tasker\" ausgewählt werden.</string>
     <string name="select_voice">Stimmauswahl</string>
     <string name="cancel">Abbruch</string>
     <string name="nothing_to_play">Nichts zum abspielen gefunden.</string>

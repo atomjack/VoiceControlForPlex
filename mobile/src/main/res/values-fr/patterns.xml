@@ -2,6 +2,8 @@
 <!--
 This file contains the regular expressions patterns used for figuring out what action the user wishes to take. When
 adding translations, please do not modify (.*), $1, ([0-9]+), etc.
+
+Also, you don't need to translate these comments.
 -->
 <resources>
     <!--
@@ -9,10 +11,11 @@ adding translations, please do not modify (.*), $1, ([0-9]+), etc.
     a quite complicated regular expression. Plugging it into https://www.debuggex.com/ should help you figure out how
     it is constructed.
     -->
-    <item name="pattern_recognition" type="string">^(((regarder|reprendre lecture|écouter|regarder film) (.+)( sur (.+))?)|((position) (.+)( sur (.+))?)|((pauser|reprendre|arrêter)( lecture)?( sur (.+))?))$</item>
+    <item name="pattern_recognition" type="string">^(((regarder|reprendre lecture|écouter|regarder film) (.+)( sur (.+))?)|((position) (.+)( sur (.+))?)|((forward|rewind|back) (.+)( on (.+))?)|((pauser|reprendre|arrêter)( lecture)?( sur (.+))?))$</item>
 
     <item name="pattern_on_client" type="string">(.+) sur (.+)$</item>
     <item name="pattern_resume_watching" type="string">^reprendre (lecture) (.+)</item>
+    <item name="pattern_on_shuffle" type="string"> on shuffle$</item>
     <item name="pattern_watch" type="string">(regarder) $1</item>
     <item name="pattern_watch_movie" type="string">(regarder) film (.+)</item>
     <item name="pattern_watch_season_episode_of_show" type="string">(regarder) saison ([0-9]+) épisode ([0-9]+) of (.+)</item>
@@ -21,7 +24,11 @@ adding translations, please do not modify (.*), $1, ([0-9]+), etc.
     <item name="pattern_watch_next_episode_of_show" type="string">(regarder)( le)? prochain épisode de (.+)</item>
     <item name="pattern_watch_latest_episode_of_show" type="string">(regarder)( le)? dernier épisode de (.+)</item>
     <item name="pattern_watch_show_episode_named" type="string">(regarder) (.+) épisode (.+)</item>
+    <item name="pattern_connect_to" type="string">^connect to (.+)</item>
+    <item name="pattern_disconnect" type="string">^disconnect$</item>
     <item name="pattern_watch2" type="string">(regarder) (.+)</item>
+    <item name="pattern_forward" type="string">forward ([0-9]+|two|to) (hours?|minutes?|seconds?)</item>
+    <item name="pattern_rewind" type="string">(rewind|back) ([0-9]+|two|to) (hours?|minutes?|seconds?)</item>
 
     <!--
     The following pattern lets the user say "listen to <album> by <artist>" or

@@ -10,6 +10,8 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.net.Uri;
+import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -50,6 +52,7 @@ import com.atomjack.vcfp.net.PlexHttpClient;
 import com.atomjack.vcfp.net.PlexHttpUserHandler;
 import com.atomjack.vcfp.net.PlexPinResponseHandler;
 import com.atomjack.vcfp.services.PlexScannerService;
+import com.atomjack.vcfp.services.WearListenerService;
 import com.atomjack.vcfp.tasker.TaskerPlugin;
 import com.cubeactive.martin.inscription.WhatsNewDialog;
 import com.google.android.gms.cast.CastDevice;
@@ -64,10 +67,15 @@ import org.apache.http.message.BasicHeader;
 import org.simpleframework.xml.Serializer;
 import org.simpleframework.xml.core.Persister;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.UUID;
 import java.util.concurrent.Executors;
@@ -102,6 +110,11 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 	MediaRouter mMediaRouter;
 	MediaRouterCallback mMediaRouterCallback;
 	MediaRouteSelector mMediaRouteSelector;
+
+  // Whether or not we received device logs from a wear device. This will allow a timer to be run in case wear support has
+  // been purchased, but no wear device is paired. When this happens, we'll go ahead and email just the mobile device's logs
+  //
+  private boolean receivedWearLogsResponse = false;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -147,6 +160,100 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 		openAppInPlayStore("com.joaomgcd.autovoice");
 	}
 
+	public void emailDeviceLogs(MenuItem item) {
+		if(VoiceControlForPlexApplication.getInstance().hasWear()) {
+      receivedWearLogsResponse = false;
+      new SendToDataLayerThread(WearConstants.GET_DEVICE_LOGS, this).start();
+      Logger.d("requesting device logs from wear device");
+      // Now start a 5 second timer. If receivedWearLogsResponse is not true, go ahead and email just the mobile device's log
+      final Handler handler = new Handler();
+      handler.postDelayed(new Runnable() {
+        @Override
+        public void run() {
+          if(receivedWearLogsResponse == false)
+            emailDeviceLogs("");
+        }
+      }, 2000);
+    } else {
+      emailDeviceLogs("");
+    }
+	}
+
+  // The passed 'wearLog' string is the contents of the wear device's log. If there is no wear device paired with the mobile device,
+  // the passed string will be empty ("")
+  //
+	public void emailDeviceLogs(final String wearLog) {
+		new AsyncTask<Void, Void, Void>() {
+			@Override
+			protected Void doInBackground(Void... params) {
+				try {
+					Logger.d("Emailing device logs");
+					Intent emailIntent = new Intent(Intent.ACTION_SEND_MULTIPLE);
+					emailIntent.putExtra(Intent.EXTRA_SUBJECT, "Voice Control for Plex Android Logs");
+
+					// Build the body of the email
+					StringBuilder body = new StringBuilder();
+					body.append(String.format("Manufacturer: %s\n", Build.MANUFACTURER));
+					body.append(String.format("Device: %s\n", Build.DEVICE));
+					body.append(String.format("Model: %s\n", Build.MODEL));
+					body.append(String.format("Product: %s\n", Build.PRODUCT));
+					body.append(String.format("Version: %s\n\n", Build.VERSION.RELEASE));
+
+					body.append(String.format("Logged in: %s\n\n", VoiceControlForPlexApplication.getInstance().prefs.getString(Preferences.PLEX_USERNAME) != null ? "yes" : "no"));
+
+					body.append("Description of the issue:\n\n");
+
+          emailIntent.setType("application/octet-stream");
+
+          emailIntent.putExtra(Intent.EXTRA_TEXT, body.toString());
+
+					File tempDirectory = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/tmp");
+					if (!tempDirectory.exists())
+						tempDirectory.mkdirs();
+
+					File tempFile = new File(tempDirectory, "/vcfp-log.txt");
+					FileOutputStream fos = new FileOutputStream(tempFile);
+					Writer out = new OutputStreamWriter(fos, "UTF-8");
+
+					Process process = Runtime.getRuntime().exec("logcat -d *:V");
+					BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+					StringBuilder log = new StringBuilder();
+					String line;
+					while ((line = bufferedReader.readLine()) != null)
+					{
+						log.append(line);
+						log.append(System.getProperty("line.separator"));
+					}
+
+					bufferedReader.close();
+
+					out.write(log.toString());
+					out.flush();
+					out.close();
+
+          ArrayList<Uri> uris = new ArrayList<Uri>();
+          uris.add(Uri.parse("file://" + tempFile.getAbsolutePath()));
+
+          if(!wearLog.equals("")) {
+            tempFile = new File(tempDirectory, "/vcfp-wear-log.txt");
+            fos = new FileOutputStream(tempFile);
+            out = new OutputStreamWriter(fos, "UTF-8");
+            out.write(wearLog);
+            out.flush();
+            out.close();
+            uris.add(Uri.parse("file://" + tempFile.getAbsolutePath()));
+          }
+          emailIntent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris);
+          startActivity(emailIntent);
+				} catch (Exception ex) {
+					Logger.e("Exception emailing device logs: %s", ex);
+					feedback.e("Error emailing device logs: %s", ex.getMessage());
+				}
+				return null;
+			}
+		}.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+	}
+
 	public void showChangelog(MenuItem item) {
 		final WhatsNewDialog whatsNewDialog = new WhatsNewDialog(this);
 		whatsNewDialog.forceShow();
@@ -156,7 +263,7 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 		try {
 			startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + packageName)));
 		} catch (android.content.ActivityNotFoundException anfe) {
-			startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("http://play.google.com/store/apps/details?id=" + packageName)));
+			startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=" + packageName)));
 		}
 	}
 
@@ -402,11 +509,11 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 				initMainWithServer();
 			}
 		}).setNegativeButton(R.string.feedback_toast, new DialogInterface.OnClickListener() {
-			public void onClick(DialogInterface dialog, int id) {
+      public void onClick(DialogInterface dialog, int id) {
         VoiceControlForPlexApplication.getInstance().prefs.put(errors ? Preferences.ERRORS : Preferences.FEEDBACK, FEEDBACK_TOAST);
-				initMainWithServer();
-			}
-		});
+        initMainWithServer();
+      }
+    });
 		AlertDialog d = builder.create();
 		d.show();
 	}
@@ -488,17 +595,17 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 		};
 
 		PlexHttpClient.getPinCode(headers, new PlexPinResponseHandler() {
-			@Override
-			public void onSuccess(Pin pin) {
-				showPin(pin);
-			}
+      @Override
+      public void onSuccess(Pin pin) {
+        showPin(pin);
+      }
 
-			@Override
-			public void onFailure(Throwable error) {
-				error.printStackTrace();
-				feedback.e(R.string.login_error);
-			}
-		});
+      @Override
+      public void onFailure(Throwable error) {
+        error.printStackTrace();
+        feedback.e(R.string.login_error);
+      }
+    });
 	}
 
 	private void switchLogin() {
@@ -784,7 +891,6 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
           serverScanCanceled = false;
           return;
         }
-//      if(intent.getStringExtra(com.atomjack.shared.Intent.SCAN_TYPE).equals(com.atomjack.shared.Intent.SCAN_TYPE_SERVER)) {
         Logger.d("Got " + VoiceControlForPlexApplication.servers.size() + " servers");
         if(searchDialog != null)
           searchDialog.cancel();
@@ -803,16 +909,36 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
             });
           } else {
             searchDialog.dismiss();
-//            localScan.hideSearchDialog();
-            AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-            builder.setTitle(R.string.no_servers_found);
-            builder.setCancelable(false).setNeutralButton(R.string.ok, new DialogInterface.OnClickListener() {
-              public void onClick(DialogInterface dialog, int id) {
-                dialog.cancel();
-              }
-            });
-            AlertDialog d = builder.create();
-            d.show();
+
+            if(intent.getBooleanExtra(PlexScannerService.REMOTE_SERVER_SCAN_UNAUTHORIZED, false) == true) {
+              AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+              builder.setTitle(R.string.remote_scan_unauthorized);
+              builder.setMessage(R.string.remote_scan_unauthorized_message);
+              builder.setCancelable(false).setNeutralButton(R.string.no_thanks, new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int id) {
+                  dialog.cancel();
+                }
+              });
+              builder.setCancelable(false).setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int id) {
+                  logout(null);
+                  showLogin();
+                  dialog.cancel();
+                }
+              });
+              AlertDialog d = builder.create();
+              d.show();
+            } else {
+              AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+              builder.setTitle(R.string.no_servers_found);
+              builder.setCancelable(false).setNeutralButton(R.string.ok, new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int id) {
+                  dialog.cancel();
+                }
+              });
+              AlertDialog d = builder.create();
+              d.show();
+            }
           }
         }
         // TODO: Check this!
@@ -823,7 +949,7 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
           return;
         }
         ArrayList<PlexClient> clients = intent.getParcelableArrayListExtra(com.atomjack.shared.Intent.EXTRA_CLIENTS);
-        if(clients != null || VoiceControlForPlexApplication.getInstance().castClients.size() > 0) {
+        if(clients != null || (VoiceControlForPlexApplication.getInstance().castClients != null && VoiceControlForPlexApplication.getInstance().castClients.size() > 0)) {
           VoiceControlForPlexApplication.clients = new HashMap<String, PlexClient>();
           if(clients != null)
             for (PlexClient c : clients) {
@@ -857,6 +983,10 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
         }
       } else if(intent.getAction() != null && intent.getAction().equals(com.atomjack.shared.Intent.SHOW_WEAR_PURCHASE_REQUIRED)) {
         showWearPurchaseRequired();
+      } else if(intent.getAction() != null && intent.getAction().equals(WearConstants.GET_DEVICE_LOGS)) {
+        String wearLog = intent.getStringExtra(WearConstants.LOG_CONTENTS);
+        receivedWearLogsResponse = true;
+        emailDeviceLogs(wearLog);
       }
 		//}
 		super.onNewIntent(intent);
@@ -914,6 +1044,11 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 
     if(VoiceControlForPlexApplication.getInstance().hasWear())
       hidePurchaseWearMenuItem();
+
+		if(VoiceControlForPlexApplication.getInstance().hasChromecast()) {
+			MenuItem chromecastOptionsItem = menu.findItem(R.id.menu_chromecast_video);
+			chromecastOptionsItem.setVisible(true);
+		}
 
 		if(authToken != null) {
 			_menu.findItem(R.id.menu_login).setVisible(false);
@@ -1040,7 +1175,7 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
     @Override
 		public void onRouteAdded(MediaRouter router, MediaRouter.RouteInfo route)
 		{
-//			Logger.d("onRouteAdded: %s", route);
+			Logger.d("onRouteAdded: %s", route);
 			if(!VoiceControlForPlexApplication.castClients.containsKey(route.getName())) {
         PlexClient client = new PlexClient();
         client.isCastClient = true;
@@ -1048,13 +1183,13 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
         client.product = route.getDescription();
         client.castDevice = CastDevice.getFromBundle(route.getExtras());
         VoiceControlForPlexApplication.castClients.put(client.name, client);
+				Logger.d("Added cast client %s", client.name);
         VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.SAVED_CAST_CLIENTS, gsonWrite.toJson(VoiceControlForPlexApplication.castClients));
         // If the "select a plex client" dialog is showing, refresh the list of clients
         if(deviceSelectDialog != null && deviceSelectDialog.isShowing()) {
-//        if(localScan.isDeviceDialogShowing()) {
           deviceSelectDialogRefresh();
-        }
-      }
+				}
+			}
 		}
 
 		@Override
@@ -1101,15 +1236,53 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
       }
     });
     chooserDialog.setNeutralButton(R.string.play_pause, new DialogInterface.OnClickListener() {
-      public void onClick(DialogInterface dialog, int id) {
-        DataMap dataMap = new DataMap();
-        dataMap.putBoolean(WearConstants.PRIMARY_FUNCTION_VOICE_INPUT, false);
-        new SendToDataLayerThread(WearConstants.SET_WEAR_OPTIONS, dataMap, MainActivity.this).start();
-        dialog.dismiss();
-      }
-    });
+			public void onClick(DialogInterface dialog, int id) {
+				DataMap dataMap = new DataMap();
+				dataMap.putBoolean(WearConstants.PRIMARY_FUNCTION_VOICE_INPUT, false);
+				new SendToDataLayerThread(WearConstants.SET_WEAR_OPTIONS, dataMap, MainActivity.this).start();
+				dialog.dismiss();
+			}
+		});
     chooserDialog.show();
   }
+
+	public void showChromecastVideoOptions(MenuItem item) {
+		AlertDialog.Builder chooserDialog = new AlertDialog.Builder(this);
+		chooserDialog.setTitle(R.string.chromecast_video_options_header);
+//		chooserDialog.setMessage(R.string.wear_primary_function_option_description);
+		chooserDialog.setPositiveButton(R.string.chromecast_video_local, new DialogInterface.OnClickListener() {
+			public void onClick(DialogInterface dialog, int id) {
+				showChromecastVideoOptions(true);
+				dialog.dismiss();
+			}
+		});
+		chooserDialog.setNeutralButton(R.string.chromecast_video_remote, new DialogInterface.OnClickListener() {
+			public void onClick(DialogInterface dialog, int id) {
+				showChromecastVideoOptions(false);
+				dialog.dismiss();
+			}
+		});
+		chooserDialog.show();
+	}
+
+	private void showChromecastVideoOptions(final boolean local) {
+		AlertDialog.Builder builder = new AlertDialog.Builder(this);
+		builder.setTitle(local ? getString(R.string.chromecast_video_local_full) : getString(R.string.chromecast_video_remote_full));
+		final CharSequence[] items = VoiceControlForPlexApplication.chromecastVideoOptions.keySet().toArray(new CharSequence[VoiceControlForPlexApplication.chromecastVideoOptions.size()]);
+		int videoQuality = new ArrayList<>(VoiceControlForPlexApplication.chromecastVideoOptions.keySet()).indexOf(VoiceControlForPlexApplication.getInstance().prefs.getString(local ? Preferences.CHROMECAST_VIDEO_QUALITY_LOCAL : Preferences.CHROMECAST_VIDEO_QUALITY_REMOTE));
+		if(videoQuality == -1)
+			videoQuality = new ArrayList<>(VoiceControlForPlexApplication.chromecastVideoOptions.keySet()).indexOf("8mbps 1080p");
+		Logger.d("video quality: %d", videoQuality);
+		builder.setSingleChoiceItems(items, videoQuality, new DialogInterface.OnClickListener() {
+			@Override
+			public void onClick(DialogInterface dialog, int which) {
+				Logger.d("clicked %d (%s) (%s)", which, (String)items[which], local);
+				VoiceControlForPlexApplication.getInstance().prefs.put(local ? Preferences.CHROMECAST_VIDEO_QUALITY_LOCAL : Preferences.CHROMECAST_VIDEO_QUALITY_REMOTE, (String)items[which]);
+				dialog.dismiss();
+			}
+		});
+		builder.create().show();
+	}
 
 
 }

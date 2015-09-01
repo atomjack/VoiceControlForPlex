@@ -34,6 +34,7 @@ public class PlexScannerService extends Service {
   public static final String ACTION_SCAN_SERVERS = "com.atomjack.vcfp.plexscannerservice.action_scan_servers";
   public static final String ACTION_SCAN_CLIENTS = "com.atomjack.vcfp.plexscannerservice.action_scan_clients";
   public static final String ACTION_SERVER_SCAN_FINISHED = "com.atomjack.vcfp.plexscannerservice.action_server_scan_finished";
+  public static final String REMOTE_SERVER_SCAN_UNAUTHORIZED = "com.atomjack.vcfp.plexscannerservice.remote_server_scan_unauthorized";
 //  public static final String ACTION_LOCAL_SERVER_SCAN_FINISHED = "com.atomjack.vcfp.plexscannerservice.action_local_server_scan_finished";
   public static final String ACTION_CLIENT_SCAN_FINISHED = "com.atomjack.vcfp.plexscannerservice.action_client_scan_finished";
   public static final String SCAN_TYPE = "com.atomjack.vcfp.plexscannerservice.scan_type";
@@ -46,8 +47,6 @@ public class PlexScannerService extends Service {
 
   private boolean localServerScanFinished = false;
   private boolean remoteServerScanFinished = false;
-
-  private static Gson gson = new Gson();
 
   private static AsyncHttpClient client = new AsyncHttpClient();
   private static Serializer serial = new Persister();
@@ -84,7 +83,6 @@ public class PlexScannerService extends Service {
   }
 
   private void onServerScanFinished() {
-    Logger.d("callingClass: %s", callingClass);
     onScanFinished(ACTION_SERVER_SCAN_FINISHED);
   }
 
@@ -93,8 +91,12 @@ public class PlexScannerService extends Service {
   }
 
   private void onScanFinished(String type) {
+    onScanFinished(type, null);
+  }
+  private void onScanFinished(String type, String extra) {
     Intent intent = new Intent(this, callingClass);
     intent.setAction(type);
+    intent.putExtra(REMOTE_SERVER_SCAN_UNAUTHORIZED, extra != null && extra.equals(REMOTE_SERVER_SCAN_UNAUTHORIZED));
     intent.addFlags(Intent.FLAG_FROM_BACKGROUND);
     intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -121,7 +123,11 @@ public class PlexScannerService extends Service {
 
         @Override
         public void onFailure(int statusCode) {
-          // TODO: Handle failure
+          Logger.d("[PlexScannerService] failure: %d", statusCode);
+          if (statusCode == 401) { // Unauthorized
+            // REMOTE_SERVER_SCAN_UNAUTHORIZED
+            onScanFinished(ACTION_SERVER_SCAN_FINISHED, REMOTE_SERVER_SCAN_UNAUTHORIZED);
+          }
         }
       });
     }

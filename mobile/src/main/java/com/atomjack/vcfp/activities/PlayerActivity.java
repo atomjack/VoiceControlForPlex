@@ -43,15 +43,14 @@ public abstract class PlayerActivity extends VCFPActivity implements SeekBar.OnS
 
 	public void doMic(View v) {
 		Intent serviceIntent = new Intent(getApplicationContext(), PlexSearchService.class);
-		Gson gson = new Gson();
 
 		PlexServer server = nowPlayingMedia.server;
 
 		Logger.d("server: %s", server);
 		if(server != null) {
 
-			serviceIntent.putExtra(com.atomjack.shared.Intent.EXTRA_SERVER, gson.toJson(server));
-			serviceIntent.putExtra(com.atomjack.shared.Intent.EXTRA_CLIENT, gson.toJson(mClient));
+			serviceIntent.putExtra(com.atomjack.shared.Intent.EXTRA_SERVER, gsonWrite.toJson(server));
+			serviceIntent.putExtra(com.atomjack.shared.Intent.EXTRA_CLIENT, gsonWrite.toJson(mClient));
 			serviceIntent.putExtra(com.atomjack.shared.Intent.EXTRA_RESUME, resumePlayback);
 
 			SecureRandom random = new SecureRandom();
@@ -80,6 +79,7 @@ public abstract class PlayerActivity extends VCFPActivity implements SeekBar.OnS
 	}
 
 	protected int getOffset(PlexMedia media) {
+    Logger.d("getting offset, mediaoffset: %s", media.viewOffset);
 		if((VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.RESUME, false) || resumePlayback) && media.viewOffset != null)
 			return Integer.parseInt(media.viewOffset) / 1000;
 		else

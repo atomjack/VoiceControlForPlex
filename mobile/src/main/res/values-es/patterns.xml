@@ -9,7 +9,7 @@ adding translations, please do not modify (.*), $1, ([0-9]+), etc.
     a quite complicated regular expression. Plugging it into https://www.debuggex.com/ should help you figure out how
     it is constructed.
     -->
-    <item name="pattern_recognition" type="string">^(((ver|continuar viendo|escuchar|ver película) (.+)( en (.+))?( en modo aleatorio)?)|((posición) (.+)( en (.+))?)|((pausar|detener|continuar)( reproducción)?( en (.+))?))|(conectar a (.+)|desconectar)$</item>
+    <item name="pattern_recognition" type="string">^(((ver|continuar viendo|escuchar|ver película) (.+)( en (.+))?( en modo aleatorio)?)|((posición) (.+)( en (.+))?)|((forward|rewind|back) (.+)( on (.+))?)|((pausar|detener|continuar)( reproducción)?( en (.+))?))|(conectar a (.+)|desconectar)$</item>
 
     <item name="pattern_on_client" type="string">(.+) en (.+)$</item>
     <item name="pattern_resume_watching" type="string">^continuar (viendo) (.+)</item>
@@ -25,6 +25,8 @@ adding translations, please do not modify (.*), $1, ([0-9]+), etc.
     <item name="pattern_connect_to" type="string">^conectar a (.+)</item>
     <item name="pattern_disconnect" type="string">^desconectar$</item>
     <item name="pattern_watch2" type="string">(ver) (.+)</item>
+    <item name="pattern_forward" type="string">forward ([0-9]+|two|to) (hours?|minutes?|seconds?)</item>
+    <item name="pattern_rewind" type="string">(rewind|back) ([0-9]+|two|to) (hours?|minutes?|seconds?)</item>
 
     <!--
     The following pattern lets the user say "listen to <album> by <artist>" or

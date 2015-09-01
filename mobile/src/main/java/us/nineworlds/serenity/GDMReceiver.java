@@ -33,7 +33,7 @@ public class GDMReceiver extends BroadcastReceiver {
 			String message = intent.getStringExtra("data").trim();
 			String ipAddress = intent.getStringExtra("ipaddress").substring(1);
 
-			Logger.d("message: %s", message);
+			Logger.d("[GDMReceiver] message: %s", message);
 			HashMap<String, String> responseMap = processResponse(message);
 
 			if(responseMap.get("resource-identifier") != null) {

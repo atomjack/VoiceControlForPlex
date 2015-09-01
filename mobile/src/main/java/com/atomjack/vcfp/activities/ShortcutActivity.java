@@ -8,18 +8,28 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.speech.RecognizerIntent;
 
+import com.atomjack.shared.UriDeserializer;
+import com.atomjack.shared.UriSerializer;
 import com.atomjack.vcfp.R;
-import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.model.Connection;
 import com.atomjack.vcfp.model.PlexServer;
 import com.atomjack.vcfp.services.PlexSearchService;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 
 public class ShortcutActivity extends Activity {
+  protected Gson gsonRead = new GsonBuilder()
+          .registerTypeAdapter(Uri.class, new UriDeserializer())
+          .create();
+
+  protected Gson gsonWrite = new GsonBuilder()
+          .registerTypeAdapter(Uri.class, new UriSerializer())
+          .create();
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -28,8 +38,7 @@ public class ShortcutActivity extends Activity {
 
       // Shortcuts created before multiple connections were supported will not have any connections at all. So let's add one to the server
       // this shortcut was created for, composed of the server's address and port.
-      Gson gson = new Gson();
-      PlexServer server = gson.fromJson(getIntent().getStringExtra(com.atomjack.shared.Intent.EXTRA_SERVER), PlexServer.class);
+      PlexServer server = gsonRead.fromJson(getIntent().getStringExtra(com.atomjack.shared.Intent.EXTRA_SERVER), PlexServer.class);
       if (server != null) {
         if (server.connections.size() == 0) {
           server.connections = new ArrayList<Connection>();
@@ -37,7 +46,7 @@ public class ShortcutActivity extends Activity {
         }
       }
 
-      serviceIntent.putExtra(com.atomjack.shared.Intent.EXTRA_SERVER, gson.toJson(server));
+      serviceIntent.putExtra(com.atomjack.shared.Intent.EXTRA_SERVER, gsonWrite.toJson(server));
       serviceIntent.putExtra(com.atomjack.shared.Intent.EXTRA_CLIENT, getIntent().getStringExtra(com.atomjack.shared.Intent.EXTRA_CLIENT));
       serviceIntent.putExtra(com.atomjack.shared.Intent.EXTRA_RESUME, getIntent().getBooleanExtra(com.atomjack.shared.Intent.EXTRA_RESUME, false));
 

@@ -10,7 +10,7 @@ Den här filen innehåller reguljära uttryck som används för att räkna ut vi
     detta är uppbyggt.
     -->
 
-    <item name="pattern_recognition" type="string">^(((titta|spela|fortsätt titta|lyssna|titta på filmen|spela filmen) (.+)( på (.+))?( med blandad uppspelning)?)|((spola fram) (.+)( på (.+))?)|((pausa|stoppa|återuppta|fortsätt)( uppspelingen)?( på (.+))?))|(anslut till (.+)|koppla från)$</item>
+    <item name="pattern_recognition" type="string">^(((titta|spela|fortsätt titta|lyssna|titta på filmen|spela filmen) (.+)( på (.+))?( med blandad uppspelning)?)|((spola fram) (.+)( på (.+))?)|((forward|rewind|back) (.+)( on (.+))?)|((pausa|stoppa|återuppta|fortsätt)( uppspelingen)?( på (.+))?))|(anslut till (.+)|koppla från)$</item>
 
     <item name="pattern_on_client" type="string">(.+) på (.+)$</item>
     <item name="pattern_resume_watching" type="string">^fortsätt (titta|spela) (.+)</item>
@@ -26,6 +26,8 @@ Den här filen innehåller reguljära uttryck som används för att räkna ut vi
     <item name="pattern_connect_to" type="string">^anslut till (.+)</item>
     <item name="pattern_disconnect" type="string">^koppla från$</item>
     <item name="pattern_watch2" type="string">(titta på|spela) (.+)</item>
+    <item name="pattern_forward" type="string">forward ([0-9]+|two|to) (hours?|minutes?|seconds?)</item>
+    <item name="pattern_rewind" type="string">(rewind|back) ([0-9]+|two|to) (hours?|minutes?|seconds?)</item>
 
     <!--
     Följande mall låter användaren säga "lyssna på <album> från <artist>" eller 

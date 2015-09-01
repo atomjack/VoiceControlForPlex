@@ -3,6 +3,8 @@ package com.atomjack.vcfp.model;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import com.atomjack.shared.Logger;
+
 import org.simpleframework.xml.Attribute;
 import org.simpleframework.xml.Root;
 import org.simpleframework.xml.core.Commit;
@@ -58,6 +60,7 @@ public class Connection implements Parcelable {
 
 	@Commit
 	public void build() {
+		Logger.d("Connection build: %d", localStr);
 		local = localStr == 1;
 	}
 
@@ -67,6 +70,7 @@ public class Connection implements Parcelable {
 		parcel.writeString(address);
 		parcel.writeString(port);
 		parcel.writeString(uri);
+		parcel.writeInt(local ? 1 : 0);
 	}
 
 	public Connection(Parcel in) {
@@ -74,6 +78,7 @@ public class Connection implements Parcelable {
 		address = in.readString();
 		port = in.readString();
 		uri = in.readString();
+		local = in.readInt() == 1;
 	}
 
 	public static final Parcelable.Creator<Connection> CREATOR = new Parcelable.Creator<Connection>() {

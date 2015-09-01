@@ -1,6 +1,7 @@
 package com.atomjack.vcfp.net;
 
 import android.content.res.Resources;
+import android.os.Looper;
 
 import com.atomjack.shared.Logger;
 import com.atomjack.shared.Preferences;
@@ -21,6 +22,7 @@ import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
 import com.loopj.android.http.BinaryHttpResponseHandler;
 import com.loopj.android.http.RequestParams;
+import com.loopj.android.http.SyncHttpClient;
 
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
@@ -42,11 +44,15 @@ import java.net.SocketTimeoutException;
 
 public class PlexHttpClient
 {
-  private static AsyncHttpClient client = new AsyncHttpClient();
+  private static SyncHttpClient syncClient = new SyncHttpClient();
+  private static AsyncHttpClient asyncClient = new AsyncHttpClient();
   private static Serializer serial = new Persister();
 
   public static AsyncHttpClient getClient() {
-    return client;
+    // Return the synchronous HTTP client when the thread is not prepared
+    if (Looper.myLooper() == null)
+      return syncClient;
+    return asyncClient;
   }
 
 	public static void get(final PlexServer server, final String path, final BinaryHttpResponseHandler responseHandler) {
@@ -57,7 +63,7 @@ public class PlexHttpClient
         if(server.accessToken != null)
           url += String.format("%s%s=%s", (url.contains("?") ? "&" : "?"), PlexHeaders.XPlexToken, server.accessToken);
         Logger.d("url: %s", url);
-        client.get(url, responseHandler);
+        getClient().get(url, responseHandler);
       }
 
       @Override
@@ -72,10 +78,10 @@ public class PlexHttpClient
       @Override
       public void onSuccess(Connection connection) {
         String url = String.format("%s%s", connection.uri, path);
-        if(server.accessToken != null)
+        if (server.accessToken != null)
           url += String.format("%s%s=%s", (url.contains("?") ? "&" : "?"), PlexHeaders.XPlexToken, server.accessToken);
         Logger.d("Fetching %s", url);
-        client.get(url, new RequestParams(), new AsyncHttpResponseHandler() {
+        getClient().get(url, new RequestParams(), new AsyncHttpResponseHandler() {
           @Override
           public void onSuccess(int statusCode, org.apache.http.Header[] headers, byte[] responseBody) {
             try {
@@ -97,7 +103,7 @@ public class PlexHttpClient
 
           @Override
           public void onFailure(int statusCode, org.apache.http.Header[] headers, byte[] responseBody, java.lang.Throwable error) {
-            if(responseHandler != null)
+            if (responseHandler != null)
               responseHandler.onFailure(error);
           }
         });
@@ -105,7 +111,7 @@ public class PlexHttpClient
 
       @Override
       public void onFailure(int statusCode) {
-        if(responseHandler != null)
+        if (responseHandler != null)
           responseHandler.onFailure(new Throwable());
       }
     });
@@ -114,7 +120,7 @@ public class PlexHttpClient
   public static void get(String url, final Header[] theseHeaders, final PlexHttpResponseHandler responseHandler) {
     Logger.d("Fetching %s", url);
     addHeaders(theseHeaders);
-    client.get(url, new RequestParams(), new AsyncHttpResponseHandler() {
+    getClient().get(url, new RequestParams(), new AsyncHttpResponseHandler() {
       @Override
       public void onSuccess(int statusCode, org.apache.http.Header[] headers, byte[] responseBody) {
         // Remove the headers we just added
@@ -125,14 +131,14 @@ public class PlexHttpClient
         } catch (Exception e) {
           Logger.e("Exception parsing response: %s", e.toString());
         }
-        if(responseHandler != null)
+        if (responseHandler != null)
           responseHandler.onSuccess(r);
       }
 
       @Override
       public void onFailure(int statusCode, org.apache.http.Header[] headers, byte[] responseBody, java.lang.Throwable error) {
         removeHeaders(theseHeaders);
-        if(responseHandler != null)
+        if (responseHandler != null)
           responseHandler.onFailure(error);
       }
     });
@@ -140,20 +146,20 @@ public class PlexHttpClient
 
   private static void addHeaders(Header[] headers) {
     for(Header header : headers) {
-      client.addHeader(header.getName(), header.getValue());
+      getClient().addHeader(header.getName(), header.getValue());
     }
   }
 
   private static void removeHeaders(Header[] headers) {
     for(Header header : headers) {
-      client.removeHeader(header.getName());
+      getClient().removeHeader(header.getName());
     }
   }
 
   public static void get(String url, final Header[] theseHeaders, final PlexHttpMediaContainerHandler responseHandler) {
     Logger.d("Fetching %s", url);
     addHeaders(theseHeaders);
-    client.get(url, new RequestParams(), new AsyncHttpResponseHandler() {
+    getClient().get(url, new RequestParams(), new AsyncHttpResponseHandler() {
       @Override
       public void onSuccess(int statusCode, org.apache.http.Header[] headers, byte[] responseBody) {
         removeHeaders(theseHeaders);
@@ -173,7 +179,7 @@ public class PlexHttpClient
       @Override
       public void onFailure(int statusCode, org.apache.http.Header[] headers, byte[] responseBody, java.lang.Throwable error) {
         removeHeaders(theseHeaders);
-        if(responseHandler != null)
+        if (responseHandler != null)
           responseHandler.onFailure(error);
       }
     });
@@ -198,7 +204,7 @@ public class PlexHttpClient
     };
     String url = String.format("http://%s:%s/playQueues?%s", connection.address, connection.port, qs);
     addHeaders(headers);
-    client.post(url, new RequestParams(), new AsyncHttpResponseHandler() {
+    getClient().post(url, new RequestParams(), new AsyncHttpResponseHandler() {
       @Override
       public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
         MediaContainer mediaContainer = new MediaContainer();
@@ -211,7 +217,7 @@ public class PlexHttpClient
           e.printStackTrace();
         }
 
-        if(responseHandler != null)
+        if (responseHandler != null)
           responseHandler.onSuccess(mediaContainer);
 
       }
@@ -225,50 +231,50 @@ public class PlexHttpClient
 
 	public static void get(String url, final PlexHttpResponseHandler responseHandler) {
 		Logger.d("Fetching %s", url);
-		client.get(url, new RequestParams(), new AsyncHttpResponseHandler() {
-			@Override
-			public void onSuccess(int statusCode, org.apache.http.Header[] headers, byte[] responseBody) {
+    getClient().get(url, new RequestParams(), new AsyncHttpResponseHandler() {
+      @Override
+      public void onSuccess(int statusCode, org.apache.http.Header[] headers, byte[] responseBody) {
         Logger.d("Response: %s", new String(responseBody));
-				PlexResponse r = new PlexResponse();
-				try {
-					r = serial.read(PlexResponse.class, new String(responseBody, "UTF-8"));
-				} catch (Exception e) {
-					Logger.e("Exception parsing response: %s", e.toString());
-				}
-				if(responseHandler != null)
-					responseHandler.onSuccess(r);
-			}
+        PlexResponse r = new PlexResponse();
+        try {
+          r = serial.read(PlexResponse.class, new String(responseBody, "UTF-8"));
+        } catch (Exception e) {
+          Logger.e("Exception parsing response: %s", e.toString());
+        }
+        if (responseHandler != null)
+          responseHandler.onSuccess(r);
+      }
 
-			@Override
-			public void onFailure(int statusCode, org.apache.http.Header[] headers, byte[] responseBody, java.lang.Throwable error) {
-				if(responseHandler != null)
-					responseHandler.onFailure(error);
-			}
-		});
+      @Override
+      public void onFailure(int statusCode, org.apache.http.Header[] headers, byte[] responseBody, java.lang.Throwable error) {
+        if (responseHandler != null)
+          responseHandler.onFailure(error);
+      }
+    });
 	}
 
 	public static void getPinCode(final Header[] theseHeaders, final PlexPinResponseHandler responseHandler) {
     addHeaders(theseHeaders);
-		client.post("https://plex.tv:443/pins.xml", new RequestParams(), new AsyncHttpResponseHandler() {
-			@Override
-			public void onSuccess(int statusCode, org.apache.http.Header[] headers, byte[] responseBody) {
+    getClient().post("https://plex.tv:443/pins.xml", new RequestParams(), new AsyncHttpResponseHandler() {
+      @Override
+      public void onSuccess(int statusCode, org.apache.http.Header[] headers, byte[] responseBody) {
         removeHeaders(theseHeaders);
 
-				Pin pin = new Pin();
-				try {
-					pin = serial.read(Pin.class, new String(responseBody, "UTF-8"));
-				} catch (Exception e) {
-					Logger.e("Exception parsing response: %s", e.toString());
-				}
-				responseHandler.onSuccess(pin);
-			}
+        Pin pin = new Pin();
+        try {
+          pin = serial.read(Pin.class, new String(responseBody, "UTF-8"));
+        } catch (Exception e) {
+          Logger.e("Exception parsing response: %s", e.toString());
+        }
+        responseHandler.onSuccess(pin);
+      }
 
-			@Override
-			public void onFailure(int statusCode, org.apache.http.Header[] headers, byte[] responseBody, java.lang.Throwable error) {
+      @Override
+      public void onFailure(int statusCode, org.apache.http.Header[] headers, byte[] responseBody, java.lang.Throwable error) {
         removeHeaders(theseHeaders);
-				responseHandler.onFailure(error);
-			}
-		});
+        responseHandler.onFailure(error);
+      }
+    });
 	}
 
 	public static void signin(String authToken, Header[] headers, final PlexHttpUserHandler responseHandler) {
@@ -281,40 +287,40 @@ public class PlexHttpClient
 
 	public static void signin(String username, String password, String authToken, final Header[] theseHeaders, final PlexHttpUserHandler responseHandler) {
 		if(username != null && password != null)
-			client.setBasicAuth(username, password);
+      getClient().setBasicAuth(username, password);
 		String url = "https://plex.tv/users/sign_in.xml";
 		if(authToken != null)
 			url += "?auth_token=" + authToken;
     addHeaders(theseHeaders);
-		client.post(url, new RequestParams(), new AsyncHttpResponseHandler() {
-			@Override
-			public void onSuccess(int statusCode, org.apache.http.Header[] headers, byte[] responseBody) {
+    getClient().post(url, new RequestParams(), new AsyncHttpResponseHandler() {
+      @Override
+      public void onSuccess(int statusCode, org.apache.http.Header[] headers, byte[] responseBody) {
         removeHeaders(theseHeaders);
-				Logger.d("signin success: %d", statusCode);
-				PlexUser u = new PlexUser();
-				try {
-					u = serial.read(PlexUser.class, new String(responseBody, "UTF-8"));
-				} catch (Exception e) {
-					Logger.e("Exception parsing response: %s", e.toString());
-				}
-				responseHandler.onSuccess(u);
-			}
+        Logger.d("signin success: %d", statusCode);
+        PlexUser u = new PlexUser();
+        try {
+          u = serial.read(PlexUser.class, new String(responseBody, "UTF-8"));
+        } catch (Exception e) {
+          Logger.e("Exception parsing response: %s", e.toString());
+        }
+        responseHandler.onSuccess(u);
+      }
 
-			@Override
-			public void onFailure(int statusCode, org.apache.http.Header[] headers, byte[] responseBody, java.lang.Throwable error) {
+      @Override
+      public void onFailure(int statusCode, org.apache.http.Header[] headers, byte[] responseBody, java.lang.Throwable error) {
         removeHeaders(theseHeaders);
-				if(responseBody != null)
-					Logger.d("body: %s", new String(responseBody));
-				PlexError er = new PlexError();
-				try {
-				  er = serial.read(PlexError.class, new String(responseBody, "UTF-8"));
-				} catch (Exception e) {
-					Logger.e("Exception parsing response: %s", e.toString());
-				}
-				Logger.d("error: %s", er.errors);
-				responseHandler.onFailure(statusCode, er);
-			}
-		});
+        if (responseBody != null)
+          Logger.d("body: %s", new String(responseBody));
+        PlexError er = new PlexError();
+        try {
+          er = serial.read(PlexError.class, new String(responseBody, "UTF-8"));
+        } catch (Exception e) {
+          Logger.e("Exception parsing response: %s", e.toString());
+        }
+        Logger.d("error: %s", er.errors);
+        responseHandler.onFailure(statusCode, er);
+      }
+    });
 	}
 
   public static PlexResponse getSync(String url) {
@@ -324,7 +330,13 @@ public class PlexHttpClient
       r = serial.read(PlexResponse.class, body);
     } catch (Exception e) {
       Logger.e("Exception parsing response: %s", e.toString());
-      return null;
+      e.printStackTrace();
+      if(body.equals("")) {
+        // Roku doesn't return anything in the response body, so let's just assume everything worked
+        r = new PlexResponse();
+        r.code = "200";
+      } else
+        return null;
     }
     return r;
   }

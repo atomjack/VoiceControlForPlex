@@ -2,6 +2,7 @@ package com.atomjack.vcfp;
 
 import android.app.NotificationManager;
 import android.content.Intent;
+import android.os.Environment;
 
 import com.atomjack.shared.Logger;
 import com.atomjack.shared.PlayerState;
@@ -13,6 +14,13 @@ import com.google.android.gms.wearable.DataMap;
 import com.google.android.gms.wearable.DataMapItem;
 import com.google.android.gms.wearable.MessageEvent;
 import com.google.android.gms.wearable.WearableListenerService;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 
 public class WearListenerService extends WearableListenerService {
   private NotificationManager mNotifyMgr;
@@ -143,6 +151,8 @@ public class WearListenerService extends WearableListenerService {
         intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(intent);
+      } else if(message.equals(WearConstants.GET_DEVICE_LOGS)) {
+        getDeviceLogs();
       } else if(message.equals(WearConstants.FINISH)) {
         finishMain();
       }
@@ -156,5 +166,40 @@ public class WearListenerService extends WearableListenerService {
     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
     intent.setAction(MainActivity.FINISH);
     startActivity(intent);
+  }
+
+  private void getDeviceLogs() {
+    String logContents = "";
+    try {
+      File tempDirectory = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/tmp");
+      if (!tempDirectory.exists())
+        tempDirectory.mkdirs();
+
+      File tempFile = new File(tempDirectory, "/vcfp-log.txt");
+      FileOutputStream fos = new FileOutputStream(tempFile);
+      Writer out = new OutputStreamWriter(fos, "UTF-8");
+
+      Process process = Runtime.getRuntime().exec("logcat -d *:V");
+      BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+      StringBuilder log = new StringBuilder();
+      String line;
+      while ((line = bufferedReader.readLine()) != null) {
+        log.append(line);
+        log.append(System.getProperty("line.separator"));
+      }
+
+      bufferedReader.close();
+
+      out.write(log.toString());
+      out.flush();
+      out.close();
+      logContents = log.toString();
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+
+    DataMap dataMap = new DataMap();
+    dataMap.putString(WearConstants.LOG_CONTENTS, logContents);
+    new SendToDataLayerThread(WearConstants.GET_DEVICE_LOGS, dataMap, this).start();
   }
 }

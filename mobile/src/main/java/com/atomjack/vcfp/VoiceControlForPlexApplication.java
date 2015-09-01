@@ -71,6 +71,7 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
@@ -99,11 +100,13 @@ public class VoiceControlForPlexApplication extends Application
 					.create();
 
   private NOTIFICATION_STATUS notificationStatus = NOTIFICATION_STATUS.off;
-  public static enum NOTIFICATION_STATUS {
+  public enum NOTIFICATION_STATUS {
     off,
     on,
     initializing
   }
+
+  public static HashMap<String, String[]> chromecastVideoOptions = new LinkedHashMap<>();
 
   private NotificationManager mNotifyMgr;
   private Bitmap notificationBitmap = null;
@@ -159,6 +162,22 @@ public class VoiceControlForPlexApplication extends Application
 
     plexSubscription = new PlexSubscription();
     castPlayerManager = new CastPlayerManager(getApplicationContext());
+
+//    chromecastVideoOptions.put(getString(R.string.original), new String[]{"12000", "1920x1080", "1"}); // Disabled for now. Don't know how to get PMS to direct play to chromecast
+    chromecastVideoOptions.put("20mbps 720p", new String[]{"20000", "1280x720"});
+    chromecastVideoOptions.put("12mbps 720p", new String[]{"12000", "1280x720"});
+    chromecastVideoOptions.put("10mbps 720p", new String[]{"10000", "1280x720"});
+    chromecastVideoOptions.put("8mbps 720p", new String[]{"8000", "1280x720"});
+    chromecastVideoOptions.put("4mbps 720p", new String[]{"4000", "1280x720"});
+    chromecastVideoOptions.put("3mbps 720p", new String[]{"3000", "1280x720"});
+    chromecastVideoOptions.put("2mbps 720p", new String[]{"2000", "1280x720"});
+    chromecastVideoOptions.put("1.5mbps 720p", new String[]{"1500", "1280x720"});
+
+    if(VoiceControlForPlexApplication.getInstance().prefs.getString(Preferences.CHROMECAST_VIDEO_QUALITY_LOCAL) == null)
+      VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.CHROMECAST_VIDEO_QUALITY_LOCAL, "8mbps 720p");
+    if(VoiceControlForPlexApplication.getInstance().prefs.getString(Preferences.CHROMECAST_VIDEO_QUALITY_REMOTE) == null)
+      VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.CHROMECAST_VIDEO_QUALITY_REMOTE, "8mbps 720p");
+
 
     // Check for donate version, and if found, allow chromecast & wear
     PackageInfo pinfo;

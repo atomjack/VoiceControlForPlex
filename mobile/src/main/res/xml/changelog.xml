@@ -1,5 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog>
+    <release version="2.0.4b6" versioncode="46">
+        <change>Added Swedish translations (Bjorn Komlanz).</change>
+        <change>Cinema Trailers will not play for movies that are resuming progress.</change>
+        <change>Added ability to email device logs.</change>
+        <change>Added Chromecast Video Options.</change>
+        <change>Handle invalid access token properly.</change>
+        <change>Fixed seeking when using Chromecast.</change>
+        <change>Seek to relative position with forward/rewind.</change>
+        <change>Fixed integration with Google Search API.</change>
+        <change>Various bug fixes.</change>
+    </release>
+    <release version="2.0.3" versioncode="42">
+        <change>Added German translations (Claas-Thido Pfaff).</change>
+        <change>Playback can now be adjusted by saying "Pause", "Play", and "Stop".</change>
+    </release>
     <release version="2.0.2" versioncode="41">
         <change>Added support for Cinema Trailers. Number of trailers to show before playing a movie can be set in the Options menu. Default is 0 (disabled).</change>
     </release>

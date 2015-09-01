@@ -18,6 +18,8 @@ public class WearConstants {
   public final static String PING = "/ping";
   public final static String PONG = "/pong";
 
+  public final static String GET_DEVICE_LOGS = "/get_device_logs";
+
   // Options
   public final static String SET_WEAR_OPTIONS = "com.atomjack.vcfp.set_wear_options";
   public final static String PRIMARY_FUNCTION_VOICE_INPUT = "com.atomjack.vcfp.primary_function_voice_input";
@@ -28,6 +30,8 @@ public class WearConstants {
   public final static String LAUNCHED = "com.atomjack.vcfp.launched";
   public final static String RETRY_GET_PLAYBACK_STATE = "com.atomjack.vcfp.retry_get_playback_state";
 
+  // key of intent extra containing the wear device's logs
+  public final static String LOG_CONTENTS = "com.atomjack.vcfp.log_contents";
 
   public final static String FINISH = "com.atomjack.vcfp.finish";
 

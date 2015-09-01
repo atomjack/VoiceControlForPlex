@@ -14,7 +14,7 @@ import com.atomjack.vcfp.model.PlexServer;
 import com.atomjack.vcfp.model.PlexTrack;
 import com.atomjack.vcfp.model.PlexVideo;
 import com.google.android.gms.cast.ApplicationMetadata;
-import com.google.sample.castcompanionlibrary.cast.VideoCastManager;
+import com.google.android.libraries.cast.companionlibrary.cast.VideoCastManager;
 
 import org.json.JSONObject;
 
@@ -96,6 +96,7 @@ public class CastPlayerManager {
 
   public void subscribe(final PlexClient _client) {
     if(castManager == null) {
+      Logger.d("creating castManager");
       castManager = getCastManager(mContext);
       castManager.addVideoCastConsumer(castConsumer);
       castManager.incrementUiCounter();
@@ -103,7 +104,10 @@ public class CastPlayerManager {
     if(castManager.isConnected()) {
       castManager.disconnect();
     }
-    castManager.setDevice(_client.castDevice);
+    Logger.d("selecting device: %s", _client.castDevice);
+    castManager.onDeviceSelected(_client.castDevice);
+//    castManager.setDevice(_client.castDevice);
+    Logger.d("device selected");
     castConsumer.setOnConnected(new Runnable() {
       @Override
       public void run() {
@@ -140,7 +144,7 @@ public class CastPlayerManager {
   }
 
   public boolean isSubscribed() {
-    Logger.d("[CastPlayerManager] subscribed: %s, mClient: %s", subscribed, mClient);
+    Logger.d("[CastPlayerManager] subscribed: %s, client: %s", subscribed, mClient);
     return subscribed && mClient != null;
   }
 
@@ -177,6 +181,7 @@ public class CastPlayerManager {
     void onCastPlayerPlaylistAdvance(PlexMedia media);
     void onCastPlayerState(PlayerState state, PlexMedia media);
     void onCastConnectionFailed();
+    void onCastSeek();
     PlexMedia getNowPlayingMedia();
   };
 
@@ -186,6 +191,7 @@ public class CastPlayerManager {
 
   // This will send a message to the cast device to load the passed in media
   public void loadMedia(PlexMedia media, List<PlexMedia> album, final int offset) {
+    Logger.d("Loading media");
     nowPlayingMedia = media;
     nowPlayingAlbum = album;
     nowPlayingMedia.server.findServerConnection(new ActiveConnectionHandler() {
@@ -229,12 +235,13 @@ public class CastPlayerManager {
             obj.put(PARAMS.SRC, getTranscodeUrl(nowPlayingMedia, connection, seconds));
           obj.put(PARAMS.RESUME, VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.RESUME, false));
           sendMessage(obj);
+          listener.onCastSeek();
         } catch (Exception ex) {}
       }
 
       @Override
       public void onFailure(int statusCode) {
-
+        // TODO: Handle failure
       }
     });
   }
@@ -277,16 +284,17 @@ public class CastPlayerManager {
 
   private static VideoCastManager getCastManager(Context context) {
     if (null == castManager) {
-      castManager = VideoCastManager.initialize(context, BuildConfig.CHROMECAST_APP_ID,
-              null, "urn:x-cast:com.atomjack.vcfp");
-      castManager.enableFeatures(
-              VideoCastManager.FEATURE_NOTIFICATION |
-                      VideoCastManager.FEATURE_LOCKSCREEN |
-                      VideoCastManager.FEATURE_DEBUGGING);
+      VideoCastManager.initialize(context, BuildConfig.CHROMECAST_APP_ID,
+              null, "urn:x-cast:com.atomjack.vcfp")
+          .enableFeatures(
+                  VideoCastManager.FEATURE_NOTIFICATION |
+                          VideoCastManager.FEATURE_LOCKSCREEN |
+                          VideoCastManager.FEATURE_DEBUGGING);
 
     }
 //    castManager.setContext(context);
-    castManager.setStopOnDisconnect(true);
+    castManager = VideoCastManager.getInstance();
+    castManager.setStopOnDisconnect(false);
     return castManager;
   }
 
@@ -388,10 +396,9 @@ public class CastPlayerManager {
       }
 
       @Override
-      public boolean onApplicationConnectionFailed(int errorCode) {
+      public void onApplicationConnectionFailed(int errorCode) {
         Logger.d("[CastPlayerManager] onApplicationConnectionFailed: %d", errorCode);
         listener.onCastConnectionFailed();
-        return false;
       }
 
       @Override
@@ -408,6 +415,7 @@ public class CastPlayerManager {
   }
 
   public String getTranscodeUrl(PlexMedia media, Connection connection, int offset) {
+    Logger.d("getTranscodeUrl, offset: %d", offset);
     String url = connection.uri;
     url += String.format("/%s/:/transcode/universal/start?", media instanceof PlexVideo ? "video" : "audio");
     QueryString qs = new QueryString("path", String.format("http://127.0.0.1:32400%s", media.key));
@@ -416,11 +424,13 @@ public class CastPlayerManager {
     qs.add("protocol", "http");
     qs.add("offset", Integer.toString(offset));
     qs.add("fastSeek", "1");
+//    String[] videoQuality = VoiceControlForPlexApplication.chromecastVideoOptions.get(VoiceControlForPlexApplication.getInstance().prefs.getString(connection.local ? Preferences.CHROMECAST_VIDEO_QUALITY_LOCAL : Preferences.CHROMECAST_VIDEO_QUALITY_REMOTE));
+//    qs.add("directPlay", videoQuality.length == 3 && videoQuality[2] == "1" ? "1" : "0");
     qs.add("directPlay", "0");
     qs.add("directStream", "1");
     qs.add("videoQuality", "60");
-    qs.add("videoResolution", "1024x768");
-    qs.add("maxVideoBitrate", "2000");
+    qs.add("maxVideoBitrate", VoiceControlForPlexApplication.chromecastVideoOptions.get(VoiceControlForPlexApplication.getInstance().prefs.getString(connection.local ? Preferences.CHROMECAST_VIDEO_QUALITY_LOCAL : Preferences.CHROMECAST_VIDEO_QUALITY_REMOTE))[0]);
+    qs.add("videoResolution", VoiceControlForPlexApplication.chromecastVideoOptions.get(VoiceControlForPlexApplication.getInstance().prefs.getString(connection.local ? Preferences.CHROMECAST_VIDEO_QUALITY_LOCAL : Preferences.CHROMECAST_VIDEO_QUALITY_REMOTE))[1]);
     qs.add("subtitleSize", "100");
     qs.add("audioBoost", "100");
     qs.add("session", mSessionId);
@@ -462,6 +472,7 @@ public class CastPlayerManager {
       data.put(PARAMS.CLIENT, VoiceControlForPlexApplication.gsonWrite.toJson(mClient));
       data.put(PARAMS.SRC, getTranscodeUrl(nowPlayingMedia, connection, offset));
       data.put(PARAMS.ACCESS_TOKEN, nowPlayingMedia.server.accessToken);
+      Logger.d("token: %s", nowPlayingMedia.server.accessToken);
       data.put(PARAMS.PLAYLIST, getPlaylistJson());
     } catch (Exception ex) {
       ex.printStackTrace();
@@ -475,6 +486,10 @@ public class CastPlayerManager {
 
   public PlayerState getCurrentState() {
     return currentState;
+  }
+
+  public void setNowPlayingMedia(PlexMedia nowPlayingMedia) {
+    this.nowPlayingMedia = nowPlayingMedia;
   }
 
   public PlexMedia getNowPlayingMedia() {

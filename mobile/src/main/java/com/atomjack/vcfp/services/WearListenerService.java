@@ -209,6 +209,14 @@ public class WearListenerService extends WearableListenerService {
           startService(intent);
           Logger.d("[WearListenerService] Sent %s to %s", message, client.name);
         }
+      } else if(message.equals(WearConstants.GET_DEVICE_LOGS)) {
+        Intent intent = new android.content.Intent(this, MainActivity.class);
+        intent.setAction(message);
+        intent.addFlags(Intent.FLAG_FROM_BACKGROUND);
+        intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        intent.putExtra(WearConstants.LOG_CONTENTS, receivedDataMap.getString(WearConstants.LOG_CONTENTS));
+        startActivity(intent);
       }
     }
   }

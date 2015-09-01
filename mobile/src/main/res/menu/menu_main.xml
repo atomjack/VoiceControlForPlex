@@ -32,6 +32,10 @@
           android:title="@string/menu_wear_options"
           android:onClick="showWearOptions"
           android:visible="false"></item>
+    <item android:id="@+id/menu_chromecast_video"
+          android:title="@string/menu_chromecast_video"
+          android:onClick="showChromecastVideoOptions"
+          android:visible="false"></item>
     <item android:id="@+id/menu_install_short"
           android:title="@string/menu_install_shortcut"
           android:onClick="installShortcut">
@@ -54,6 +58,10 @@
           android:title="@string/menu_install_autovoice"
           android:visible="false"
           android:onClick="installAutoVoice">
+    </item>
+    <item android:id="@+id/menu_email_device_logs"
+          android:title="@string/menu_email_device_logs"
+          android:onClick="emailDeviceLogs">
     </item>
     <item android:id="@+id/menu_changelog"
           android:title="@string/menu_changelog"

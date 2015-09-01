@@ -18,6 +18,7 @@ import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexResponse;
 import com.atomjack.shared.model.Timeline;
+import com.atomjack.vcfp.model.PlexTrack;
 import com.atomjack.vcfp.net.PlexHttpResponseHandler;
 import com.bugsense.trace.BugSenseHandler;
 import com.google.android.gms.wearable.DataMap;

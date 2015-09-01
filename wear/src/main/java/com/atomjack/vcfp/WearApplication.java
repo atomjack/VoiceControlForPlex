@@ -1,13 +1,13 @@
 package com.atomjack.vcfp;
 
 import android.app.Application;
-import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.RemoteInput;
+import android.support.v4.app.NotificationManagerCompat;
 
 import com.atomjack.shared.Logger;
 import com.atomjack.shared.PlayerState;
@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit;
 
 public class WearApplication extends Application {
   private static WearApplication instance;
-  private NotificationManager mNotifyMgr;
+  private NotificationManagerCompat mNotifyMgr;
   private static final int NOTIFICATION_ID = 001;
   GoogleApiClient googleApiClient;
   DataMap nowPlayingMedia = new DataMap();
@@ -37,9 +37,8 @@ public class WearApplication extends Application {
   public void onCreate() {
     super.onCreate();
     instance = this;
-    mNotifyMgr = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
+    mNotifyMgr = NotificationManagerCompat.from(this);
 
-//    mNotifyMgr.
     googleApiClient = new GoogleApiClient.Builder(this)
             .addApi(Wearable.API)
             .build();
@@ -71,7 +70,7 @@ public class WearApplication extends Application {
     }
 
     NotificationCompat.Action playPauseAction = new NotificationCompat.Action.Builder(playPauseIcon,
-            null, PendingIntent.getService(this, 0, playPauseIntent, PendingIntent.FLAG_UPDATE_CURRENT))
+            "", PendingIntent.getService(this, 0, playPauseIntent, PendingIntent.FLAG_UPDATE_CURRENT))
             .build();
     return playPauseAction;
   }
@@ -91,17 +90,18 @@ public class WearApplication extends Application {
     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 
     NotificationCompat.Action voiceInputAction = new NotificationCompat.Action.Builder(R.drawable.mic,
-            null, PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT))
+            "", PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT))
             .addRemoteInput(remoteInput)
             .build();
     return voiceInputAction;
   }
 
   private NotificationCompat.Action getStopAction() {
+
     Intent stopIntent = new Intent(this, PlexControlService.class);
     stopIntent.setAction(WearConstants.ACTION_STOP);
     NotificationCompat.Action stopAction = new NotificationCompat.Action.Builder(R.drawable.button_stop,
-            null, PendingIntent.getService(this, 0, stopIntent, PendingIntent.FLAG_UPDATE_CURRENT))
+            "", PendingIntent.getService(this, 0, stopIntent, PendingIntent.FLAG_UPDATE_CURRENT))
             .build();
     return stopAction;
   }
@@ -117,7 +117,7 @@ public class WearApplication extends Application {
 
 
 
-    NotificationCompat.Extender extender;
+    NotificationCompat.WearableExtender extender;
     if(nowPlayingImage != null) {
       extender = new NotificationCompat.WearableExtender()
               .addAction(getPlayPauseAction())

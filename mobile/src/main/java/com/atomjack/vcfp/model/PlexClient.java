@@ -3,6 +3,7 @@ package com.atomjack.vcfp.model;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import com.atomjack.shared.Logger;
 import com.atomjack.vcfp.Utils;
 import com.atomjack.vcfp.net.PlexHttpClient;
 import com.atomjack.vcfp.net.PlexHttpResponseHandler;
@@ -58,6 +59,7 @@ public class PlexClient extends PlexDevice {
 		machineIdentifier = in.readString();
 		isCastClient = in.readInt() == 1;
 		castDevice = in.readParcelable(CastDevice.class.getClassLoader());
+    Logger.d("set cast device from parcel");
 	}
 
 	public static final Parcelable.Creator<PlexClient> CREATOR = new Parcelable.Creator<PlexClient>() {
@@ -108,6 +110,7 @@ public class PlexClient extends PlexDevice {
 	}
 
   private PlexResponse adjustPlayback(String which) {
+		Logger.d("Adjusting playback with %s", which);
     try {
       String url = String.format("http://%s:%s/player/playback/%s", address, port, which);
       return PlexHttpClient.getSync(url);

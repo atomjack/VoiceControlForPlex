@@ -302,7 +302,7 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
         if (clientSelected.isCastClient) {
           if(VoiceControlForPlexApplication.getInstance().hasChromecast()) {
             mClient = clientSelected;
-            Logger.d("[VCPActivity] subscribing");
+            Logger.d("[VCFPActivity] subscribing");
             castPlayerManager.subscribe(mClient);
           } else {
             showChromecastPurchase(clientSelected, new Runnable() {
@@ -496,11 +496,17 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
   }
 
   @Override
+  public void onCastSeek() {
+    
+  }
+
+  @Override
   public void onCastPlayerState(PlayerState state, PlexMedia media) {
     mCurrentState = state;
     Logger.d("[VCFPActivity] mCurrentState: %s, media: %s", mCurrentState, media);
     if(!mCurrentState.equals(PlayerState.STOPPED) && media != null) {
       nowPlayingMedia = media;
+      castPlayerManager.setNowPlayingMedia(nowPlayingMedia);
       mClient = castPlayerManager.mClient;
       VoiceControlForPlexApplication.getInstance().setNotification(mClient, mCurrentState, nowPlayingMedia);
     }

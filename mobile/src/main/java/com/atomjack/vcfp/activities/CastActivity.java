@@ -17,7 +17,7 @@ import com.atomjack.vcfp.VCFPCastConsumer;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexMedia;
-import com.google.sample.castcompanionlibrary.cast.VideoCastManager;
+import com.google.android.libraries.cast.companionlibrary.cast.VideoCastManager;
 
 import java.util.Arrays;
 import java.util.List;
@@ -30,7 +30,7 @@ public class CastActivity extends PlayerActivity {
 
   private List<PlexMedia> nowPlayingAlbum;
 
-  private Dialog connectingDialog;
+  private Dialog infoDialog;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -51,16 +51,16 @@ public class CastActivity extends PlayerActivity {
       nowPlayingAlbum = Arrays.asList(nowPlayingMedia);
 
     Logger.d("[CastActivity] starting up, action: %s, current state: %s", getIntent().getAction(), castPlayerManager.getCurrentState());
-    Logger.d("mClient: %s", mClient);
+    Logger.d("client: %s", mClient);
 		if(getIntent().getAction() != null && getIntent().getAction().equals(com.atomjack.shared.Intent.CAST_MEDIA)) {
 
-			Logger.d("Casting %s", nowPlayingMedia.title);
+			Logger.d("Casting %s (%s)", nowPlayingMedia.title, nowPlayingMedia.viewOffset);
 
       showNowPlaying();
       if(castPlayerManager.isSubscribed()) {
         init();
       } else {
-        showConnectingDialog();
+        showInfoDialog(getResources().getString(R.string.connecting));
         castPlayerManager.subscribe(mClient);
       }
 		} else {
@@ -82,7 +82,7 @@ public class CastActivity extends PlayerActivity {
   @Override
   public void onCastConnected(PlexClient _client) {
     super.onCastConnected(_client);
-    hideConnectingDialog();
+    hideInfoDialog();
     init();
   }
 
@@ -93,6 +93,7 @@ public class CastActivity extends PlayerActivity {
     seekBar.setMax(nowPlayingMedia.duration);
     seekBar.setProgress(getOffset(nowPlayingMedia)*1000);
 
+    Logger.d("setupUI, setting time display to %d", getOffset(nowPlayingMedia));
     setCurrentTimeDisplay(getOffset(nowPlayingMedia));
     durationDisplay.setText(VoiceControlForPlexApplication.secondsToTimecode(nowPlayingMedia.duration / 1000));
   }
@@ -123,22 +124,22 @@ public class CastActivity extends PlayerActivity {
     }
   }
 
-  private void showConnectingDialog() {
-    if(connectingDialog == null) {
-      connectingDialog = new Dialog(this);
+  private void showInfoDialog(String text) {
+    if(infoDialog == null) {
+      infoDialog = new Dialog(this);
     }
-    connectingDialog.setContentView(R.layout.search_popup);
-    connectingDialog.setTitle(getResources().getString(R.string.connecting));
+    infoDialog.setContentView(R.layout.search_popup);
+    infoDialog.setTitle(text);
 
     // TODO: Re-enable this
-//    connectingDialog.setCancelable(false);
+//    infoDialog.setCancelable(false);
 
-    connectingDialog.show();
+    infoDialog.show();
   }
 
-  private void hideConnectingDialog() {
-    if(connectingDialog != null && connectingDialog.isShowing()) {
-      connectingDialog.dismiss();
+  private void hideInfoDialog() {
+    if(infoDialog != null && infoDialog.isShowing()) {
+      infoDialog.dismiss();
     }
   }
 
@@ -180,7 +181,7 @@ public class CastActivity extends PlayerActivity {
 	protected void onDestroy() {
 		Logger.d("[CastActivity] onDestroy");
 		if (null != castManager) {
-			castManager.clearContext(this);
+//			castManager.clearContext(this);
 		}
 		super.onDestroy();
 	}
@@ -270,8 +271,10 @@ public class CastActivity extends PlayerActivity {
   public void onCastPlayerStateChanged(PlayerState state) {
     super.onCastPlayerStateChanged(state);
     Logger.d("[CastActivity] onCastPlayerStateChanged: %s", state);
-    if(isSeeking)
+    if(isSeeking) {
       isSeeking = false;
+    }
+    hideInfoDialog();
     if(state == PlayerState.STOPPED) {
       Logger.d("[CastActivity] media player is idle, finishing");
       VoiceControlForPlexApplication.getInstance().cancelNotification();
@@ -298,5 +301,10 @@ public class CastActivity extends PlayerActivity {
     nowPlayingMedia = media;
     setupUI();
     showNowPlaying(false);
+  }
+
+  @Override
+  public void onCastSeek() {
+    showInfoDialog(getString(R.string.please_wait));
   }
 }
