@@ -14,6 +14,8 @@ import org.simpleframework.xml.Root;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import retrofit.Call;
+
 @Root(name="Server", strict=false)
 public class PlexClient extends PlexDevice {
 	public boolean isCastClient = false;
@@ -73,8 +75,7 @@ public class PlexClient extends PlexDevice {
 	};
 
 	public void seekTo(int offset, PlexHttpResponseHandler responseHandler) {
-		String url = String.format("http://%s:%s/player/playback/seekTo?offset=%s", address, port, offset);
-		PlexHttpClient.get(url, responseHandler);
+		PlexHttpClient.get(String.format("http://%s:%s", address, port), String.format("player/playback/seekTo?offset=%s", offset), responseHandler);
 	}
 
   public void pause(PlexHttpResponseHandler responseHandler) {
@@ -102,8 +103,7 @@ public class PlexClient extends PlexDevice {
 		if(validModes.indexOf(which) == -1)
 			return;
 		try {
-			String url = String.format("http://%s:%s/player/playback/%s", address, port, which);
-			PlexHttpClient.get(url, responseHandler);
+			PlexHttpClient.get(String.format("http://%s:%s", address, port), String.format("player/playback/%s", which), responseHandler);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -112,8 +112,9 @@ public class PlexClient extends PlexDevice {
   private PlexResponse adjustPlayback(String which) {
 		Logger.d("Adjusting playback with %s", which);
     try {
-      String url = String.format("http://%s:%s/player/playback/%s", address, port, which);
-      return PlexHttpClient.getSync(url);
+      PlexHttpClient.PlexHttpService service = PlexHttpClient.getService(String.format("http://%s:%s", address, port));
+      Call<PlexResponse> call = service.adjustPlayback(which);
+      return call.execute().body();
     } catch (Exception e) {
       e.printStackTrace();
     }
@@ -133,8 +134,14 @@ public class PlexClient extends PlexDevice {
   }
 
   public PlexResponse seekTo(int offset) {
-    String url = String.format("http://%s:%s/player/playback/seekTo?offset=%s", address, port, offset);
-    return PlexHttpClient.getSync(url);
+    try {
+      PlexHttpClient.PlexHttpService service = PlexHttpClient.getService(String.format("http://%s:%s", address, port));
+      Call<PlexResponse> call = service.seekTo(offset);
+      return call.execute().body();
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+    return null;
   }
 
   public boolean isLocalDevice() {

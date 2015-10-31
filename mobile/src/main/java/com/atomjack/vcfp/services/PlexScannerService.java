@@ -4,30 +4,25 @@ import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.res.Resources;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
 
 import com.atomjack.vcfp.GDMService;
 import com.atomjack.shared.Logger;
-import com.atomjack.vcfp.PlexHeaders;
 import com.atomjack.shared.Preferences;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.model.Device;
 import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.PlexServer;
-import com.google.gson.Gson;
-import com.loopj.android.http.AsyncHttpClient;
-import com.loopj.android.http.AsyncHttpResponseHandler;
-import com.loopj.android.http.RequestParams;
-
-import org.simpleframework.xml.Serializer;
-import org.simpleframework.xml.core.Persister;
+import com.atomjack.vcfp.net.PlexHttpClient;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
+import retrofit.Call;
+import retrofit.Callback;
+import retrofit.Response;
 import us.nineworlds.serenity.GDMReceiver;
 
 public class PlexScannerService extends Service {
@@ -47,9 +42,6 @@ public class PlexScannerService extends Service {
 
   private boolean localServerScanFinished = false;
   private boolean remoteServerScanFinished = false;
-
-  private static AsyncHttpClient client = new AsyncHttpClient();
-  private static Serializer serial = new Persister();
 
   private static boolean cancel = false;
 
@@ -196,28 +188,21 @@ public class PlexScannerService extends Service {
   }
 
   public static void refreshResources(String authToken, final RefreshResourcesResponseHandler responseHandler, boolean silent) {
+    Logger.d("Fetching resources from plex.tv");
     cancel = false;
     VoiceControlForPlexApplication.hasDoneClientScan = true;
-//		VoiceControlForPlexApplication.servers = new ConcurrentHashMap<String, PlexServer>();
-    String url = String.format("https://plex.tv/pms/resources?%s=%s", PlexHeaders.XPlexToken, authToken);
-    Logger.d("Fetching %s", url);
-    client.get(url, new RequestParams(), new AsyncHttpResponseHandler() {
+    PlexHttpClient.PlexHttpService service = PlexHttpClient.getService("https://plex.tv");
+    Call<MediaContainer> call = service.getResources(authToken);
+    call.enqueue(new Callback<MediaContainer>() {
       @Override
-      public void onSuccess(int statusCode, org.apache.http.Header[] headers, byte[] responseBody) {
+      public void onResponse(Response<MediaContainer> response) {
         try {
           if(cancel) {
             cancel = false;
             return;
           }
-          MediaContainer mediaContainer = new MediaContainer();
+          MediaContainer mediaContainer = response.body();
 
-          try {
-            mediaContainer = serial.read(MediaContainer.class, new String(responseBody, "UTF-8"));
-          } catch (Resources.NotFoundException e) {
-            e.printStackTrace();
-          } catch (Exception e) {
-            e.printStackTrace();
-          }
           Logger.d("got %d devices", mediaContainer.devices.size());
 
           List<PlexServer> servers = new ArrayList<PlexServer>();
@@ -249,11 +234,6 @@ public class PlexScannerService extends Service {
               }
             });
           }
-
-
-
-
-
         } catch (Exception e) {
           if(responseHandler != null)
             responseHandler.onFailure(0);
@@ -261,15 +241,15 @@ public class PlexScannerService extends Service {
       }
 
       @Override
-      public void onFailure(int statusCode, org.apache.http.Header[] headers, byte[] responseBody, java.lang.Throwable error) {
-        Logger.d("Failure getting resources: %d", statusCode);
+      public void onFailure(Throwable t) {
+        Logger.d("Failure getting resources.");
+        t.printStackTrace();
         if(cancel) {
           cancel = false;
           return;
         }
-        error.printStackTrace();
         if(responseHandler != null)
-          responseHandler.onFailure(statusCode);
+          responseHandler.onFailure(0);
       }
     });
   }

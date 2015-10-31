@@ -305,6 +305,7 @@ public class CastActivity extends PlayerActivity {
 
   @Override
   public void onCastSeek() {
-    showInfoDialog(getString(R.string.please_wait));
+    if(!nowPlayingMedia.getType().equals("music"))
+      showInfoDialog(getString(R.string.please_wait));
   }
 }

@@ -35,7 +35,6 @@ import com.atomjack.shared.SendToDataLayerThread;
 import com.atomjack.shared.WearConstants;
 import com.atomjack.vcfp.BuildConfig;
 import com.atomjack.vcfp.FutureRunnable;
-import com.atomjack.vcfp.PlexHeaders;
 import com.atomjack.shared.Preferences;
 import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.interfaces.ScanHandler;
@@ -45,27 +44,17 @@ import com.atomjack.vcfp.model.MainSetting;
 import com.atomjack.vcfp.model.Pin;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexDevice;
-import com.atomjack.vcfp.model.PlexError;
 import com.atomjack.vcfp.model.PlexServer;
 import com.atomjack.vcfp.model.PlexUser;
 import com.atomjack.vcfp.net.PlexHttpClient;
 import com.atomjack.vcfp.net.PlexHttpUserHandler;
 import com.atomjack.vcfp.net.PlexPinResponseHandler;
 import com.atomjack.vcfp.services.PlexScannerService;
-import com.atomjack.vcfp.services.WearListenerService;
 import com.atomjack.vcfp.tasker.TaskerPlugin;
 import com.cubeactive.martin.inscription.WhatsNewDialog;
 import com.google.android.gms.cast.CastDevice;
 import com.google.android.gms.cast.CastMediaControlIntent;
 import com.google.android.gms.wearable.DataMap;
-import com.loopj.android.http.AsyncHttpClient;
-import com.loopj.android.http.AsyncHttpResponseHandler;
-import com.loopj.android.http.RequestParams;
-
-import org.apache.http.Header;
-import org.apache.http.message.BasicHeader;
-import org.simpleframework.xml.Serializer;
-import org.simpleframework.xml.core.Persister;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -75,9 +64,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
@@ -590,11 +577,7 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 	}
 
 	public void showLogin() {
-		Header[] headers = {
-			new BasicHeader(PlexHeaders.XPlexClientIdentifier, getUUID())
-		};
-
-		PlexHttpClient.getPinCode(headers, new PlexPinResponseHandler() {
+		PlexHttpClient.getPinCode(new PlexPinResponseHandler() {
       @Override
       public void onSuccess(Pin pin) {
         showPin(pin);
@@ -649,72 +632,55 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 		fetchPinTask = new FutureRunnable() {
 			@Override
 			public void run() {
-				AsyncHttpClient hclient = new AsyncHttpClient();
-				String url = String.format("https://plex.tv:443/pins/%d.xml", pin.id);
-				Logger.d("Fetching %s", url);
-				Header[] headers = {
-					new BasicHeader(PlexHeaders.XPlexClientIdentifier, getUUID())
-				};
-				hclient.get(MainActivity.this, url, headers, new RequestParams(), new AsyncHttpResponseHandler() {
-					@Override
-					public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
-						Pin pin = new Pin();
-						Serializer serial = new Persister();
-						try {
-							pin = serial.read(Pin.class, new String(responseBody, "UTF-8"));
-						} catch (Exception e) {
-							Logger.e("Exception parsing response: %s", e.toString());
-						}
-						if(pin.authToken != null) {
-							authToken = pin.authToken;
+				PlexHttpClient.fetchPin(pin.id, new PlexPinResponseHandler() {
+          @Override
+          public void onSuccess(Pin pin) {
+            if(pin.authToken != null) {
+              authToken = pin.authToken;
               VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.AUTHENTICATION_TOKEN, authToken);
-							Header[] sheaders = {
-											new BasicHeader(com.atomjack.vcfp.PlexHeaders.XPlexClientPlatform, "Android"),
-											new BasicHeader(com.atomjack.vcfp.PlexHeaders.XPlexClientIdentifier, getUUID()),
-											new BasicHeader("Accept", "text/xml")
-							};
-							PlexHttpClient.signin(authToken, sheaders, new PlexHttpUserHandler() {
-								@Override
-								public void onSuccess(PlexUser user) {
+              PlexHttpClient.signin(authToken, new PlexHttpUserHandler() {
+                @Override
+                public void onSuccess(PlexUser user) {
+                  Logger.d("Got user: %s", user);
                   VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.PLEX_USERNAME, user.username);
-									Logger.d("Saved username %s", user.username);
-								}
+                  Logger.d("Saved username %s", user.username);
+                }
 
-								@Override
-								public void onFailure(int statusCode, PlexError error) {
+                @Override
+                public void onFailure(int statusCode) {
+                  // TODO: Handle failure
+                }
+              });
+              pinAlert.cancel();
+              Handler mainHandler = new Handler(context.getMainLooper());
+              mainHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                  feedback.m(R.string.logged_in);
+                  switchLogin();
+                  PlexScannerService.refreshResources(authToken, new PlexScannerService.RefreshResourcesResponseHandler() {
+                    @Override
+                    public void onSuccess() {
+                      feedback.t(R.string.servers_refreshed);
+                    }
 
-								}
-							});
-							pinAlert.cancel();
-							Handler mainHandler = new Handler(context.getMainLooper());
-							mainHandler.post(new Runnable() {
-								@Override
-								public void run() {
-									feedback.m(R.string.logged_in);
-									switchLogin();
-									PlexScannerService.refreshResources(authToken, new PlexScannerService.RefreshResourcesResponseHandler() {
-										@Override
-										public void onSuccess() {
-											feedback.t(R.string.servers_refreshed);
-										}
+                    @Override
+                    public void onFailure(int statusCode) {
+                      feedback.e(R.string.remote_scan_error);
+                    }
+                  });
+                }
+              });
+              // We got the auth token, so cancel this task
+              getFuture().cancel(false);
+            }
+          }
 
-										@Override
-										public void onFailure(int statusCode) {
-											feedback.e(R.string.remote_scan_error);
-										}
-									});
-								}
-							});
-							// We got the auth token, so cancel this task
-							getFuture().cancel(false);
-						}
-					}
-
-					@Override
-					public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
-						error.printStackTrace();
-					}
-				});
+          @Override
+          public void onFailure(Throwable error) {
+            error.printStackTrace();
+          }
+        });
 			}
 		};
 		// Set up the schedule service and let fetchPinTask know of the Future object, so the task can cancel
@@ -765,46 +731,33 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 		b.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View view) {
-				Header[] headers = {
-								new BasicHeader(com.atomjack.vcfp.PlexHeaders.XPlexClientPlatform, "Android"),
-								new BasicHeader(com.atomjack.vcfp.PlexHeaders.XPlexClientIdentifier, getUUID()),
-								new BasicHeader("Accept", "text/xml")
-				};
-				PlexHttpClient.signin(usernameInput.getText().toString(), passwordInput.getText().toString(), headers, new PlexHttpUserHandler() {
-					@Override
-					public void onSuccess(PlexUser user) {
+        PlexHttpClient.signin(usernameInput.getText().toString(), passwordInput.getText().toString(), new PlexHttpUserHandler() {
+          @Override
+          public void onSuccess(PlexUser user) {
             VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.AUTHENTICATION_TOKEN, user.authenticationToken);
-						authToken = user.authenticationToken;
+            authToken = user.authenticationToken;
             VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.PLEX_USERNAME, user.username);
-						feedback.m(R.string.logged_in);
-						MenuItem loginItem = menu.findItem(R.id.menu_login);
-						loginItem.setVisible(false);
-						MenuItem logoutItem = menu.findItem(R.id.menu_logout);
-						logoutItem.setVisible(true);
+            feedback.m(R.string.logged_in);
+            MenuItem loginItem = menu.findItem(R.id.menu_login);
+            loginItem.setVisible(false);
+            MenuItem logoutItem = menu.findItem(R.id.menu_logout);
+            logoutItem.setVisible(true);
+            alertD.cancel();
+          }
+
+          @Override
+          public void onFailure(int statusCode) {
+            Logger.e("Failure logging in");
+            String err = getString(R.string.login_error);
+            if(statusCode == 401) {
+              err = getString(R.string.login_incorrect);
+            }
+            feedback.e(err);
 						alertD.cancel();
-					}
-
-					@Override
-					public void onFailure(int statusCode, PlexError error) {
-						Logger.e("Failure logging in");
-						String err = getString(R.string.login_error);
-						if (error.errors != null && error.errors.size() > 0)
-							err = error.errors.get(0);
-						feedback.e(err);
-					}
-
-				});
+          }
+        });
 			}
 		});
-	}
-
-	public String getUUID() {
-		String uuid = VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.UUID, null);
-		if(uuid == null) {
-			uuid = UUID.randomUUID().toString();
-      VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.UUID, uuid);
-		}
-		return uuid;
 	}
 
 	public void importTaskerProject(MenuItem item) {

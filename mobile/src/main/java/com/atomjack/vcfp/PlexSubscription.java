@@ -13,8 +13,6 @@ import com.atomjack.vcfp.model.PlexResponse;
 import com.atomjack.vcfp.net.PlexHttpClient;
 import com.atomjack.vcfp.net.PlexHttpResponseHandler;
 
-import org.apache.http.Header;
-import org.apache.http.message.BasicHeader;
 import org.simpleframework.xml.Serializer;
 import org.simpleframework.xml.core.Persister;
 
@@ -260,16 +258,7 @@ public class PlexSubscription {
     if(client == null)
       return;
     mClient = client;
-    Logger.d("subscribe, client now %s", mClient);
-    QueryString qs = new QueryString("port", String.valueOf(subscriptionPort));
-    qs.add("commandID", String.valueOf(commandId));
-    qs.add("protocol", "http");
-
-    Header[] headers = {
-      new BasicHeader(PlexHeaders.XPlexClientIdentifier, uuid),
-      new BasicHeader(PlexHeaders.XPlexDeviceName, appName)
-    };
-    PlexHttpClient.get(String.format("http://%s:%s/player/timeline/subscribe?%s", mClient.address, mClient.port, qs), headers, new PlexHttpResponseHandler() {
+    PlexHttpClient.subscribe(client, subscriptionPort, commandId, uuid, appName, new PlexHttpResponseHandler() {
       @Override
       public void onSuccess(PlexResponse response) {
         failedHeartbeats = 0;
@@ -323,6 +312,7 @@ public class PlexSubscription {
         }
       }
     });
+
   }
 
   private void onSubscribed() {
@@ -362,48 +352,36 @@ public class PlexSubscription {
     if(listener == null)
       return;
 
-    //if(mSubscribers.size() == 0) {
-      QueryString qs = new QueryString("commandID", String.valueOf(commandId));
-      Logger.d("mClient: %s", mClient);
-      Header[] headers = {
-        new BasicHeader(PlexHeaders.XPlexClientIdentifier, uuid),
-        new BasicHeader(PlexHeaders.XPlexDeviceName, listener.getString(R.string.app_name)),
-        new BasicHeader(PlexHeaders.XPlexTargetClientIdentifier, mClient.machineIdentifier)
-      };
-      PlexHttpClient.get(String.format("http://%s:%s/player/timeline/unsubscribe?%s", mClient.address, mClient.port, qs), headers, new PlexHttpResponseHandler() {
-        @Override
-        public void onSuccess(PlexResponse response) {
-          Logger.d("Unsubscribed");
-          subscribed = false;
-          commandId++;
-          mClient = null;
+    PlexHttpClient.unsubscribe(mClient, commandId, uuid, listener.getString(R.string.app_name), new PlexHttpResponseHandler() {
+      @Override
+      public void onSuccess(PlexResponse response) {
+        Logger.d("Unsubscribed");
+        subscribed = false;
+        commandId++;
+        mClient = null;
 
-          try {
-            serverSocket.close();
-            serverSocket = null;
-          } catch (Exception ex) {
+        try {
+          serverSocket.close();
+          serverSocket = null;
+        } catch (Exception ex) {
 //            ex.printStackTrace();
-          }
-          if(notify)
-            onUnsubscribed();
-          if (onFinish != null)
-            onFinish.run();
         }
-
-        @Override
-        public void onFailure(Throwable error) {
-          // TODO: Handle failure here?
-          Logger.d("failure unsubscribing");
-          subscribed = false;
-          mHandler.removeCallbacks(subscriptionHeartbeat);
+        if(notify)
           onUnsubscribed();
-        }
-      });
-//      if(onFinish != null)
-//        onFinish.run();
-//    } else if(onFinish != null) {
-//      onFinish.run();
-//    }
+        if (onFinish != null)
+          onFinish.run();
+      }
+
+      @Override
+      public void onFailure(Throwable error) {
+        // TODO: Handle failure here?
+        Logger.d("failure unsubscribing");
+        subscribed = false;
+        mHandler.removeCallbacks(subscriptionHeartbeat);
+        onUnsubscribed();
+      }
+    });
+
   }
 
   private void onMessage(final MediaContainer mc) {

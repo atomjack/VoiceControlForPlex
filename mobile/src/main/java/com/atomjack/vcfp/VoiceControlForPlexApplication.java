@@ -46,6 +46,7 @@ import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexServer;
 import com.atomjack.vcfp.model.PlexTrack;
+import com.atomjack.vcfp.net.PlexHttpClient;
 import com.atomjack.vcfp.services.PlexControlService;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.wearable.Asset;
@@ -54,10 +55,7 @@ import com.google.android.gms.wearable.Wearable;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
-import com.loopj.android.http.AsyncHttpClient;
-import com.loopj.android.http.AsyncHttpResponseHandler;
 
-import org.apache.http.Header;
 import org.simpleframework.xml.Serializer;
 import org.simpleframework.xml.core.Persister;
 
@@ -78,6 +76,9 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import cz.fhucho.android.util.SimpleDiskCache;
+import retrofit.Call;
+import retrofit.Callback;
+import retrofit.Response;
 
 public class VoiceControlForPlexApplication extends Application
 {
@@ -261,28 +262,12 @@ public class VoiceControlForPlexApplication extends Application
         @Override
         public void onSuccess(Connection connection) {
           Logger.d("active connection: %s", connection);
-          String url = String.format("http://%s:%s/library/sections/", connection.address, connection.port);
-          if(server.accessToken != null)
-            url += String.format("?%s=%s", PlexHeaders.XPlexToken, server.accessToken);
-          AsyncHttpClient httpClient = new AsyncHttpClient();
-          Logger.d("Fetching %s", url);
-          httpClient.get(url, new AsyncHttpResponseHandler() {
+          PlexHttpClient.PlexHttpService service = PlexHttpClient.getService(connection);
+          Call<MediaContainer> call = service.getLibrarySections(server.accessToken);
+          call.enqueue(new Callback<MediaContainer>() {
             @Override
-            public void onFailure(int i, Header[] headers, byte[] bytes, Throwable throwable) {
-              if(onFinish != null)
-                onFinish.run();
-            }
-
-            @Override
-            public void onSuccess(int statusCode, org.apache.http.Header[] headers, byte[] responseBody) {
-              MediaContainer mc = new MediaContainer();
-              try {
-                mc = serial.read(MediaContainer.class, new String(responseBody, "UTF-8"));
-              } catch (NotFoundException e) {
-                e.printStackTrace();
-              } catch (Exception e) {
-                e.printStackTrace();
-              }
+            public void onResponse(Response<MediaContainer> response) {
+              MediaContainer mc = response.body();
               server.movieSections = new ArrayList<String>();
               server.tvSections = new ArrayList<String>();
               server.musicSections = new ArrayList<String>();
@@ -314,6 +299,11 @@ public class VoiceControlForPlexApplication extends Application
                 onFinish.run();
             }
 
+            @Override
+            public void onFailure(Throwable t) {
+              if(onFinish != null)
+                onFinish.run();
+            }
           });
         }
 

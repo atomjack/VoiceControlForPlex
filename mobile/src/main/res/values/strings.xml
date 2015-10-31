@@ -149,4 +149,5 @@
     <string name="chromecast_video_local_full">Chromecast Video Quality over Local Network</string>
     <string name="chromecast_video_remote_full">Chromecast Video Quality over Remote Network</string>
     <string name="original">Direct Play</string>
+    <string name="login_incorrect">Sorry, but your username or password is incorrect.</string>
 </resources>

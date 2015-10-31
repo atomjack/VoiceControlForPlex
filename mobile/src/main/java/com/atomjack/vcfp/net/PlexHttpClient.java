@@ -1,110 +1,212 @@
 package com.atomjack.vcfp.net;
 
-import android.content.res.Resources;
-import android.os.Looper;
+import android.util.Base64;
 
 import com.atomjack.shared.Logger;
 import com.atomjack.shared.Preferences;
 import com.atomjack.vcfp.PlexHeaders;
-import com.atomjack.vcfp.QueryString;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.interfaces.ActiveConnectionHandler;
+import com.atomjack.vcfp.interfaces.InputStreamHandler;
 import com.atomjack.vcfp.interfaces.PlexPlayQueueHandler;
 import com.atomjack.vcfp.model.Connection;
 import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.Pin;
-import com.atomjack.vcfp.model.PlexError;
+import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexResponse;
 import com.atomjack.vcfp.model.PlexServer;
 import com.atomjack.vcfp.model.PlexUser;
-import com.loopj.android.http.AsyncHttpClient;
-import com.loopj.android.http.AsyncHttpResponseHandler;
-import com.loopj.android.http.BinaryHttpResponseHandler;
-import com.loopj.android.http.RequestParams;
-import com.loopj.android.http.SyncHttpClient;
+import com.squareup.okhttp.Interceptor;
+import com.squareup.okhttp.OkHttpClient;
+import com.squareup.okhttp.Request;
 
-import org.apache.http.Header;
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpStatus;
-import org.apache.http.StatusLine;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicHeader;
-import org.apache.http.params.BasicHttpParams;
-import org.apache.http.params.HttpConnectionParams;
-import org.apache.http.params.HttpParams;
-import org.simpleframework.xml.Serializer;
-import org.simpleframework.xml.core.Persister;
-
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
+import retrofit.Call;
+import retrofit.Callback;
+import retrofit.Response;
+import retrofit.Retrofit;
+import retrofit.SimpleXmlConverterFactory;
+import retrofit.http.GET;
+import retrofit.http.Headers;
+import retrofit.http.POST;
+import retrofit.http.Path;
+import retrofit.http.Query;
+import retrofit.http.QueryMap;
+
 
 public class PlexHttpClient
 {
-  private static SyncHttpClient syncClient = new SyncHttpClient();
-  private static AsyncHttpClient asyncClient = new AsyncHttpClient();
-  private static Serializer serial = new Persister();
+  private static OkHttpClient httpClient = new OkHttpClient();
 
-  public static AsyncHttpClient getClient() {
-    // Return the synchronous HTTP client when the thread is not prepared
-    if (Looper.myLooper() == null)
-      return syncClient;
-    return asyncClient;
+  public interface PlexHttpService {
+    @GET("/library/sections/{section}/search")
+    Call<MediaContainer> searchSection(@Path("section") String section, @Query("type") String type, @Query("query") String query, @Query(PlexHeaders.XPlexToken) String token);
+
+    @GET("/library/metadata/{key}")
+    Call<MediaContainer> getKey(@Path("key") String key, @Query(PlexHeaders.XPlexToken) String token);
+
+    @GET("/{path}")
+    Call<MediaContainer> getMediaContainer(@Path(value="path", encoded = true) String path, @Query(PlexHeaders.XPlexToken) String token);
+
+    @GET("/{path}")
+    Call<PlexResponse> getPlexResponse(@Path(value="path", encoded=true) String path, @QueryMap Map<String, String> options);
+
+    @GET("/player/timeline/subscribe?protocol=http")
+    Call<PlexResponse> subscribe(@retrofit.http.Header(PlexHeaders.XPlexClientIdentifier) String clientId,
+                                 @retrofit.http.Header(PlexHeaders.XPlexDeviceName) String deviceName,
+                                 @Query("port") int subscriptionPort,
+                                 @Query("commandID") int commandId);
+
+    @GET("/player/timeline/unsubscribe")
+    Call<PlexResponse> unsubscribe(@retrofit.http.Header(PlexHeaders.XPlexClientIdentifier) String clientId,
+                                   @retrofit.http.Header(PlexHeaders.XPlexDeviceName) String deviceName,
+                                   @retrofit.http.Header(PlexHeaders.XPlexTargetClientIdentifier) String machineIdentifier,
+                                   @Query("commandID") int commandId);
+
+    @GET("/player/timeline/poll")
+    Call<MediaContainer> pollTimeline(@retrofit.http.Header(PlexHeaders.XPlexClientIdentifier) String clientId,
+                                 @Query("commandID") int commandId);
+
+    @GET("/pins/{pinID}.xml")
+    Call<Pin> fetchPin(@Path(value="pinID", encoded = true) int pinID, @retrofit.http.Header(PlexHeaders.XPlexClientIdentifier) String clientId);
+
+    @Headers("Accept: text/xml")
+    @POST("/users/sign_in.xml")
+    Call<PlexUser> signin(@retrofit.http.Header(PlexHeaders.XPlexClientPlatform) String clientPlatform,
+                          @retrofit.http.Header(PlexHeaders.XPlexClientIdentifier) String clientId,
+                          @Query("auth_token") String authToken);
+
+    @POST("/pins.xml")
+    Call<Pin> getPinCode(@retrofit.http.Header(PlexHeaders.XPlexClientIdentifier) String clientId);
+
+    @POST("/playQueues")
+    Call<MediaContainer> createPlayQueue(@QueryMap Map<String, String> options, @retrofit.http.Header(PlexHeaders.XPlexClientIdentifier) String clientId);
+
+    @GET("/player/playback/{which}")
+    Call<PlexResponse> adjustPlayback(@Path(value="which", encoded=true) String which);
+
+    @GET("/player/playback/seekTo")
+    Call<PlexResponse> seekTo(@Query("offset") int offset);
+
+    @GET("/library/sections")
+    Call<MediaContainer> getLibrarySections(@Query(PlexHeaders.XPlexToken) String accessToken);
+
+    @GET("/pms/resources")
+    Call<MediaContainer> getResources(@Query(PlexHeaders.XPlexToken) String accessToken);
   }
 
-	public static void get(final PlexServer server, final String path, final BinaryHttpResponseHandler responseHandler) {
-    server.findServerConnection(new ActiveConnectionHandler() {
+  public static void getThumb(String url, final InputStreamHandler inputStreamHandler) {
+    Request request = new Request.Builder()
+            .url(url)
+            .build();
+    httpClient.newCall(request).enqueue(new com.squareup.okhttp.Callback() {
       @Override
-      public void onSuccess(Connection connection) {
-        String url = String.format("%s%s", connection.uri, path);
-        if(server.accessToken != null)
-          url += String.format("%s%s=%s", (url.contains("?") ? "&" : "?"), PlexHeaders.XPlexToken, server.accessToken);
-        Logger.d("url: %s", url);
-        getClient().get(url, responseHandler);
+      public void onFailure(Request request, IOException e) {
+        e.printStackTrace();
       }
 
       @Override
-      public void onFailure(int statusCode) {
+      public void onResponse(com.squareup.okhttp.Response response) throws IOException {
+        Logger.d("got %d bytes", response.body().contentLength());
+        inputStreamHandler.onSuccess(response.body().byteStream());
       }
     });
+  }
 
-	}
+  public static PlexHttpService getService(Connection connection) {
+    return getService(String.format(connection.uri));
+  }
 
-	public static void get(final PlexServer server, final String path, final PlexHttpMediaContainerHandler responseHandler) {
+  public static PlexHttpService getService(Connection connection, int timeout) {
+    return getService(String.format(connection.uri), null, null, false, timeout);
+  }
+
+  public static PlexHttpService getService(Connection connection, boolean debug) {
+    return getService(String.format(connection.uri), debug);
+  }
+
+  public static PlexHttpService getService(String url) {
+    return getService(url, false);
+  }
+
+  public static PlexHttpService getService(String url, boolean debug) {
+    return getService(url, null, null, debug);
+  }
+
+  public static PlexHttpService getService(String url, String username, String password) {
+    return getService(url, username, password, false);
+  }
+
+  public static PlexHttpService getService(String url, String username, String password, boolean debug) {
+    return getService(url, username, password, debug, 0);
+  }
+
+  public static PlexHttpService getService(String url, String username, String password, boolean debug, int timeout) {
+    OkHttpClient client = new OkHttpClient();
+    if(timeout > 0)
+      client.setReadTimeout(timeout, TimeUnit.SECONDS);
+    Retrofit.Builder builder = new Retrofit.Builder()
+            .baseUrl(url)
+            .client(client)
+            .addConverterFactory(SimpleXmlConverterFactory.create());
+
+    if(username != null && password != null) {
+      String creds = username + ":" + password;
+      final String basic = "Basic " + Base64.encodeToString(creds.getBytes(), Base64.NO_WRAP);
+      httpClient.interceptors().add(new Interceptor() {
+        @Override
+        public com.squareup.okhttp.Response intercept(Chain chain) throws IOException {
+          Request original = chain.request();
+
+          Request.Builder requestBuilder = original.newBuilder()
+                  .header("Authorization", basic)
+          .header("Accept", "text/xml")
+          .method(original.method(), original.body());
+
+          Request request = requestBuilder.build();
+          return chain.proceed(request);
+        }
+      });
+    }
+    if(debug) {
+      httpClient.interceptors().add(new Interceptor() {
+        @Override
+        public com.squareup.okhttp.Response intercept(Chain chain) throws IOException {
+          try {
+            com.squareup.okhttp.Response response = chain.proceed(chain.request());
+            Logger.d("Retrofit@Response: %s", response.body().string());
+            return response;
+          } catch (IOException e) {}
+          return null;
+        }
+      });
+    }
+    Retrofit retrofit = builder.client(httpClient).build();
+    return retrofit.create(PlexHttpService.class);
+  }
+
+  public static void searchServer(final PlexServer server, final String section, final String queryTerm, final PlexHttpMediaContainerHandler responseHandler) {
     server.findServerConnection(new ActiveConnectionHandler() {
       @Override
       public void onSuccess(Connection connection) {
-        String url = String.format("%s%s", connection.uri, path);
-        if (server.accessToken != null)
-          url += String.format("%s%s=%s", (url.contains("?") ? "&" : "?"), PlexHeaders.XPlexToken, server.accessToken);
-        Logger.d("Fetching %s", url);
-        getClient().get(url, new RequestParams(), new AsyncHttpResponseHandler() {
+        PlexHttpService service = getService(connection.uri);
+        Call<MediaContainer> call = service.searchSection(section, "1", queryTerm, server.accessToken);
+        call.enqueue(new Callback<MediaContainer>() {
           @Override
-          public void onSuccess(int statusCode, org.apache.http.Header[] headers, byte[] responseBody) {
-            try {
-              MediaContainer mediaContainer = new MediaContainer();
-
-              try {
-                mediaContainer = serial.read(MediaContainer.class, new String(responseBody, "UTF-8"));
-              } catch (Resources.NotFoundException e) {
-                e.printStackTrace();
-              } catch (Exception e) {
-                e.printStackTrace();
-              }
-
-              responseHandler.onSuccess(mediaContainer);
-            } catch (Exception e) {
-              e.printStackTrace();
-            }
+          public void onResponse(Response<MediaContainer> response) {
+            responseHandler.onSuccess(response.body());
           }
 
           @Override
-          public void onFailure(int statusCode, org.apache.http.Header[] headers, byte[] responseBody, java.lang.Throwable error) {
+          public void onFailure(Throwable t) {
             if (responseHandler != null)
-              responseHandler.onFailure(error);
+              responseHandler.onFailure(t);
           }
         });
       }
@@ -117,296 +219,219 @@ public class PlexHttpClient
     });
   }
 
-  public static void get(String url, final Header[] theseHeaders, final PlexHttpResponseHandler responseHandler) {
-    Logger.d("Fetching %s", url);
-    addHeaders(theseHeaders);
-    getClient().get(url, new RequestParams(), new AsyncHttpResponseHandler() {
+	public static void get(final PlexServer server, final String path, final PlexHttpMediaContainerHandler responseHandler) {
+    server.findServerConnection(new ActiveConnectionHandler() {
       @Override
-      public void onSuccess(int statusCode, org.apache.http.Header[] headers, byte[] responseBody) {
-        // Remove the headers we just added
-        removeHeaders(theseHeaders);
-        PlexResponse r = new PlexResponse();
-        try {
-          r = serial.read(PlexResponse.class, new String(responseBody, "UTF-8"));
-        } catch (Exception e) {
-          Logger.e("Exception parsing response: %s", e.toString());
-        }
-        if (responseHandler != null)
-          responseHandler.onSuccess(r);
+      public void onSuccess(Connection connection) {
+
+        PlexHttpService service = getService(connection.uri);
+        Logger.d("using path %s %s", connection.uri, path.substring(1));
+        Call<MediaContainer> call = service.getMediaContainer(path.substring(1), server.accessToken);
+        call.enqueue(new Callback<MediaContainer>() {
+          @Override
+          public void onResponse(Response<MediaContainer> response) {
+            responseHandler.onSuccess(response.body());
+          }
+
+          @Override
+          public void onFailure(Throwable t) {
+            if (responseHandler != null)
+              responseHandler.onFailure(t);
+          }
+        });
       }
 
       @Override
-      public void onFailure(int statusCode, org.apache.http.Header[] headers, byte[] responseBody, java.lang.Throwable error) {
-        removeHeaders(theseHeaders);
+      public void onFailure(int statusCode) {
         if (responseHandler != null)
-          responseHandler.onFailure(error);
+          responseHandler.onFailure(new Throwable());
       }
     });
   }
 
-  private static void addHeaders(Header[] headers) {
-    for(Header header : headers) {
-      getClient().addHeader(header.getName(), header.getValue());
-    }
-  }
-
-  private static void removeHeaders(Header[] headers) {
-    for(Header header : headers) {
-      getClient().removeHeader(header.getName());
-    }
-  }
-
-  public static void get(String url, final Header[] theseHeaders, final PlexHttpMediaContainerHandler responseHandler) {
-    Logger.d("Fetching %s", url);
-    addHeaders(theseHeaders);
-    getClient().get(url, new RequestParams(), new AsyncHttpResponseHandler() {
+  public static void subscribe(PlexClient client, int subscriptionPort, int commandId, String uuid, String deviceName, final PlexHttpResponseHandler responseHandler) {
+    String url = String.format("http://%s:%s", client.address, client.port);
+    PlexHttpService service = getService(url);
+    Call<PlexResponse> call = service.subscribe(uuid, deviceName, subscriptionPort, commandId);
+    call.enqueue(new Callback<PlexResponse>() {
       @Override
-      public void onSuccess(int statusCode, org.apache.http.Header[] headers, byte[] responseBody) {
-        removeHeaders(theseHeaders);
-        MediaContainer mediaContainer = new MediaContainer();
-
-        try {
-          mediaContainer = serial.read(MediaContainer.class, new String(responseBody, "UTF-8"));
-        } catch (Resources.NotFoundException e) {
-          e.printStackTrace();
-        } catch (Exception e) {
-          e.printStackTrace();
-        }
-
-        responseHandler.onSuccess(mediaContainer);
+      public void onResponse(Response<PlexResponse> response) {
+        if (responseHandler != null)
+          responseHandler.onSuccess(response.body());
       }
 
       @Override
-      public void onFailure(int statusCode, org.apache.http.Header[] headers, byte[] responseBody, java.lang.Throwable error) {
-        removeHeaders(theseHeaders);
+      public void onFailure(Throwable t) {
         if (responseHandler != null)
-          responseHandler.onFailure(error);
+          responseHandler.onFailure(t);
       }
     });
+  }
+
+  public static void unsubscribe(PlexClient client, int commandId, String uuid, String deviceName, final PlexHttpResponseHandler responseHandler) {
+    String url = String.format("http://%s:%s", client.address, client.port);
+    PlexHttpService service = getService(url);
+    Call<PlexResponse> call = service.unsubscribe(uuid, deviceName, client.machineIdentifier, commandId);
+    call.enqueue(new Callback<PlexResponse>() {
+      @Override
+      public void onResponse(Response<PlexResponse> response) {
+        responseHandler.onSuccess(response.body());
+      }
+
+      @Override
+      public void onFailure(Throwable t) {
+        responseHandler.onFailure(t);
+      }
+    });
+
   }
 
   public static void createPlayQueue(Connection connection, PlexMedia media, String transientToken, final PlexPlayQueueHandler responseHandler) {
-    QueryString qs = new QueryString("type", media.getType());
-    qs.add("next", "0");
+    Logger.d("[666] Creating play queue.");
+    Map qs = new HashMap<>();
+    qs.put("type", media.getType());
+    qs.put("next", "0");
+
     boolean hasOffset = media.viewOffset != null && Integer.parseInt(media.viewOffset) > 0;
     if(media.isMovie() && !hasOffset) {
-      qs.add("extrasPrefixCount", Integer.toString(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.NUM_CINEMA_TRAILERS, 0)));
+      qs.put("extrasPrefixCount", Integer.toString(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.NUM_CINEMA_TRAILERS, 0)));
     }
-    qs.add("uri", String.format("library://%s/item/%%2flibrary%%2fmetadata%%2f%s", media.server.machineIdentifier, media.key));
-    qs.add("window", "50"); // no idea what this is for
+    qs.put("uri", String.format("library://%s/item/%%2flibrary%%2fmetadata%%2f%s", media.server.machineIdentifier, media.key));
+    qs.put("window", "50"); // no idea what this is for
     if (transientToken != null)
-      qs.add("token", transientToken);
+      qs.put("token", transientToken);
     if (media.server.accessToken != null)
-      qs.add(PlexHeaders.XPlexToken, media.server.accessToken);
+      qs.put(PlexHeaders.XPlexToken, media.server.accessToken);
 
-    Header[] headers = {
-            new BasicHeader(PlexHeaders.XPlexClientIdentifier, VoiceControlForPlexApplication.getUUID())
-    };
-    String url = String.format("http://%s:%s/playQueues?%s", connection.address, connection.port, qs);
-    addHeaders(headers);
-    getClient().post(url, new RequestParams(), new AsyncHttpResponseHandler() {
+    Logger.d("Qs: ", qs);
+    PlexHttpService service = getService(String.format("http://%s:%s", connection.address, connection.port));
+    Call<MediaContainer> call = service.createPlayQueue(qs, VoiceControlForPlexApplication.getUUID());
+    call.enqueue(new Callback<MediaContainer>() {
       @Override
-      public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
-        MediaContainer mediaContainer = new MediaContainer();
-
-        try {
-          mediaContainer = serial.read(MediaContainer.class, new String(responseBody, "UTF-8"));
-        } catch (Resources.NotFoundException e) {
-          e.printStackTrace();
-        } catch (Exception e) {
-          e.printStackTrace();
-        }
-
+      public void onResponse(Response<MediaContainer> response) {
         if (responseHandler != null)
-          responseHandler.onSuccess(mediaContainer);
-
+          responseHandler.onSuccess(response.body());
       }
 
       @Override
-      public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
-        Logger.d("createPlayQueue failure: %s", new String(responseBody));
+      public void onFailure(Throwable t) {
+        Logger.d("createPlayQueue failure.");
+        t.printStackTrace();
       }
     });
   }
 
-	public static void get(String url, final PlexHttpResponseHandler responseHandler) {
-		Logger.d("Fetching %s", url);
-    getClient().get(url, new RequestParams(), new AsyncHttpResponseHandler() {
+  public static void get(String baseHostname, String path, final PlexHttpResponseHandler responseHandler) {
+    PlexHttpService service = getService(baseHostname);
+
+    Call<PlexResponse> call = service.getPlexResponse(path.replaceFirst("^/", ""), null);
+    call.enqueue(new Callback<PlexResponse>() {
       @Override
-      public void onSuccess(int statusCode, org.apache.http.Header[] headers, byte[] responseBody) {
-        Logger.d("Response: %s", new String(responseBody));
-        PlexResponse r = new PlexResponse();
-        try {
-          r = serial.read(PlexResponse.class, new String(responseBody, "UTF-8"));
-        } catch (Exception e) {
-          Logger.e("Exception parsing response: %s", e.toString());
-        }
+      public void onResponse(Response<PlexResponse> response) {
         if (responseHandler != null)
-          responseHandler.onSuccess(r);
+          responseHandler.onSuccess(response.body());
       }
 
       @Override
-      public void onFailure(int statusCode, org.apache.http.Header[] headers, byte[] responseBody, java.lang.Throwable error) {
+      public void onFailure(Throwable t) {
         if (responseHandler != null)
-          responseHandler.onFailure(error);
+          responseHandler.onFailure(t);
       }
     });
-	}
-
-	public static void getPinCode(final Header[] theseHeaders, final PlexPinResponseHandler responseHandler) {
-    addHeaders(theseHeaders);
-    getClient().post("https://plex.tv:443/pins.xml", new RequestParams(), new AsyncHttpResponseHandler() {
-      @Override
-      public void onSuccess(int statusCode, org.apache.http.Header[] headers, byte[] responseBody) {
-        removeHeaders(theseHeaders);
-
-        Pin pin = new Pin();
-        try {
-          pin = serial.read(Pin.class, new String(responseBody, "UTF-8"));
-        } catch (Exception e) {
-          Logger.e("Exception parsing response: %s", e.toString());
-        }
-        responseHandler.onSuccess(pin);
-      }
-
-      @Override
-      public void onFailure(int statusCode, org.apache.http.Header[] headers, byte[] responseBody, java.lang.Throwable error) {
-        removeHeaders(theseHeaders);
-        responseHandler.onFailure(error);
-      }
-    });
-	}
-
-	public static void signin(String authToken, Header[] headers, final PlexHttpUserHandler responseHandler) {
-		signin(null, null, authToken, headers, responseHandler);
-	}
-
-	public static void signin(String username, String password, Header[] headers, final PlexHttpUserHandler responseHandler) {
-		signin(username, password, null, headers, responseHandler);
-	}
-
-	public static void signin(String username, String password, String authToken, final Header[] theseHeaders, final PlexHttpUserHandler responseHandler) {
-		if(username != null && password != null)
-      getClient().setBasicAuth(username, password);
-		String url = "https://plex.tv/users/sign_in.xml";
-		if(authToken != null)
-			url += "?auth_token=" + authToken;
-    addHeaders(theseHeaders);
-    getClient().post(url, new RequestParams(), new AsyncHttpResponseHandler() {
-      @Override
-      public void onSuccess(int statusCode, org.apache.http.Header[] headers, byte[] responseBody) {
-        removeHeaders(theseHeaders);
-        Logger.d("signin success: %d", statusCode);
-        PlexUser u = new PlexUser();
-        try {
-          u = serial.read(PlexUser.class, new String(responseBody, "UTF-8"));
-        } catch (Exception e) {
-          Logger.e("Exception parsing response: %s", e.toString());
-        }
-        responseHandler.onSuccess(u);
-      }
-
-      @Override
-      public void onFailure(int statusCode, org.apache.http.Header[] headers, byte[] responseBody, java.lang.Throwable error) {
-        removeHeaders(theseHeaders);
-        if (responseBody != null)
-          Logger.d("body: %s", new String(responseBody));
-        PlexError er = new PlexError();
-        try {
-          er = serial.read(PlexError.class, new String(responseBody, "UTF-8"));
-        } catch (Exception e) {
-          Logger.e("Exception parsing response: %s", e.toString());
-        }
-        Logger.d("error: %s", er.errors);
-        responseHandler.onFailure(statusCode, er);
-      }
-    });
-	}
-
-  public static PlexResponse getSync(String url) {
-    String body = getSyncBody(url, null);
-    PlexResponse r;
-    try {
-      r = serial.read(PlexResponse.class, body);
-    } catch (Exception e) {
-      Logger.e("Exception parsing response: %s", e.toString());
-      e.printStackTrace();
-      if(body.equals("")) {
-        // Roku doesn't return anything in the response body, so let's just assume everything worked
-        r = new PlexResponse();
-        r.code = "200";
-      } else
-        return null;
-    }
-    return r;
   }
 
-  public static MediaContainer getSync(String url, Header[] headers) {
-    String body = getSyncBody(url, headers);
-    MediaContainer mc;
-    try {
-      mc = serial.read(MediaContainer.class, body);
-    } catch (Exception e) {
-      Logger.e("Exception parsing response: %s", e.toString());
-      return null;
-    }
-    return mc;
+	public static void getPinCode(final PlexPinResponseHandler responseHandler) {
+    PlexHttpService service = getService("https://plex.tv:443");
+    Call<Pin> call = service.getPinCode(VoiceControlForPlexApplication.getUUID());
+    call.enqueue(new Callback<Pin>() {
+      @Override
+      public void onResponse(Response<Pin> response) {
+        responseHandler.onSuccess(response.body());
+      }
+
+      @Override
+      public void onFailure(Throwable t) {
+        responseHandler.onFailure(t);
+      }
+    });
+	}
+
+  public static void signin(String authToken, final PlexHttpUserHandler responseHandler) {
+    signin(null, null, authToken, responseHandler);
+  }
+
+  public static void signin(String username, String password, final PlexHttpUserHandler responseHandler) {
+    signin(username, password, null, responseHandler);
+  }
+
+  public static void signin(String username, String password, String authToken, final PlexHttpUserHandler responseHandler) {
+    PlexHttpService service = getService("https://plex.tv", username, password, false);
+    Call<PlexUser> call = service.signin("Android", VoiceControlForPlexApplication.getUUID(), authToken);
+    call.enqueue(new Callback<PlexUser>() {
+      @Override
+      public void onResponse(Response<PlexUser> response) {
+        if(response.code() == 200)
+          responseHandler.onSuccess(response.body());
+        else if(response.code() == 401) {
+          responseHandler.onFailure(response.code());
+        }
+      }
+
+      @Override
+      public void onFailure(Throwable t) {
+        t.printStackTrace();
+        responseHandler.onFailure(0);
+      }
+    });
   }
 
   public static byte[] getSyncBytes(String url) throws SocketTimeoutException {
+    Request request = new Request.Builder()
+            .url(url)
+            .build();
     try {
-      HttpGet get = new HttpGet(url);
-      HttpParams httpParameters = new BasicHttpParams();
-      int timeoutConnection = 3000;
-      HttpConnectionParams.setConnectionTimeout(httpParameters, timeoutConnection);
-      int timeoutSocket = 5000;
-      HttpConnectionParams.setSoTimeout(httpParameters, timeoutSocket);
-
-
-      HttpClient httpclient = new DefaultHttpClient(httpParameters);
-
-      HttpResponse response = httpclient.execute(get);
-      StatusLine statusLine = response.getStatusLine();
-      if (statusLine.getStatusCode() == HttpStatus.SC_OK) {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        response.getEntity().writeTo(out);
-        out.close();
-        return out.toByteArray();
-      } else {
-        //Closes the connection.
-        response.getEntity().getContent().close();
-        throw new IOException(statusLine.getReasonPhrase());
-      }
-    } catch (Exception ex) {
+      com.squareup.okhttp.Response response = httpClient.newCall(request).execute();
+      if (!response.isSuccessful()) throw new IOException("Unexpected code " + response);
+      return response.body().bytes();
+    } catch (IOException ex) {
       ex.printStackTrace();
     }
     return null;
   }
 
-  public static String getSyncBody(String url, Header[] headers) {
-    try {
-      HttpClient httpclient = new DefaultHttpClient();
-      HttpGet get = new HttpGet(url);
-      if(headers != null) {
-        get.setHeaders(headers);
+  public static void getClientTimeline(PlexClient client, final int commandId, final PlexHttpMediaContainerHandler responseHandler) {
+    String url = String.format("http://%s:%s", client.address, client.port);
+    PlexHttpService service = getService(url);
+    Logger.d("Polling timeline");
+    Call<MediaContainer> call = service.pollTimeline(VoiceControlForPlexApplication.getInstance().prefs.getUUID(), commandId);
+    call.enqueue(new Callback<MediaContainer>() {
+      @Override
+      public void onResponse(Response<MediaContainer> response) {
+        responseHandler.onSuccess(response.body());
       }
-      HttpResponse response = httpclient.execute(get);
-      StatusLine statusLine = response.getStatusLine();
-      if (statusLine.getStatusCode() == HttpStatus.SC_OK) {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        response.getEntity().writeTo(out);
-        out.close();
-        String body = out.toString();
-        return body;
-      } else {
-        //Closes the connection.
-        response.getEntity().getContent().close();
-        throw new IOException(statusLine.getReasonPhrase());
+
+      @Override
+      public void onFailure(Throwable t) {
+        responseHandler.onFailure(t);
       }
-    } catch (Exception ex) {
-      ex.printStackTrace();
-    }
-    return null;
+    });
+  }
+
+  public static void fetchPin(int pinID, final PlexPinResponseHandler responseHandler) {
+    String url = "https://plex.tv:443";
+    PlexHttpService service = getService(url);
+    Call<Pin> call = service.fetchPin(pinID, VoiceControlForPlexApplication.getInstance().prefs.getUUID());
+    call.enqueue(new Callback<Pin>() {
+      @Override
+      public void onResponse(Response<Pin> response) {
+        responseHandler.onSuccess(response.body());
+      }
+
+      @Override
+      public void onFailure(Throwable t) {
+        responseHandler.onFailure(t);
+      }
+    });
   }
 }
 

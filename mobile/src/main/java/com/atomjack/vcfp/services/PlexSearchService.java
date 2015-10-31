@@ -10,8 +10,10 @@ import android.speech.RecognizerIntent;
 import android.support.v7.media.MediaRouteSelector;
 import android.support.v7.media.MediaRouter;
 
+import com.atomjack.shared.PlayerState;
 import com.atomjack.shared.SendToDataLayerThread;
 import com.atomjack.shared.WearConstants;
+import com.atomjack.shared.model.Timeline;
 import com.atomjack.vcfp.Utils;
 import com.atomjack.vcfp.interfaces.ActiveConnectionHandler;
 import com.atomjack.vcfp.interfaces.AfterTransientTokenRequest;
@@ -157,7 +159,7 @@ public class PlexSearchService extends Service {
 		if(intent.getAction() != null) {
       if (intent.getAction().equals(PlexScannerService.ACTION_SERVER_SCAN_FINISHED)) {
         // We just scanned for servers and are returning from that, so set the servers we found
-        // and then figure out which mClient to play to
+        // and then figure out which client to play to
         Logger.d("Got back from scanning for servers.");
         videoPlayed = false;
         plexmediaServers = VoiceControlForPlexApplication.servers;
@@ -674,17 +676,38 @@ public class PlexSearchService extends Service {
         @Override
         public void run() {
           Logger.d("[ffr] Skipping ahead %d seconds", seconds);
-          int currentOffset = 0;
           if(client.isCastClient) {
-            currentOffset = Integer.parseInt(castPlayerManager.getNowPlayingMedia().viewOffset);
+            int currentOffset = Integer.parseInt(castPlayerManager.getNowPlayingMedia().viewOffset);
+            Logger.d("[ffr] currentOffset: %d", currentOffset);
+            seekTo(currentOffset + (seconds * 1000));
           } else {
-            NowPlayingActivity listener = (NowPlayingActivity)plexSubscription.getListener();
-            if (listener != null) {
-              currentOffset = Integer.parseInt(listener.getNowPlayingMedia().viewOffset);
-            }
+            PlexHttpClient.getClientTimeline(client, 0, new PlexHttpMediaContainerHandler() {
+              @Override
+              public void onSuccess(MediaContainer mediaContainer) {
+                List<Timeline> timelines = mediaContainer.timelines;
+                int currentTime = -1;
+                if(timelines != null) {
+                  for (Timeline timeline : timelines) {
+                    if(!PlayerState.getState(timeline).equals(PlayerState.STOPPED))
+                      currentTime = timeline.time;
+                  }
+                }
+                if(currentTime > -1) {
+                  Logger.d("[ffr] currentOffset: %d", currentTime);
+                  seekTo(currentTime + (seconds * 1000));
+                } else {
+                  // TODO: Handle failure
+                }
+              }
+
+              @Override
+              public void onFailure(Throwable error) {
+                Logger.d("Failure getting client timeline");
+                error.printStackTrace();
+              }
+            });
           }
-          Logger.d("[ffr] currentOffset: %d", currentOffset);
-          seekTo((currentOffset + seconds) * 1000);
+
         }
       };
     }
@@ -705,17 +728,43 @@ public class PlexSearchService extends Service {
         @Override
         public void run() {
           Logger.d("[ffr] Rewinding %d seconds", seconds);
-          int currentOffset = 0;
+					int currentOffset;
           if(client.isCastClient) {
             currentOffset = Integer.parseInt(castPlayerManager.getNowPlayingMedia().viewOffset);
+            Logger.d("[ffr] currentOffset: %d", currentOffset);
+            seekTo(currentOffset - (seconds * 1000));
           } else {
+            PlexHttpClient.getClientTimeline(client, 0, new PlexHttpMediaContainerHandler() {
+              @Override
+              public void onSuccess(MediaContainer mediaContainer) {
+                List<Timeline> timelines = mediaContainer.timelines;
+                int currentTime = -1;
+                if(timelines != null) {
+                  for (Timeline timeline : timelines) {
+                    if(!PlayerState.getState(timeline).equals(PlayerState.STOPPED))
+                      currentTime = timeline.time;
+                  }
+                }
+                if(currentTime > -1) {
+                  Logger.d("[ffr] currentOffset: %d", currentTime);
+                  seekTo(currentTime - (seconds * 1000));
+                } else {
+                  // TODO: Handle failure
+                }
+              }
+
+              @Override
+              public void onFailure(Throwable error) {
+                Logger.d("Failure getting client timeline");
+                error.printStackTrace();
+              }
+            });
+
             NowPlayingActivity listener = (NowPlayingActivity)plexSubscription.getListener();
             if (listener != null) {
               currentOffset = Integer.parseInt(listener.getNowPlayingMedia().viewOffset);
             }
           }
-          Logger.d("[ffr] currentOffset: %d", currentOffset);
-          seekTo((currentOffset - seconds) * 1000);
         }
       };
     }
@@ -884,6 +933,7 @@ public class PlexSearchService extends Service {
 	}
 
   private void seekTo(int offset) {
+    Logger.d("Seeking to %d", offset);
     if(client.isCastClient) {
       castPlayerManager.seekTo(offset / 1000);
     } else {
@@ -930,38 +980,37 @@ public class PlexSearchService extends Service {
 					}
 					for(int i=0;i<server.movieSections.size();i++) {
 						String section = server.movieSections.get(i);
-						String path = String.format("/library/sections/%s/search?type=1&query=%s", section, queryTerm);
-						PlexHttpClient.get(server, path, new PlexHttpMediaContainerHandler()
-						{
-							@Override
-							public void onSuccess(MediaContainer mc)
-							{
-								server.movieSectionsSearched++;
-								for(int j=0;j<mc.videos.size();j++) {
-									PlexVideo video = mc.videos.get(j);
-									if(compareTitle(video.title.toLowerCase(), queryTerm.toLowerCase())) {
-										video.server = server;
-										video.showTitle = mc.grandparentTitle;
-                    video.parentArt = mc.art;
-										videos.add(video);
-									}
-								}
-								Logger.d("Videos: %d", mc.videos.size());
-								Logger.d("%d sections searched out of %d", server.movieSectionsSearched, server.movieSections.size());
-								if(server.movieSections.size() == server.movieSectionsSearched) {
-									serversSearched++;
-									if(serversSearched == plexmediaServers.size()) {
-										onMovieSearchFinished(queryTerm);
-									}
-								}
-							}
+//						String path = String.format("/library/sections/%s/search?type=1&query=%s", section, queryTerm.replace("&", "%26").replaceAll(" ", "%20"));
 
-							@Override
-							public void onFailure(Throwable error) {
-								error.printStackTrace();
-								feedback.e(getResources().getString(R.string.got_error), error.getMessage());
-							}
-						});
+            PlexHttpClient.searchServer(server, section, queryTerm, new PlexHttpMediaContainerHandler() {
+              @Override
+              public void onSuccess(MediaContainer mc) {
+                server.movieSectionsSearched++;
+                for (int j = 0; j < mc.videos.size(); j++) {
+                  PlexVideo video = mc.videos.get(j);
+                  if (compareTitle(video.title.toLowerCase(), queryTerm.toLowerCase())) {
+                    video.server = server;
+                    video.showTitle = mc.grandparentTitle;
+                    video.parentArt = mc.art;
+                    videos.add(video);
+                  }
+                }
+                Logger.d("Videos: %d", mc.videos.size());
+                Logger.d("%d sections searched out of %d", server.movieSectionsSearched, server.movieSections.size());
+                if (server.movieSections.size() == server.movieSectionsSearched) {
+                  serversSearched++;
+                  if (serversSearched == plexmediaServers.size()) {
+                    onMovieSearchFinished(queryTerm);
+                  }
+                }
+              }
+
+              @Override
+              public void onFailure(Throwable error) {
+                error.printStackTrace();
+                feedback.e(getResources().getString(R.string.got_error), error.getMessage());
+              }
+            });
 					}
 				}
 
@@ -977,6 +1026,12 @@ public class PlexSearchService extends Service {
 	}
 
 	private static Boolean compareTitle(String title, String queryTerm) {
+    // Replace & in the title with "and"
+//    title = title.replace("&", "and");
+
+    // Strip out some other punctuation from the title, like periods and commas
+    title = title.replaceAll("[\\.,]", "");
+
 		// First, check if the two terms are equal
 		if(title.toLowerCase().equals(queryTerm.toLowerCase()))
 			return true;
@@ -1046,22 +1101,24 @@ public class PlexSearchService extends Service {
       @Override
       public void onSuccess(MediaContainer mediaContainer) {
         PlexMedia theMedia = null;
-        if(media instanceof PlexVideo)
+        if (media instanceof PlexVideo)
           theMedia = mediaContainer.videos.get(0);
-        else if(media instanceof PlexTrack)
+        else if (media instanceof PlexTrack)
           theMedia = mediaContainer.tracks.get(0);
-        if(theMedia != null) {
+        if (theMedia != null) {
           theMedia.server = media.server;
           playMedia(theMedia);
           onActionFinished(WearConstants.SPEECH_QUERY_RESULT, false, theMedia);
         } else {
           // TODO: Handle failure
+          Logger.d("Failed!");
         }
       }
 
       @Override
       public void onFailure(Throwable error) {
         // TODO: Handle failure
+        error.printStackTrace();
       }
     });
   }
@@ -1138,15 +1195,14 @@ public class PlexSearchService extends Service {
                   Intent sendIntent = new Intent(PlexSearchService.this, CastActivity.class);
                   sendIntent.setAction(com.atomjack.shared.Intent.CAST_MEDIA);
                   sendIntent.putExtra(WearConstants.FROM_WEAR, fromWear);
-                  sendIntent.putExtra(com.atomjack.shared.Intent.EXTRA_MEDIA, mediaContainer.videos.get(0));
+                  sendIntent.putExtra(com.atomjack.shared.Intent.EXTRA_MEDIA, media instanceof PlexTrack ? mediaContainer.tracks.get(0) : mediaContainer.videos.get(0));
                   sendIntent.putParcelableArrayListExtra(com.atomjack.shared.Intent.EXTRA_ALBUM, media instanceof PlexTrack ? (ArrayList)mediaContainer.tracks : (ArrayList)mediaContainer.videos);
                   sendIntent.putExtra(com.atomjack.shared.Intent.EXTRA_CLIENT, client);
                   sendIntent.putExtra("resume", resumePlayback);
                   sendIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                   startActivity(sendIntent);
                 } else {
-                  String url = String.format("http://%s:%s/player/playback/playMedia?%s", client.address, client.port, qs);
-                  PlexHttpClient.get(url, new PlexHttpResponseHandler() {
+                  PlexHttpClient.get(String.format("http://%s:%s", client.address, client.port), String.format("player/playback/playMedia?%s", qs), new PlexHttpResponseHandler() {
                     @Override
                     public void onSuccess(PlexResponse r) {
                       // If the host we're playing on is this device, we don't wanna do anything else here.
@@ -1664,6 +1720,7 @@ public class PlexSearchService extends Service {
 	}
 
 	private void searchForAlbum(final String artist, final String album) {
+    albums.clear();
     if(!artist.equals(""))
       feedback.m(getString(R.string.searching_for_album), album, artist);
     else

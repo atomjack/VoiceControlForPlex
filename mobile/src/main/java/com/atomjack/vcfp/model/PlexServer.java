@@ -14,15 +14,16 @@ import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.net.PlexHttpClient;
 import com.atomjack.vcfp.net.PlexHttpMediaContainerHandler;
 import com.atomjack.vcfp.net.PlexHttpResponseHandler;
-import com.loopj.android.http.AsyncHttpClient;
-import com.loopj.android.http.AsyncHttpResponseHandler;
 
-import org.apache.http.Header;
 import org.simpleframework.xml.Root;
 
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+
+import retrofit.Call;
+import retrofit.Callback;
+import retrofit.Response;
 
 @Root(strict=false)
 public class PlexServer extends PlexDevice {
@@ -169,48 +170,45 @@ public class PlexServer extends PlexDevice {
     testServerConnection(connection, new ServerTestHandler() {
       @Override
       public void onFinish(int statusCode, boolean available) {
-        if(available) {
-          // This connection replied, so let's use it
-          activeConnection = connections.get(connectionIndex);
-          activeConnectionExpires = Calendar.getInstance();
-          activeConnectionExpires.set(Calendar.HOUR, 1);
-          activeConnectionHandler.onSuccess(activeConnection);
-        } else {
-          int newConnectionIndex = connectionIndex + 1;
-          if(connections.size() <= newConnectionIndex)
+				if(statusCode != 200) {
+					if(activeConnectionHandler != null)
             activeConnectionHandler.onFailure(statusCode);
-          else
-            findServerConnection(newConnectionIndex, activeConnectionHandler);
-        }
+				} else {
+					if (available) {
+						// This connection replied, so let's use it
+						activeConnection = connections.get(connectionIndex);
+						activeConnectionExpires = Calendar.getInstance();
+						activeConnectionExpires.set(Calendar.HOUR, 1);
+						activeConnectionHandler.onSuccess(activeConnection);
+					} else {
+						int newConnectionIndex = connectionIndex + 1;
+						if (connections.size() <= newConnectionIndex)
+							activeConnectionHandler.onFailure(statusCode);
+						else
+							findServerConnection(newConnectionIndex, activeConnectionHandler);
+					}
+				}
       }
     });
   }
 
 	private void testServerConnection(final Connection connection, final ServerTestHandler handler) {
-		AsyncHttpClient httpClient = new AsyncHttpClient();
+    Logger.d("testServerConnection: fetching %s", connection.uri);
+    PlexHttpClient.PlexHttpService service = PlexHttpClient.getService(connection, 2);
+    Call<MediaContainer> call = service.getMediaContainer("", accessToken);
+    call.enqueue(new Callback<MediaContainer>() {
+      @Override
+      public void onResponse(Response<MediaContainer> response) {
+        Logger.d("%s success", connection.uri);
+        handler.onFinish(response.code(), true);
+      }
 
-		// Set timeout to 2 seconds, we don't want this to take too long
-		httpClient.setTimeout(2000);
-		String url = connection.uri;
-		if(accessToken != null)
-			url += String.format("/?%s=%s", PlexHeaders.XPlexToken, accessToken);
-		Logger.d("testServerConnection: fetching %s", connection.uri);
-		httpClient.get(url, new AsyncHttpResponseHandler() {
-			@Override
-			public void onSuccess(int statusCode, org.apache.http.Header[] headers, byte[] responseBody) {
-				Logger.d("%s success", connection.uri);
-				handler.onFinish(statusCode, true);
-			}
-
-			@Override
-			public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
-				// unauthorized: 401
-				// timeout: 0
-				Logger.d("Status Code: %d", statusCode);
-				Logger.d("%s failed", connection.uri);
-				handler.onFinish(statusCode, false);
-			}
-		});
+      @Override
+      public void onFailure(Throwable t) {
+        Logger.d("%s failed", connection.uri);
+        handler.onFinish(0, false);
+      }
+    });
 	}
 
 	public void requestTransientAccessToken(final AfterTransientTokenRequest onFinish) {
@@ -265,7 +263,7 @@ public class PlexServer extends PlexDevice {
       qs.add(PlexHeaders.XPlexToken, accessToken);
     String url = String.format("http://127.0.0.1:32400/player/playback/playMedia?%s", qs);
     Logger.d("[PlexServer] Playback url: %s ", url);
-    PlexHttpClient.get(url, new PlexHttpResponseHandler()
+    PlexHttpClient.get("http://127.0.0.1:32400", String.format("player/playback/playMedia?%s", qs), new PlexHttpResponseHandler()
     {
       @Override
       public void onSuccess(PlexResponse r)

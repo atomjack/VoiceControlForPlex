@@ -41,6 +41,7 @@ import com.atomjack.shared.Preferences;
 import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.interfaces.ActiveConnectionHandler;
 import com.atomjack.vcfp.interfaces.BitmapHandler;
+import com.atomjack.vcfp.interfaces.InputStreamHandler;
 import com.atomjack.vcfp.interfaces.ScanHandler;
 import com.atomjack.shared.UriDeserializer;
 import com.atomjack.shared.UriSerializer;
@@ -62,9 +63,9 @@ import com.bugsense.trace.BugSenseHandler;
 import com.google.android.gms.wearable.DataMap;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.loopj.android.http.BinaryHttpResponseHandler;
 
-import org.apache.http.Header;
+
+import org.apache.commons.io.IOUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -624,29 +625,18 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
         if(media.server.accessToken != null)
           url += String.format("?%s=%s", PlexHeaders.XPlexToken, media.server.accessToken);
 
-        PlexHttpClient.getClient().get(url, new BinaryHttpResponseHandler() {
+        PlexHttpClient.getThumb(url, new InputStreamHandler() {
           @Override
-          public void onSuccess(int i, Header[] headers, byte[] imageData) {
-            InputStream is = new ByteArrayInputStream(imageData);
-
+          public void onSuccess(InputStream is) {
             try {
-              is.reset();
+              InputStream iss = new ByteArrayInputStream(IOUtils.toByteArray(is));
+              iss.reset();
+              mSimpleDiskCache.put(media.getCacheKey(thumb), iss);
+              setThumb(iss);
             } catch (IOException e) {
+              Logger.d("Exception getting/saving thumb");
               e.printStackTrace();
             }
-
-            // Save the downloaded image into the disk cache so we don't have to download it again
-            try {
-              mSimpleDiskCache.put(media.getCacheKey(thumb), is);
-            } catch (Exception ex) {
-              ex.printStackTrace();
-            }
-            setThumb(is);
-          }
-
-          @Override
-          public void onFailure(int i, Header[] headers, byte[] bytes, Throwable throwable) {
-
           }
         });
       }
@@ -665,31 +655,43 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
   @SuppressWarnings("deprecation")
   private void setThumb(InputStream is) {
     Logger.d("Setting thumb: %s", is);
-    View layout;
+    final View layout;
     View backgroundLayout = findViewById(R.id.background);
     View musicLayout = findViewById(R.id.nowPlayingMusicCover);
     if(nowPlayingMedia instanceof PlexTrack && getOrientation() == Configuration.ORIENTATION_PORTRAIT) {
-      backgroundLayout.setBackground(null);
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
+        backgroundLayout.setBackground(null);
+      else
+        backgroundLayout.setBackgroundDrawable(null);
       layout = musicLayout;
     } else {
       if(musicLayout != null)
-        musicLayout.setBackground(null);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
+          musicLayout.setBackground(null);
+        else
+          musicLayout.setBackgroundDrawable(null);
       layout = backgroundLayout;
     }
 
     try {
       is.reset();
     } catch (IOException e) {
+      e.printStackTrace();
     }
 
 		if(layout == null)
 			return;
 		
-    Drawable d = Drawable.createFromStream(is, "thumb");
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
-      layout.setBackground(d);
-    else
-      layout.setBackgroundDrawable(d);
+    final Drawable d = Drawable.createFromStream(is, "thumb");
+    runOnUiThread(new Runnable() {
+      @Override
+      public void run() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
+          layout.setBackground(d);
+        else
+          layout.setBackgroundDrawable(d);
+      }
+    });
   }
 
   public void setThumb() {

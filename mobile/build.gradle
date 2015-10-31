@@ -106,7 +106,12 @@ android {
 dependencies {
     wearApp project(':wear')
     compile 'org.apache.httpcomponents:httpclient-android:4.3.5.1'
-    compile 'com.loopj.android:android-async-http:1.4.8'
+    compile 'com.squareup.retrofit:retrofit:2.0.0-beta1'
+    compile ('com.squareup.retrofit:converter-simplexml:2.0.0-beta1') {
+        exclude group: 'xpp3', module: 'xpp3'
+        exclude group: 'stax', module: 'stax-api'
+        exclude group: 'stax', module: 'stax'
+    }
     compile files('libs/bugsense-3.6.jar')
     compile('org.simpleframework:simple-xml:2.7.1') {
         exclude group: 'stax', module: 'stax-api'
