@@ -26,6 +26,7 @@ public class Preferences {
   public final static String NUM_CINEMA_TRAILERS = "pref.num_cinema_trailers";
   public final static String CHROMECAST_VIDEO_QUALITY_LOCAL = "pref.chromecast_video_quality_local";
   public final static String CHROMECAST_VIDEO_QUALITY_REMOTE = "pref.chromecast_video_quality_remote";
+  public final static String SUBSCRIBED_CLIENT = "pref.subscribed_client";
 
   public Preferences(Context context) {
     mPrefs = context.getSharedPreferences(PREFS, context.MODE_PRIVATE);

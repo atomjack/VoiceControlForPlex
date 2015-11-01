@@ -152,13 +152,19 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
 
     plexSubscription = VoiceControlForPlexApplication.getInstance().plexSubscription;
     castPlayerManager = VoiceControlForPlexApplication.getInstance().castPlayerManager;
-    if(plexSubscription.isSubscribed()) {
-      Logger.d("[VCFPActivity] setting client to %s", plexSubscription.mClient);
-      mClient = plexSubscription.mClient;
-    } else if(castPlayerManager.isSubscribed()) {
-      Logger.d("[VCFPActivity] setting client to %s", castPlayerManager.mClient);
-      mClient = castPlayerManager.mClient;
-    } else {
+
+    if(gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.SUBSCRIBED_CLIENT, ""), PlexClient.class) != null) {
+      mClient = gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.SUBSCRIBED_CLIENT, ""), PlexClient.class);
+      if(mClient.isCastClient) {
+        if(!castPlayerManager.isSubscribed()) {
+          castPlayerManager.subscribe(mClient);
+        }
+      } else if(!plexSubscription.isSubscribed()) {
+        plexSubscription.subscribe(mClient);
+      }
+    }
+
+    if(!plexSubscription.isSubscribed() && !castPlayerManager.isSubscribed()) {
       Logger.d("Not subscribed: %s", plexSubscription.mClient);
       // In case the notification is still up due to a crash
       VoiceControlForPlexApplication.getInstance().cancelNotification();
@@ -449,6 +455,8 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
     Logger.d("VCFPActivity: onSubscribed: %s", _client);
     mClient = _client;
 
+    VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.SUBSCRIBED_CLIENT, gsonWrite.toJson(_client));
+
 		subscribing = false;
     try {
       setCastIconActive();
@@ -613,6 +621,7 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
     setCastIconInactive();
     nowPlayingMedia = null;
     VoiceControlForPlexApplication.getInstance().cancelNotification();
+    VoiceControlForPlexApplication.getInstance().prefs.remove(Preferences.SUBSCRIBED_CLIENT);
     sendWearPlaybackChange();
     feedback.m(R.string.disconnected);
   }
