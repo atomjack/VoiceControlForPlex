@@ -150,4 +150,6 @@
     <string name="chromecast_video_remote_full">Chromecast Video Quality over Remote Network</string>
     <string name="original">Direct Play</string>
     <string name="login_incorrect">Sorry, but your username or password is incorrect.</string>
+    <string name="email_device_logs_write_storage_denied">Permission to write to the device\'s external storage is required in order to email device logs.</string>
+    <string name="video_attempted_on_audio_only_device">Sorry, but video playback is not supported on %s.</string>
 </resources>

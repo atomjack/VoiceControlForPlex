@@ -1,5 +1,6 @@
 package com.atomjack.vcfp.activities;
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -16,6 +17,8 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.speech.tts.TextToSpeech;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.media.MediaRouteSelector;
 import android.support.v7.media.MediaRouter;
 import android.view.LayoutInflater;
@@ -174,74 +177,102 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 			@Override
 			protected Void doInBackground(Void... params) {
 				try {
-					Logger.d("Emailing device logs");
-					Intent emailIntent = new Intent(Intent.ACTION_SEND_MULTIPLE);
-					emailIntent.putExtra(Intent.EXTRA_SUBJECT, "Voice Control for Plex Android Logs");
+          boolean hasPermission = (ContextCompat.checkSelfPermission(MainActivity.this,
+                  Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED);
+          if(!hasPermission) {
+            ActivityCompat.requestPermissions(MainActivity.this,
+                    new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                    REQUEST_WRITE_STORAGE);
+          } else {
+            Logger.d("Emailing device logs");
+            Intent emailIntent = new Intent(Intent.ACTION_SEND_MULTIPLE);
+            emailIntent.putExtra(Intent.EXTRA_SUBJECT, "Voice Control for Plex Android Logs");
 
-					// Build the body of the email
-					StringBuilder body = new StringBuilder();
-					body.append(String.format("Manufacturer: %s\n", Build.MANUFACTURER));
-					body.append(String.format("Device: %s\n", Build.DEVICE));
-					body.append(String.format("Model: %s\n", Build.MODEL));
-					body.append(String.format("Product: %s\n", Build.PRODUCT));
-					body.append(String.format("Version: %s\n\n", Build.VERSION.RELEASE));
+            // Build the body of the email
+            StringBuilder body = new StringBuilder();
+            body.append(String.format("Manufacturer: %s\n", Build.MANUFACTURER));
+            body.append(String.format("Device: %s\n", Build.DEVICE));
+            body.append(String.format("Model: %s\n", Build.MODEL));
+            body.append(String.format("Product: %s\n", Build.PRODUCT));
+            body.append(String.format("Version: %s\n\n", Build.VERSION.RELEASE));
 
-					body.append(String.format("Logged in: %s\n\n", VoiceControlForPlexApplication.getInstance().prefs.getString(Preferences.PLEX_USERNAME) != null ? "yes" : "no"));
+            body.append(String.format("Logged in: %s\n\n", VoiceControlForPlexApplication.getInstance().prefs.getString(Preferences.PLEX_USERNAME) != null ? "yes" : "no"));
 
-					body.append("Description of the issue:\n\n");
+            body.append("Description of the issue:\n\n");
 
-          emailIntent.setType("application/octet-stream");
+            emailIntent.setType("application/octet-stream");
 
-          emailIntent.putExtra(Intent.EXTRA_TEXT, body.toString());
+            emailIntent.putExtra(Intent.EXTRA_TEXT, body.toString());
 
-					File tempDirectory = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/tmp");
-					if (!tempDirectory.exists())
-						tempDirectory.mkdirs();
+            File tempDirectory = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/tmp");
+            if (!tempDirectory.exists())
+              tempDirectory.mkdirs();
 
-					File tempFile = new File(tempDirectory, "/vcfp-log.txt");
-					FileOutputStream fos = new FileOutputStream(tempFile);
-					Writer out = new OutputStreamWriter(fos, "UTF-8");
+            File tempFile = new File(tempDirectory, "/vcfp-log.txt");
+            FileOutputStream fos = new FileOutputStream(tempFile);
+            Writer out = new OutputStreamWriter(fos, "UTF-8");
 
-					Process process = Runtime.getRuntime().exec("logcat -d *:V");
-					BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-					StringBuilder log = new StringBuilder();
-					String line;
-					while ((line = bufferedReader.readLine()) != null)
-					{
-						log.append(line);
-						log.append(System.getProperty("line.separator"));
-					}
+            Process process = Runtime.getRuntime().exec("logcat -d *:V");
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            StringBuilder log = new StringBuilder();
+            String line;
+            while ((line = bufferedReader.readLine()) != null) {
+              log.append(line);
+              log.append(System.getProperty("line.separator"));
+            }
 
-					bufferedReader.close();
+            bufferedReader.close();
 
-					out.write(log.toString());
-					out.flush();
-					out.close();
-
-          ArrayList<Uri> uris = new ArrayList<Uri>();
-          uris.add(Uri.parse("file://" + tempFile.getAbsolutePath()));
-
-          if(!wearLog.equals("")) {
-            tempFile = new File(tempDirectory, "/vcfp-wear-log.txt");
-            fos = new FileOutputStream(tempFile);
-            out = new OutputStreamWriter(fos, "UTF-8");
-            out.write(wearLog);
+            out.write(log.toString());
             out.flush();
             out.close();
+
+            ArrayList<Uri> uris = new ArrayList<Uri>();
             uris.add(Uri.parse("file://" + tempFile.getAbsolutePath()));
+
+            if (!wearLog.equals("")) {
+              tempFile = new File(tempDirectory, "/vcfp-wear-log.txt");
+              fos = new FileOutputStream(tempFile);
+              out = new OutputStreamWriter(fos, "UTF-8");
+              out.write(wearLog);
+              out.flush();
+              out.close();
+              uris.add(Uri.parse("file://" + tempFile.getAbsolutePath()));
+            }
+            emailIntent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris);
+            startActivity(emailIntent);
           }
-          emailIntent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris);
-          startActivity(emailIntent);
-				} catch (Exception ex) {
-					Logger.e("Exception emailing device logs: %s", ex);
-					feedback.e("Error emailing device logs: %s", ex.getMessage());
-				}
-				return null;
+				} catch (final Exception ex) {
+          Logger.e("Exception emailing device logs: %s", ex);
+          runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+              feedback.e("Error emailing device logs: %s", ex.getMessage());
+            }
+          });
+        }
+        return null;
 			}
 		}.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
 	}
 
-	public void showChangelog(MenuItem item) {
+  @Override
+  public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+    super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    switch (requestCode) {
+      case REQUEST_WRITE_STORAGE: {
+        if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)
+        {
+          emailDeviceLogs("");
+        } else
+        {
+          feedback.e(R.string.email_device_logs_write_storage_denied);
+        }
+      }
+    }
+  }
+
+  public void showChangelog(MenuItem item) {
 		final WhatsNewDialog whatsNewDialog = new WhatsNewDialog(this);
 		whatsNewDialog.forceShow();
 	}

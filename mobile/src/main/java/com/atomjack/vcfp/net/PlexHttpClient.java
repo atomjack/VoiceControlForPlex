@@ -13,6 +13,7 @@ import com.atomjack.vcfp.model.Connection;
 import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.Pin;
 import com.atomjack.vcfp.model.PlexClient;
+import com.atomjack.vcfp.model.PlexDirectory;
 import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexResponse;
 import com.atomjack.vcfp.model.PlexServer;
@@ -286,8 +287,35 @@ public class PlexHttpClient
 
   }
 
+  public static void createArtistPlayQueue(Connection connection, PlexDirectory artist, final PlexPlayQueueHandler responseHandler) {
+    Map qs = new HashMap<>();
+    qs.put("type", "audio");
+    qs.put("shuffle", "1");
+    String uri = String.format("library://%s/item/%%2flibrary%%2fmetadata%%2f%s", artist.server.machineIdentifier, artist.ratingKey);
+    Logger.d("URI: %s", uri);
+    qs.put("uri", uri);
+    if(artist.server.accessToken != null)
+      qs.put(PlexHeaders.XPlexToken, artist.server.accessToken);
+    qs.put("continuous", "0");
+    qs.put("includeRelated", "1");
+    PlexHttpService service = getService(String.format("http://%s:%s", connection.address, connection.port));
+    Call<MediaContainer> call = service.createPlayQueue(qs, VoiceControlForPlexApplication.getUUID());
+    call.enqueue(new Callback<MediaContainer>() {
+      @Override
+      public void onResponse(Response<MediaContainer> response) {
+        if (responseHandler != null)
+          responseHandler.onSuccess(response.body());
+      }
+
+      @Override
+      public void onFailure(Throwable t) {
+        Logger.d("createPlayQueue failure.");
+        t.printStackTrace();
+      }
+    });
+  }
+
   public static void createPlayQueue(Connection connection, PlexMedia media, String transientToken, final PlexPlayQueueHandler responseHandler) {
-    Logger.d("[666] Creating play queue.");
     Map qs = new HashMap<>();
     qs.put("type", media.getType());
     qs.put("next", "0");

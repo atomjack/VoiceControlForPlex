@@ -15,7 +15,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.support.v7.app.ActionBarActivity;
+import android.support.v7.app.AppCompatActivity;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -47,6 +47,7 @@ import com.atomjack.shared.UriDeserializer;
 import com.atomjack.shared.UriSerializer;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.adapters.PlexListAdapter;
+import com.atomjack.vcfp.model.Capabilities;
 import com.atomjack.vcfp.model.Connection;
 import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.PlexClient;
@@ -75,10 +76,12 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import cz.fhucho.android.util.SimpleDiskCache;
 
-public abstract class VCFPActivity extends ActionBarActivity implements PlexSubscription.PlexListener, CastPlayerManager.CastListener, VoiceControlForPlexApplication.NetworkChangeListener {
+public abstract class VCFPActivity extends AppCompatActivity implements PlexSubscription.PlexListener, CastPlayerManager.CastListener, VoiceControlForPlexApplication.NetworkChangeListener {
 	protected PlexMedia nowPlayingMedia;
 	protected boolean subscribing = false;
 	protected PlexClient mClient;
+
+  protected static final int REQUEST_WRITE_STORAGE = 112;
 
   protected VoiceControlForPlexApplication app;
 
@@ -520,6 +523,14 @@ public abstract class VCFPActivity extends ActionBarActivity implements PlexSubs
       VoiceControlForPlexApplication.getInstance().setNotification(mClient, mCurrentState, nowPlayingMedia);
     }
     sendWearPlaybackChange();
+  }
+
+  @Override
+  public void onGetDeviceCapabilities(Capabilities capabilities) {
+    if(mClient.isCastClient) {
+      mClient.isAudioOnly = !capabilities.displaySupported;
+      setClient(mClient);
+    }
   }
 
   @Override

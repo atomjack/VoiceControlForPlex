@@ -20,6 +20,7 @@ import retrofit.Call;
 public class PlexClient extends PlexDevice {
 	public boolean isCastClient = false;
 	public CastDevice castDevice;
+	public boolean isAudioOnly = false;
 
 	public PlexClient() {
 
@@ -49,6 +50,7 @@ public class PlexClient extends PlexDevice {
 		parcel.writeString(address);
 		parcel.writeString(machineIdentifier);
 		parcel.writeInt(isCastClient ? 1 : 0);
+		parcel.writeInt(isAudioOnly ? 1 : 0);
 		parcel.writeParcelable(castDevice, i);
 	}
 
@@ -60,6 +62,7 @@ public class PlexClient extends PlexDevice {
 		address = in.readString();
 		machineIdentifier = in.readString();
 		isCastClient = in.readInt() == 1;
+		isAudioOnly = in.readInt() == 1;
 		castDevice = in.readParcelable(CastDevice.class.getClassLoader());
     Logger.d("set cast device from parcel");
 	}

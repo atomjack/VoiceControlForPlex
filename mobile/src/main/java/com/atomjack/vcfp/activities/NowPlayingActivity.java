@@ -330,7 +330,7 @@ public class NowPlayingActivity extends PlayerActivity {
     getMenuInflater().inflate(R.menu.menu_playing, _menu);
     menu = _menu;
     if(plexSubscription.isSubscribed()) {
-      if(plexSubscription.mClient.machineIdentifier != mClient.machineIdentifier) {
+      if(!plexSubscription.mClient.machineIdentifier.equals(mClient.machineIdentifier)) {
         // We're already subscribed to another client, so unsubscribe from that one and subscribe to the new one
         plexSubscription.unsubscribe(false, new Runnable() {
           @Override

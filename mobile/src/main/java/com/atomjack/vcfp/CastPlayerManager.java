@@ -7,6 +7,7 @@ import com.atomjack.shared.Logger;
 import com.atomjack.shared.PlayerState;
 import com.atomjack.shared.Preferences;
 import com.atomjack.vcfp.interfaces.ActiveConnectionHandler;
+import com.atomjack.vcfp.model.Capabilities;
 import com.atomjack.vcfp.model.Connection;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexMedia;
@@ -72,6 +73,14 @@ public class CastPlayerManager {
     public static final String SERVERS = "servers";
 
   };
+
+  public static final class RECEIVER_EVENTS {
+    public static final String PLAYLIST_ADVANCE = "playlistAdvance";
+    public static final String PLAYER_STATUS_CHANGED = "playerStatusChanged";
+    public static final String GET_PLAYBACK_STATE = "getPlaybackState";
+    public static final String TIME_UPDATE = "timeUpdate";
+    public static final String DEVICE_CAPABILITIES = "deviceCapabilities";
+  }
 
   private Context mContext;
 
@@ -182,6 +191,7 @@ public class CastPlayerManager {
     void onCastPlayerState(PlayerState state, PlexMedia media);
     void onCastConnectionFailed();
     void onCastSeek();
+    void onGetDeviceCapabilities(Capabilities capabilities);
     PlexMedia getNowPlayingMedia();
   };
 
@@ -313,21 +323,21 @@ public class CastPlayerManager {
         try {
           JSONObject obj = new JSONObject(message);
           if(obj.has("event") && obj.has("status")) {
-            if(obj.getString("event").equals("playerStatusChanged")) {
+            if(obj.getString("event").equals(RECEIVER_EVENTS.PLAYER_STATUS_CHANGED)) {
               Logger.d("playerStatusChanged: %s", obj.getString("status"));
               currentState = PlayerState.getState(obj.getString("status"));
               listener.onCastPlayerStateChanged(currentState);
             }
-          } else if(obj.has("event") && obj.getString("event").equals("timeUpdate") && obj.has("currentTime")) {
+          } else if(obj.has("event") && obj.getString("event").equals(RECEIVER_EVENTS.TIME_UPDATE) && obj.has("currentTime")) {
             listener.onCastPlayerTimeUpdate(obj.getInt("currentTime"));
-          } else if(obj.has("event") && obj.getString("event").equals("playlistAdvance") && obj.has("media") && obj.has("type")) {
+          } else if(obj.has("event") && obj.getString("event").equals(RECEIVER_EVENTS.PLAYLIST_ADVANCE) && obj.has("media") && obj.has("type")) {
             Logger.d("[CastPlayerManager] playlistAdvance");
             if(obj.getString("type").equals(PARAMS.MEDIA_TYPE_VIDEO))
               nowPlayingMedia = VoiceControlForPlexApplication.gsonRead.fromJson(obj.getString("media"), PlexVideo.class);
             else
               nowPlayingMedia = VoiceControlForPlexApplication.gsonRead.fromJson(obj.getString("media"), PlexTrack.class);
             listener.onCastPlayerPlaylistAdvance(nowPlayingMedia);
-          } else if(obj.has("event") && obj.getString("event").equals("getPlaybackState") && obj.has("state")) {
+          } else if(obj.has("event") && obj.getString("event").equals(RECEIVER_EVENTS.GET_PLAYBACK_STATE) && obj.has("state")) {
             currentState = PlayerState.getState(obj.getString("state"));
             PlexMedia media = null;
             if(obj.has("media") && obj.has("type") && obj.has("client")) {
@@ -338,6 +348,9 @@ public class CastPlayerManager {
               mClient = VoiceControlForPlexApplication.gsonRead.fromJson(obj.getString("client"), PlexClient.class);
             }
             listener.onCastPlayerState(PlayerState.getState(obj.getString("state")), media);
+          } else if(obj.has("event") && obj.getString("event").equals(RECEIVER_EVENTS.DEVICE_CAPABILITIES) && obj.has("capabilities")) {
+            Capabilities capabilities = VoiceControlForPlexApplication.gsonRead.fromJson(obj.getString("capabilities"), Capabilities.class);
+            listener.onGetDeviceCapabilities(capabilities);
           }
         } catch (Exception ex) {
           ex.printStackTrace();
@@ -376,18 +389,13 @@ public class CastPlayerManager {
         Logger.d("sessionid: %s", sessionId);
         Logger.d("was launched: %s", wasLaunched);
         mSessionId = sessionId;
-//        if(!launched) {
-//          launched = true;
-          if(onConnectedRunnable != null)
-            onConnectedRunnable.run();
-//        }
-
+        if(onConnectedRunnable != null)
+          onConnectedRunnable.run();
       }
 
       @Override
       public void onConnectivityRecovered() {
-//					com.google.sample.cast.refplayer.utils.Utils.
-//									showToast(VideoBrowserActivity.this, R.string.connection_recovered);
+
       }
 
       @Override
