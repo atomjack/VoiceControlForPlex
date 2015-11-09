@@ -131,6 +131,9 @@ public class PlexServer extends PlexDevice {
     parcel.writeString(machineIdentifier);
 		parcel.writeTypedList(connections);
 		parcel.writeParcelable(activeConnection, i);
+    parcel.writeStringList(movieSections);
+    parcel.writeStringList(tvSections);
+    parcel.writeStringList(musicSections);
 	}
 
 	public PlexServer(Parcel in) {
@@ -144,8 +147,10 @@ public class PlexServer extends PlexDevice {
     machineIdentifier = in.readString();
 		in.readTypedList(connections, Connection.CREATOR);
 		activeConnection = in.readParcelable(Connection.class.getClassLoader());
-//    activeConnection = null;
-	}
+    in.readStringList(movieSections);
+    in.readStringList(tvSections);
+    in.readStringList(musicSections);
+  }
 
 	public static final Parcelable.Creator<PlexServer> CREATOR = new Parcelable.Creator<PlexServer>() {
 		public PlexServer createFromParcel(Parcel in) {

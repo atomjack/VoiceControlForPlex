@@ -60,7 +60,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -84,6 +83,8 @@ public class PlexSearchService extends Service {
 	private List<PlexDirectory> albums = new ArrayList<PlexDirectory>();
 
 	private boolean didClientScan = false;
+
+  private boolean fromMic;
 
   private boolean shuffle = false;
 
@@ -135,6 +136,8 @@ public class PlexSearchService extends Service {
     if(castPlayerManager.isSubscribed()) {
       Logger.d("CAST MANAGER IS SUBSCRIBED");
     }
+
+    fromMic = intent.getBooleanExtra(com.atomjack.shared.Intent.EXTRA_FROM_MIC, false);
 
     if(intent.getBooleanExtra(WearConstants.FROM_WEAR, false) == true && VoiceControlForPlexApplication.getInstance().hasWear()) {
       fromWear = true;
@@ -203,7 +206,7 @@ public class PlexSearchService extends Service {
 				}
 			};
 
-			queries = new ArrayList<String>();
+			queries = new ArrayList<>();
 			clients = (HashMap)VoiceControlForPlexApplication.clients;
       clients.putAll(VoiceControlForPlexApplication.castClients);
 			resumePlayback = false;
@@ -301,7 +304,7 @@ public class PlexSearchService extends Service {
 		final PlexServer defaultServer = VoiceControlForPlexApplication.gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.SERVER, ""), PlexServer.class);
 		if(specifiedServer != null && client != null && !specifiedServer.name.equals(getResources().getString(R.string.scan_all))) {
 			// got a specified server and mClient from a shortcut
-			Logger.d("Got hardcoded server and mClient from shortcut");
+			Logger.d("Got hardcoded server and mClient from shortcut with %d music sections", specifiedServer.musicSections.size());
 			plexmediaServers = new ConcurrentHashMap<String, PlexServer>();
 			plexmediaServers.put(specifiedServer.name, specifiedServer);
 			setClient();
@@ -356,8 +359,6 @@ public class PlexSearchService extends Service {
 
 	private myRunnable handleVoiceSearch(boolean noChange) {
 		Logger.d("GOT QUERY: %s", queryText);
-
-//		resumePlayback = false;
 
 		Pattern p;
 		Matcher matcher;
@@ -1032,7 +1033,7 @@ public class PlexSearchService extends Service {
 
 		// No equal match, so split the query term up by words, and see if the title contains every single word
 		String[] words = queryTerm.split(" ");
-		Boolean missing = false;
+		boolean missing = false;
 		for(int i=0;i<words.length;i++) {
 			if(!title.toLowerCase().matches(".*\\b" + words[i].toLowerCase() + "\\b.*"))
 				missing = true;
@@ -1091,6 +1092,7 @@ public class PlexSearchService extends Service {
   // fetch the specific media element by its key. This prevents the need to add new missing fields to the media
   //
   private void fetchAndPlayMedia(final PlexMedia media) {
+    Logger.d("fetchAndPlayMedia: %s", media.title);
     PlexHttpClient.get(media.server, media.key, new PlexHttpMediaContainerHandler() {
       @Override
       public void onSuccess(MediaContainer mediaContainer) {
@@ -1101,6 +1103,7 @@ public class PlexSearchService extends Service {
           theMedia = mediaContainer.tracks.get(0);
         if (theMedia != null) {
           theMedia.server = media.server;
+          Logger.d("fetchAndPlayMedia, set server to %s", theMedia.server);
           playMedia(theMedia);
           onActionFinished(WearConstants.SPEECH_QUERY_RESULT, false, theMedia);
         } else {
@@ -1167,44 +1170,73 @@ public class PlexSearchService extends Service {
     });
   }
 
-  private void playMedia(final PlexMedia media, Connection connection, PlexDirectory album, String transientToken, MediaContainer mediaContainer) {
-    QueryString qs = new QueryString("machineIdentifier", media.server.machineIdentifier);
-    qs.add("key", media.key);
-    qs.add("containerKey", String.format("/playQueues/%s", mediaContainer.playQueueID));
-    qs.add("port", connection.port);
-    qs.add("address", connection.address);
+  private int getOffset(PlexMedia media) {
+    Logger.d("getting offset, mediaoffset: %s", media.viewOffset);
+    if((VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.RESUME, false) || resumePlayback) && media.viewOffset != null)
+      return Integer.parseInt(media.viewOffset) / 1000;
+    else
+      return 0;
+  }
 
-    if (resumePlayback && media.viewOffset != null)
-      qs.add("viewOffset", media.viewOffset);
-    if (transientToken != null)
-      qs.add("token", transientToken);
-    if (media.server.accessToken != null)
-      qs.add(PlexHeaders.XPlexToken, media.server.accessToken);
+  private void playMedia(final PlexMedia media, Connection connection, PlexDirectory album, String transientToken, final MediaContainer mediaContainer) {
 
-    if (album != null)
-      qs.add("containerKey", album.key);
 
     if(client.isCastClient) {
       Logger.d("playQueueID: %s", mediaContainer.playQueueID);
       Logger.d("num videos/tracks: %d", media instanceof PlexTrack ? mediaContainer.tracks.size() : mediaContainer.videos.size());
-      Intent sendIntent = new Intent(PlexSearchService.this, CastActivity.class);
-      sendIntent.setAction(com.atomjack.shared.Intent.CAST_MEDIA);
-      sendIntent.putExtra(WearConstants.FROM_WEAR, fromWear);
-      sendIntent.putExtra(com.atomjack.shared.Intent.EXTRA_MEDIA, media instanceof PlexTrack ? mediaContainer.tracks.get(0) : mediaContainer.videos.get(0));
-      sendIntent.putParcelableArrayListExtra(com.atomjack.shared.Intent.EXTRA_ALBUM, media instanceof PlexTrack ? (ArrayList)mediaContainer.tracks : (ArrayList)mediaContainer.videos);
-      sendIntent.putExtra(com.atomjack.shared.Intent.EXTRA_CLIENT, client);
-      sendIntent.putExtra("resume", resumePlayback);
-      sendIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-      startActivity(sendIntent);
+      Runnable sendCast = new Runnable() {
+        @Override
+        public void run() {
+          castPlayerManager.loadMedia(media instanceof PlexTrack ? mediaContainer.tracks.get(0) : mediaContainer.videos.get(0),
+                  media instanceof PlexTrack ? (ArrayList) mediaContainer.tracks : (ArrayList) mediaContainer.videos,
+                  getOffset(media instanceof PlexTrack ? mediaContainer.tracks.get(0) : mediaContainer.videos.get(0)));
+
+          if(!fromMic || true) {
+            Intent sendIntent = new Intent(PlexSearchService.this, CastActivity.class);
+            sendIntent.setAction(com.atomjack.shared.Intent.CAST_MEDIA);
+            sendIntent.putExtra(com.atomjack.shared.Intent.EXTRA_MEDIA, media instanceof PlexTrack ? mediaContainer.tracks.get(0) : mediaContainer.videos.get(0));
+            sendIntent.putParcelableArrayListExtra(com.atomjack.shared.Intent.EXTRA_ALBUM, media instanceof PlexTrack ? (ArrayList) mediaContainer.tracks : (ArrayList) mediaContainer.videos);
+            sendIntent.putExtra(WearConstants.FROM_WEAR, fromWear);
+            sendIntent.putExtra(com.atomjack.shared.Intent.EXTRA_CLIENT, client);
+            sendIntent.putExtra(com.atomjack.shared.Intent.EXTRA_FROM_MIC, fromMic);
+            sendIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            sendIntent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+            startActivity(sendIntent);
+          }
+        }
+      };
+
+      if(castPlayerManager.isSubscribed()) {
+        sendCast.run();
+      } else {
+        castPlayerManager.subscribe(client, sendCast);
+      }
+
     } else {
+      QueryString qs = new QueryString("machineIdentifier", media.server.machineIdentifier);
+      qs.add("key", media.key);
+      qs.add("containerKey", String.format("/playQueues/%s", mediaContainer.playQueueID));
+      qs.add("port", connection.port);
+      qs.add("address", connection.address);
+
+      if (resumePlayback && media.viewOffset != null)
+        qs.add("viewOffset", media.viewOffset);
+      if (transientToken != null)
+        qs.add("token", transientToken);
+      if (media.server.accessToken != null)
+        qs.add(PlexHeaders.XPlexToken, media.server.accessToken);
+
+      if (album != null)
+        qs.add("containerKey", album.key);
+
       PlexHttpClient.get(String.format("http://%s:%s", client.address, client.port), String.format("player/playback/playMedia?%s", qs), new PlexHttpResponseHandler() {
         @Override
         public void onSuccess(PlexResponse r) {
           // If the host we're playing on is this device, we don't wanna do anything else here.
           if (Utils.getIPAddress(true).equals(client.address) || r == null)
             return;
-          if(media instanceof PlexTrack)
-            feedback.m(getResources().getString(R.string.now_listening_to), media.title, ((PlexTrack)media).artist, client.name);
+          if (media instanceof PlexTrack)
+            feedback.m(getResources().getString(R.string.now_listening_to), media.title, ((PlexTrack) media).artist, client.name);
           else
             feedback.m(getResources().getString(R.string.now_watching_video), media.isMovie() ? media.title : media.grandparentTitle, client.name);
           Boolean passed = true;
@@ -1243,19 +1275,9 @@ public class PlexSearchService extends Service {
         @Override
         public void onSuccess(final Connection connection) {
           try {
-            PlexHttpClient.createPlayQueue(connection, media, transientToken, new PlexPlayQueueHandler() {
+            PlexHttpClient.createPlayQueue(connection, media, album != null ? album.ratingKey : media.key, transientToken, new PlexPlayQueueHandler() {
               @Override
               public void onSuccess(MediaContainer mediaContainer) {
-                if(media instanceof PlexTrack) {
-
-                } else {
-                  // Insert the server into each video in the playlist
-                  for (int i = 0; i < mediaContainer.videos.size(); i++) {
-                    mediaContainer.videos.get(i).server = media.server;
-                    if (mediaContainer.videos.get(i).isClip())
-                      mediaContainer.videos.get(i).setClipDuration();
-                  }
-                }
                 playMedia(media, connection, album, transientToken, mediaContainer);
               }
             });
@@ -1273,18 +1295,6 @@ public class PlexSearchService extends Service {
       });
     }
 	}
-
-  private void castAlbum(List<PlexTrack> tracks) {
-    Intent sendIntent = new Intent(this, CastActivity.class);
-    sendIntent.setAction(com.atomjack.shared.Intent.CAST_MEDIA);
-    sendIntent.putExtra(com.atomjack.shared.Intent.EXTRA_MEDIA, tracks.get(0));
-    sendIntent.putParcelableArrayListExtra(com.atomjack.shared.Intent.EXTRA_ALBUM, (ArrayList<PlexTrack>)tracks);
-    sendIntent.putExtra(com.atomjack.shared.Intent.EXTRA_CLIENT, client);
-    sendIntent.putExtra("resume", resumePlayback);
-    sendIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-    sendIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-    startActivity(sendIntent);
-  }
 
 	private void showPlayingMedia(PlexMedia media) {
     Logger.d("[PlexSearchService] nowPlayingMedia: %s", media.title);
@@ -1803,10 +1813,12 @@ public class PlexSearchService extends Service {
 								for(int j=0;j<mc.directories.size();j++) {
 									PlexDirectory thisAlbum = mc.directories.get(j);
 									Logger.d("Album: %s by %s.", thisAlbum.title, thisAlbum.parentTitle);
-									if(compareTitle(thisAlbum.title, album) || artist.equals("")) {
-										Logger.d("adding album");
-										thisAlbum.server = server;
-										albums.add(thisAlbum);
+									if(compareTitle(thisAlbum.title, album)) {
+                    if(compareTitle(thisAlbum.parentTitle, artist) || artist.equals("")) {
+                      Logger.d("adding album");
+                      thisAlbum.server = server;
+                      albums.add(thisAlbum);
+                    }
 									}
 								}
 
@@ -1818,20 +1830,23 @@ public class PlexSearchService extends Service {
 											playAlbum(albums.get(0));
 										} else {
 											boolean exactMatch = false;
+                      List<PlexDirectory> exactMatchAlbum = new ArrayList<>();
 											for(int k=0;k<albums.size();k++) {
 												if(albums.get(k).title.toLowerCase().equals(album.toLowerCase())) {
                           Logger.d("Found an exact match : %s", album);
 													exactMatch = true;
-													playAlbum(albums.get(k));
+                          exactMatchAlbum.add(albums.get(k));
 												}
 											}
-											if(!exactMatch) {
-												if(queries.size() > 0)
+											if(!exactMatch || exactMatchAlbum.size() > 1) {
+												if(queries.size() > 0 && !exactMatch)
 													startup();
 												else
 													feedback.e(getResources().getString(albums.size() > 1 ? R.string.found_more_than_one_album : R.string.couldnt_find_album));
 												return;
-											}
+											} else if(exactMatchAlbum.size() == 1) {
+                        playAlbum(exactMatchAlbum.get(0));
+                      }
 										}
 									}
 
@@ -1911,12 +1926,12 @@ public class PlexSearchService extends Service {
 								if(server.musicSections.size() == server.musicSectionsSearched) {
 									serversSearched++;
 									if(serversSearched == plexmediaServers.size()) {
-										Logger.d("found music to play.");
-										if(tracks.size() > 0) {
+										Logger.d("found %d tracks to play.", tracks.size());
+										if(tracks.size() == 1) {
                       fetchAndPlayMedia(tracks.get(0));
 										} else {
-											Boolean exactMatch = false;
-											for(int k=0;k<albums.size();k++) {
+											boolean exactMatch = false;
+											for(int k=0;k<tracks.size();k++) {
 												if(tracks.get(k).artist.toLowerCase().equals(artist.toLowerCase())) {
 													exactMatch = true;
                           fetchAndPlayMedia(tracks.get(k));
@@ -2065,10 +2080,7 @@ public class PlexSearchService extends Service {
           if(shuffle) {
             Collections.shuffle(tracks);
           }
-          if(client.isCastClient)
-            castAlbum(tracks);
-          else
-  					playMedia(tracks.get(0), album);
+          playMedia(tracks.get(0), album);
 				} else {
 					Logger.d("Didn't find any tracks");
 					if(queries.size() > 0)

@@ -2,8 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
           xmlns:tools="http://schemas.android.com/tools"
     package="com.atomjack.vcfp"
-    android:versionCode="51"
-    android:versionName="2.0.5b2" >
+    android:versionCode="52"
+    android:versionName="2.0.5b3" >
 
     <uses-permission android:name="com.mohammadag.googlesearchapi.permission.ACCESS_GGOGLE_SEARCH_API" />
     <uses-permission android:name="android.permission.INTERNET" />
@@ -59,6 +59,7 @@
         </activity>
         <activity
             android:name=".activities.CastActivity"
+            android:launchMode="singleTask"
             android:configChanges="orientation|screenSize"
             android:label="@string/app_name" >
             <intent-filter>

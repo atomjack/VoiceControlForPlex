@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog>
-    <release version="2.0.5b2" versioncode="51">
+    <release version="2.0.5b3" versioncode="52">
         <change>Added support for audio-only Chromecast devices.</change>
-        <change>Started fixing the playing of all songs by an artist (WIP).</change>
+        <change>Fixed playing all songs by an artist.</change>
+        <change>Fixed using the mic button on the now playing screen to trigger new playback, when used with Chromecast.</change>
         <change>Fixed display of notifications (background color).</change>
         <change>Fixed bug that caused inconsistent connection to non-Chromecast Plex clients.</change>
     </release>

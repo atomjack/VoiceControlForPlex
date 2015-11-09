@@ -7,6 +7,7 @@ public class Intent {
   public final static String EXTRA_CLIENT = "com.atomjack.vcfp.intent.extra_client";
   public final static String EXTRA_RESUME = "com.atomjack.vcfp.intent.extra_resume";
   public final static String EXTRA_SILENT = "com.atomjack.vcfp.intent.extra_silent";
+  public final static String EXTRA_FROM_MIC = "com.atomjack.vcfp.intent.extra_from_mic";
 
 
   public final static String SCAN_TYPE = "com.atomjack.vcfp.intent.scan_type";

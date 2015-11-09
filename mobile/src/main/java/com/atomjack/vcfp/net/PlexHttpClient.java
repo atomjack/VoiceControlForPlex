@@ -231,6 +231,15 @@ public class PlexHttpClient
         call.enqueue(new Callback<MediaContainer>() {
           @Override
           public void onResponse(Response<MediaContainer> response) {
+            // Add this server to each of this media container's media objects
+            MediaContainer mediaContainer = response.body();
+            for (int i = 0; i < mediaContainer.tracks.size(); i++) {
+              mediaContainer.tracks.get(i).server = server;
+            }
+            Logger.d("Set tracks server with %d music sections", server.musicSections.size());
+            for (int i = 0; i < mediaContainer.videos.size(); i++) {
+              mediaContainer.videos.get(i).server = server;
+            }
             responseHandler.onSuccess(response.body());
           }
 
@@ -315,7 +324,7 @@ public class PlexHttpClient
     });
   }
 
-  public static void createPlayQueue(Connection connection, PlexMedia media, String transientToken, final PlexPlayQueueHandler responseHandler) {
+  public static void createPlayQueue(Connection connection, final PlexMedia media, final String key, String transientToken, final PlexPlayQueueHandler responseHandler) {
     Map qs = new HashMap<>();
     qs.put("type", media.getType());
     qs.put("next", "0");
@@ -324,7 +333,7 @@ public class PlexHttpClient
     if(media.isMovie() && !hasOffset) {
       qs.put("extrasPrefixCount", Integer.toString(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.NUM_CINEMA_TRAILERS, 0)));
     }
-    qs.put("uri", String.format("library://%s/item/%%2flibrary%%2fmetadata%%2f%s", media.server.machineIdentifier, media.key));
+    qs.put("uri", String.format("library://%s/item/%%2flibrary%%2fmetadata%%2f%s", media.server.machineIdentifier, key));
     qs.put("window", "50"); // no idea what this is for
     if (transientToken != null)
       qs.put("token", transientToken);
@@ -337,8 +346,18 @@ public class PlexHttpClient
     call.enqueue(new Callback<MediaContainer>() {
       @Override
       public void onResponse(Response<MediaContainer> response) {
-        if (responseHandler != null)
-          responseHandler.onSuccess(response.body());
+        if (responseHandler != null) {
+          MediaContainer mc = response.body();
+          for(int i=0;i<mc.tracks.size();i++) {
+            mc.tracks.get(i).server = media.server;
+          }
+          for(int i=0;i<mc.videos.size();i++) {
+            mc.videos.get(i).server = media.server;
+            if (mc.videos.get(i).isClip())
+              mc.videos.get(i).setClipDuration();
+          }
+          responseHandler.onSuccess(mc);
+        }
       }
 
       @Override

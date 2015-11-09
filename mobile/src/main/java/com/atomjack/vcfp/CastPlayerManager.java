@@ -103,7 +103,13 @@ public class CastPlayerManager {
     mContext = context;
   }
 
+
+
   public void subscribe(final PlexClient _client) {
+    subscribe(_client, null);
+  }
+
+  public void subscribe(final PlexClient _client, final Runnable onFinished) {
     if(castManager == null) {
       Logger.d("creating castManager");
       castManager = getCastManager(mContext);
@@ -148,6 +154,9 @@ public class CastPlayerManager {
           listener.onCastConnected(_client);
         else
           Logger.d("[CastPlayerManager] listener is null");
+
+        if(onFinished != null)
+          onFinished.run();
       }
     });
   }
@@ -241,12 +250,13 @@ public class CastPlayerManager {
         try {
           obj.put(PARAMS.ACTION, PARAMS.ACTION_SEEK);
           obj.put(PARAMS.OFFSET, seconds);
-          if(nowPlayingMedia instanceof PlexVideo)
+          if (nowPlayingMedia instanceof PlexVideo)
             obj.put(PARAMS.SRC, getTranscodeUrl(nowPlayingMedia, connection, seconds));
           obj.put(PARAMS.RESUME, VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.RESUME, false));
           sendMessage(obj);
           listener.onCastSeek();
-        } catch (Exception ex) {}
+        } catch (Exception ex) {
+        }
       }
 
       @Override
@@ -326,17 +336,20 @@ public class CastPlayerManager {
             if(obj.getString("event").equals(RECEIVER_EVENTS.PLAYER_STATUS_CHANGED)) {
               Logger.d("playerStatusChanged: %s", obj.getString("status"));
               currentState = PlayerState.getState(obj.getString("status"));
-              listener.onCastPlayerStateChanged(currentState);
+              if(listener != null)
+                listener.onCastPlayerStateChanged(currentState);
             }
           } else if(obj.has("event") && obj.getString("event").equals(RECEIVER_EVENTS.TIME_UPDATE) && obj.has("currentTime")) {
-            listener.onCastPlayerTimeUpdate(obj.getInt("currentTime"));
+            if(listener != null)
+              listener.onCastPlayerTimeUpdate(obj.getInt("currentTime"));
           } else if(obj.has("event") && obj.getString("event").equals(RECEIVER_EVENTS.PLAYLIST_ADVANCE) && obj.has("media") && obj.has("type")) {
             Logger.d("[CastPlayerManager] playlistAdvance");
             if(obj.getString("type").equals(PARAMS.MEDIA_TYPE_VIDEO))
               nowPlayingMedia = VoiceControlForPlexApplication.gsonRead.fromJson(obj.getString("media"), PlexVideo.class);
             else
               nowPlayingMedia = VoiceControlForPlexApplication.gsonRead.fromJson(obj.getString("media"), PlexTrack.class);
-            listener.onCastPlayerPlaylistAdvance(nowPlayingMedia);
+            if(listener != null)
+              listener.onCastPlayerPlaylistAdvance(nowPlayingMedia);
           } else if(obj.has("event") && obj.getString("event").equals(RECEIVER_EVENTS.GET_PLAYBACK_STATE) && obj.has("state")) {
             currentState = PlayerState.getState(obj.getString("state"));
             PlexMedia media = null;
@@ -347,10 +360,12 @@ public class CastPlayerManager {
                 media = VoiceControlForPlexApplication.gsonRead.fromJson(obj.getString("media"), PlexTrack.class);
               mClient = VoiceControlForPlexApplication.gsonRead.fromJson(obj.getString("client"), PlexClient.class);
             }
-            listener.onCastPlayerState(PlayerState.getState(obj.getString("state")), media);
+            if(listener != null)
+              listener.onCastPlayerState(PlayerState.getState(obj.getString("state")), media);
           } else if(obj.has("event") && obj.getString("event").equals(RECEIVER_EVENTS.DEVICE_CAPABILITIES) && obj.has("capabilities")) {
             Capabilities capabilities = VoiceControlForPlexApplication.gsonRead.fromJson(obj.getString("capabilities"), Capabilities.class);
-            listener.onGetDeviceCapabilities(capabilities);
+            if(listener != null)
+              listener.onGetDeviceCapabilities(capabilities);
           }
         } catch (Exception ex) {
           ex.printStackTrace();
@@ -479,8 +494,8 @@ public class CastPlayerManager {
       data.put(PARAMS.RESUME, VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.RESUME, false));
       data.put(PARAMS.CLIENT, VoiceControlForPlexApplication.gsonWrite.toJson(mClient));
       data.put(PARAMS.SRC, getTranscodeUrl(nowPlayingMedia, connection, offset));
+      Logger.d("[CastPlayerManager] setting src to %s", getTranscodeUrl(nowPlayingMedia, connection, offset));
       data.put(PARAMS.ACCESS_TOKEN, nowPlayingMedia.server.accessToken);
-      Logger.d("token: %s", nowPlayingMedia.server.accessToken);
       data.put(PARAMS.PLAYLIST, getPlaylistJson());
     } catch (Exception ex) {
       ex.printStackTrace();
@@ -502,6 +517,10 @@ public class CastPlayerManager {
 
   public PlexMedia getNowPlayingMedia() {
     return nowPlayingMedia;
+  }
+
+  public List<PlexMedia> getNowPlayingAlbum() {
+    return nowPlayingAlbum;
   }
 
   public String getSessionId() {

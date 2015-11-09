@@ -22,7 +22,6 @@ import com.atomjack.vcfp.model.PlexTrack;
 import com.atomjack.vcfp.model.PlexVideo;
 import com.atomjack.vcfp.services.PlexSearchService;
 import com.google.android.gms.wearable.DataMap;
-import com.google.gson.Gson;
 
 import java.math.BigInteger;
 import java.security.SecureRandom;
@@ -42,16 +41,17 @@ public abstract class PlayerActivity extends VCFPActivity implements SeekBar.OnS
 	}
 
 	public void doMic(View v) {
-		Intent serviceIntent = new Intent(getApplicationContext(), PlexSearchService.class);
 
-		PlexServer server = nowPlayingMedia.server;
+    PlexServer server = nowPlayingMedia.server;
 
-		Logger.d("server: %s", server);
-		if(server != null) {
+    Logger.d("server: %s", server);
+    if(server != null) {
+      Intent serviceIntent = new Intent(getApplicationContext(), PlexSearchService.class);
 
-			serviceIntent.putExtra(com.atomjack.shared.Intent.EXTRA_SERVER, gsonWrite.toJson(server));
+      serviceIntent.putExtra(com.atomjack.shared.Intent.EXTRA_SERVER, gsonWrite.toJson(server));
 			serviceIntent.putExtra(com.atomjack.shared.Intent.EXTRA_CLIENT, gsonWrite.toJson(mClient));
 			serviceIntent.putExtra(com.atomjack.shared.Intent.EXTRA_RESUME, resumePlayback);
+      serviceIntent.putExtra(com.atomjack.shared.Intent.EXTRA_FROM_MIC, true);
 
 			SecureRandom random = new SecureRandom();
 			serviceIntent.setData(Uri.parse(new BigInteger(130, random).toString(32)));
@@ -129,6 +129,7 @@ public abstract class PlayerActivity extends VCFPActivity implements SeekBar.OnS
         setContentView(R.layout.now_playing_music);
 
       TextView artist = (TextView)findViewById(R.id.nowPlayingArtist);
+      Logger.d("Setting artist to %s", track.grandparentTitle);
       artist.setText(track.grandparentTitle);
       TextView album = (TextView)findViewById(R.id.nowPlayingAlbum);
       album.setText(track.parentTitle);

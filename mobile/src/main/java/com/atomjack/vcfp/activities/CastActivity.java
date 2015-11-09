@@ -2,10 +2,12 @@ package com.atomjack.vcfp.activities;
 
 import android.app.Dialog;
 import android.os.Bundle;
+import android.os.Handler;
 import android.view.Menu;
 import android.view.View;
 import android.widget.SeekBar;
 
+import com.atomjack.shared.Intent;
 import com.atomjack.shared.SendToDataLayerThread;
 import com.atomjack.shared.WearConstants;
 import com.atomjack.vcfp.interfaces.AfterTransientTokenRequest;
@@ -19,7 +21,7 @@ import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexMedia;
 import com.google.android.libraries.cast.companionlibrary.cast.VideoCastManager;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 
 public class CastActivity extends PlayerActivity {
@@ -28,18 +30,88 @@ public class CastActivity extends PlayerActivity {
 
 	private PlayerState currentState = PlayerState.STOPPED;
 
-  private List<PlexMedia> nowPlayingAlbum;
+  private List<PlexMedia> nowPlayingAlbum = new ArrayList<>();
 
   private Dialog infoDialog;
 
-	@Override
+  final Handler handler = new Handler();
+
+  private boolean uiShowing = false;
+
+  private void start(final boolean setView) {
+    mClient = getIntent().getParcelableExtra(Intent.EXTRA_CLIENT);
+    Logger.d("[CastActivity] set mClient: %s", mClient);
+
+    if(getIntent().getBooleanExtra(WearConstants.FROM_WEAR, false)) {
+      new SendToDataLayerThread(WearConstants.FINISH, this).start();
+    }
+
+    if(getIntent().getAction() != null && getIntent().getAction().equals(Intent.CAST_MEDIA)) {
+      Logger.d("[CastActivity] checking subscribed: %s", castPlayerManager.isSubscribed());
+      if(castPlayerManager.isSubscribed()) {
+        nowPlayingMedia = castPlayerManager.getNowPlayingMedia();
+        nowPlayingAlbum = castPlayerManager.getNowPlayingAlbum();
+        if(!castPlayerManager.getCurrentState().equals(PlayerState.STOPPED)) {
+          // Media is playing, so show ui
+          showNowPlaying(setView);
+        } else {
+          handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+              Logger.d("Checking for playback state: %s", castPlayerManager.getCurrentState());
+              if(!castPlayerManager.getCurrentState().equals(PlayerState.STOPPED)) {
+                showNowPlaying(setView);
+              } else {
+                handler.postDelayed(this, 1000);
+              }
+            }
+          }, 1000);
+        }
+      } else {
+        if(getIntent().getParcelableExtra(Intent.EXTRA_MEDIA) != null) {
+          nowPlayingMedia = getIntent().getParcelableExtra(Intent.EXTRA_MEDIA);
+          nowPlayingAlbum = getIntent().getParcelableExtra(Intent.EXTRA_ALBUM);
+          showNowPlaying(setView);
+        }
+        castPlayerManager.subscribe(mClient, new Runnable() {
+          @Override
+          public void run() {
+            // TODO: this
+            nowPlayingMedia = castPlayerManager.getNowPlayingMedia();
+            nowPlayingAlbum = castPlayerManager.getNowPlayingAlbum();
+          }
+        });
+      }
+    } else {
+      // We're coming here expecting to already be connected and have media playing.
+      if(!castPlayerManager.isSubscribed() || castPlayerManager.getCurrentState().equals(PlayerState.STOPPED))
+        finish();
+      else {
+        nowPlayingMedia = castPlayerManager.getNowPlayingMedia();
+        nowPlayingAlbum = castPlayerManager.getNowPlayingAlbum();
+        showNowPlaying(setView);
+      }
+    }
+  }
+
+  @Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-    mClient = getIntent().getParcelableExtra(com.atomjack.shared.Intent.EXTRA_CLIENT);
-    Logger.d("[CastActivity] set mClient: %s", mClient);
-    nowPlayingMedia = getIntent().getParcelableExtra(com.atomjack.shared.Intent.EXTRA_MEDIA);
-    nowPlayingAlbum = getIntent().getParcelableArrayListExtra(com.atomjack.shared.Intent.EXTRA_ALBUM);
+    start(true);
+
+/*
+
+    boolean mediaChange = false;
+    PlexMedia newMedia = getIntent().getParcelableExtra(Intent.EXTRA_MEDIA);
+    if(castPlayerManager.isSubscribed()) {
+      if(newMedia != null && castPlayerManager.getNowPlayingMedia() != null && !newMedia.key.equals(castPlayerManager.getNowPlayingMedia().key))
+        mediaChange = true;
+    }
+
+
+    nowPlayingMedia = newMedia;
+    nowPlayingAlbum = getIntent().getParcelableArrayListExtra(Intent.EXTRA_ALBUM);
     resumePlayback = getIntent().getBooleanExtra("resume", false);
     castManager = castPlayerManager.getCastManager();
 
@@ -47,35 +119,62 @@ public class CastActivity extends PlayerActivity {
       new SendToDataLayerThread(WearConstants.FINISH, this).start();
     }
     // If just playing a single track, put the media into an array
-    if(nowPlayingAlbum == null)
-      nowPlayingAlbum = Arrays.asList(nowPlayingMedia);
+    if(nowPlayingAlbum == null) {
+      nowPlayingAlbum = new ArrayList<>();
+      nowPlayingAlbum.add(nowPlayingMedia);
+    }
 
     Logger.d("[CastActivity] starting up, action: %s, current state: %s", getIntent().getAction(), castPlayerManager.getCurrentState());
     Logger.d("client: %s", mClient);
-		if(getIntent().getAction() != null && getIntent().getAction().equals(com.atomjack.shared.Intent.CAST_MEDIA)) {
+		if(getIntent().getAction() != null && getIntent().getAction().equals(Intent.CAST_MEDIA)) {
 
+      /*
 			Logger.d("Casting %s (%s)", nowPlayingMedia.title, nowPlayingMedia.viewOffset);
 
-      showNowPlaying();
-      if(castPlayerManager.isSubscribed()) {
-        init();
+      // TODO: only show now playing if stopped?
+//      if(castPlayerManager.getCurrentState().equals(PlayerState.STOPPED))
+
+      if(mediaChange) {
+        Logger.d("[CastActivity] MEDIA CHANGED!");
+
+        init(true); // tell the chromecast to load the new media. The cast player activity will receive a notification of the new media and will update accordingly
       } else {
-        showInfoDialog(getResources().getString(R.string.connecting));
-        castPlayerManager.subscribe(mClient);
+
+        showNowPlaying(castPlayerManager.getCurrentState().equals(PlayerState.STOPPED) || !mediaChange ? true : false);
+        if (castPlayerManager.isSubscribed()) {
+          init();
+        } else {
+          showInfoDialog(getResources().getString(R.string.connecting));
+          castPlayerManager.subscribe(mClient);
+        }
       }
 		} else {
       Logger.d("[CastActivity] No action found.");
       if(castPlayerManager.getCurrentState().equals(PlayerState.STOPPED))
         finish();
       else {
-        showNowPlaying();
+        showNowPlaying(true);
       }
 		}
+		*/
 	}
 
   @Override
+  protected void onNewIntent(android.content.Intent intent) {
+    super.onNewIntent(intent);
+    // If the currently playing media is of a different type than the one being received, make sure to set the view
+    PlexMedia newMedia = intent.getParcelableExtra(Intent.EXTRA_MEDIA);
+    start(newMedia != null && nowPlayingMedia != null && !newMedia.getType().equals(nowPlayingMedia.getType()));
+  }
+
+  @Override
   public void showNowPlaying() {
-    super.showNowPlaying();
+    showNowPlaying(true);
+  }
+
+  @Override
+  public void showNowPlaying(boolean setView) {
+    super.showNowPlaying(setView);
     setupUI();
   }
 
@@ -91,17 +190,22 @@ public class CastActivity extends PlayerActivity {
     seekBar = (SeekBar)findViewById(R.id.seekBar);
     seekBar.setOnSeekBarChangeListener(this);
     seekBar.setMax(nowPlayingMedia.duration);
-    seekBar.setProgress(getOffset(nowPlayingMedia)*1000);
+    seekBar.setProgress(getOffset(nowPlayingMedia) * 1000);
 
     Logger.d("setupUI, setting time display to %d", getOffset(nowPlayingMedia));
     setCurrentTimeDisplay(getOffset(nowPlayingMedia));
     durationDisplay.setText(VoiceControlForPlexApplication.secondsToTimecode(nowPlayingMedia.duration / 1000));
+    uiShowing = true;
   }
 
   private void init() {
+    init(false);
+  }
+
+  private void init(boolean forceLoad) {
     currentState = castPlayerManager.getCurrentState();
     Logger.d("castPlayerManager.getCurrentState(): %s", castPlayerManager.getCurrentState());
-    if(castPlayerManager.getCurrentState() != PlayerState.STOPPED)
+    if(castPlayerManager.getCurrentState() != PlayerState.STOPPED && !forceLoad)
       return;
     if (VoiceControlForPlexApplication.getInstance().prefs.getString(Preferences.PLEX_USERNAME) != null) {
       nowPlayingMedia.server.requestTransientAccessToken(new AfterTransientTokenRequest() {
@@ -271,16 +375,19 @@ public class CastActivity extends PlayerActivity {
   public void onCastPlayerStateChanged(PlayerState state) {
     super.onCastPlayerStateChanged(state);
     Logger.d("[CastActivity] onCastPlayerStateChanged: %s", state);
+
     if(isSeeking) {
       isSeeking = false;
     }
-    hideInfoDialog();
     if(state == PlayerState.STOPPED) {
       Logger.d("[CastActivity] media player is idle, finishing");
       VoiceControlForPlexApplication.getInstance().cancelNotification();
       finish();
-    } else
+    } else if(uiShowing) {
       setState(state);
+    }
+    if(uiShowing)
+      hideInfoDialog();
   }
 
   @Override

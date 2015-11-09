@@ -638,34 +638,47 @@ public abstract class VCFPActivity extends AppCompatActivity implements PlexSubs
   }
 
   private void getThumb(final String thumb, final PlexMedia media) {
-    media.server.findServerConnection(new ActiveConnectionHandler() {
-      @Override
-      public void onSuccess(Connection connection) {
-        String url = String.format("http://%s:%s%s", connection.address, connection.port, thumb);
-        if(media.server.accessToken != null)
-          url += String.format("?%s=%s", PlexHeaders.XPlexToken, media.server.accessToken);
+    if(thumb == null) {
+      InputStream is = getResources().openRawResource(+ R.drawable.ic_launcher);
+      try {
+        InputStream iss = new ByteArrayInputStream(IOUtils.toByteArray(is));
+        iss.reset();
+        mSimpleDiskCache.put(media.getCacheKey(media.key), iss);
+        setThumb(iss);
+      } catch (IOException e) {
+        Logger.d("Exception getting/saving thumb");
+        e.printStackTrace();
+      }
+    } else {
+      media.server.findServerConnection(new ActiveConnectionHandler() {
+        @Override
+        public void onSuccess(Connection connection) {
+          String url = String.format("http://%s:%s%s", connection.address, connection.port, thumb);
+          if (media.server.accessToken != null)
+            url += String.format("?%s=%s", PlexHeaders.XPlexToken, media.server.accessToken);
 
-        PlexHttpClient.getThumb(url, new InputStreamHandler() {
-          @Override
-          public void onSuccess(InputStream is) {
-            try {
-              InputStream iss = new ByteArrayInputStream(IOUtils.toByteArray(is));
-              iss.reset();
-              mSimpleDiskCache.put(media.getCacheKey(thumb), iss);
-              setThumb(iss);
-            } catch (IOException e) {
-              Logger.d("Exception getting/saving thumb");
-              e.printStackTrace();
+          PlexHttpClient.getThumb(url, new InputStreamHandler() {
+            @Override
+            public void onSuccess(InputStream is) {
+              try {
+                InputStream iss = new ByteArrayInputStream(IOUtils.toByteArray(is));
+                iss.reset();
+                mSimpleDiskCache.put(media.getCacheKey(thumb), iss);
+                setThumb(iss);
+              } catch (IOException e) {
+                Logger.d("Exception getting/saving thumb");
+                e.printStackTrace();
+              }
             }
-          }
-        });
-      }
+          });
+        }
 
-      @Override
-      public void onFailure(int statusCode) {
+        @Override
+        public void onFailure(int statusCode) {
 
-      }
-    });
+        }
+      });
+    }
   }
 
   protected int getOrientation() {
@@ -696,7 +709,7 @@ public abstract class VCFPActivity extends AppCompatActivity implements PlexSubs
     try {
       is.reset();
     } catch (IOException e) {
-      e.printStackTrace();
+//      e.printStackTrace();
     }
 
 		if(layout == null)
@@ -715,45 +728,48 @@ public abstract class VCFPActivity extends AppCompatActivity implements PlexSubs
   }
 
   public void setThumb() {
-    if(nowPlayingMedia.thumb != null && !nowPlayingMedia.thumb.equals("")) {
-      String thumb = nowPlayingMedia.thumb;
-      Logger.d("setThumb: %s", thumb);
-      if(nowPlayingMedia instanceof PlexVideo) {
-        PlexVideo video = (PlexVideo)nowPlayingMedia;
-        thumb = video.isMovie() || video.isClip() ? video.thumb : video.grandparentThumb;
-        Logger.d("orientation: %s, type: %s", getOrientation(), video.type);
-        if(video.isClip()) {
+    String thumb = nowPlayingMedia.thumb;
 
-        }
 
-        if(getOrientation() == Configuration.ORIENTATION_LANDSCAPE) {
-          thumb = video.art;
-        }
-      } else if(nowPlayingMedia instanceof PlexTrack && getOrientation() == Configuration.ORIENTATION_LANDSCAPE) {
-        PlexTrack track = (PlexTrack)nowPlayingMedia;
-        thumb = track.art;
+    Logger.d("setThumb: %s", thumb);
+    if(nowPlayingMedia instanceof PlexVideo) {
+      PlexVideo video = (PlexVideo)nowPlayingMedia;
+      thumb = video.isMovie() || video.isClip() ? video.thumb : video.grandparentThumb;
+      Logger.d("orientation: %s, type: %s", getOrientation(), video.type);
+      if(video.isClip()) {
+
       }
 
+      if(getOrientation() == Configuration.ORIENTATION_LANDSCAPE) {
+        thumb = video.art;
+      }
+    } else if(nowPlayingMedia instanceof PlexTrack) {
+      PlexTrack track = (PlexTrack)nowPlayingMedia;
+      thumb = track.thumb;
+    }
 
-      Logger.d("thumb: %s", thumb);
+    if(thumb != null && thumb.equals("")) {
+      thumb = null;
+    }
+    Logger.d("thumb: %s", thumb);
 
-      if(thumb != null) {
-        SimpleDiskCache.InputStreamEntry thumbEntry = null;
-        try {
-          thumbEntry = mSimpleDiskCache.getInputStream(nowPlayingMedia.getCacheKey(thumb));
-        } catch (Exception ex) {
-          ex.printStackTrace();
-        }
-        if (thumbEntry != null) {
-          Logger.d("Using cached thumb: %s", nowPlayingMedia.getCacheKey(thumb));
-          setThumb(thumbEntry.getInputStream());
-        } else {
-          Logger.d("Downloading thumb");
-          getThumb(thumb, nowPlayingMedia);
-        }
+    if(thumb != null || true) {
+      SimpleDiskCache.InputStreamEntry thumbEntry = null;
+      try {
+        Logger.d("Server: %s", nowPlayingMedia.server);
+        thumbEntry = mSimpleDiskCache.getInputStream(nowPlayingMedia.getCacheKey(thumb != null ? thumb : nowPlayingMedia.key));
+      } catch (Exception ex) {
+        ex.printStackTrace();
+      }
+      if (thumbEntry != null) {
+        Logger.d("Using cached thumb: %s", nowPlayingMedia.getCacheKey(thumb));
+        setThumb(thumbEntry.getInputStream());
       } else {
-        Logger.d("Couldn't find a background");
+        Logger.d("Downloading thumb");
+        getThumb(thumb, nowPlayingMedia);
       }
+    } else {
+      Logger.d("Couldn't find a background");
     }
   }
 
@@ -978,9 +994,6 @@ public abstract class VCFPActivity extends AppCompatActivity implements PlexSubs
   protected void onNewIntent(Intent intent) {
     Logger.d("[VCFPActivity] onNewIntent: %s", intent.getAction());
     if(intent.getAction() != null) {
-      if(intent.getAction().equals(com.atomjack.shared.Intent.ACTION_PAUSE) || intent.getAction().equals(com.atomjack.shared.Intent.ACTION_PLAY)) {
-        VoiceControlForPlexApplication.getInstance().plexSubscription.getListener().doPlayPause();
-      }
     }
   }
 
