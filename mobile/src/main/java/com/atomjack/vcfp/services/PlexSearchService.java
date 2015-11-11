@@ -745,11 +745,6 @@ public class PlexSearchService extends Service {
                 error.printStackTrace();
               }
             });
-
-            NowPlayingActivity listener = (NowPlayingActivity)plexSubscription.getListener();
-            if (listener != null) {
-              currentOffset = Integer.parseInt(listener.getNowPlayingMedia().viewOffset);
-            }
           }
         }
       };
@@ -1154,7 +1149,7 @@ public class PlexSearchService extends Service {
           public void onSuccess(MediaContainer mediaContainer) {
             Logger.d("got play queue: %s", mediaContainer.playQueueID);
             tracks = mediaContainer.tracks;
-            if(tracks.size() > 0) {
+            if (tracks.size() > 0) {
               PlexTrack media = tracks.get(0);
               media.server = artist.server;
               playMedia(media, connection, null, null, mediaContainer);

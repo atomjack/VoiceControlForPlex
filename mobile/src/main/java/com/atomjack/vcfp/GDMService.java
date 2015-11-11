@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.SocketTimeoutException;
 
 public class GDMService extends IntentService {
@@ -29,8 +30,10 @@ public class GDMService extends IntentService {
 			try
 			{
         int port = intent.getIntExtra(PORT, 32414); // Default port, for Plex Media Servers (Clients use 32412)
-        DatagramSocket socket = new DatagramSocket(32420);
+        DatagramSocket socket = new DatagramSocket(null);
+        socket.setReuseAddress(true);
         socket.setBroadcast(true);
+        socket.bind(new InetSocketAddress(0));
         String data = "M-SEARCH * HTTP/1.1";
         DatagramPacket packet = new DatagramPacket(data.getBytes(), data.length(), getBroadcastAddress(), port);
         socket.send(packet);
