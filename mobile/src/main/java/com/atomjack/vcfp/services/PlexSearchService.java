@@ -252,6 +252,20 @@ public class PlexSearchService extends Service {
 				return Service.START_NOT_STICKY;
 			}
 
+			if(castPlayerManager.isSubscribed()) {
+				if(!client.machineIdentifier.equals(castPlayerManager.mClient.machineIdentifier)) {
+					Logger.d("Subscribed to a chromecast but need to play on a different client.");
+					castPlayerManager.unsubscribe();
+				}
+			} else if(plexSubscription.isSubscribed()) {
+				// Chromecast clients don't have a machine identifier, so if the selected client doesn't have one, it's
+				// a Chromecast, and we're already subscribed to a non-chromecast, so unsubscribe.
+				if(client.machineIdentifier == null || !client.machineIdentifier.equals(plexSubscription.getClient().machineIdentifier)) {
+					Logger.d("Subscribed to non-chromecast client but need to play on a different client.");
+					plexSubscription.unsubscribe();
+				}
+			}
+
 //      if(client.isCastClient)
 //        castPlayerManager.subscribe(client);
 			if (queries.size() > 0) {
@@ -297,21 +311,21 @@ public class PlexSearchService extends Service {
 
 
 		Logger.d("Starting up with query string: %s", queryText);
-		tracks = new ArrayList<PlexTrack>();
-		videos = new ArrayList<PlexVideo>();
-		shows = new ArrayList<PlexDirectory>();
+		tracks = new ArrayList<>();
+		videos = new ArrayList<>();
+		shows = new ArrayList<>();
 
 		final PlexServer defaultServer = VoiceControlForPlexApplication.gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.SERVER, ""), PlexServer.class);
 		if(specifiedServer != null && client != null && !specifiedServer.name.equals(getResources().getString(R.string.scan_all))) {
 			// got a specified server and mClient from a shortcut
-			Logger.d("Got hardcoded server and mClient from shortcut with %d music sections", specifiedServer.musicSections.size());
-			plexmediaServers = new ConcurrentHashMap<String, PlexServer>();
+			Logger.d("Got hardcoded server and client from shortcut with %d music sections", specifiedServer.musicSections.size());
+			plexmediaServers = new ConcurrentHashMap<>();
 			plexmediaServers.put(specifiedServer.name, specifiedServer);
 			setClient();
 		} else if(specifiedServer == null && defaultServer != null && !defaultServer.name.equals(getResources().getString(R.string.scan_all))) {
 			// Use the server specified in the main settings
 			Logger.d("Using server and client specified in main settings");
-			plexmediaServers = new ConcurrentHashMap<String, PlexServer>();
+			plexmediaServers = new ConcurrentHashMap<>();
 			plexmediaServers.put(defaultServer.name, defaultServer);
 			setClient();
 		} else {
