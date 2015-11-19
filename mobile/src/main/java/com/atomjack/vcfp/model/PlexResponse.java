@@ -6,7 +6,7 @@ import org.simpleframework.xml.Root;
 @Root(strict=false)
 public class PlexResponse {
 	@Attribute(required=false)
-	public String code;
+	public int code = -1;
 	@Attribute(required=false)
 	public String status;
 }

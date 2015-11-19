@@ -6,17 +6,15 @@
                 android:orientation="vertical">
     <ScrollView
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentTop="true"
-        android:layout_above="@+id/nowPlayingMusic">
+        android:layout_height="fill_parent"
+        android:layout_alignParentLeft="false"
+        android:layout_alignParentTop="false"
+        android:id="@+id/nowPlayingScrollView"
+        android:fillViewport="true">
 
-        <LinearLayout
-            android:orientation="vertical"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:layout_alignParentTop="true"
-            android:padding="3dp">
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
 
             <TextView
             android:id="@+id/nowPlayingOnClient"
@@ -83,10 +81,20 @@
                 android:layout_marginTop="68dp"
                 android:text="When Ripley's lifepod is found by a salvage crew over 50 years later, she finds that terra-formers are on the very planet they found the alien species. When the company sends a family of colonists out to investigate her story... all contact is lost with the planet and colonists. They enlist Ripley and the colonial marines to return and search for answers." />
 
-        </LinearLayout>
+        </RelativeLayout>
     </ScrollView>
 
 
-    <include layout="@layout/playback" />
+
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="120dp"
+        android:layout_alignParentBottom="true">
+
+        <include layout="@layout/playback"
+                 android:layout_height="120dp"
+                 android:layout_width="fill_parent"/>
+    </RelativeLayout>
 
 </RelativeLayout>

@@ -5,6 +5,9 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.speech.RecognizerIntent;
+import android.support.v4.view.GestureDetectorCompat;
+import android.view.GestureDetector;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.SeekBar;
@@ -33,6 +36,8 @@ public abstract class PlayerActivity extends VCFPActivity implements SeekBar.OnS
 	protected SeekBar seekBar;
 	protected TextView currentTimeDisplay;
 	protected TextView durationDisplay;
+
+  protected GestureDetectorCompat mDetector;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -72,7 +77,51 @@ public abstract class PlayerActivity extends VCFPActivity implements SeekBar.OnS
 		playPauseButton = (ImageButton)findViewById(R.id.playPauseButton);
 		currentTimeDisplay = (TextView)findViewById(R.id.currentTimeView);
 		durationDisplay = (TextView)findViewById(R.id.durationView);
+
+    mDetector = new GestureDetectorCompat(this, new TouchGestureListener());
+    View nowPlayingScrollView = findViewById(R.id.nowPlayingScrollView);
+    nowPlayingScrollView.setOnTouchListener(new View.OnTouchListener() {
+      @Override
+      public boolean onTouch(View v, MotionEvent event) {
+        return mDetector.onTouchEvent(event);
+      }
+    });
 	}
+
+  class TouchGestureListener extends GestureDetector.SimpleOnGestureListener {
+    @Override
+    public boolean onSingleTapUp(MotionEvent e) {
+      Logger.d("Single tap.");
+      doPlayPause();
+      return true;
+    }
+
+    @Override
+    public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+      float SWIPE_SPEED_THRESHOLD = 2000;
+
+      try {
+        float diffY = e2.getY() - e1.getY();
+        float diffX = e2.getX() - e1.getX();
+        if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(velocityX) >= SWIPE_SPEED_THRESHOLD) {
+
+          if (diffX > 0) {
+            Logger.d("Doing forward via fling right");
+            doForward(null);
+          } else {
+            Logger.d("Doing back via fling left");
+            doRewind(null);
+          }
+        }
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+      return true;
+    }
+  }
+
+  public void doRewind(View v) {}
+  public void doForward(View v) {}
 
 	protected void setCurrentTimeDisplay(long seconds) {
 		currentTimeDisplay.setText(VoiceControlForPlexApplication.secondsToTimecode(seconds));

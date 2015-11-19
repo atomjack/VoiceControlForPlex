@@ -1161,19 +1161,21 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 		{
 			Logger.d("onRouteAdded: %s", route);
 			if(!VoiceControlForPlexApplication.castClients.containsKey(route.getName())) {
-        PlexClient client = new PlexClient();
-        client.isCastClient = true;
-        client.name = route.getName();
-        client.product = route.getDescription();
-        client.castDevice = CastDevice.getFromBundle(route.getExtras());
-        VoiceControlForPlexApplication.castClients.put(client.name, client);
-				Logger.d("Added cast client %s", client.name);
-        VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.SAVED_CAST_CLIENTS, gsonWrite.toJson(VoiceControlForPlexApplication.castClients));
-        // If the "select a plex client" dialog is showing, refresh the list of clients
-        if(deviceSelectDialog != null && deviceSelectDialog.isShowing()) {
-          deviceSelectDialogRefresh();
-				}
+				VoiceControlForPlexApplication.castClients.remove(route.getName());
 			}
+      PlexClient client = new PlexClient();
+      client.isCastClient = true;
+      client.name = route.getName();
+      client.product = route.getDescription();
+      client.castDevice = CastDevice.getFromBundle(route.getExtras());
+      client.machineIdentifier = client.castDevice.getDeviceId();
+      VoiceControlForPlexApplication.castClients.put(client.name, client);
+      Logger.d("Added cast client %s (%s)", client.name, client.machineIdentifier);
+      VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.SAVED_CAST_CLIENTS, gsonWrite.toJson(VoiceControlForPlexApplication.castClients));
+      // If the "select a plex client" dialog is showing, refresh the list of clients
+      if(deviceSelectDialog != null && deviceSelectDialog.isShowing()) {
+        deviceSelectDialogRefresh();
+      }
 		}
 
 		@Override

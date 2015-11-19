@@ -5,6 +5,7 @@ import android.os.Parcelable;
 
 import com.atomjack.shared.Logger;
 import com.atomjack.vcfp.Utils;
+import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.net.PlexHttpClient;
 import com.atomjack.vcfp.net.PlexHttpResponseHandler;
 import com.google.android.gms.cast.CastDevice;
@@ -78,7 +79,7 @@ public class PlexClient extends PlexDevice {
 	};
 
 	public void seekTo(int offset, PlexHttpResponseHandler responseHandler) {
-		PlexHttpClient.get(String.format("http://%s:%s", address, port), String.format("player/playback/seekTo?offset=%s", offset), responseHandler);
+		PlexHttpClient.get(String.format("http://%s:%s", address, port), String.format("player/playback/seekTo?commandID=0&offset=%s", offset), responseHandler);
 	}
 
   public void pause(PlexHttpResponseHandler responseHandler) {
@@ -101,22 +102,25 @@ public class PlexClient extends PlexDevice {
     adjustPlayback("skipPrevious", responseHandler);
   }
 
+	// asynchronous
 	private void adjustPlayback(String which, PlexHttpResponseHandler responseHandler) {
 		ArrayList<String> validModes = new ArrayList<String>(Arrays.asList("pause", "play", "stop", "skipNext", "skipPrevious"));
 		if(validModes.indexOf(which) == -1)
 			return;
 		try {
-			PlexHttpClient.get(String.format("http://%s:%s", address, port), String.format("player/playback/%s", which), responseHandler);
+			PlexHttpClient.get(String.format("http://%s:%s", address, port), String.format("player/playback/%s?commandID=0", which), responseHandler);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 
+	// synchronous
   private PlexResponse adjustPlayback(String which) {
 		Logger.d("Adjusting playback with %s", which);
     try {
       PlexHttpClient.PlexHttpService service = PlexHttpClient.getService(String.format("http://%s:%s", address, port));
-      Call<PlexResponse> call = service.adjustPlayback(which);
+      Logger.d("Seeking with uuid %s", VoiceControlForPlexApplication.getInstance().getUUID());
+      Call<PlexResponse> call = service.adjustPlayback(which, "0", VoiceControlForPlexApplication.getInstance().getUUID());
       return call.execute().body();
     } catch (Exception e) {
       e.printStackTrace();
@@ -139,7 +143,8 @@ public class PlexClient extends PlexDevice {
   public PlexResponse seekTo(int offset) {
     try {
       PlexHttpClient.PlexHttpService service = PlexHttpClient.getService(String.format("http://%s:%s", address, port));
-      Call<PlexResponse> call = service.seekTo(offset);
+			Logger.d("Seeking with uuid %s", VoiceControlForPlexApplication.getInstance().getUUID());
+      Call<PlexResponse> call = service.seekTo(offset, "0", VoiceControlForPlexApplication.getInstance().getUUID());
       return call.execute().body();
     } catch (Exception e) {
       e.printStackTrace();

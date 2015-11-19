@@ -40,7 +40,8 @@ public class CastActivity extends PlayerActivity {
 
   private void start(final boolean setView) {
     mClient = getIntent().getParcelableExtra(Intent.EXTRA_CLIENT);
-    Logger.d("[CastActivity] set mClient: %s", mClient);
+    Logger.d("[CastActivity] set client: %s", mClient);
+    Logger.d("[CastActivity] action: %s", getIntent().getAction());
 
     if(getIntent().getBooleanExtra(WearConstants.FROM_WEAR, false)) {
       new SendToDataLayerThread(WearConstants.FINISH, this).start();
@@ -291,6 +292,11 @@ public class CastActivity extends PlayerActivity {
 	}
 
   @Override
+  public void doPlayPause() {
+    doPlayPause(null);
+  }
+
+  @Override
 	public void doPlayPause(View v) {
 		try {
       Logger.d("doPlayPause, currentState: %s", currentState);
@@ -302,6 +308,7 @@ public class CastActivity extends PlayerActivity {
 		} catch (Exception ex) {}
 	}
 
+  @Override
 	public void doRewind(View v) {
     if(position > -1) {
       nowPlayingMedia.viewOffset = Integer.toString(position - 15000);
@@ -313,6 +320,7 @@ public class CastActivity extends PlayerActivity {
     }
 	}
 
+  @Override
 	public void doForward(View v) {
     if(position > -1) {
       nowPlayingMedia.viewOffset = Integer.toString(position + 30000);

@@ -46,7 +46,7 @@
     <string name="select_voice">Stimmauswahl</string>
     <string name="cancel">Abbruch</string>
     <string name="nothing_to_play">Nichts zum abspielen gefunden.</string>
-    <string name="http_status_code_error">Ein Fehler ist aufgetreten. HTTP status code: %s</string>
+    <string name="http_status_code_error">Ein Fehler ist aufgetreten. HTTP status code: %d</string>
     <string name="got_error">Ein fehler ist aufgetreten: %s</string>
     <string name="client_not_specified">Es ist kein  Empfänger spezifiziert oder ich kann ihn nicht finden.</string>
     <string name="found_more_than_one_album">Ich habe mehr als ein passendes Album gefunden. Spezifiziere den Künstler.</string>

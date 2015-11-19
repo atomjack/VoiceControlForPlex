@@ -421,7 +421,8 @@ public class CastPlayerManager {
       @Override
       public void onApplicationConnectionFailed(int errorCode) {
         Logger.d("[CastPlayerManager] onApplicationConnectionFailed: %d", errorCode);
-        listener.onCastConnectionFailed();
+        if(listener != null)
+          listener.onCastConnectionFailed();
       }
 
       @Override

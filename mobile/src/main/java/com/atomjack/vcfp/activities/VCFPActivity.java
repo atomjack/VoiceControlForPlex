@@ -71,6 +71,7 @@ import org.apache.commons.io.IOUtils;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -312,7 +313,7 @@ public abstract class VCFPActivity extends AppCompatActivity implements PlexSubs
         if (clientSelected.isCastClient) {
           if(VoiceControlForPlexApplication.getInstance().hasChromecast()) {
             mClient = clientSelected;
-            Logger.d("[VCFPActivity] subscribing");
+            Logger.d("[VCFPActivity] subscribing to %s", mClient.name);
             castPlayerManager.subscribe(mClient);
           } else {
             showChromecastPurchase(clientSelected, new Runnable() {
@@ -471,6 +472,7 @@ public abstract class VCFPActivity extends AppCompatActivity implements PlexSubs
 
   @Override
   public void onSubscribeError(String errorMessage) {
+    Logger.d("[Scott] onSubscribeError: %s", errorMessage);
     feedback.e(String.format(getString(R.string.got_error), errorMessage));
     setCastIconInactive();
   }
@@ -817,6 +819,16 @@ public abstract class VCFPActivity extends AppCompatActivity implements PlexSubs
     else if(connectionType == ConnectivityManager.TYPE_WIFI)
       currentNetworkState = NetworkState.WIFI;
 
+    if(plexSubscription.isSubscribed()) {
+      // If it's been more than 30 seconds since we last heard from the subscribed client, force a (non-heartbeat)
+      // subscription request right now to refresh. It shouldn't be a heartbeat request in case the client
+      // booted us off for being unreachable for 90 seconds.
+      if(plexSubscription.timeLastHeardFromClient != null) {
+        if((new Date().getTime() - plexSubscription.timeLastHeardFromClient.getTime()) / 1000 >= 30) {
+          plexSubscription.subscribe(plexSubscription.getClient());
+        }
+      }
+    }
   }
 
   @Override

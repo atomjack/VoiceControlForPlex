@@ -266,8 +266,6 @@ public class PlexSearchService extends Service {
 				}
 			}
 
-//      if(client.isCastClient)
-//        castPlayerManager.subscribe(client);
 			if (queries.size() > 0) {
 				Logger.d("Starting up, with queries: %s", queries);
 				startup();
@@ -873,12 +871,10 @@ public class PlexSearchService extends Service {
 			public void onSuccess(PlexResponse r)
 			{
 				Boolean passed = true;
-				if(r.code != null) {
-					if(!r.code.equals("200")) {
-						passed = false;
-					}
+				if(r.code != 200) {
+					passed = false;
 				}
-				Logger.d("Playback response: %s", r.code);
+				Logger.d("Playback response: %d", r.code);
 				if(passed) {
 					feedback.m(onFinish);
 				} else {
@@ -888,6 +884,7 @@ public class PlexSearchService extends Service {
 
 			@Override
 			public void onFailure(Throwable error) {
+				Logger.d("[Scott] adjustPlayback onFailure: %s", error.getMessage());
 				feedback.e(getResources().getString(R.string.got_error), error.getMessage());
 			}
 		};
@@ -936,12 +933,10 @@ public class PlexSearchService extends Service {
         @Override
         public void onSuccess(PlexResponse r) {
           Boolean passed = true;
-          if (r.code != null) {
-            if (!r.code.equals("200")) {
-              passed = false;
-            }
-          }
-          Logger.d("Playback response: %s", r.code);
+					if (r.code != 200) {
+						passed = false;
+					}
+          Logger.d("Playback response: %d", r.code);
           if (!passed) {
             feedback.e(getResources().getString(R.string.http_status_code_error), r.code);
           }
@@ -949,6 +944,7 @@ public class PlexSearchService extends Service {
 
         @Override
         public void onFailure(Throwable error) {
+          Logger.d("[Scott] seekTo onFailure: %s", error.getMessage());
           feedback.e(getResources().getString(R.string.got_error), error.getMessage());
         }
       });
@@ -1012,6 +1008,7 @@ public class PlexSearchService extends Service {
               @Override
               public void onFailure(Throwable error) {
                 error.printStackTrace();
+								Logger.d("[Scott] doMovieSearch onFailure: %s", error.getMessage());
                 feedback.e(getResources().getString(R.string.got_error), error.getMessage());
               }
             });
@@ -1134,7 +1131,7 @@ public class PlexSearchService extends Service {
   }
 
   private void playMedia(final PlexMedia media, final PlexDirectory album) {
-		if(media.server.owned)
+		if(media.server.owned && false)
 			createPlayQueueAndPlayMedia(media, album, null);
 		else {
 			// TODO: switch this to the PlexServer method and verify
@@ -1238,6 +1235,14 @@ public class PlexSearchService extends Service {
       if (album != null)
         qs.add("containerKey", album.key);
 
+			// new for PMP:
+			qs.add("commandID", "0");
+			qs.add("type", media.getType().equals("music") ? "music" : "video");
+			qs.add("protocol", "http");
+			qs.add("offset", "0");
+
+
+
       PlexHttpClient.get(String.format("http://%s:%s", client.address, client.port), String.format("player/playback/playMedia?%s", qs), new PlexHttpResponseHandler() {
         @Override
         public void onSuccess(PlexResponse r) {
@@ -1249,11 +1254,9 @@ public class PlexSearchService extends Service {
           else
             feedback.m(getResources().getString(R.string.now_watching_video), media.isMovie() ? media.title : media.grandparentTitle, client.name);
           Boolean passed = true;
-          if (r.code != null) {
-            if (!r.code.equals("200")) {
-              passed = false;
-            }
-          }
+					if (r.code != 200) {
+						passed = false;
+					}
           Logger.d("Playback response: %s", r.code);
           if (passed) {
             videoPlayed = true;
@@ -1265,6 +1268,7 @@ public class PlexSearchService extends Service {
 
         @Override
         public void onFailure(Throwable error) {
+          Logger.d("[Scott] doEpisodeSearch playMedia: %s", error.getMessage());
           feedback.e(getResources().getString(R.string.got_error), error.getMessage());
         }
       });
@@ -1284,7 +1288,7 @@ public class PlexSearchService extends Service {
         @Override
         public void onSuccess(final Connection connection) {
           try {
-            PlexHttpClient.createPlayQueue(connection, media, album != null ? album.ratingKey : media.key, transientToken, new PlexPlayQueueHandler() {
+            PlexHttpClient.createPlayQueue(connection, media, album != null ? album.ratingKey : media.ratingKey, transientToken, new PlexPlayQueueHandler() {
               @Override
               public void onSuccess(MediaContainer mediaContainer) {
                 playMedia(media, connection, album, transientToken, mediaContainer);
@@ -1362,6 +1366,7 @@ public class PlexSearchService extends Service {
 
 							@Override
 							public void onFailure(Throwable error) {
+                Logger.d("[Scott] doNextEpisodeSearch onFailure: %s", error.getMessage());
 								feedback.e(getResources().getString(R.string.got_error), error.getMessage());
 							}
 						});
@@ -1459,6 +1464,7 @@ public class PlexSearchService extends Service {
 							@Override
 							public void onFailure(Throwable error) {
 								error.printStackTrace();
+								Logger.d("[Scott] doLatestEpisodeSearch onFailure: %s", error.getMessage());
 								feedback.e(getResources().getString(R.string.got_error), error.getMessage());
 							}
 						});
@@ -1536,6 +1542,7 @@ public class PlexSearchService extends Service {
 
 			@Override
 			public void onFailure(Throwable error) {
+        Logger.d("[Scott] doLatestEpisode onFailure: %s", error.getMessage());
 				feedback.e(getResources().getString(R.string.got_error), error.getMessage());
 			}
 		});
@@ -1589,6 +1596,7 @@ public class PlexSearchService extends Service {
 
 							@Override
 							public void onFailure(Throwable error) {
+                Logger.d("[Scott] doShowSearch onFailure: %s", error.getMessage());
 								feedback.e(getResources().getString(R.string.got_error), error.getMessage());
 							}
 						});
@@ -1762,6 +1770,7 @@ public class PlexSearchService extends Service {
 
 								@Override
 								public void onFailure(Throwable error) {
+									Logger.d("[Scott] doEpisodeSearch onFailure: %s", error.getMessage());
 									feedback.e(getResources().getString(R.string.got_error), error.getMessage());
 								}
 							});
@@ -1770,6 +1779,7 @@ public class PlexSearchService extends Service {
 
 					@Override
 					public void onFailure(Throwable error) {
+            Logger.d("[Scott] doEpisodeSearch onFailure2: %s", error.getMessage());
 						feedback.e(getResources().getString(R.string.got_error), error.getMessage());
 					}
 				});
@@ -1864,6 +1874,7 @@ public class PlexSearchService extends Service {
 
 							@Override
 							public void onFailure(Throwable error) {
+                Logger.d("[Scott] searchForAlbum onFailure: %s", error.getMessage());
 								feedback.e(getResources().getString(R.string.got_error), error.getMessage());
 							}
 						});
@@ -1960,6 +1971,7 @@ public class PlexSearchService extends Service {
 
 							@Override
 							public void onFailure(Throwable error) {
+                Logger.d("[Scott] searchForSong onFailure: %s", error.getMessage());
 								feedback.e(getResources().getString(R.string.got_error), error.getMessage());
 							}
 						});
@@ -2042,6 +2054,7 @@ public class PlexSearchService extends Service {
 
 							@Override
 							public void onFailure(Throwable error) {
+                Logger.d("[Scott] searchForArtist onFailure: %s", error.getMessage());
 								feedback.e(getResources().getString(R.string.got_error), error.getMessage());
 							}
 						});
@@ -2102,6 +2115,7 @@ public class PlexSearchService extends Service {
 
 			@Override
 			public void onFailure(Throwable error) {
+        Logger.d("[Scott] playAlbum onFailure: %s", error.getMessage());
 				feedback.e(getResources().getString(R.string.got_error), error.getMessage());
 			}
 		});

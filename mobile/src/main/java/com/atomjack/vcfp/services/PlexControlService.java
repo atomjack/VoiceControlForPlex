@@ -67,7 +67,7 @@ public class PlexControlService extends IntentService {
           castPlayerManager.play();
         } else {
           response = client.play();
-          if (response.code.equals("200"))
+          if (response.code == 200)
             currentState = PlayerState.PLAYING;
         }
       } else if (intent.getAction().equals(ACTION_PAUSE)) {
@@ -75,7 +75,7 @@ public class PlexControlService extends IntentService {
           castPlayerManager.pause();
         } else {
           response = client.pause();
-          if (response.code.equals("200"))
+          if (response.code == 200)
             currentState = PlayerState.PAUSED;
         }
       } else if (intent.getAction().equals(ACTION_STOP)) {
@@ -83,7 +83,7 @@ public class PlexControlService extends IntentService {
           castPlayerManager.stop();
         } else {
           response = client.stop();
-          if (response.code.equals("200"))
+          if (response.code == 200)
             currentState = PlayerState.STOPPED;
         }
       } else if (intent.getAction().equals(ACTION_REWIND)) {

@@ -7,10 +7,12 @@
 
     <ScrollView
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="fill_parent"
         android:layout_alignParentLeft="true"
         android:layout_alignParentTop="true"
-        android:layout_above="@+id/nowPlayingMusic">
+        android:layout_above="@+id/nowPlayingMusic"
+        android:id="@+id/nowPlayingScrollView"
+        android:fillViewport="true">
         <LinearLayout
             android:orientation="vertical"
             android:layout_width="fill_parent"

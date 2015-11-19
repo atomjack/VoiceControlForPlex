@@ -20,38 +20,22 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class PlexSubscription {
-  public static final String ACTION_SUBSCRIBE = "com.atomjack.vcfp.action_subscribe";
-  public static final String ACTION_SUBSCRIBED = "com.atomjack.vcfp.action_subscribed";
-  public static final String ACTION_UNSUBSCRIBE = "com.atomjack.vcfp.action_unsubscribe";
-
-  // Boolean indicating whether or not to notify an activity of an action done
-  public static final String EXTRA_NOTIFY = "com.atomjack.vcfp.extra_unsubscribe_notify";
-
-  public static final String ACTION_UNSUBSCRIBED = "com.atomjack.vcfp.action_unsubscribed";
-  public static final String ACTION_BROADCAST = "com.atomjack.vcfp.action_broadcast";
-  public static final String ACTION_MESSAGE = "com.atomjack.vcfp.action_message";
-
-  public static final String EXTRA_CLASS = "com.atomjack.vcfp.extra_class";
-  public static final String EXTRA_CLIENT = "com.atomjack.vcfp.extra_client";
-  public static final String EXTRA_TIMELINES = "com.atomjack.vcfp.extra_timelines";
-
   private static final int SUBSCRIBE_INTERVAL = 30000; // Send subscribe message every 30 seconds to keep us alive
 
   private static Serializer serial = new Persister();
 
-  public PlexClient mClient; // the mClient we are subscribing to
-
-  private String uuid;
-  private String appName;
+  public PlexClient mClient; // the client we are subscribing to
 
   private VCFPActivity listener;
   private VCFPActivity notificationListener; // This will be the listener but will not be reset, and will be used for changing the notification
@@ -71,9 +55,10 @@ public class PlexSubscription {
   private PlayerState currentState = PlayerState.STOPPED;
   private Timeline currentTimeline;
 
+  public Date timeLastHeardFromClient;
+
   public PlexSubscription() {
     mHandler = new Handler();
-    uuid = VoiceControlForPlexApplication.getInstance().prefs.getUUID();
   }
 
   public void setListener(VCFPActivity _listener) {
@@ -81,7 +66,6 @@ public class PlexSubscription {
       Logger.d("Setting listener to %s", _listener.getClass().getSimpleName());
     listener = _listener;
     if(_listener != null) {
-      appName = _listener.getString(R.string.app_name);
       notificationListener = _listener;
     }
   }
@@ -125,12 +109,19 @@ public class PlexSubscription {
       Logger.d("starting serverthread");
       Socket socket = null;
       try {
-        serverSocket = new ServerSocket(subscriptionPort);
+        serverSocket = new ServerSocket();
+        serverSocket.setReuseAddress(true);
+        serverSocket.bind(new InetSocketAddress(subscriptionPort));
+//        subscriptionPort = serverSocket.getLocalPort();
       } catch (IOException e) {
+
         e.printStackTrace();
       }
 
       Logger.d("running");
+
+
+
       onSocketReady.run();
       if(onReady != null) {
 //        onReady.run();
@@ -258,27 +249,45 @@ public class PlexSubscription {
     if(client == null)
       return;
     mClient = client;
-    PlexHttpClient.subscribe(client, subscriptionPort, commandId, uuid, appName, new PlexHttpResponseHandler() {
+
+    PlexHttpClient.subscribe(client, subscriptionPort, commandId, VoiceControlForPlexApplication.getInstance().getUUID(), VoiceControlForPlexApplication.getInstance().getString(R.string.app_name), new PlexHttpResponseHandler() {
       @Override
       public void onSuccess(PlexResponse response) {
         failedHeartbeats = 0;
-        Logger.d("PlexSubscription: Subscribed: %s", response.status);
-        commandId++;
-        subscribed = true;
+        if(!isHeartbeat)
+          Logger.d("PlexSubscription: Subscribed: %s", response != null ? response.status : "");
+        else
+          Logger.d("PlexSubscription: Heartbeat: %s", response != null ? response.status : "");
 
-        if (!isHeartbeat) {
-          // Start the heartbeat subscription (so the server knows we're still here)
-          mHandler.removeCallbacks(subscriptionHeartbeat);
-          mHandler.postDelayed(subscriptionHeartbeat, SUBSCRIBE_INTERVAL);
-          onSubscribed();
+
+
+        if(response.code != 200) {
+          this.onFailure(new Throwable(response.status));
+          // Close the server socket so it's no longer listening on the subscriptionPort
+          try {
+            serverSocket.close();
+            serverSocket = null;
+          } catch (Exception e) {}
+
+
+        } else {
+          timeLastHeardFromClient = new Date();
+
+          commandId++;
+          subscribed = true;
+
+          if (!isHeartbeat) {
+            // Start the heartbeat subscription (so the plex client knows we're still here)
+            mHandler.removeCallbacks(subscriptionHeartbeat);
+            mHandler.postDelayed(subscriptionHeartbeat, SUBSCRIBE_INTERVAL);
+            onSubscribed();
+          }
         }
       }
 
       @Override
       public void onFailure(final Throwable error) {
         error.printStackTrace();
-
-
         if(isHeartbeat) {
           failedHeartbeats++;
           Logger.d("%d failed heartbeats", failedHeartbeats);
@@ -352,7 +361,7 @@ public class PlexSubscription {
     if(listener == null)
       return;
 
-    PlexHttpClient.unsubscribe(mClient, commandId, uuid, listener.getString(R.string.app_name), new PlexHttpResponseHandler() {
+    PlexHttpClient.unsubscribe(mClient, commandId, VoiceControlForPlexApplication.getInstance().prefs.getUUID(), listener.getString(R.string.app_name), new PlexHttpResponseHandler() {
       @Override
       public void onSuccess(PlexResponse response) {
         Logger.d("Unsubscribed");
@@ -364,7 +373,8 @@ public class PlexSubscription {
           serverSocket.close();
           serverSocket = null;
         } catch (Exception ex) {
-//            ex.printStackTrace();
+          Logger.d("Exception attempting to close socket.");
+          ex.printStackTrace();
         }
         if(notify)
           onUnsubscribed();
@@ -378,6 +388,15 @@ public class PlexSubscription {
         Logger.d("failure unsubscribing");
         subscribed = false;
         mHandler.removeCallbacks(subscriptionHeartbeat);
+
+        try {
+          serverSocket.close();
+          serverSocket = null;
+        } catch (Exception ex) {
+          Logger.d("Exception attempting to close socket due to failed unsubscribe.");
+          ex.printStackTrace();
+        }
+
         onUnsubscribed();
       }
     });

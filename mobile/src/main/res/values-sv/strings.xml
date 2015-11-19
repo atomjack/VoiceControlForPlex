@@ -46,7 +46,7 @@
     <string name="select_voice">Välj Röst</string>
     <string name="cancel">Avbryt</string>
     <string name="nothing_to_play">Tyvärr, jag kunde inte hitta något att spela.</string>
-    <string name="http_status_code_error">Ett fel har uppkommit. HTTP status code: %s</string>
+    <string name="http_status_code_error">Ett fel har uppkommit. HTTP status code: %d</string>
     <string name="got_error">Ett fel har uppkommit: %s</string>
     <string name="client_not_specified">Ingen klient har angivits i inställningar, eller den går inte att hitta.</string>
     <string name="found_more_than_one_album">Jag har hittat mer än ett matchande album. Specificera artisten.</string>

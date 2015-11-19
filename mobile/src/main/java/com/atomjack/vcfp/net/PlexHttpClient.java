@@ -21,6 +21,7 @@ import com.atomjack.vcfp.model.PlexUser;
 import com.squareup.okhttp.Interceptor;
 import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
+import com.squareup.okhttp.ResponseBody;
 
 import java.io.IOException;
 import java.net.SocketTimeoutException;
@@ -56,7 +57,8 @@ public class PlexHttpClient
     Call<MediaContainer> getMediaContainer(@Path(value="path", encoded = true) String path, @Query(PlexHeaders.XPlexToken) String token);
 
     @GET("/{path}")
-    Call<PlexResponse> getPlexResponse(@Path(value="path", encoded=true) String path, @QueryMap Map<String, String> options);
+    Call<PlexResponse> getPlexResponse(@retrofit.http.Header(PlexHeaders.XPlexClientIdentifier) String clientId,
+                                       @Path(value="path", encoded=true) String path);
 
     @GET("/player/timeline/subscribe?protocol=http")
     Call<PlexResponse> subscribe(@retrofit.http.Header(PlexHeaders.XPlexClientIdentifier) String clientId,
@@ -67,9 +69,9 @@ public class PlexHttpClient
     @GET("/player/timeline/unsubscribe")
     Call<PlexResponse> unsubscribe(@retrofit.http.Header(PlexHeaders.XPlexClientIdentifier) String clientId,
                                    @retrofit.http.Header(PlexHeaders.XPlexDeviceName) String deviceName,
-                                   @retrofit.http.Header(PlexHeaders.XPlexTargetClientIdentifier) String machineIdentifier,
-                                   @Query("commandID") int commandId);
+                                   @retrofit.http.Header(PlexHeaders.XPlexTargetClientIdentifier) String machineIdentifier);
 
+    @retrofit.http.Headers(PlexHeaders.XPlexDeviceName + ": Voice Control for Plex")
     @GET("/player/timeline/poll")
     Call<MediaContainer> pollTimeline(@retrofit.http.Header(PlexHeaders.XPlexClientIdentifier) String clientId,
                                  @Query("commandID") int commandId);
@@ -90,10 +92,14 @@ public class PlexHttpClient
     Call<MediaContainer> createPlayQueue(@QueryMap Map<String, String> options, @retrofit.http.Header(PlexHeaders.XPlexClientIdentifier) String clientId);
 
     @GET("/player/playback/{which}")
-    Call<PlexResponse> adjustPlayback(@Path(value="which", encoded=true) String which);
+    Call<PlexResponse> adjustPlayback(@Path(value="which", encoded=true) String which,
+                                      @Query("commandID") String commandId,
+                                      @retrofit.http.Header(PlexHeaders.XPlexClientIdentifier) String clientId);
 
     @GET("/player/playback/seekTo")
-    Call<PlexResponse> seekTo(@Query("offset") int offset);
+    Call<PlexResponse> seekTo(@Query("offset") int offset,
+                              @Query("commandID") String commandId,
+                              @retrofit.http.Header(PlexHeaders.XPlexClientIdentifier) String clientId);
 
     @GET("/library/sections")
     Call<MediaContainer> getLibrarySections(@Query(PlexHeaders.XPlexToken) String accessToken);
@@ -160,7 +166,7 @@ public class PlexHttpClient
     if(username != null && password != null) {
       String creds = username + ":" + password;
       final String basic = "Basic " + Base64.encodeToString(creds.getBytes(), Base64.NO_WRAP);
-      httpClient.interceptors().add(new Interceptor() {
+      client.interceptors().add(new Interceptor() {
         @Override
         public com.squareup.okhttp.Response intercept(Chain chain) throws IOException {
           Request original = chain.request();
@@ -176,19 +182,46 @@ public class PlexHttpClient
       });
     }
     if(debug) {
-      httpClient.interceptors().add(new Interceptor() {
+      client.interceptors().add(new Interceptor() {
         @Override
         public com.squareup.okhttp.Response intercept(Chain chain) throws IOException {
           try {
             com.squareup.okhttp.Response response = chain.proceed(chain.request());
-            Logger.d("Retrofit@Response: %s", response.body().string());
-            return response;
-          } catch (IOException e) {}
+            ResponseBody responseBody = response.body();
+            String body = response.body().string();
+            Logger.d("Retrofit@Response: (%d) %s", response.code(), body);
+            com.squareup.okhttp.Response newResponse = response.newBuilder().body(ResponseBody.create(responseBody.contentType(), body.getBytes())).build();
+            return newResponse;
+          } catch (Exception e) {
+          }
           return null;
         }
       });
     }
-    Retrofit retrofit = builder.client(httpClient).build();
+
+    // Plex Media Player currently returns an empty body instead of valid XML for many calls, so we must detect an empty body
+    // and write our own valid XML in place of it
+    client.interceptors().add(new Interceptor() {
+      @Override
+      public com.squareup.okhttp.Response intercept(Chain chain) throws IOException {
+        try {
+          com.squareup.okhttp.Response response = chain.proceed(chain.request());
+          ResponseBody responseBody = response.body();
+          String body = response.body().string();
+          if(body.equals("")) {
+            body = String.format("<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
+                    "<Response code=\"%d\" status=\"%s\" />", response.code(), response.code() == 200 ? "OK" : "Error");
+          }
+          com.squareup.okhttp.Response newResponse = response.newBuilder().body(ResponseBody.create(responseBody.contentType(), body.getBytes())).build();
+          return newResponse;
+        } catch (Exception e) {}
+
+
+        return null;
+      }
+    });
+
+    Retrofit retrofit = builder.client(client).build();
     return retrofit.create(PlexHttpService.class);
   }
 
@@ -261,17 +294,30 @@ public class PlexHttpClient
 
   public static void subscribe(PlexClient client, int subscriptionPort, int commandId, String uuid, String deviceName, final PlexHttpResponseHandler responseHandler) {
     String url = String.format("http://%s:%s", client.address, client.port);
-    PlexHttpService service = getService(url);
+    Logger.d("Subscribing at url %s", url);
+    PlexHttpService service = getService(url, true);
+
     Call<PlexResponse> call = service.subscribe(uuid, deviceName, subscriptionPort, commandId);
     call.enqueue(new Callback<PlexResponse>() {
       @Override
       public void onResponse(Response<PlexResponse> response) {
-        if (responseHandler != null)
-          responseHandler.onSuccess(response.body());
+        Logger.d("Subscribe code: %d", response.code());
+        if (responseHandler != null) {
+          if(response.code() == 200)
+            responseHandler.onSuccess(response.body());
+          else
+            responseHandler.onFailure(new Throwable());
+        }
       }
 
       @Override
       public void onFailure(Throwable t) {
+        Logger.d("subscribe onFailure:");
+        PlexResponse response = new PlexResponse();
+        response.status = "ok";
+        if (responseHandler != null)
+          responseHandler.onSuccess(response);
+        t.printStackTrace();
         if (responseHandler != null)
           responseHandler.onFailure(t);
       }
@@ -280,8 +326,8 @@ public class PlexHttpClient
 
   public static void unsubscribe(PlexClient client, int commandId, String uuid, String deviceName, final PlexHttpResponseHandler responseHandler) {
     String url = String.format("http://%s:%s", client.address, client.port);
-    PlexHttpService service = getService(url);
-    Call<PlexResponse> call = service.unsubscribe(uuid, deviceName, client.machineIdentifier, commandId);
+    PlexHttpService service = getService(url, true);
+    Call<PlexResponse> call = service.unsubscribe(uuid, deviceName, client.machineIdentifier);
     call.enqueue(new Callback<PlexResponse>() {
       @Override
       public void onResponse(Response<PlexResponse> response) {
@@ -333,7 +379,9 @@ public class PlexHttpClient
     if(media.isMovie() && !hasOffset) {
       qs.put("extrasPrefixCount", Integer.toString(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.NUM_CINEMA_TRAILERS, 0)));
     }
-    qs.put("uri", String.format("library://%s/item/%%2flibrary%%2fmetadata%%2f%s", media.server.machineIdentifier, key));
+
+    String uri = String.format("library://%s/item/%%2flibrary%%2fmetadata%%2f%s", media.server.machineIdentifier, key);
+    qs.put("uri", uri);
     qs.put("window", "50"); // no idea what this is for
     if (transientToken != null)
       qs.put("token", transientToken);
@@ -369,9 +417,9 @@ public class PlexHttpClient
   }
 
   public static void get(String baseHostname, String path, final PlexHttpResponseHandler responseHandler) {
-    PlexHttpService service = getService(baseHostname);
-
-    Call<PlexResponse> call = service.getPlexResponse(path.replaceFirst("^/", ""), null);
+    PlexHttpService service = getService(baseHostname, true);
+    Call<PlexResponse> call = service.getPlexResponse(VoiceControlForPlexApplication.getInstance().prefs.getUUID(),
+            path.replaceFirst("^/", ""));
     call.enqueue(new Callback<PlexResponse>() {
       @Override
       public void onResponse(Response<PlexResponse> response) {
@@ -448,8 +496,8 @@ public class PlexHttpClient
 
   public static void getClientTimeline(PlexClient client, final int commandId, final PlexHttpMediaContainerHandler responseHandler) {
     String url = String.format("http://%s:%s", client.address, client.port);
-    PlexHttpService service = getService(url);
-    Logger.d("Polling timeline");
+    PlexHttpService service = getService(url, true);
+    Logger.d("Polling timeline with uuid %s", VoiceControlForPlexApplication.getInstance().prefs.getUUID());
     Call<MediaContainer> call = service.pollTimeline(VoiceControlForPlexApplication.getInstance().prefs.getUUID(), commandId);
     call.enqueue(new Callback<MediaContainer>() {
       @Override

@@ -46,7 +46,7 @@ public class GDMReceiver extends BroadcastReceiver {
 					server.version = responseMap.get("version");
 					server.local = true;
 					Connection connection = new Connection("http", server.address, server.port);
-					server.connections = new ArrayList<Connection>();
+					server.connections = new ArrayList<>();
 					server.connections.add(connection);
 					VoiceControlForPlexApplication.addPlexServer(server);
 				} else if(responseMap.get("content-type").equals("plex/media-player") && responseMap.get("protocol") != null && responseMap.get("protocol").equals("plex")) {
@@ -98,7 +98,7 @@ public class GDMReceiver extends BroadcastReceiver {
         context.startActivity(i);
       }
       // Clear the list of clients so the next scan sends a reinitialized list.
-      clients = new ArrayList<PlexClient>();
+      clients = new ArrayList<>();
 		} else if(intent.getAction().equals(ACTION_CANCEL)) {
       Logger.d("[GDMReceiver] cancel");
       cancel = true;
@@ -114,7 +114,9 @@ public class GDMReceiver extends BroadcastReceiver {
 		for(String line : lines) {
 			matcher = p.matcher(line);
 			if(matcher.find()) {
-				responseMap.put(matcher.group(1).toLowerCase(), matcher.group(2));
+				Logger.d("%s: %s", matcher.group(1).toLowerCase(), matcher.group(2));
+        if(!responseMap.containsKey(matcher.group(1).toLowerCase()))
+  				responseMap.put(matcher.group(1).toLowerCase(), matcher.group(2));
 			}
 		}
 		return responseMap;

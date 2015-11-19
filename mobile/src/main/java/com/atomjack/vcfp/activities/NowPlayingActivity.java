@@ -4,8 +4,12 @@ import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.v4.view.GestureDetectorCompat;
+import android.view.GestureDetector;
 import android.view.Menu;
+import android.view.MotionEvent;
 import android.view.View;
+import android.widget.ScrollView;
 import android.widget.SeekBar;
 
 import com.atomjack.shared.PlayerState;
@@ -97,7 +101,6 @@ public class NowPlayingActivity extends PlayerActivity {
     }
 	}
 
-
 	private void setState(PlayerState newState) {
 		state = newState;
 		if(state == PlayerState.PAUSED) {
@@ -143,12 +146,14 @@ public class NowPlayingActivity extends PlayerActivity {
     doPlayPause();
   }
 
+  @Override
 	public void doRewind(View v) {
 		if(position > -1) {
 			mClient.seekTo(position - 15000, null);
 		}
 	}
 
+  @Override
 	public void doForward(View v) {
 		if(position > -1) {
 			mClient.seekTo(position + 30000, null);

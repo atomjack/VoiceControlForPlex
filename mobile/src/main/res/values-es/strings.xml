@@ -46,7 +46,7 @@
     <string name="select_voice">Selecciona Voz</string>
     <string name="cancel">Cancelar</string>
     <string name="nothing_to_play">Lo siento, no he podido encontrar nada que reproducir.</string>
-    <string name="http_status_code_error">Lo siento, me da un error, HTTP status code: %s</string>
+    <string name="http_status_code_error">Lo siento, me da un error, HTTP status code: %d</string>
     <string name="got_error">Lo siento, me da un error: %s</string>
     <string name="client_not_specified">Sorry, you didn\'t specify a client in the main settings, or I couldn\'t find it.</string>
     <string name="found_more_than_one_album">He encontrado más de un álbum que coincide. Por favor, especifica el artista.</string>
