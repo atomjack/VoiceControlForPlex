@@ -103,7 +103,7 @@ public class PlexScannerService extends Service {
   }
 
   private void scanForServers() {
-    VoiceControlForPlexApplication.servers = new ConcurrentHashMap<String, PlexServer>();
+    VoiceControlForPlexApplication.servers = new ConcurrentHashMap<>();
     if(isLoggedIn()) {
       refreshResources(VoiceControlForPlexApplication.getInstance().prefs.getString(Preferences.AUTHENTICATION_TOKEN), new RefreshResourcesResponseHandler() {
         @Override
@@ -117,7 +117,6 @@ public class PlexScannerService extends Service {
         public void onFailure(int statusCode) {
           Logger.d("[PlexScannerService] failure: %d", statusCode);
           if (statusCode == 401) { // Unauthorized
-            // REMOTE_SERVER_SCAN_UNAUTHORIZED
             onScanFinished(ACTION_SERVER_SCAN_FINISHED, REMOTE_SERVER_SCAN_UNAUTHORIZED);
           }
         }

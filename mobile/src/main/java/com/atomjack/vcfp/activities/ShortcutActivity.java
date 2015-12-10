@@ -49,6 +49,7 @@ public class ShortcutActivity extends Activity {
       serviceIntent.putExtra(com.atomjack.shared.Intent.EXTRA_SERVER, gsonWrite.toJson(server));
       serviceIntent.putExtra(com.atomjack.shared.Intent.EXTRA_CLIENT, getIntent().getStringExtra(com.atomjack.shared.Intent.EXTRA_CLIENT));
       serviceIntent.putExtra(com.atomjack.shared.Intent.EXTRA_RESUME, getIntent().getBooleanExtra(com.atomjack.shared.Intent.EXTRA_RESUME, false));
+      serviceIntent.putExtra(com.atomjack.shared.Intent.USE_CURRENT, getIntent().getBooleanExtra(com.atomjack.shared.Intent.USE_CURRENT, false));
 
       SecureRandom random = new SecureRandom();
       serviceIntent.setData(Uri.parse(new BigInteger(130, random).toString(32)));

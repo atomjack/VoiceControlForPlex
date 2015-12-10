@@ -43,6 +43,7 @@ import com.atomjack.vcfp.interfaces.BitmapHandler;
 import com.atomjack.vcfp.model.Connection;
 import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.PlexClient;
+import com.atomjack.vcfp.model.PlexDirectory;
 import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexServer;
 import com.atomjack.vcfp.model.PlexTrack;
@@ -107,7 +108,7 @@ public class VoiceControlForPlexApplication extends Application
     initializing
   }
 
-  public static HashMap<String, String[]> chromecastVideoOptions = new LinkedHashMap<>();
+  public static HashMap<String, String[]> chromecastVideoOptions = new LinkedHashMap<String, String[]>();
 
   private NotificationManager mNotifyMgr;
   private Bitmap notificationBitmap = null;
@@ -262,15 +263,15 @@ public class VoiceControlForPlexApplication extends Application
         @Override
         public void onSuccess(Connection connection) {
           Logger.d("active connection: %s", connection);
-          PlexHttpClient.PlexHttpService service = PlexHttpClient.getService(connection);
+          PlexHttpClient.PlexHttpService service = PlexHttpClient.getService(connection, true);
           Call<MediaContainer> call = service.getLibrarySections(server.accessToken);
           call.enqueue(new Callback<MediaContainer>() {
             @Override
             public void onResponse(Response<MediaContainer> response) {
               MediaContainer mc = response.body();
-              server.movieSections = new ArrayList<String>();
-              server.tvSections = new ArrayList<String>();
-              server.musicSections = new ArrayList<String>();
+              server.movieSections = new ArrayList<>();
+              server.tvSections = new ArrayList<>();
+              server.musicSections = new ArrayList<>();
               for(int i=0;i<mc.directories.size();i++) {
                 if(mc.directories.get(i).type.equals("movie")) {
                   server.addMovieSection(mc.directories.get(i).key);
@@ -827,5 +828,34 @@ public class VoiceControlForPlexApplication extends Application
       VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.UUID, uuid);
     }
     return uuid;
+  }
+
+  public static QueryString getPlaybackQueryString(PlexMedia media,
+                                            MediaContainer mediaContainer, Connection connection,
+                                            String transientToken, PlexDirectory album,
+                                            boolean resumePlayback) {
+    QueryString qs = new QueryString("machineIdentifier", media.server.machineIdentifier);
+    qs.add("key", media.key);
+    qs.add("containerKey", String.format("/playQueues/%s", mediaContainer.playQueueID));
+    qs.add("port", connection.port);
+    qs.add("address", connection.address);
+
+    if (resumePlayback && media.viewOffset != null)
+      qs.add("viewOffset", media.viewOffset);
+    if (transientToken != null)
+      qs.add("token", transientToken);
+    if (media.server.accessToken != null)
+      qs.add(PlexHeaders.XPlexToken, media.server.accessToken);
+
+    if (album != null)
+      qs.add("containerKey", album.key);
+
+    // new for PMP:
+    qs.add("commandID", "0");
+    qs.add("type", media.getType().equals("music") ? "music" : "video");
+    qs.add("protocol", "http");
+    qs.add("offset", resumePlayback && media.viewOffset != null ? media.viewOffset : "0");
+
+    return qs;
   }
 }

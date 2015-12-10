@@ -19,6 +19,7 @@ import android.os.Handler;
 import android.speech.tts.TextToSpeech;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.content.FileProvider;
 import android.support.v7.media.MediaRouteSelector;
 import android.support.v7.media.MediaRouter;
 import android.view.LayoutInflater;
@@ -187,6 +188,7 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
             Logger.d("Emailing device logs");
             Intent emailIntent = new Intent(Intent.ACTION_SEND_MULTIPLE);
             emailIntent.putExtra(Intent.EXTRA_SUBJECT, "Voice Control for Plex Android Logs");
+            emailIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
 
             // Build the body of the email
             StringBuilder body = new StringBuilder();
@@ -194,7 +196,8 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
             body.append(String.format("Device: %s\n", Build.DEVICE));
             body.append(String.format("Model: %s\n", Build.MODEL));
             body.append(String.format("Product: %s\n", Build.PRODUCT));
-            body.append(String.format("Version: %s\n\n", Build.VERSION.RELEASE));
+            body.append(String.format("Version: %s\n", Build.VERSION.RELEASE));
+            body.append(String.format("App Version: %s\n\n", getPackageManager().getPackageInfo(getPackageName(), 0).versionName));
 
             body.append(String.format("Logged in: %s\n\n", VoiceControlForPlexApplication.getInstance().prefs.getString(Preferences.PLEX_USERNAME) != null ? "yes" : "no"));
 
@@ -229,8 +232,10 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 
             ArrayList<Uri> uris = new ArrayList<Uri>();
             uris.add(Uri.parse("file://" + tempFile.getAbsolutePath()));
+//            uris.add(FileProvider.getUriForFile(MainActivity.this, "com.atomjack.vcfp.fileprovider", tempFile));
 
             if (!wearLog.equals("")) {
+              Logger.d("attaching wear log");
               tempFile = new File(tempDirectory, "/vcfp-wear-log.txt");
               fos = new FileOutputStream(tempFile);
               out = new OutputStreamWriter(fos, "UTF-8");
@@ -238,6 +243,7 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
               out.flush();
               out.close();
               uris.add(Uri.parse("file://" + tempFile.getAbsolutePath()));
+//                uris.add(FileProvider.getUriForFile(MainActivity.this, "com.atomjack.vcfp.fileprovider", tempFile));
             }
             emailIntent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris);
             startActivity(emailIntent);
@@ -329,7 +335,8 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 	}
 
 	public void resumeChecked(View v) {
-    VoiceControlForPlexApplication.getInstance().prefs.put("resume", ((CheckBox) v).isChecked());
+    Logger.d("Setting resume checkbox to %s", ((CheckBox) v).isChecked());
+    VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.RESUME, ((CheckBox) v).isChecked());
 	}
 
 	@Override

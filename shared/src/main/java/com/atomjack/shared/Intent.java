@@ -6,6 +6,7 @@ public class Intent {
   public final static String EXTRA_SERVER = "com.atomjack.vcfp.intent.extra_server";
   public final static String EXTRA_CLIENT = "com.atomjack.vcfp.intent.extra_client";
   public final static String EXTRA_RESUME = "com.atomjack.vcfp.intent.extra_resume";
+  public final static String USE_CURRENT = "com.atomjack.vcfp.intent.use_current";
   public final static String EXTRA_SILENT = "com.atomjack.vcfp.intent.extra_silent";
   public final static String EXTRA_FROM_MIC = "com.atomjack.vcfp.intent.extra_from_mic";
 

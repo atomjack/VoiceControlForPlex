@@ -295,7 +295,7 @@ public class PlexHttpClient
   public static void subscribe(PlexClient client, int subscriptionPort, int commandId, String uuid, String deviceName, final PlexHttpResponseHandler responseHandler) {
     String url = String.format("http://%s:%s", client.address, client.port);
     Logger.d("Subscribing at url %s", url);
-    PlexHttpService service = getService(url, true);
+    PlexHttpService service = getService(url);
 
     Call<PlexResponse> call = service.subscribe(uuid, deviceName, subscriptionPort, commandId);
     call.enqueue(new Callback<PlexResponse>() {
@@ -380,6 +380,9 @@ public class PlexHttpClient
       qs.put("extrasPrefixCount", Integer.toString(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.NUM_CINEMA_TRAILERS, 0)));
     }
 
+    if(hasOffset)
+      qs.put("viewOffset", media.viewOffset);
+
     String uri = String.format("library://%s/item/%%2flibrary%%2fmetadata%%2f%s", media.server.machineIdentifier, key);
     qs.put("uri", uri);
     qs.put("window", "50"); // no idea what this is for
@@ -388,8 +391,10 @@ public class PlexHttpClient
     if (media.server.accessToken != null)
       qs.put(PlexHeaders.XPlexToken, media.server.accessToken);
 
-    Logger.d("Qs: ", qs);
-    PlexHttpService service = getService(String.format("http://%s:%s", connection.address, connection.port));
+    for(Object name:qs.keySet()) {
+      Logger.d("QS %s:%s", name, qs.get(name));
+    }
+    PlexHttpService service = getService(String.format("http://%s:%s", connection.address, connection.port), true);
     Call<MediaContainer> call = service.createPlayQueue(qs, VoiceControlForPlexApplication.getUUID());
     call.enqueue(new Callback<MediaContainer>() {
       @Override

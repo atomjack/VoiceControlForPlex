@@ -110,8 +110,10 @@ public class ShortcutProviderActivity extends VCFPActivity {
 			launchIntent.putExtra(com.atomjack.shared.Intent.EXTRA_RESUME, resume);
 			String label = server.name.equals(client.name) ? server.name : (server.owned ? server.name : server.sourceTitle) + "/" + client.name;
 			sendIntent.putExtra(Intent.EXTRA_SHORTCUT_NAME, label);
-		} else
-			sendIntent.putExtra(Intent.EXTRA_SHORTCUT_NAME, getResources().getString(R.string.app_name));
+		} else {
+      launchIntent.putExtra(com.atomjack.shared.Intent.USE_CURRENT, true);
+      sendIntent.putExtra(Intent.EXTRA_SHORTCUT_NAME, getResources().getString(R.string.app_name));
+    }
 
 		sendIntent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, launchIntent);
 

@@ -162,8 +162,8 @@ public class PlexServer extends PlexDevice {
 	};
 
   public void findServerConnection(final ActiveConnectionHandler activeConnectionHandler) {
-    Logger.d("[PlexServer] finding server connection, current active connection expires %s", activeConnectionExpires);
-    if(activeConnectionExpires != null && activeConnectionExpires.after(Calendar.getInstance())) {
+    Logger.d("[PlexServer] finding server connection, current active connection expires %s, number of connections: %d", activeConnectionExpires, connections.size());
+    if(activeConnectionExpires != null && activeConnectionExpires.before(Calendar.getInstance())) {
       activeConnectionHandler.onSuccess(activeConnection);
     } else {
       findServerConnection(0, activeConnectionHandler);
@@ -175,37 +175,37 @@ public class PlexServer extends PlexDevice {
     testServerConnection(connection, new ServerTestHandler() {
       @Override
       public void onFinish(int statusCode, boolean available) {
-				if(statusCode != 200) {
-					if(activeConnectionHandler != null)
+        if (available) {
+          // This connection replied, so let's use it
+          activeConnection = connections.get(connectionIndex);
+          activeConnectionExpires = Calendar.getInstance();
+          activeConnectionExpires.set(Calendar.HOUR, 1);
+          activeConnectionHandler.onSuccess(activeConnection);
+        } else {
+          int newConnectionIndex = connectionIndex + 1;
+          Logger.d("Not available, new connection index: %d", newConnectionIndex);
+          if (connections.size() <= newConnectionIndex)
             activeConnectionHandler.onFailure(statusCode);
-				} else {
-					if (available) {
-						// This connection replied, so let's use it
-						activeConnection = connections.get(connectionIndex);
-						activeConnectionExpires = Calendar.getInstance();
-						activeConnectionExpires.set(Calendar.HOUR, 1);
-						activeConnectionHandler.onSuccess(activeConnection);
-					} else {
-						int newConnectionIndex = connectionIndex + 1;
-						if (connections.size() <= newConnectionIndex)
-							activeConnectionHandler.onFailure(statusCode);
-						else
-							findServerConnection(newConnectionIndex, activeConnectionHandler);
-					}
-				}
+          else
+            findServerConnection(newConnectionIndex, activeConnectionHandler);
+        }
       }
     });
   }
 
 	private void testServerConnection(final Connection connection, final ServerTestHandler handler) {
-    Logger.d("testServerConnection: fetching %s", connection.uri);
+    Logger.d("testServerConnection: fetching %s with token %s", connection.uri, accessToken);
     PlexHttpClient.PlexHttpService service = PlexHttpClient.getService(connection, 2);
     Call<MediaContainer> call = service.getMediaContainer("", accessToken);
     call.enqueue(new Callback<MediaContainer>() {
       @Override
       public void onResponse(Response<MediaContainer> response) {
-        Logger.d("%s success", connection.uri);
-        handler.onFinish(response.code(), true);
+        if(response.code() == 200) {
+          Logger.d("%s success", connection.uri);
+          handler.onFinish(response.code(), true);
+        } else {
+          handler.onFinish(response.code(), false);
+        }
       }
 
       @Override
