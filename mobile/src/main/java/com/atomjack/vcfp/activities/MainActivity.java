@@ -420,59 +420,27 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 						return;
 					}
 
-          searchDialog = new Dialog(MainActivity.this);
+          LayoutInflater inflater = getLayoutInflater();
+          View layout = inflater.inflate(R.layout.search_popup, null);
 
-          searchDialog.setContentView(R.layout.search_popup);
-          searchDialog.setTitle(getResources().getString(R.string.searching_for_plex_servers));
+          AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
 
-          searchDialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
+          builder.setView(layout);
+          builder.setTitle(getResources().getString(R.string.searching_for_plex_servers));
+
+          builder.setOnCancelListener(new DialogInterface.OnCancelListener() {
             @Override
             public void onCancel(DialogInterface dialogInterface) {
               serverScanCanceled = true;
-//              RemoteScan.cancelScan();
             }
           });
+          searchDialog = builder.create();
           searchDialog.show();
           Intent scannerIntent = new Intent(MainActivity.this, PlexScannerService.class);
           scannerIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
           scannerIntent.putExtra(PlexScannerService.CLASS, MainActivity.class);
           scannerIntent.setAction(PlexScannerService.ACTION_SCAN_SERVERS);
           startService(scannerIntent);
-
-          /*
-					if(authToken != null) {
-
-
-						RemoteScan.refreshResources(authToken, new RemoteScan.RefreshResourcesResponseHandler() {
-							@Override
-							public void onSuccess() {
-                // Finished getting servers from plex.tv. If no wifi connection is detected, just show the servers we found.
-								if(currentNetworkState.equals(NetworkState.MOBILE)) {
-                  searchDialog.dismiss();
-                  localScan.showPlexServers();
-                } else
-                  localScan.searchForPlexServers();
-							}
-
-							@Override
-							public void onFailure(int statusCode) {
-								if(statusCode == 401) {
-									authToken = null;
-                  VoiceControlForPlexApplication.getInstance().prefs.remove(Preferences.AUTHENTICATION_TOKEN);
-									feedback.e(R.string.login_unauthorized);
-									switchLogin();
-								} else
-									feedback.e(R.string.remote_scan_error);
-							}
-						});
-					} else {
-						Logger.d("not logged in");
-            if(currentNetworkState.equals(NetworkState.MOBILE)) {
-              feedback.e(R.string.mobile_connection_login_required);
-            } else
-  						localScan.searchForPlexServers();
-					}
-					*/
 				} else if (holder.tag.equals(holder.TAG_FEEDBACK)) {
 					selectFeedback();
 				} else if (holder.tag.equals(holder.TAG_ERRORS)) {

@@ -860,14 +860,10 @@ public abstract class VCFPActivity extends AppCompatActivity implements PlexSubs
       cancelScan = false;
       return;
     }
-//    if(searchDialog != null)
-//      searchDialog.dismiss();
-    if(deviceSelectDialog == null) {
-      deviceSelectDialog = new Dialog(this);
-    }
-    deviceSelectDialog.setContentView(R.layout.server_select);
-    deviceSelectDialog.setTitle("Select a Plex Server");
+
+    deviceSelectDialog = getDeviceSelectDialog(getResources().getString(R.string.select_plex_server));
     deviceSelectDialog.show();
+
 
     final ListView serverListView = (ListView) deviceSelectDialog.findViewById(R.id.serverListView);
     if(servers == null)
@@ -887,6 +883,15 @@ public abstract class VCFPActivity extends AppCompatActivity implements PlexSubs
     });
   }
 
+  public Dialog getDeviceSelectDialog(String title) {
+    AlertDialog.Builder builder = new AlertDialog.Builder(this);
+    LayoutInflater inflater = getLayoutInflater();
+    View layout = inflater.inflate(R.layout.server_select, null);
+    builder.setView(layout);
+    builder.setTitle(title);
+    return builder.create();
+  }
+
   public void showPlexClients() {
     showPlexClients(false, null);
   }
@@ -901,11 +906,8 @@ public abstract class VCFPActivity extends AppCompatActivity implements PlexSubs
       cancelScan = false;
       return;
     }
-    if (deviceSelectDialog == null) {
-      deviceSelectDialog = new Dialog(this);
-    }
-    deviceSelectDialog.setContentView(R.layout.server_select);
-    deviceSelectDialog.setTitle(R.string.select_plex_client);
+    deviceSelectDialog = getDeviceSelectDialog(getString(R.string.select_plex_client));
+
     deviceSelectDialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
       @Override
       public void onCancel(DialogInterface dialogInterface) {
