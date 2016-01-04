@@ -24,7 +24,7 @@ public class PlexClient extends PlexDevice {
 	public boolean isAudioOnly = false;
 
 	public PlexClient() {
-
+    super();
 	}
 
 	public static PlexClient fromDevice(Device device) {

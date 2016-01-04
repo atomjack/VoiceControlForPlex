@@ -47,8 +47,10 @@ public class PlexServer extends PlexDevice {
 	public boolean local;
 
 	public PlexServer() {
-		connections = new ArrayList<Connection>();
+		super();
+    connections = new ArrayList<Connection>();
 	}
+
 	public PlexServer(String _name) {
 		name = _name;
 		connections = new ArrayList<Connection>();

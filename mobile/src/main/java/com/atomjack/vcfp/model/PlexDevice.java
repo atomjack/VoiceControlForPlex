@@ -5,6 +5,7 @@ import android.os.Parcelable;
 import org.simpleframework.xml.Attribute;
 import org.simpleframework.xml.ElementList;
 
+import java.util.Date;
 import java.util.List;
 
 public abstract class PlexDevice implements Parcelable {
@@ -26,6 +27,12 @@ public abstract class PlexDevice implements Parcelable {
 	public List<Connection> connections;
 	@Attribute(required=false)
 	public String machineIdentifier;
+  @Attribute(required=false)
+  public Date lastUpdated;
+
+  public PlexDevice() {
+    lastUpdated = new Date();
+  }
 
 
 

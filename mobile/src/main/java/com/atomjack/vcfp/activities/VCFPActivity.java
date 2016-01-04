@@ -906,7 +906,8 @@ public abstract class VCFPActivity extends AppCompatActivity implements PlexSubs
       cancelScan = false;
       return;
     }
-    deviceSelectDialog = getDeviceSelectDialog(getString(R.string.select_plex_client));
+    if(deviceSelectDialog == null)
+      deviceSelectDialog = getDeviceSelectDialog(getString(R.string.select_plex_client));
 
     deviceSelectDialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
       @Override
