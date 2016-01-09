@@ -153,4 +153,5 @@
     <string name="email_device_logs_write_storage_denied">Permission to write to the device\'s external storage is required in order to email device logs.</string>
     <string name="video_attempted_on_audio_only_device">Sorry, but video playback is not supported on %s.</string>
     <string name="select_plex_server">Select a Plex Server</string>
+    <string name="couldnt_play_to_client">Sorry, I got an error trying to connect to %s. If this problem persists, recreate the homescreen shortcut after re-scanning for clients.</string>
 </resources>

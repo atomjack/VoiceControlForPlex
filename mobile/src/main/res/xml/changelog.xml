@@ -1,11 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog>
-    <release version="2.0.5b3" versioncode="52">
+    <release version="2.0.5" versioncode="55">
+        <change>On Now Playing screen, tap to pause and swipe left/right to seek back/forward.</change>
         <change>Added support for audio-only Chromecast devices.</change>
         <change>Fixed playing all songs by an artist.</change>
         <change>Fixed using the mic button on the now playing screen to trigger new playback, when used with Chromecast.</change>
         <change>Fixed display of notifications (background color).</change>
         <change>Fixed bug that caused inconsistent connection to non-Chromecast Plex clients.</change>
+        <change>Better support for Plex Media Player.</change>
+        <change>Other minor bug fixes.</change>
     </release>
     <release version="2.0.4" versioncode="49">
         <change>Added Swedish translations (Bjorn Komlanz).</change>

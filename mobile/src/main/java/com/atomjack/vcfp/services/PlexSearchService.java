@@ -215,8 +215,20 @@ public class PlexSearchService extends Service {
 			if(specifiedServer != null)
 				Logger.d("specified server %s", specifiedServer);
 			PlexClient thisClient = VoiceControlForPlexApplication.gsonRead.fromJson(intent.getStringExtra(com.atomjack.shared.Intent.EXTRA_CLIENT), PlexClient.class);
-			if(thisClient != null)
-				client = thisClient;
+      if(thisClient != null) {
+        client = thisClient;
+//        Logger.d("Got client from hardcoded shortcut, lastUpdated: %s.", client.lastUpdated);
+        // See if this same client has been saved into settings more recently than the shortcut was created, and if so, use the saved client in case its IP address has changed
+        for (PlexClient theClient : VoiceControlForPlexApplication.clients.values()) {
+          if(theClient.machineIdentifier != null && theClient.machineIdentifier.equals(client.machineIdentifier)) {
+//            Logger.d("Found saved client, last updated: %s", theClient.lastUpdated);
+            if(client.lastUpdated == null || (theClient.lastUpdated != null && theClient.lastUpdated.after(client.lastUpdated))) {
+              Logger.d("Saved client was updated after shortcut was created. Using saved client instead.");
+              client = theClient;
+            }
+          }
+        }
+      }
 			if(intent.getBooleanExtra(com.atomjack.shared.Intent.EXTRA_RESUME, false))
 				resumePlayback = true;
 
@@ -1252,7 +1264,9 @@ public class PlexSearchService extends Service {
 
         @Override
         public void onFailure(Throwable error) {
-          feedback.e(getResources().getString(R.string.got_error), error.getMessage());
+          feedback.e(String.format(getResources().getString(R.string.couldnt_play_to_client), client.name));
+          Logger.e("Couldn't connect to client %s.", client.name);
+          error.printStackTrace();
         }
       });
     }
