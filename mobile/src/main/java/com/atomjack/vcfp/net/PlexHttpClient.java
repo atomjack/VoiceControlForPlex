@@ -266,12 +266,15 @@ public class PlexHttpClient
           public void onResponse(Response<MediaContainer> response) {
             // Add this server to each of this media container's media objects
             MediaContainer mediaContainer = response.body();
-            for (int i = 0; i < mediaContainer.tracks.size(); i++) {
-              mediaContainer.tracks.get(i).server = server;
+            if(mediaContainer.tracks != null) {
+              for (int i = 0; i < mediaContainer.tracks.size(); i++) {
+                mediaContainer.tracks.get(i).server = server;
+              }
             }
-            Logger.d("Set tracks server with %d music sections", server.musicSections.size());
-            for (int i = 0; i < mediaContainer.videos.size(); i++) {
-              mediaContainer.videos.get(i).server = server;
+            if(mediaContainer.videos != null) {
+              for (int i = 0; i < mediaContainer.videos.size(); i++) {
+                mediaContainer.videos.get(i).server = server;
+              }
             }
             responseHandler.onSuccess(response.body());
           }
