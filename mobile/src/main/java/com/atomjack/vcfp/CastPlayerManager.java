@@ -25,7 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class CastPlayerManager {
   private PlexMedia nowPlayingMedia;
-  private List<PlexMedia> nowPlayingAlbum;
+  private List<? extends PlexMedia> nowPlayingAlbum;
 
   private static VideoCastManager castManager = null;
   private VCFPCastConsumer castConsumer;
@@ -209,7 +209,7 @@ public class CastPlayerManager {
   }
 
   // This will send a message to the cast device to load the passed in media
-  public void loadMedia(PlexMedia media, List<PlexMedia> album, final int offset) {
+  public void loadMedia(PlexMedia media, List<? extends PlexMedia> album, final int offset) {
     Logger.d("Loading media");
     nowPlayingMedia = media;
     nowPlayingAlbum = album;
@@ -520,7 +520,7 @@ public class CastPlayerManager {
     return nowPlayingMedia;
   }
 
-  public List<PlexMedia> getNowPlayingAlbum() {
+  public List<? extends PlexMedia> getNowPlayingAlbum() {
     return nowPlayingAlbum;
   }
 

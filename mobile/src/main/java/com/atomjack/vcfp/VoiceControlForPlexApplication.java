@@ -329,12 +329,6 @@ public class VoiceControlForPlexApplication extends Application
 		return cmp.compare(v1, v2) < 0;
 	}
 
-	public static boolean isWifiConnected(Context context) {
-		ConnectivityManager connManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-		NetworkInfo mWifi = connManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
-		return mWifi.isConnected();
-	}
-
 	public static void showNoWifiDialog(Context context) {
 		AlertDialog.Builder usageDialog = new AlertDialog.Builder(context);
 		usageDialog.setTitle(R.string.no_wifi_connection);
@@ -412,9 +406,9 @@ public class VoiceControlForPlexApplication extends Application
   // notification again.
   private void fetchNotificationBitmap(final PlexMedia.IMAGE_KEY key, final PlexClient client, final PlexMedia media, final PlayerState currentState) {
       Logger.d("Thumb not found in cache. Downloading %s.", key);
-      new AsyncTask() {
+      new AsyncTask<Void, Void, Void>() {
         @Override
-        protected Object doInBackground(Object[] objects) {
+        protected Void doInBackground(Void... voids) {
           if (client != null && media != null) {
             InputStream inputStream = media.getNotificationThumb(media instanceof PlexTrack ? PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB_MUSIC : key);
             if(inputStream != null) {
@@ -438,9 +432,9 @@ public class VoiceControlForPlexApplication extends Application
   }
 
   public void fetchNotificationBitmap(final PlexMedia.IMAGE_KEY key, final PlexMedia media, final Runnable onFinish) {
-    new AsyncTask() {
+    new AsyncTask<Void, Void, Void>() {
       @Override
-      protected Object doInBackground(Object[] params) {
+      protected Void doInBackground(Void... voids) {
         InputStream inputStream = media.getNotificationThumb(key);
         if(inputStream != null) {
           try {

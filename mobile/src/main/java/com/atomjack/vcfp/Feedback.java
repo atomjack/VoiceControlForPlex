@@ -1,6 +1,8 @@
 package com.atomjack.vcfp;
 
+import android.annotation.TargetApi;
 import android.content.Context;
+import android.os.Build;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
 import android.widget.Toast;
@@ -113,8 +115,11 @@ public class Feedback implements TextToSpeech.OnInitListener {
           feedbackTts.setOnUtteranceProgressListener(utteranceProgressListener);
 				}
 			} else {
-        map.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, Integer.toString(utteranceId++));
-				tts.speak(filterText(text), TextToSpeech.QUEUE_FLUSH, map);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+          ttsGreater21(tts, text);
+        } else {
+          ttsUnder20(tts, text);
+        }
 				if (errors)
 					errorsQueue = null;
 				else
@@ -127,6 +132,18 @@ public class Feedback implements TextToSpeech.OnInitListener {
       onFinish = null;
 		}
 	}
+
+  @SuppressWarnings("deprecation")
+  private void ttsUnder20(TextToSpeech tts, String text) {
+    map.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, Integer.toString(utteranceId++));
+    tts.speak(text, TextToSpeech.QUEUE_FLUSH, map);
+  }
+
+  @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+  private void ttsGreater21(TextToSpeech tts, String text) {
+    String utteranceId = this.hashCode() + "";
+    tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, utteranceId);
+  }
 
   // Filter out some extraneous patterns, like when a connection is refused, strip out the uri.
   private String filterText(String text) {

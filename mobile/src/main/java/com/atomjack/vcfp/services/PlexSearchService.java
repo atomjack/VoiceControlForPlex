@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.os.Parcelable;
 import android.speech.RecognizerIntent;
 import android.support.v7.media.MediaRouteSelector;
 import android.support.v7.media.MediaRouter;
@@ -165,7 +166,7 @@ public class PlexSearchService extends Service {
           for (PlexClient c : cs) {
             VoiceControlForPlexApplication.clients.put(c.name, c);
           }
-          clients = (HashMap) VoiceControlForPlexApplication.clients;
+          clients = VoiceControlForPlexApplication.clients;
           clients.putAll(VoiceControlForPlexApplication.castClients);
         }
         startup();
@@ -207,7 +208,7 @@ public class PlexSearchService extends Service {
 			};
 
 			queries = new ArrayList<>();
-			clients = (HashMap)VoiceControlForPlexApplication.clients;
+			clients = VoiceControlForPlexApplication.clients;
       clients.putAll(VoiceControlForPlexApplication.castClients);
 			resumePlayback = false;
 
@@ -1211,14 +1212,14 @@ public class PlexSearchService extends Service {
         @Override
         public void run() {
           castPlayerManager.loadMedia(media instanceof PlexTrack ? mediaContainer.tracks.get(0) : mediaContainer.videos.get(0),
-                  media instanceof PlexTrack ? (ArrayList) mediaContainer.tracks : (ArrayList) mediaContainer.videos,
+                  media instanceof PlexTrack ? mediaContainer.tracks : mediaContainer.videos,
                   getOffset(media instanceof PlexTrack ? mediaContainer.tracks.get(0) : mediaContainer.videos.get(0)));
 
           if(!fromMic || true) {
             Intent sendIntent = new Intent(PlexSearchService.this, CastActivity.class);
             sendIntent.setAction(com.atomjack.shared.Intent.CAST_MEDIA);
             sendIntent.putExtra(com.atomjack.shared.Intent.EXTRA_MEDIA, media instanceof PlexTrack ? mediaContainer.tracks.get(0) : mediaContainer.videos.get(0));
-            sendIntent.putParcelableArrayListExtra(com.atomjack.shared.Intent.EXTRA_ALBUM, media instanceof PlexTrack ? (ArrayList) mediaContainer.tracks : (ArrayList) mediaContainer.videos);
+            sendIntent.putParcelableArrayListExtra(com.atomjack.shared.Intent.EXTRA_ALBUM, media instanceof PlexTrack ? (ArrayList<? extends Parcelable>) mediaContainer.tracks : (ArrayList<? extends Parcelable>) mediaContainer.videos);
             sendIntent.putExtra(WearConstants.FROM_WEAR, fromWear);
             sendIntent.putExtra(com.atomjack.shared.Intent.EXTRA_CLIENT, client);
             sendIntent.putExtra(com.atomjack.shared.Intent.EXTRA_FROM_MIC, fromMic);

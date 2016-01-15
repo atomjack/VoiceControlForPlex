@@ -346,7 +346,7 @@ public class PlexHttpClient
   }
 
   public static void createArtistPlayQueue(Connection connection, PlexDirectory artist, final PlexPlayQueueHandler responseHandler) {
-    Map qs = new HashMap<>();
+    HashMap<String, String> qs = new HashMap<String, String>();
     qs.put("type", "audio");
     qs.put("shuffle", "1");
     String uri = String.format("library://%s/item/%%2flibrary%%2fmetadata%%2f%s", artist.server.machineIdentifier, artist.ratingKey);
@@ -374,7 +374,7 @@ public class PlexHttpClient
   }
 
   public static void createPlayQueue(Connection connection, final PlexMedia media, final String key, String transientToken, final PlexPlayQueueHandler responseHandler) {
-    Map qs = new HashMap<>();
+    Map<String, String> qs = new HashMap<>();
     qs.put("type", media.getType());
     qs.put("next", "0");
 

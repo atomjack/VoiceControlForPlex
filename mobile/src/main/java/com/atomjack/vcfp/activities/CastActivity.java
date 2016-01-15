@@ -30,7 +30,7 @@ public class CastActivity extends PlayerActivity {
 
 	private PlayerState currentState = PlayerState.STOPPED;
 
-  private List<PlexMedia> nowPlayingAlbum = new ArrayList<>();
+  private List<? extends PlexMedia> nowPlayingAlbum = new ArrayList<>();
 
   private Dialog infoDialog;
 

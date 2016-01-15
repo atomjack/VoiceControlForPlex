@@ -196,7 +196,6 @@ public class PlexServer extends PlexDevice {
   }
 
 	private void testServerConnection(final Connection connection, final ServerTestHandler handler) {
-    Logger.d("testServerConnection: fetching %s with token %s", connection.uri, accessToken);
     PlexHttpClient.PlexHttpService service = PlexHttpClient.getService(connection, 2);
     Call<MediaContainer> call = service.getMediaContainer("", accessToken);
     call.enqueue(new Callback<MediaContainer>() {
