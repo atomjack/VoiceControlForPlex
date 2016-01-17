@@ -154,4 +154,6 @@
     <string name="video_attempted_on_audio_only_device">Sorry, but video playback is not supported on %s.</string>
     <string name="select_plex_server">Select a Plex Server</string>
     <string name="couldnt_play_to_client">Sorry, I got an error trying to connect to %s. If this problem persists, recreate the homescreen shortcut after re-scanning for clients.</string>
+    <string name="unauthorized_local_server_found_logged_out">I found one or more local servers but was denied access. Log in to Plex (via the Menu button) to attempt to access this server.</string>
+    <string name="unauthorized_local_server_found_logged_in">I found one or more local servers but was denied access. Since you are already logged in to Plex, either log out and back in (in case your access token has changed), or verify your access to this server/servers.</string>
 </resources>

@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog>
+    <release version="2.0.6" versioncode="57">
+        <change>Fix crash from using Scan All Servers.</change>
+        <change>Added notification when a local server that denies access is found.</change>
+    </release>
     <release version="2.0.5" versioncode="55">
         <change>On Now Playing screen, tap to pause and swipe left/right to seek back/forward.</change>
         <change>Added support for audio-only Chromecast devices.</change>

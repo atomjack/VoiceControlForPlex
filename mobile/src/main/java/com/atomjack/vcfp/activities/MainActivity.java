@@ -846,13 +846,12 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 
       if(intent.getAction().equals(PlexScannerService.ACTION_SERVER_SCAN_FINISHED)) {
         if(serverScanCanceled) {
-          Logger.d("Server scan was canceled.");
           serverScanCanceled = false;
           return;
         }
         Logger.d("Got " + VoiceControlForPlexApplication.servers.size() + " servers");
         if(searchDialog != null)
-          searchDialog.cancel();
+          searchDialog.dismiss();
         VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.SAVED_SERVERS, gsonWrite.toJson(VoiceControlForPlexApplication.servers));
 
         if(intent.getBooleanExtra(com.atomjack.shared.Intent.EXTRA_SILENT, false) == false) {
@@ -890,17 +889,24 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
             } else {
               AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
               builder.setTitle(R.string.no_servers_found);
+              if(VoiceControlForPlexApplication.getInstance().unauthorizedLocalServersFound.size() > 0) {
+                if (VoiceControlForPlexApplication.getInstance().isLoggedIn())
+                  builder.setMessage(R.string.unauthorized_local_server_found_logged_in);
+                else
+                  builder.setMessage(R.string.unauthorized_local_server_found_logged_out);
+              }
+
               builder.setCancelable(false).setNeutralButton(R.string.ok, new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface dialog, int id) {
                   dialog.cancel();
                 }
               });
               AlertDialog d = builder.create();
+
               d.show();
             }
           }
         }
-        // TODO: Check this!
       } else if(intent.getStringExtra(com.atomjack.shared.Intent.SCAN_TYPE) != null && intent.getStringExtra(com.atomjack.shared.Intent.SCAN_TYPE).equals(com.atomjack.shared.Intent.SCAN_TYPE_CLIENT)) {
         Logger.d("clientScanCanceled: %s", clientScanCanceled);
         if(clientScanCanceled) {
@@ -909,7 +915,7 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
         }
         ArrayList<PlexClient> clients = intent.getParcelableArrayListExtra(com.atomjack.shared.Intent.EXTRA_CLIENTS);
         if(clients != null || (VoiceControlForPlexApplication.getInstance().castClients != null && VoiceControlForPlexApplication.getInstance().castClients.size() > 0)) {
-          VoiceControlForPlexApplication.clients = new HashMap<String, PlexClient>();
+          VoiceControlForPlexApplication.clients = new HashMap<>();
           if(clients != null)
             for (PlexClient c : clients) {
               VoiceControlForPlexApplication.clients.put(c.name, c);

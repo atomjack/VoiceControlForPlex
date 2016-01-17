@@ -58,9 +58,9 @@ public class PlexScannerService extends Service {
         scanForClients(intent.getBooleanExtra(com.atomjack.shared.Intent.EXTRA_CONNECT_TO_CLIENT, false));
       } else if(action.equals(ACTION_SERVER_SCAN_FINISHED)) {
         Logger.d("local server scan finished");
-        Logger.d("is logged in: %s", isLoggedIn());
+        Logger.d("is logged in: %s", VoiceControlForPlexApplication.getInstance().isLoggedIn());
         localServerScanFinished = true;
-        if(remoteServerScanFinished || !isLoggedIn()) {
+        if(remoteServerScanFinished || !VoiceControlForPlexApplication.getInstance().isLoggedIn()) {
           onServerScanFinished();
         }
       } else if(action.equals(ACTION_CLIENT_SCAN_FINISHED)) {
@@ -98,13 +98,10 @@ public class PlexScannerService extends Service {
       startActivity(intent);
   }
 
-  private boolean isLoggedIn() {
-    return VoiceControlForPlexApplication.getInstance().prefs.getString(Preferences.AUTHENTICATION_TOKEN) != null;
-  }
-
   private void scanForServers() {
+    VoiceControlForPlexApplication.getInstance().unauthorizedLocalServersFound.clear();
     VoiceControlForPlexApplication.servers = new ConcurrentHashMap<>();
-    if(isLoggedIn()) {
+    if(VoiceControlForPlexApplication.getInstance().isLoggedIn()) {
       refreshResources(VoiceControlForPlexApplication.getInstance().prefs.getString(Preferences.AUTHENTICATION_TOKEN), new RefreshResourcesResponseHandler() {
         @Override
         public void onSuccess() {
@@ -213,6 +210,8 @@ public class PlexScannerService extends Service {
               PlexServer server = PlexServer.fromDevice(device);
               Logger.d("Device %s is a server, has %d connections", server.name, server.connections.size());
               servers.add(server);
+              if(VoiceControlForPlexApplication.getInstance().unauthorizedLocalServersFound.contains(server.machineIdentifier))
+                VoiceControlForPlexApplication.getInstance().unauthorizedLocalServersFound.remove(server.machineIdentifier);
             } else if(device.provides.contains("player")) {
               Logger.d("Device %s is a player", device.name);
             }

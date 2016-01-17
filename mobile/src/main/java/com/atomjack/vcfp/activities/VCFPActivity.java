@@ -861,13 +861,12 @@ public abstract class VCFPActivity extends AppCompatActivity implements PlexSubs
       return;
     }
 
-    deviceSelectDialog = getDeviceSelectDialog(getResources().getString(R.string.select_plex_server));
+    deviceSelectDialog = getDeviceSelectDialog(true, getResources().getString(R.string.select_plex_server));
     deviceSelectDialog.show();
-
 
     final ListView serverListView = (ListView) deviceSelectDialog.findViewById(R.id.serverListView);
     if(servers == null)
-      servers = new ConcurrentHashMap<String, PlexServer>(VoiceControlForPlexApplication.servers);
+      servers = new ConcurrentHashMap<>(VoiceControlForPlexApplication.servers);
     final PlexListAdapter adapter = new PlexListAdapter(this, PlexListAdapter.TYPE_SERVER);
     adapter.setServers(servers);
     serverListView.setAdapter(adapter);
@@ -883,21 +882,25 @@ public abstract class VCFPActivity extends AppCompatActivity implements PlexSubs
     });
   }
 
-  public Dialog getDeviceSelectDialog(String title) {
+  public Dialog getDeviceSelectDialog(boolean isServer, String title) {
     AlertDialog.Builder builder = new AlertDialog.Builder(this);
     LayoutInflater inflater = getLayoutInflater();
-    View layout = inflater.inflate(R.layout.server_select, null);
+    View layout = inflater.inflate(R.layout.device_select, null);
+    if(VoiceControlForPlexApplication.getInstance().unauthorizedLocalServersFound.size() > 0 && isServer) {
+      layout.findViewById(R.id.unauthorizedLocalServerFoundFrameView).setVisibility(View.VISIBLE);
+      if(VoiceControlForPlexApplication.getInstance().isLoggedIn()) {
+        layout.findViewById(R.id.unauthorizedLocalServerFoundTextViewLoggedIn).setVisibility(View.VISIBLE);
+        layout.findViewById(R.id.unauthorizedLocalServerFoundTextViewLoggedOut).setVisibility(View.INVISIBLE);
+      } else {
+        layout.findViewById(R.id.unauthorizedLocalServerFoundTextViewLoggedOut).setVisibility(View.VISIBLE);
+        layout.findViewById(R.id.unauthorizedLocalServerFoundTextViewLoggedIn).setVisibility(View.INVISIBLE);
+      }
+    } else {
+      layout.findViewById(R.id.unauthorizedLocalServerFoundFrameView).setVisibility(View.GONE);
+    }
     builder.setView(layout);
     builder.setTitle(title);
     return builder.create();
-  }
-
-  public void showPlexClients() {
-    showPlexClients(false, null);
-  }
-
-  public void showPlexClients(boolean showResume) {
-    showPlexClients(true, null);
   }
 
   public void showPlexClients(boolean showResume, final ScanHandler onFinish) {
@@ -906,8 +909,12 @@ public abstract class VCFPActivity extends AppCompatActivity implements PlexSubs
       cancelScan = false;
       return;
     }
-    if(deviceSelectDialog == null)
-      deviceSelectDialog = getDeviceSelectDialog(getString(R.string.select_plex_client));
+    if(deviceSelectDialog == null) {
+      Logger.d("device select dialog is null");
+      deviceSelectDialog = getDeviceSelectDialog(false, getString(R.string.select_plex_client));
+    } else
+      deviceSelectDialog.setTitle(getString(R.string.select_plex_client));
+
 
     deviceSelectDialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
       @Override
@@ -918,6 +925,8 @@ public abstract class VCFPActivity extends AppCompatActivity implements PlexSubs
       }
     });
     deviceSelectDialog.show();
+    if(deviceSelectDialog.findViewById(R.id.unauthorizedLocalServerFoundFrameView) != null)
+      deviceSelectDialog.findViewById(R.id.unauthorizedLocalServerFoundFrameView).setVisibility(View.GONE);
 
     if (showResume) {
       CheckBox resumeCheckbox = (CheckBox) deviceSelectDialog.findViewById(R.id.serverListResume);
@@ -936,9 +945,6 @@ public abstract class VCFPActivity extends AppCompatActivity implements PlexSubs
         PlexClient s = (PlexClient) parentAdapter.getItemAtPosition(position);
         deviceSelectDialog.dismiss();
         CheckBox resumeCheckbox = (CheckBox) deviceSelectDialog.findViewById(R.id.serverListResume);
-//        if (onFinish == null)
-//          scanHandler.onDeviceSelected(s, resumeCheckbox.isChecked());
-//        else
         if (onFinish != null)
           onFinish.onDeviceSelected(s, resumeCheckbox.isChecked());
       }

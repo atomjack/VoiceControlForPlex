@@ -71,6 +71,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
@@ -100,6 +101,10 @@ public class VoiceControlForPlexApplication extends Application
 	public static Gson gsonWrite = new GsonBuilder()
 					.registerTypeAdapter(Uri.class, new UriSerializer())
 					.create();
+
+  // When scanning for servers, if a local server is found but is not accessible due to requiring login
+  // alert the user that one or more servers like this were found.
+  public List<String> unauthorizedLocalServersFound = new ArrayList<>();
 
   private NOTIFICATION_STATUS notificationStatus = NOTIFICATION_STATUS.off;
   public enum NOTIFICATION_STATUS {
@@ -136,7 +141,7 @@ public class VoiceControlForPlexApplication extends Application
   // This is the default value.
   private boolean mHasChromecast = !BuildConfig.CHROMECAST_REQUIRES_PURCHASE;
   private boolean mHasWear = !BuildConfig.WEAR_REQUIRES_PURCHASE;
-  // Only the release build will use the actual Chromecast SKU
+  // Only the release build will use the actual Chromecast/Wear SKU
   public static final String SKU_CHROMECAST = BuildConfig.SKU_CHROMECAST;
   public static final String SKU_WEAR = BuildConfig.SKU_WEAR;
   public static final String SKU_TEST_PURCHASED = "android.test.purchased";
@@ -311,7 +316,10 @@ public class VoiceControlForPlexApplication extends Application
         @Override
         public void onFailure(int statusCode) {
           Logger.d("Failed to find connection for %s: %d", server.name, statusCode);
-          if(onFinish != null)
+          if(statusCode == 401) {
+            getInstance().unauthorizedLocalServersFound.add(server.machineIdentifier);
+          }
+          if (onFinish != null)
             onFinish.run();
         }
       });
@@ -851,5 +859,9 @@ public class VoiceControlForPlexApplication extends Application
     qs.add("offset", resumePlayback && media.viewOffset != null ? media.viewOffset : "0");
 
     return qs;
+  }
+
+  public boolean isLoggedIn() {
+    return getInstance().prefs.getString(Preferences.AUTHENTICATION_TOKEN) != null;
   }
 }
