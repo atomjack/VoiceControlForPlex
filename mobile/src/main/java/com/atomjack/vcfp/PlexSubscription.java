@@ -361,7 +361,7 @@ public class PlexSubscription {
 //    if(listener == null)
 //      return;
 
-    PlexHttpClient.unsubscribe(mClient, commandId, VoiceControlForPlexApplication.getInstance().prefs.getUUID(), listener.getString(R.string.app_name), new PlexHttpResponseHandler() {
+    PlexHttpClient.unsubscribe(mClient, commandId, VoiceControlForPlexApplication.getInstance().prefs.getUUID(), VoiceControlForPlexApplication.getInstance().getString(R.string.app_name), new PlexHttpResponseHandler() {
       @Override
       public void onSuccess(PlexResponse response) {
         Logger.d("Unsubscribed");

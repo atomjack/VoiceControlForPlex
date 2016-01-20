@@ -96,44 +96,54 @@ public abstract class PlayerActivity extends VCFPActivity implements SeekBar.OnS
     LayoutInflater inflater = getLayoutInflater();
     View layout = inflater.inflate(R.layout.media_options_dialog, null);
 
-    Spinner subtitlesSpinner = (Spinner)layout.findViewById(R.id.subtitlesSpinner);
-    StreamAdapter subtitlesStreamAdapter = new StreamAdapter(this, android.R.layout.simple_spinner_dropdown_item, subtitleStreams);
-    subtitlesSpinner.setAdapter(subtitlesStreamAdapter);
-    subtitlesSpinner.setSelection(subtitleStreams.indexOf(nowPlayingMedia.getActiveStream(Stream.SUBTITLE)), false);
+    if(subtitleStreams.size() > 0) {
+      Spinner subtitlesSpinner = (Spinner) layout.findViewById(R.id.subtitlesSpinner);
+      StreamAdapter subtitlesStreamAdapter = new StreamAdapter(this, android.R.layout.simple_spinner_dropdown_item, subtitleStreams);
+      subtitlesSpinner.setAdapter(subtitlesStreamAdapter);
+      subtitlesSpinner.setSelection(subtitleStreams.indexOf(nowPlayingMedia.getActiveStream(Stream.SUBTITLE)), false);
 
-    subtitlesSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-      @Override
-      public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-        Stream stream = subtitleStreams.get(position);
-        if(!stream.isActive()) {
-          mClient.setStream(stream);
-          nowPlayingMedia.setActiveStream(stream);
+      subtitlesSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+        @Override
+        public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+          Stream stream = subtitleStreams.get(position);
+          if (!stream.isActive()) {
+            mClient.setStream(stream);
+            nowPlayingMedia.setActiveStream(stream);
+          }
         }
-      }
 
-      @Override
-      public void onNothingSelected(AdapterView<?> parent) {
-      }
-    });
-    Spinner audioSpinner = (Spinner)layout.findViewById(R.id.audioSpinner);
-    StreamAdapter audioStreamAdapter = new StreamAdapter(this, android.R.layout.simple_spinner_dropdown_item, audioStreams);
-    audioSpinner.setAdapter(audioStreamAdapter);
-    audioSpinner.setSelection(audioStreams.indexOf(nowPlayingMedia.getActiveStream(Stream.AUDIO)), false);
-
-    audioSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-      @Override
-      public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-        Stream stream = audioStreams.get(position);
-        if(!stream.isActive()) {
-          mClient.setStream(stream);
-          nowPlayingMedia.setActiveStream(stream);
+        @Override
+        public void onNothingSelected(AdapterView<?> parent) {
         }
-      }
+      });
+    } else {
+      layout.findViewById(R.id.subtitlesRow).setVisibility(View.GONE);
+    }
 
-      @Override
-      public void onNothingSelected(AdapterView<?> parent) {
-      }
-    });
+    if(audioStreams.size() > 0) {
+      Spinner audioSpinner = (Spinner) layout.findViewById(R.id.audioSpinner);
+      StreamAdapter audioStreamAdapter = new StreamAdapter(this, android.R.layout.simple_spinner_dropdown_item, audioStreams);
+      audioSpinner.setAdapter(audioStreamAdapter);
+      audioSpinner.setSelection(audioStreams.indexOf(nowPlayingMedia.getActiveStream(Stream.AUDIO)), false);
+
+      audioSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+        @Override
+        public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+          Stream stream = audioStreams.get(position);
+          if (!stream.isActive()) {
+            mClient.setStream(stream);
+            nowPlayingMedia.setActiveStream(stream);
+          }
+        }
+
+        @Override
+        public void onNothingSelected(AdapterView<?> parent) {
+        }
+      });
+    } else {
+      // For some reason, no audio streams found, so hide the row
+      layout.findViewById(R.id.audioRow).setVisibility(View.GONE);
+    }
 
     builder.setView(layout);
     builder.setTitle(getResources().getString(R.string.stream_selection));
@@ -255,6 +265,10 @@ public abstract class PlayerActivity extends VCFPActivity implements SeekBar.OnS
     }
     TextView nowPlayingOnClient = (TextView)findViewById(R.id.nowPlayingOnClient);
     nowPlayingOnClient.setText(getResources().getString(R.string.now_playing_on) + " " + mClient.name);
+
+    if(findViewById(R.id.mediaOptionsButton) != null && nowPlayingMedia.getStreams(Stream.SUBTITLE).size() == 0 && nowPlayingMedia.getStreams(Stream.AUDIO).size() == 0) {
+      findViewById(R.id.mediaOptionsButton).setVisibility(View.GONE);
+    }
 
     Logger.d("[PlayerActivity] Setting thumb in showNowPlaying");
     setThumb();

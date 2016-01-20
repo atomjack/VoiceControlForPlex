@@ -428,7 +428,7 @@ public class PlexHttpClient
   }
 
   public static void get(String baseHostname, String path, final PlexHttpResponseHandler responseHandler) {
-    PlexHttpService service = getService(baseHostname, true);
+    PlexHttpService service = getService(baseHostname);
     Call<PlexResponse> call = service.getPlexResponse(VoiceControlForPlexApplication.getInstance().prefs.getUUID(),
             path.replaceFirst("^/", ""));
     call.enqueue(new Callback<PlexResponse>() {

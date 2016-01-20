@@ -35,7 +35,11 @@ public class Stream implements Parcelable {
   }
 
   public String getTitle() {
-    return title != null ? title : language;
+    if(title != null)
+      return title;
+    if(language != null)
+      return language;
+    return VoiceControlForPlexApplication.getInstance().getString(R.string.unknown);
   }
 
   public static final int UNKNOWN = 0;
