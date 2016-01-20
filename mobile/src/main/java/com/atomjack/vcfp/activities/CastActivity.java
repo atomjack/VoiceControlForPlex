@@ -347,7 +347,7 @@ public class CastActivity extends PlayerActivity {
     castPlayerManager.doPrevious();
   }
 
-	@Override
+  @Override
 	public void onStopTrackingTouch(SeekBar _seekBar) {
 		Logger.d("stopped changing progress: %d", _seekBar.getProgress());
 		try {

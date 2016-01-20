@@ -10,8 +10,8 @@ android {
             keyPassword RELEASE_KEY_PASSWORD
         }
     }
-    compileSdkVersion 22
-    buildToolsVersion '22.0.1'
+    compileSdkVersion 23
+    buildToolsVersion '23.0.2'
     dexOptions {
         preDexLibraries = false
     }

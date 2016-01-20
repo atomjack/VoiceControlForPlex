@@ -3,7 +3,7 @@ apply plugin: 'com.android.application'
 android {
     useLibrary  'org.apache.http.legacy'
     compileSdkVersion 23
-    buildToolsVersion '23.0.0'
+    buildToolsVersion '23.0.2'
     defaultConfig {
         applicationId "com.atomjack.vcfp"
         minSdkVersion 15
@@ -107,7 +107,7 @@ dependencies {
     wearApp project(':wear')
     compile 'org.apache.httpcomponents:httpclient-android:4.3.5.1'
     compile 'com.squareup.retrofit:retrofit:2.0.0-beta1'
-    compile ('com.squareup.retrofit:converter-simplexml:2.0.0-beta1') {
+    compile('com.squareup.retrofit:converter-simplexml:2.0.0-beta1') {
         exclude group: 'xpp3', module: 'xpp3'
         exclude group: 'stax', module: 'stax-api'
         exclude group: 'stax', module: 'stax'

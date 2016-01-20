@@ -3,6 +3,9 @@ package com.atomjack.vcfp.model;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import com.atomjack.vcfp.R;
+import com.atomjack.vcfp.VoiceControlForPlexApplication;
+
 import org.simpleframework.xml.Attribute;
 import org.simpleframework.xml.Root;
 
@@ -18,12 +21,31 @@ public class Stream implements Parcelable {
   public int index;
   @Attribute(required=false)
   public String title;
+  @Attribute(required=false, name="default")
+  private int def;
+  @Attribute(required=false)
+  private int selected;
 
-  public boolean active;
+  public boolean isActive() {
+    return selected == 1;
+  }
+
+  public void setActive(boolean active) {
+    selected = active ? 1 : 0;
+  }
+
+  public String getTitle() {
+    return title != null ? title : language;
+  }
+
+  public static final int UNKNOWN = 0;
+  public static final int VIDEO = 1;
+  public static final int AUDIO = 2;
+  public static final int SUBTITLE = 3;
 
   @Override
   public String toString() {
-    return title;
+    return getTitle();
   }
 
   public Stream() {
@@ -38,8 +60,16 @@ public class Stream implements Parcelable {
     id = in.readString();
     streamType = in.readInt();
     language = in.readString();
-    active = in.readByte() != 0;
+    def = in.readInt();
     title = in.readString();
+    selected = in.readInt();
+  }
+
+  public static Stream getNoneSubtitleStream() {
+    Stream s = new Stream(VoiceControlForPlexApplication.getInstance().getResources().getString(R.string.none));
+    s.id = "0";
+    s.streamType = Stream.SUBTITLE;
+    return s;
   }
 
   @Override
@@ -52,8 +82,9 @@ public class Stream implements Parcelable {
     out.writeString(id);
     out.writeInt(streamType);
     out.writeString(language);
-    out.writeByte((byte)(active ? 1 : 0));
+    out.writeInt(def);
     out.writeString(title);
+    out.writeInt(selected);
   }
 
   public static final Parcelable.Creator<Stream> CREATOR = new Parcelable.Creator<Stream>() {

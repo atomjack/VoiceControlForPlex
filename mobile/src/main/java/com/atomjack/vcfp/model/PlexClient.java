@@ -14,8 +14,11 @@ import org.simpleframework.xml.Root;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 
 import retrofit.Call;
+import retrofit.Callback;
+import retrofit.Response;
 
 @Root(name="Server", strict=false)
 public class PlexClient extends PlexDevice {
@@ -162,4 +165,31 @@ public class PlexClient extends PlexDevice {
 
 		return output;
 	}
+
+  public void setStream(Stream stream) {
+    if(isCastClient) {
+      // TODO: Implement
+    } else {
+      PlexHttpClient.PlexHttpService service = PlexHttpClient.getService(String.format("http://%s:%s", address, port));
+      HashMap<String, String> qs = new HashMap<>();
+      if (stream.streamType == Stream.AUDIO) {
+        qs.put("audioStreamID", stream.id);
+      } else if (stream.streamType == Stream.SUBTITLE) {
+        qs.put("subtitleStreamID", stream.id);
+      }
+      Call<PlexResponse> call = service.setStreams(qs);
+      call.enqueue(new Callback<PlexResponse>() {
+        @Override
+        public void onResponse(Response<PlexResponse> response) {
+          Logger.d("setStream response: %s", response.body().status);
+        }
+
+        @Override
+        public void onFailure(Throwable t) {
+
+        }
+      });
+
+    }
+  }
 }

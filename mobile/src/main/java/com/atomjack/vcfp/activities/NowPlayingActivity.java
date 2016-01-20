@@ -191,7 +191,7 @@ public class NowPlayingActivity extends PlayerActivity {
     });
 	}
 
-	@Override
+  @Override
 	protected void onPause() {
 		super.onPause();
     Logger.d("NowPlaying onPause");

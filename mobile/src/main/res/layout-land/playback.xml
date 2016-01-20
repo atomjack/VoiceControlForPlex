@@ -58,6 +58,16 @@
             android:id="@+id/forwardButton" android:src="@drawable/notif_ff30"
             android:layout_weight="1"
             android:layout_marginTop="13dp"/>
+
+        <ImageButton
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:background="@android:color/transparent"
+            android:onClick="doMediaOptions"
+            android:id="@+id/mediaOptionsButton"
+            android:src="@drawable/button_media_options"
+            android:layout_weight="1"/>
+
         <ImageButton
             android:layout_width="0dp"
             android:layout_height="wrap_content"

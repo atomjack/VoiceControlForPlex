@@ -6,6 +6,7 @@
           android:title="Cast"
           android:actionProviderClass="com.atomjack.vcfp.ClientConnectActionProvider"
           app:showAsAction="always" />
+
     <item android:id="@+id/menu_about"
         android:title="@string/menu_about"
         android:onClick="showAbout">

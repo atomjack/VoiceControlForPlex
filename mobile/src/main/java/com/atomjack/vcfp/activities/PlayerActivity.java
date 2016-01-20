@@ -1,5 +1,7 @@
 package com.atomjack.vcfp.activities;
 
+import android.app.AlertDialog;
+import android.app.Dialog;
 import android.app.PendingIntent;
 import android.content.Intent;
 import android.net.Uri;
@@ -7,10 +9,13 @@ import android.os.Bundle;
 import android.speech.RecognizerIntent;
 import android.support.v4.view.GestureDetectorCompat;
 import android.view.GestureDetector;
+import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ImageButton;
 import android.widget.SeekBar;
+import android.widget.Spinner;
 import android.widget.TextView;
 
 import com.atomjack.shared.Logger;
@@ -19,15 +24,18 @@ import com.atomjack.shared.SendToDataLayerThread;
 import com.atomjack.shared.WearConstants;
 import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
+import com.atomjack.vcfp.adapters.StreamAdapter;
 import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexServer;
 import com.atomjack.vcfp.model.PlexTrack;
 import com.atomjack.vcfp.model.PlexVideo;
+import com.atomjack.vcfp.model.Stream;
 import com.atomjack.vcfp.services.PlexSearchService;
 import com.google.android.gms.wearable.DataMap;
 
 import java.math.BigInteger;
 import java.security.SecureRandom;
+import java.util.List;
 
 public abstract class PlayerActivity extends VCFPActivity implements SeekBar.OnSeekBarChangeListener {
 	protected boolean resumePlayback;
@@ -38,6 +46,8 @@ public abstract class PlayerActivity extends VCFPActivity implements SeekBar.OnS
 	protected TextView durationDisplay;
 
   protected GestureDetectorCompat mDetector;
+
+  protected Dialog mediaOptionsDialog;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -72,6 +82,64 @@ public abstract class PlayerActivity extends VCFPActivity implements SeekBar.OnS
 			startActivity(listenerIntent);
 		}
 	}
+
+  // Open an alert to allow selection of currently playing media's audio and/or subtitle options
+  public void doMediaOptions(View v) {
+    if(nowPlayingMedia == null) {
+      return;
+    }
+
+    final List<Stream> audioStreams = nowPlayingMedia.getStreams(Stream.AUDIO);
+    final List<Stream> subtitleStreams = nowPlayingMedia.getStreams(Stream.SUBTITLE);
+
+    AlertDialog.Builder builder = new AlertDialog.Builder(this);
+    LayoutInflater inflater = getLayoutInflater();
+    View layout = inflater.inflate(R.layout.media_options_dialog, null);
+
+    Spinner subtitlesSpinner = (Spinner)layout.findViewById(R.id.subtitlesSpinner);
+    StreamAdapter subtitlesStreamAdapter = new StreamAdapter(this, android.R.layout.simple_spinner_dropdown_item, subtitleStreams);
+    subtitlesSpinner.setAdapter(subtitlesStreamAdapter);
+    subtitlesSpinner.setSelection(subtitleStreams.indexOf(nowPlayingMedia.getActiveStream(Stream.SUBTITLE)), false);
+
+    subtitlesSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+      @Override
+      public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+        Stream stream = subtitleStreams.get(position);
+        if(!stream.isActive()) {
+          mClient.setStream(stream);
+          nowPlayingMedia.setActiveStream(stream);
+        }
+      }
+
+      @Override
+      public void onNothingSelected(AdapterView<?> parent) {
+      }
+    });
+    Spinner audioSpinner = (Spinner)layout.findViewById(R.id.audioSpinner);
+    StreamAdapter audioStreamAdapter = new StreamAdapter(this, android.R.layout.simple_spinner_dropdown_item, audioStreams);
+    audioSpinner.setAdapter(audioStreamAdapter);
+    audioSpinner.setSelection(audioStreams.indexOf(nowPlayingMedia.getActiveStream(Stream.AUDIO)), false);
+
+    audioSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+      @Override
+      public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+        Stream stream = audioStreams.get(position);
+        if(!stream.isActive()) {
+          mClient.setStream(stream);
+          nowPlayingMedia.setActiveStream(stream);
+        }
+      }
+
+      @Override
+      public void onNothingSelected(AdapterView<?> parent) {
+      }
+    });
+
+    builder.setView(layout);
+    builder.setTitle(getResources().getString(R.string.stream_selection));
+    mediaOptionsDialog = builder.create();
+    mediaOptionsDialog.show();
+  }
 
 	private void attachUIElements() {
 		playPauseButton = (ImageButton)findViewById(R.id.playPauseButton);

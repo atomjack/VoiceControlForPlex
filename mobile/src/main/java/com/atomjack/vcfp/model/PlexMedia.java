@@ -167,24 +167,63 @@ public abstract class PlexMedia implements Parcelable {
 		return 0;
 	}
 
+  private List<Stream> streams;
+
   public List<Stream> getStreams() {
-    Media m = media.get(0);
-    Part p = m.parts.get(0);
-    return p.streams;
+    // The list of streams needs to have a "none" subtitle stream added to it. Subsequent calls
+    // to get the list of streams should get this list, since any manipulation of which (audio/video)
+    // stream is active will need to be saved to it - the list of streams in media/parts will not reflect
+    // the updating of active streams.
+    if (streams == null) {
+      streams = new ArrayList<>();
+      Media m = media.get(0);
+      Part p = m.parts.get(0);
+
+      List<Stream> ss = new ArrayList<>();
+      Stream none = Stream.getNoneSubtitleStream();
+      for (int i = 0; i < p.streams.size(); i++) {
+        if (p.streams.get(i).streamType == Stream.SUBTITLE && !ss.contains(none)) {
+          ss.add(none);
+        }
+        ss.add(p.streams.get(i));
+      }
+      boolean subsActive = false;
+      for (Stream s : ss) {
+        if(s.streamType == Stream.SUBTITLE && s.isActive())
+          subsActive = true;
+      }
+      if(!subsActive)
+        none.setActive(true);
+      streams = ss;
+    }
+    return streams;
   }
 
   public List<Stream> getStreams(int streamType) {
     List<Stream> s = new ArrayList<Stream>();
-    try {
-      Media m = media.get(0);
-      Part p = m.parts.get(0);
-
-      for (Stream stream : p.streams) {
-        if (stream.streamType == streamType)
-          s.add(stream);
-      }
-    } catch (Exception ex) {}
+    for (Stream stream : getStreams()) {
+      if (stream.streamType == streamType)
+        s.add(stream);
+    }
     return s;
+  }
+
+  public Stream getActiveStream(int streamType) {
+    List<Stream> streams = getStreams(streamType);
+    for(Stream stream : streams) {
+      if(stream.isActive())
+        return stream;
+    }
+
+    return streams.get(0);
+  }
+
+  public void setActiveStream(Stream s) {
+    for(Stream ss : streams) {
+      if(ss.streamType == s.streamType) {
+        ss.setActive(s.id.equals(ss.id));
+      }
+    }
   }
 
   public PlexMedia() {
@@ -279,7 +318,7 @@ class Part implements Parcelable {
   @Attribute(required=false)
   public String id;
   @ElementList(required=false, inline=true, entry="Stream")
-  public List<Stream> streams = new ArrayList<Stream>();
+  public List<Stream> streams = new ArrayList<>();
   @Attribute(required=false)
   public String key;
   @Attribute(required=false)
@@ -291,7 +330,7 @@ class Part implements Parcelable {
 
   public Part(Parcel in) {
     id = in.readString();
-    streams = new ArrayList<Stream>();
+    streams = new ArrayList<>();
     in.readTypedList(streams, Stream.CREATOR);
     key = in.readString();
     duration = in.readInt();

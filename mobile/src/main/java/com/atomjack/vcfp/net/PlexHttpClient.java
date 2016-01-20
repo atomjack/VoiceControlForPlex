@@ -106,6 +106,9 @@ public class PlexHttpClient
 
     @GET("/pms/resources")
     Call<MediaContainer> getResources(@Query(PlexHeaders.XPlexToken) String accessToken);
+
+    @GET("/player/playback/setStreams")
+    Call<PlexResponse> setStreams(@QueryMap Map<String, String> options);
   }
 
   public static void getThumb(String url, final InputStreamHandler inputStreamHandler) {
@@ -346,7 +349,7 @@ public class PlexHttpClient
   }
 
   public static void createArtistPlayQueue(Connection connection, PlexDirectory artist, final PlexPlayQueueHandler responseHandler) {
-    HashMap<String, String> qs = new HashMap<String, String>();
+    HashMap<String, String> qs = new HashMap<>();
     qs.put("type", "audio");
     qs.put("shuffle", "1");
     String uri = String.format("library://%s/item/%%2flibrary%%2fmetadata%%2f%s", artist.server.machineIdentifier, artist.ratingKey);

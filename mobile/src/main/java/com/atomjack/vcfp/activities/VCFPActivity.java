@@ -77,7 +77,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import cz.fhucho.android.util.SimpleDiskCache;
 
-public abstract class VCFPActivity extends AppCompatActivity implements PlexSubscription.PlexListener, CastPlayerManager.CastListener, VoiceControlForPlexApplication.NetworkChangeListener {
+public abstract class VCFPActivity extends AppCompatActivity implements PlexSubscription.PlexListener,
+        CastPlayerManager.CastListener, VoiceControlForPlexApplication.NetworkChangeListener {
 	protected PlexMedia nowPlayingMedia;
 	protected boolean subscribing = false;
 	protected PlexClient mClient;
