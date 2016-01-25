@@ -455,11 +455,10 @@ public class CastPlayerManager {
     qs.add("videoQuality", "60");
     qs.add("maxVideoBitrate", VoiceControlForPlexApplication.chromecastVideoOptions.get(VoiceControlForPlexApplication.getInstance().prefs.getString(connection.local ? Preferences.CHROMECAST_VIDEO_QUALITY_LOCAL : Preferences.CHROMECAST_VIDEO_QUALITY_REMOTE))[0]);
     qs.add("videoResolution", VoiceControlForPlexApplication.chromecastVideoOptions.get(VoiceControlForPlexApplication.getInstance().prefs.getString(connection.local ? Preferences.CHROMECAST_VIDEO_QUALITY_LOCAL : Preferences.CHROMECAST_VIDEO_QUALITY_REMOTE))[1]);
-    qs.add("subtitleSize", "100");
     qs.add("audioBoost", "100");
     qs.add("session", mSessionId);
     qs.add(PlexHeaders.XPlexClientIdentifier, VoiceControlForPlexApplication.getInstance().prefs.getUUID());
-    qs.add(PlexHeaders.XPlexProduct, String.format("%s Chromecast", mContext.getString(R.string.app_name)));
+    qs.add(PlexHeaders.XPlexProduct, String.format("%s Chromecast", VoiceControlForPlexApplication.getInstance().getString(R.string.app_name)));
     qs.add(PlexHeaders.XPlexDevice, mClient.castDevice.getModelName());
     qs.add(PlexHeaders.XPlexDeviceName, mClient.castDevice.getModelName());
     qs.add(PlexHeaders.XPlexPlatform, mClient.castDevice.getModelName());

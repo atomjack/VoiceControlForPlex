@@ -9,7 +9,7 @@ adding translations, please do not modify (.*), $1, ([0-9]+), etc.
     a quite complicated regular expression. Plugging it into https://www.debuggex.com/ should help you figure out how
     it is constructed.
     -->
-    <item name="pattern_recognition" type="string">^(((ver|continuar viendo|escuchar|ver película) (.+)( en (.+))?( en modo aleatorio)?)|((posición) (.+)( en (.+))?)|((forward|rewind|back) (.+)( on (.+))?)|((pausar|detener|continuar)( reproducción)?( en (.+))?))|(conectar a (.+)|desconectar)$</item>
+    <item name="pattern_recognition" type="string">^(((ver|continuar viendo|escuchar|ver película) (.+)( en (.+))?( en modo aleatorio)?)|((posición) (.+)( en (.+))?)|((forward|rewind|back) (.+)( on (.+))?)|((pausar|detener|continuar)( reproducción)?( en (.+))?))|(conectar a (.+)|desconectar)|(cycle (subtitles|audio))|(.*subtitle.*(off|on))$</item>
 
     <item name="pattern_on_client" type="string">(.+) en (.+)$</item>
     <item name="pattern_resume_watching" type="string">^continuar (viendo) (.+)</item>

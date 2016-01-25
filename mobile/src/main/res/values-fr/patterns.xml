@@ -11,7 +11,7 @@ Also, you don't need to translate these comments.
     a quite complicated regular expression. Plugging it into https://www.debuggex.com/ should help you figure out how
     it is constructed.
     -->
-    <item name="pattern_recognition" type="string">^(((regarder|reprendre lecture|écouter|regarder film) (.+)( sur (.+))?)|((position) (.+)( sur (.+))?)|((forward|rewind|back) (.+)( on (.+))?)|((pauser|reprendre|arrêter)( lecture)?( sur (.+))?))$</item>
+    <item name="pattern_recognition" type="string">^(((regarder|reprendre lecture|écouter|regarder film) (.+)( sur (.+))?)|((position) (.+)( sur (.+))?)|((forward|rewind|back) (.+)( on (.+))?)|((pauser|reprendre|arrêter)( lecture)?( sur (.+))?))|(cycle (subtitles|audio))|(.*subtitle.*(off|on))$</item>
 
     <item name="pattern_on_client" type="string">(.+) sur (.+)$</item>
     <item name="pattern_resume_watching" type="string">^reprendre (lecture) (.+)</item>

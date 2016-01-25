@@ -397,9 +397,6 @@ public class PlexHttpClient
     if (media.server.accessToken != null)
       qs.put(PlexHeaders.XPlexToken, media.server.accessToken);
 
-    for(Object name:qs.keySet()) {
-      Logger.d("QS %s:%s", name, qs.get(name));
-    }
     PlexHttpService service = getService(String.format("http://%s:%s", connection.address, connection.port));
     Call<MediaContainer> call = service.createPlayQueue(qs, VoiceControlForPlexApplication.getUUID());
     call.enqueue(new Callback<MediaContainer>() {

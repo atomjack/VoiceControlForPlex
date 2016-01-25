@@ -83,6 +83,11 @@ public abstract class PlayerActivity extends VCFPActivity implements SeekBar.OnS
 		}
 	}
 
+  public abstract void setStream(Stream stream);
+  public abstract void cycleStreams(int streamType);
+  public abstract void subtitlesOff();
+  public abstract void subtitlesOn();
+
   // Open an alert to allow selection of currently playing media's audio and/or subtitle options
   public void doMediaOptions(View v) {
     if(nowPlayingMedia == null) {
@@ -107,7 +112,7 @@ public abstract class PlayerActivity extends VCFPActivity implements SeekBar.OnS
         public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
           Stream stream = subtitleStreams.get(position);
           if (!stream.isActive()) {
-            mClient.setStream(stream);
+            setStream(stream);
             nowPlayingMedia.setActiveStream(stream);
           }
         }
@@ -131,7 +136,7 @@ public abstract class PlayerActivity extends VCFPActivity implements SeekBar.OnS
         public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
           Stream stream = audioStreams.get(position);
           if (!stream.isActive()) {
-            mClient.setStream(stream);
+            setStream(stream);
             nowPlayingMedia.setActiveStream(stream);
           }
         }
@@ -266,8 +271,15 @@ public abstract class PlayerActivity extends VCFPActivity implements SeekBar.OnS
     TextView nowPlayingOnClient = (TextView)findViewById(R.id.nowPlayingOnClient);
     nowPlayingOnClient.setText(getResources().getString(R.string.now_playing_on) + " " + mClient.name);
 
-    if(findViewById(R.id.mediaOptionsButton) != null && nowPlayingMedia.getStreams(Stream.SUBTITLE).size() == 0 && nowPlayingMedia.getStreams(Stream.AUDIO).size() == 0) {
-      findViewById(R.id.mediaOptionsButton).setVisibility(View.GONE);
+    // Hide stream options on chromecast, for now
+    if(mClient.isCastClient) {
+      if(findViewById(R.id.mediaOptionsButton) != null) {
+        findViewById(R.id.mediaOptionsButton).setVisibility(View.GONE);
+      }
+    } else {
+      if (findViewById(R.id.mediaOptionsButton) != null && nowPlayingMedia.getStreams(Stream.SUBTITLE).size() == 0 && nowPlayingMedia.getStreams(Stream.AUDIO).size() == 0) {
+        findViewById(R.id.mediaOptionsButton).setVisibility(View.GONE);
+      }
     }
 
     Logger.d("[PlayerActivity] Setting thumb in showNowPlaying");

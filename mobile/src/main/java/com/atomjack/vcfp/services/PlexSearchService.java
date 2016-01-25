@@ -15,13 +15,13 @@ import com.atomjack.shared.SendToDataLayerThread;
 import com.atomjack.shared.WearConstants;
 import com.atomjack.shared.model.Timeline;
 import com.atomjack.vcfp.Utils;
+import com.atomjack.vcfp.activities.PlayerActivity;
 import com.atomjack.vcfp.interfaces.ActiveConnectionHandler;
 import com.atomjack.vcfp.interfaces.AfterTransientTokenRequest;
 import com.atomjack.vcfp.BuildConfig;
 import com.atomjack.vcfp.CastPlayerManager;
 import com.atomjack.vcfp.Feedback;
 import com.atomjack.shared.Logger;
-import com.atomjack.vcfp.PlexHeaders;
 import com.atomjack.vcfp.PlexSubscription;
 import com.atomjack.shared.Preferences;
 import com.atomjack.vcfp.QueryString;
@@ -42,6 +42,7 @@ import com.atomjack.vcfp.model.PlexResponse;
 import com.atomjack.vcfp.model.PlexServer;
 import com.atomjack.vcfp.model.PlexTrack;
 import com.atomjack.vcfp.model.PlexVideo;
+import com.atomjack.vcfp.model.Stream;
 import com.atomjack.vcfp.net.PlexHttpClient;
 import com.atomjack.vcfp.net.PlexHttpMediaContainerHandler;
 import com.atomjack.vcfp.net.PlexHttpResponseHandler;
@@ -845,6 +846,63 @@ public class PlexSearchService extends Service {
             sendIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
             sendIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(sendIntent);
+          }
+        }
+      };
+    }
+
+
+    p = Pattern.compile(getString(R.string.pattern_cycle_subtitles), Pattern.DOTALL);
+    matcher = p.matcher(queryText);
+    if(matcher.find()) {
+      return new StopRunnable() {
+        @Override
+        public void run() {
+          if(VoiceControlForPlexApplication.getInstance().plexSubscription.getListener() != null) {
+            PlayerActivity act = (PlayerActivity)VoiceControlForPlexApplication.getInstance().plexSubscription.getListener();
+            act.cycleStreams(Stream.SUBTITLE);
+          }
+        }
+      };
+    }
+
+    p = Pattern.compile(getString(R.string.pattern_cycle_audio), Pattern.DOTALL);
+    matcher = p.matcher(queryText);
+    if(matcher.find()) {
+      return new StopRunnable() {
+        @Override
+        public void run() {
+          if(VoiceControlForPlexApplication.getInstance().plexSubscription.getListener() != null) {
+            PlayerActivity act = (PlayerActivity)VoiceControlForPlexApplication.getInstance().plexSubscription.getListener();
+            act.cycleStreams(Stream.AUDIO);
+          }
+        }
+      };
+    }
+
+    p = Pattern.compile(getString(R.string.pattern_subtitles_off), Pattern.DOTALL);
+    matcher = p.matcher(queryText);
+    if(matcher.find()) {
+      return new StopRunnable() {
+        @Override
+        public void run() {
+          if(VoiceControlForPlexApplication.getInstance().plexSubscription.getListener() != null) {
+            PlayerActivity act = (PlayerActivity)VoiceControlForPlexApplication.getInstance().plexSubscription.getListener();
+            act.subtitlesOff();
+          }
+        }
+      };
+    }
+
+    p = Pattern.compile(getString(R.string.pattern_subtitles_on), Pattern.DOTALL);
+    matcher = p.matcher(queryText);
+    if(matcher.find()) {
+      return new StopRunnable() {
+        @Override
+        public void run() {
+          if(VoiceControlForPlexApplication.getInstance().plexSubscription.getListener() != null) {
+            PlayerActivity act = (PlayerActivity)VoiceControlForPlexApplication.getInstance().plexSubscription.getListener();
+            act.subtitlesOn();
           }
         }
       };

@@ -11,7 +11,7 @@ Also, you don't need to translate these comments.
     a quite complicated regular expression. Plugging it into https://www.debuggex.com/ should help you figure out how
     it is constructed.
     -->
-    <item name="pattern_recognition" type="string">^(((watch|play|resume watching|listen to|watch movie|play movie) (.+)( on (.+))?( on shuffle)?)|((offset|timecode) (.+)( on (.+))?)|((forward|rewind|back) (.+)( on (.+))?)|((pause|stop|resume)( playback)?( on (.+))?))|(connect to (.+)|disconnect)$</item>
+    <item name="pattern_recognition" type="string">^(((watch|play|resume watching|listen to|watch movie|play movie) (.+)( on (.+))?( on shuffle)?)|((offset|timecode) (.+)( on (.+))?)|((forward|rewind|back) (.+)( on (.+))?)|((pause|stop|resume)( playback)?( on (.+))?))|(connect to (.+)|disconnect)|(cycle (subtitles|audio))|(.*subtitle.*(off|on))$</item>
 
     <item name="pattern_on_client" type="string">(.+) on (.+)$</item>
     <item name="pattern_resume_watching" type="string">^resume (watching|playing) (.+)</item>
@@ -29,6 +29,12 @@ Also, you don't need to translate these comments.
     <item name="pattern_watch2" type="string">(watch|play) (.+)</item>
     <item name="pattern_forward" type="string">forward ([0-9]+|two|to) (hours?|minutes?|seconds?)</item>
     <item name="pattern_rewind" type="string">(rewind|back) ([0-9]+|two|to) (hours?|minutes?|seconds?)</item>
+
+    <item name="pattern_cycle_subtitles" type="string">cycle subtitles</item>
+    <item name="pattern_cycle_audio" type="string">cycle audio</item>
+    <item name="pattern_subtitles_off" type="string">.*subtitle.*off</item>
+    <item name="pattern_subtitles_on" type="string">.*subtitle.*on</item>
+
 
     <!--
     The following pattern lets the user say "listen to <album> by <artist>" or

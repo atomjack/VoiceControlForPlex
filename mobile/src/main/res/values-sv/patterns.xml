@@ -10,7 +10,7 @@ Den här filen innehåller reguljära uttryck som används för att räkna ut vi
     detta är uppbyggt.
     -->
 
-    <item name="pattern_recognition" type="string">^(((titta|spela|fortsätt titta|lyssna|titta på filmen|spela filmen) (.+)( på (.+))?( med blandad uppspelning)?)|((spola fram) (.+)( på (.+))?)|((forward|rewind|back) (.+)( on (.+))?)|((pausa|stoppa|återuppta|fortsätt)( uppspelingen)?( på (.+))?))|(anslut till (.+)|koppla från)$</item>
+    <item name="pattern_recognition" type="string">^(((titta|spela|fortsätt titta|lyssna|titta på filmen|spela filmen) (.+)( på (.+))?( med blandad uppspelning)?)|((spola fram) (.+)( på (.+))?)|((forward|rewind|back) (.+)( on (.+))?)|((pausa|stoppa|återuppta|fortsätt)( uppspelingen)?( på (.+))?))|(anslut till (.+)|koppla från)|(cycle (subtitles|audio))|(.*subtitle.*(off|on))$</item>
 
     <item name="pattern_on_client" type="string">(.+) på (.+)$</item>
     <item name="pattern_resume_watching" type="string">^fortsätt (titta|spela) (.+)</item>

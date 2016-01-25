@@ -170,10 +170,10 @@ public abstract class PlexMedia implements Parcelable {
   private List<Stream> streams;
 
   public List<Stream> getStreams() {
-    // The list of streams needs to have a "none" subtitle stream added to it. Subsequent calls
-    // to get the list of streams should get this list, since any manipulation of which (audio/video)
-    // stream is active will need to be saved to it - the list of streams in media/parts will not reflect
-    // the updating of active streams.
+    // The list of streams needs to have a "none" subtitle stream added to it (if there is at least
+    // one subtitle stream). Subsequent calls to get the list of streams should get this list, since any
+    // manipulation of which (audio/video) stream is active will need to be saved to it - the list of
+    // streams in media/parts will not reflect the updating of active streams.
     if (streams == null) {
       streams = new ArrayList<>();
       Media m = media.get(0);

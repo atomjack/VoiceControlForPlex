@@ -19,6 +19,7 @@ import com.atomjack.vcfp.VCFPCastConsumer;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexMedia;
+import com.atomjack.vcfp.model.Stream;
 import com.google.android.libraries.cast.companionlibrary.cast.VideoCastManager;
 
 import java.util.ArrayList;
@@ -101,63 +102,6 @@ public class CastActivity extends PlayerActivity {
 
     start(true);
 
-/*
-
-    boolean mediaChange = false;
-    PlexMedia newMedia = getIntent().getParcelableExtra(Intent.EXTRA_MEDIA);
-    if(castPlayerManager.isSubscribed()) {
-      if(newMedia != null && castPlayerManager.getNowPlayingMedia() != null && !newMedia.key.equals(castPlayerManager.getNowPlayingMedia().key))
-        mediaChange = true;
-    }
-
-
-    nowPlayingMedia = newMedia;
-    nowPlayingAlbum = getIntent().getParcelableArrayListExtra(Intent.EXTRA_ALBUM);
-    resumePlayback = getIntent().getBooleanExtra("resume", false);
-    castManager = castPlayerManager.getCastManager();
-
-    if(getIntent().getBooleanExtra(WearConstants.FROM_WEAR, false)) {
-      new SendToDataLayerThread(WearConstants.FINISH, this).start();
-    }
-    // If just playing a single track, put the media into an array
-    if(nowPlayingAlbum == null) {
-      nowPlayingAlbum = new ArrayList<>();
-      nowPlayingAlbum.add(nowPlayingMedia);
-    }
-
-    Logger.d("[CastActivity] starting up, action: %s, current state: %s", getIntent().getAction(), castPlayerManager.getCurrentState());
-    Logger.d("client: %s", mClient);
-		if(getIntent().getAction() != null && getIntent().getAction().equals(Intent.CAST_MEDIA)) {
-
-      /*
-			Logger.d("Casting %s (%s)", nowPlayingMedia.title, nowPlayingMedia.viewOffset);
-
-      // TODO: only show now playing if stopped?
-//      if(castPlayerManager.getCurrentState().equals(PlayerState.STOPPED))
-
-      if(mediaChange) {
-        Logger.d("[CastActivity] MEDIA CHANGED!");
-
-        init(true); // tell the chromecast to load the new media. The cast player activity will receive a notification of the new media and will update accordingly
-      } else {
-
-        showNowPlaying(castPlayerManager.getCurrentState().equals(PlayerState.STOPPED) || !mediaChange ? true : false);
-        if (castPlayerManager.isSubscribed()) {
-          init();
-        } else {
-          showInfoDialog(getResources().getString(R.string.connecting));
-          castPlayerManager.subscribe(mClient);
-        }
-      }
-		} else {
-      Logger.d("[CastActivity] No action found.");
-      if(castPlayerManager.getCurrentState().equals(PlayerState.STOPPED))
-        finish();
-      else {
-        showNowPlaying(true);
-      }
-		}
-		*/
 	}
 
   @Override
@@ -422,5 +366,25 @@ public class CastActivity extends PlayerActivity {
   public void onCastSeek() {
     if(!nowPlayingMedia.getType().equals("music"))
       showInfoDialog(getString(R.string.please_wait));
+  }
+
+  @Override
+  public void setStream(Stream stream) {
+
+  }
+
+  @Override
+  public void cycleStreams(int streamType) {
+
+  }
+
+  @Override
+  public void subtitlesOn() {
+
+  }
+
+  @Override
+  public void subtitlesOff() {
+
   }
 }
