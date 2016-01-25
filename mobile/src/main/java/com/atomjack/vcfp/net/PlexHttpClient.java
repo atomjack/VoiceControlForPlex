@@ -473,9 +473,9 @@ public class PlexHttpClient
     call.enqueue(new Callback<PlexUser>() {
       @Override
       public void onResponse(Response<PlexUser> response) {
-        if(response.code() == 200)
+        if(response.code() == 200 || response.code() == 201)
           responseHandler.onSuccess(response.body());
-        else if(response.code() == 401) {
+        else {
           responseHandler.onFailure(response.code());
         }
       }
