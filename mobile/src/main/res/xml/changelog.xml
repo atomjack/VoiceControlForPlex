@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog>
+    <release version="2.0.7" versioncode="58">
+        <change>Added audio/subtitle stream support. See Usage Examples for instructions. NOTE:This feature does not yet work with Chromecast clients.</change>
+        <change>Fixed manual login.</change>
+    </release>
     <release version="2.0.6" versioncode="57">
         <change>Fix crash from using Scan All Servers.</change>
         <change>Added notification when a local server that denies access is found.</change>
