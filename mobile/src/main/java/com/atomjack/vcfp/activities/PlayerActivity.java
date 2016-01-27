@@ -25,6 +25,7 @@ import com.atomjack.shared.WearConstants;
 import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.adapters.StreamAdapter;
+import com.atomjack.vcfp.interfaces.PlexStreamHandler;
 import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexServer;
 import com.atomjack.vcfp.model.PlexTrack;
@@ -83,10 +84,40 @@ public abstract class PlayerActivity extends VCFPActivity implements SeekBar.OnS
 		}
 	}
 
-  public abstract void setStream(Stream stream);
-  public abstract void cycleStreams(int streamType);
-  public abstract void subtitlesOff();
-  public abstract void subtitlesOn();
+  public void setStream(Stream stream) {
+    mClient.setStream(stream);
+  }
+
+  public void subtitlesOn() {
+    if(nowPlayingMedia.getStreams(Stream.SUBTITLE).size() > 0) {
+      mClient.setStream(nowPlayingMedia.getStreams(Stream.SUBTITLE).get(1));
+      nowPlayingMedia.setActiveStream(nowPlayingMedia.getStreams(Stream.SUBTITLE).get(1));
+      feedback.m(String.format(getString(R.string.subtitle_active), nowPlayingMedia.getStreams(Stream.SUBTITLE).get(1).getTitle()));
+    }
+  }
+
+  public void subtitlesOff() {
+    if(nowPlayingMedia.getStreams(Stream.SUBTITLE).size() > 0) {
+      mClient.setStream(nowPlayingMedia.getStreams(Stream.SUBTITLE).get(0));
+      nowPlayingMedia.setActiveStream(nowPlayingMedia.getStreams(Stream.SUBTITLE).get(0));
+      feedback.m(R.string.subtitles_off);
+    }
+  }
+
+  public void cycleStreams(final int streamType) {
+    Stream newStream = nowPlayingMedia.getNextStream(streamType);
+    mClient.setStream(newStream);
+    nowPlayingMedia.setActiveStream(newStream);
+    if(streamType == Stream.SUBTITLE) {
+      if(newStream.id.equals("0")) {
+        feedback.m(R.string.subtitles_off);
+      } else {
+        feedback.m(String.format(getString(R.string.subtitle_active), newStream.getTitle()));
+      }
+    } else {
+      feedback.m(String.format(getString(R.string.audio_track_active), newStream.getTitle()));
+    }
+  }
 
   // Open an alert to allow selection of currently playing media's audio and/or subtitle options
   public void doMediaOptions(View v) {
@@ -272,14 +303,8 @@ public abstract class PlayerActivity extends VCFPActivity implements SeekBar.OnS
     nowPlayingOnClient.setText(getResources().getString(R.string.now_playing_on) + " " + mClient.name);
 
     // Hide stream options on chromecast, for now
-    if(mClient.isCastClient) {
-      if(findViewById(R.id.mediaOptionsButton) != null) {
-        findViewById(R.id.mediaOptionsButton).setVisibility(View.GONE);
-      }
-    } else {
-      if (findViewById(R.id.mediaOptionsButton) != null && nowPlayingMedia.getStreams(Stream.SUBTITLE).size() == 0 && nowPlayingMedia.getStreams(Stream.AUDIO).size() == 0) {
-        findViewById(R.id.mediaOptionsButton).setVisibility(View.GONE);
-      }
+    if (findViewById(R.id.mediaOptionsButton) != null && nowPlayingMedia.getStreams(Stream.SUBTITLE).size() == 0 && nowPlayingMedia.getStreams(Stream.AUDIO).size() == 0) {
+      findViewById(R.id.mediaOptionsButton).setVisibility(View.GONE);
     }
 
     Logger.d("[PlayerActivity] Setting thumb in showNowPlaying");

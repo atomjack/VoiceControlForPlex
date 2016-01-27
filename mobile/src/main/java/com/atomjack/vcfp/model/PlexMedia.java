@@ -226,6 +226,23 @@ public abstract class PlexMedia implements Parcelable {
     }
   }
 
+  public Stream getNextStream(int streamType) {
+    List<Stream> tempStreams = getStreams(streamType);
+    if (tempStreams.size() == 0) {
+      return null;
+    } else {
+      int activeIndex = 0;
+      for (int i = 0; i < tempStreams.size(); i++) {
+        if (tempStreams.get(i).isActive())
+          activeIndex = i;
+      }
+      Logger.d("Active %s stream: %d", (streamType == Stream.SUBTITLE ? "subtitle" : "audio"), activeIndex);
+      int newI = activeIndex + 1 >= tempStreams.size() ? 0 : activeIndex + 1;
+      Stream newStream = tempStreams.get(newI);
+      return newStream;
+    }
+  }
+
   public PlexMedia() {
 
   }

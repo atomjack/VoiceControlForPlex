@@ -373,54 +373,5 @@ public class NowPlayingActivity extends PlayerActivity {
     finish();
   }
 
-  @Override
-  public void setStream(Stream stream) {
-    mClient.setStream(stream);
-  }
 
-  @Override
-  public void cycleStreams(int streamType) {
-    List<Stream> streams = nowPlayingMedia.getStreams(streamType);
-
-    if(streams.size() == 0) {
-
-    } else {
-      int activeIndex = 0;
-      for(int i=0;i<streams.size();i++) {
-        if(streams.get(i).isActive())
-          activeIndex = i;
-      }
-      Logger.d("Active %s stream: %d", (streamType == Stream.SUBTITLE ? "subtitle" : "audio"), activeIndex);
-      int newI = activeIndex+1 >= streams.size() ? 0 : activeIndex+1;
-      Stream newStream = streams.get(newI);
-      mClient.setStream(newStream);
-      nowPlayingMedia.setActiveStream(newStream);
-      if(streamType == Stream.SUBTITLE) {
-        if(activeIndex+1 >= streams.size()) {
-          feedback.m(R.string.subtitles_off);
-        } else {
-          feedback.m(String.format(getString(R.string.subtitle_active), newStream.getTitle()));
-        }
-      } else {
-        feedback.m(String.format(getString(R.string.audio_track_active), newStream.getTitle()));
-      }
-
-    }
-  }
-
-  @Override
-  public void subtitlesOn() {
-    if(nowPlayingMedia.getStreams(Stream.SUBTITLE).size() > 0) {
-      mClient.setStream(nowPlayingMedia.getStreams(Stream.SUBTITLE).get(1));
-      feedback.m(String.format(getString(R.string.subtitle_active), nowPlayingMedia.getStreams(Stream.SUBTITLE).get(1).getTitle()));
-    }
-  }
-
-  @Override
-  public void subtitlesOff() {
-    if(nowPlayingMedia.getStreams(Stream.SUBTITLE).size() > 0) {
-      mClient.setStream(nowPlayingMedia.getStreams(Stream.SUBTITLE).get(0));
-      feedback.m(R.string.subtitles_off);
-    }
-  }
 }

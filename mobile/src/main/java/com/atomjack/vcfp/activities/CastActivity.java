@@ -53,6 +53,9 @@ public class CastActivity extends PlayerActivity {
       if(castPlayerManager.isSubscribed()) {
         nowPlayingMedia = castPlayerManager.getNowPlayingMedia();
         nowPlayingAlbum = castPlayerManager.getNowPlayingAlbum();
+        showNowPlaying(setView);
+        /*
+        // Not sure why I have this here. Leaving commented out for now.
         if(!castPlayerManager.getCurrentState().equals(PlayerState.STOPPED)) {
           // Media is playing, so show ui
           showNowPlaying(setView);
@@ -69,6 +72,7 @@ public class CastActivity extends PlayerActivity {
             }
           }, 1000);
         }
+        */
       } else {
         if(getIntent().getParcelableExtra(Intent.EXTRA_MEDIA) != null) {
           nowPlayingMedia = getIntent().getParcelableExtra(Intent.EXTRA_MEDIA);
@@ -308,6 +312,7 @@ public class CastActivity extends PlayerActivity {
 		if(currentState ==  PlayerState.PAUSED) {
 			playPauseButton.setImageResource(R.drawable.button_play);
 		} else if(currentState ==  PlayerState.PLAYING) {
+      Logger.d("onCastPlayerStateChanged: setting button to pause");
 			playPauseButton.setImageResource(R.drawable.button_pause);
 		}
 	}
@@ -366,25 +371,5 @@ public class CastActivity extends PlayerActivity {
   public void onCastSeek() {
     if(!nowPlayingMedia.getType().equals("music"))
       showInfoDialog(getString(R.string.please_wait));
-  }
-
-  @Override
-  public void setStream(Stream stream) {
-
-  }
-
-  @Override
-  public void cycleStreams(int streamType) {
-
-  }
-
-  @Override
-  public void subtitlesOn() {
-
-  }
-
-  @Override
-  public void subtitlesOff() {
-
   }
 }

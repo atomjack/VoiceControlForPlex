@@ -858,9 +858,15 @@ public class PlexSearchService extends Service {
       return new StopRunnable() {
         @Override
         public void run() {
-          if(VoiceControlForPlexApplication.getInstance().plexSubscription.getListener() != null) {
-            PlayerActivity act = (PlayerActivity)VoiceControlForPlexApplication.getInstance().plexSubscription.getListener();
-            act.cycleStreams(Stream.SUBTITLE);
+          if(client.isCastClient) {
+            if(VoiceControlForPlexApplication.getInstance().castPlayerManager != null) {
+              VoiceControlForPlexApplication.getInstance().castPlayerManager.cycleStreams(Stream.SUBTITLE);
+            }
+          } else {
+            if (VoiceControlForPlexApplication.getInstance().plexSubscription.getListener() != null) {
+              PlayerActivity act = (PlayerActivity) VoiceControlForPlexApplication.getInstance().plexSubscription.getListener();
+              act.cycleStreams(Stream.SUBTITLE);
+            }
           }
         }
       };
@@ -872,9 +878,13 @@ public class PlexSearchService extends Service {
       return new StopRunnable() {
         @Override
         public void run() {
-          if(VoiceControlForPlexApplication.getInstance().plexSubscription.getListener() != null) {
-            PlayerActivity act = (PlayerActivity)VoiceControlForPlexApplication.getInstance().plexSubscription.getListener();
-            act.cycleStreams(Stream.AUDIO);
+          if(client.isCastClient) {
+            VoiceControlForPlexApplication.getInstance().castPlayerManager.cycleStreams(Stream.AUDIO);
+          } else {
+            if (VoiceControlForPlexApplication.getInstance().plexSubscription.getListener() != null) {
+              PlayerActivity act = (PlayerActivity) VoiceControlForPlexApplication.getInstance().plexSubscription.getListener();
+              act.cycleStreams(Stream.AUDIO);
+            }
           }
         }
       };
@@ -886,9 +896,13 @@ public class PlexSearchService extends Service {
       return new StopRunnable() {
         @Override
         public void run() {
-          if(VoiceControlForPlexApplication.getInstance().plexSubscription.getListener() != null) {
-            PlayerActivity act = (PlayerActivity)VoiceControlForPlexApplication.getInstance().plexSubscription.getListener();
-            act.subtitlesOff();
+          if(client.isCastClient) {
+            VoiceControlForPlexApplication.getInstance().castPlayerManager.subtitlesOff();
+          } else {
+            if (VoiceControlForPlexApplication.getInstance().plexSubscription.getListener() != null) {
+              PlayerActivity act = (PlayerActivity) VoiceControlForPlexApplication.getInstance().plexSubscription.getListener();
+              act.subtitlesOff();
+            }
           }
         }
       };
@@ -900,19 +914,17 @@ public class PlexSearchService extends Service {
       return new StopRunnable() {
         @Override
         public void run() {
-          if(VoiceControlForPlexApplication.getInstance().plexSubscription.getListener() != null) {
-            PlayerActivity act = (PlayerActivity)VoiceControlForPlexApplication.getInstance().plexSubscription.getListener();
-            act.subtitlesOn();
+          if(client.isCastClient) {
+            VoiceControlForPlexApplication.getInstance().castPlayerManager.subtitlesOn();
+          } else {
+            if (VoiceControlForPlexApplication.getInstance().plexSubscription.getListener() != null) {
+              PlayerActivity act = (PlayerActivity) VoiceControlForPlexApplication.getInstance().plexSubscription.getListener();
+              act.subtitlesOn();
+            }
           }
         }
       };
     }
-
-
-
-
-
-
 
     if(queries.size() > 0)
 			return null;

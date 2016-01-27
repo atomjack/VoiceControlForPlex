@@ -14,12 +14,12 @@ import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexServer;
 import com.atomjack.vcfp.model.PlexTrack;
 import com.atomjack.vcfp.model.PlexVideo;
+import com.atomjack.vcfp.model.Stream;
 import com.google.android.gms.cast.ApplicationMetadata;
 import com.google.android.libraries.cast.companionlibrary.cast.VideoCastManager;
 
 import org.json.JSONObject;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -31,6 +31,7 @@ public class CastPlayerManager {
   private VCFPCastConsumer castConsumer;
 
   private String mSessionId;
+  private String plexSessionId;
 
   public static final class PARAMS {
     public static final String MEDIA_TYPE = "media_type";
@@ -46,6 +47,15 @@ public class CastPlayerManager {
     public static final String RESUME="resume";
 
     public static final String SRC = "src";
+    public static final String SUBTITLE_SRC = "subtitle_src";
+    public static final String AUDIO_STREAMS = "audio_streams";
+    public static final String SUBTITLE_STREAMS = "subtitle_streams";
+    public static final String ACTIVE_SUBTITLE = "active_subtitle";
+    public static final String STREAM_TYPE = "stream_type";
+    public static final String STREAM_ID = "stream_id";
+
+    public static final String SESSION_ID = "session_id";
+
     public static final String ART = "art";
 
     public static final String ARTIST = "artist";
@@ -65,6 +75,8 @@ public class CastPlayerManager {
     public static final String ACTION_GET_PLAYBACK_STATE = "getPlaybackState";
     public static final String ACTION_NEXT = "next";
     public static final String ACTION_PREV = "prev";
+    public static final String ACTION_SET_STREAM = "setStream";
+    public static final String ACTION_CYCLE_STREAMS = "cycleStreams";
 
     public static final String PLEX_USERNAME = "plexUsername";
     public static final String ACCESS_TOKEN = "accessToken";
@@ -96,6 +108,7 @@ public class CastPlayerManager {
 
   public CastPlayerManager(Context context) {
     mContext = context;
+    plexSessionId = VoiceControlForPlexApplication.generateRandomString();
     setCastConsumer();
   }
 
@@ -439,12 +452,25 @@ public class CastPlayerManager {
   }
 
   public String getTranscodeUrl(PlexMedia media, Connection connection, int offset) {
+    return getTranscodeUrl(media, connection, offset, false);
+  }
+
+  public String getTranscodeUrl(PlexMedia media, Connection connection, int offset, boolean subtitles) {
     Logger.d("getTranscodeUrl, offset: %d", offset);
     String url = connection.uri;
-    url += String.format("/%s/:/transcode/universal/start?", media instanceof PlexVideo ? "video" : "audio");
+    url += String.format("/%s/:/transcode/universal/%s?", (media instanceof PlexVideo ? "video" : "audio"), (subtitles ? "subtitles" : "start"));
     QueryString qs = new QueryString("path", String.format("http://127.0.0.1:32400%s", media.key));
     qs.add("mediaIndex", "0");
     qs.add("partIndex", "0");
+
+    qs.add("subtitles", "auto");
+    qs.add("copyts", "1");
+    qs.add("subtitleSize", "100");
+    qs.add("Accept-Language", "en");
+    qs.add("X-Plex-Client-Profile-Extra", "");
+    qs.add("X-Plex-Chunked", "1");
+    qs.add("X-Plex-Username", "atomjack");
+
     qs.add("protocol", "http");
     qs.add("offset", Integer.toString(offset));
     qs.add("fastSeek", "1");
@@ -456,7 +482,7 @@ public class CastPlayerManager {
     qs.add("maxVideoBitrate", VoiceControlForPlexApplication.chromecastVideoOptions.get(VoiceControlForPlexApplication.getInstance().prefs.getString(connection.local ? Preferences.CHROMECAST_VIDEO_QUALITY_LOCAL : Preferences.CHROMECAST_VIDEO_QUALITY_REMOTE))[0]);
     qs.add("videoResolution", VoiceControlForPlexApplication.chromecastVideoOptions.get(VoiceControlForPlexApplication.getInstance().prefs.getString(connection.local ? Preferences.CHROMECAST_VIDEO_QUALITY_LOCAL : Preferences.CHROMECAST_VIDEO_QUALITY_REMOTE))[1]);
     qs.add("audioBoost", "100");
-    qs.add("session", mSessionId);
+    qs.add("session", plexSessionId);
     qs.add(PlexHeaders.XPlexClientIdentifier, VoiceControlForPlexApplication.getInstance().prefs.getUUID());
     qs.add(PlexHeaders.XPlexProduct, String.format("%s Chromecast", VoiceControlForPlexApplication.getInstance().getString(R.string.app_name)));
     qs.add(PlexHeaders.XPlexDevice, mClient.castDevice.getModelName());
@@ -493,8 +519,13 @@ public class CastPlayerManager {
       data.put(PARAMS.MEDIA_TYPE, nowPlayingMedia instanceof PlexVideo ? PARAMS.MEDIA_TYPE_VIDEO : PARAMS.MEDIA_TYPE_AUDIO);
       data.put(PARAMS.RESUME, VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.RESUME, false));
       data.put(PARAMS.CLIENT, VoiceControlForPlexApplication.gsonWrite.toJson(mClient));
-      data.put(PARAMS.SRC, getTranscodeUrl(nowPlayingMedia, connection, offset));
+      data.put(PARAMS.SESSION_ID, plexSessionId);
       Logger.d("[CastPlayerManager] setting src to %s", getTranscodeUrl(nowPlayingMedia, connection, offset));
+      data.put(PARAMS.SRC, getTranscodeUrl(nowPlayingMedia, connection, offset));
+      data.put(PARAMS.SUBTITLE_SRC, getTranscodeUrl(nowPlayingMedia, connection, offset, true));
+      data.put(PARAMS.AUDIO_STREAMS, VoiceControlForPlexApplication.gsonWrite.toJson(nowPlayingMedia.getStreams(Stream.AUDIO)));
+      data.put(PARAMS.SUBTITLE_STREAMS, VoiceControlForPlexApplication.gsonWrite.toJson(nowPlayingMedia.getStreams(Stream.SUBTITLE)));
+      data.put(PARAMS.ACTIVE_SUBTITLE, nowPlayingMedia.getActiveStream(Stream.SUBTITLE).id);
       data.put(PARAMS.ACCESS_TOKEN, nowPlayingMedia.server.accessToken);
       data.put(PARAMS.PLAYLIST, getPlaylistJson());
     } catch (Exception ex) {
@@ -525,5 +556,47 @@ public class CastPlayerManager {
 
   public String getSessionId() {
     return mSessionId;
+  }
+
+  public void setActiveStream(final Stream stream) {
+    nowPlayingMedia.server.findServerConnection(new ActiveConnectionHandler() {
+      @Override
+      public void onSuccess(Connection connection) {
+        JSONObject obj = new JSONObject();
+        try {
+          obj.put(PARAMS.ACTION, PARAMS.ACTION_SET_STREAM);
+          obj.put(PARAMS.STREAM_TYPE, stream.streamType);
+          obj.put(PARAMS.STREAM_ID, stream.id);
+          plexSessionId = VoiceControlForPlexApplication.generateRandomString();
+          obj.put(PARAMS.SESSION_ID, plexSessionId);
+          obj.put(PARAMS.SRC, getTranscodeUrl(nowPlayingMedia, connection, Integer.parseInt(nowPlayingMedia.viewOffset) / 1000));
+          obj.put(PARAMS.SUBTITLE_SRC, getTranscodeUrl(nowPlayingMedia, connection, Integer.parseInt(nowPlayingMedia.viewOffset) / 1000, true));
+          sendMessage(obj);
+        } catch (Exception ex) {
+        }
+      }
+
+      @Override
+      public void onFailure(int statusCode) {
+
+      }
+    });
+
+  }
+
+  public void cycleStreams(int streamType) {
+    Stream newStream = nowPlayingMedia.getNextStream(streamType);
+    mClient.setStream(newStream);
+    nowPlayingMedia.setActiveStream(newStream);
+  }
+
+  public void subtitlesOn() {
+    mClient.setStream(nowPlayingMedia.getStreams(Stream.SUBTITLE).get(1));
+    nowPlayingMedia.setActiveStream(nowPlayingMedia.getStreams(Stream.SUBTITLE).get(1));
+  }
+
+  public void subtitlesOff() {
+    mClient.setStream(nowPlayingMedia.getStreams(Stream.SUBTITLE).get(0));
+    nowPlayingMedia.setActiveStream(nowPlayingMedia.getStreams(Stream.SUBTITLE).get(0));
   }
 }

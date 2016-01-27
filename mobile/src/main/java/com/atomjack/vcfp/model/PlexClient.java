@@ -168,7 +168,7 @@ public class PlexClient extends PlexDevice {
 
   public void setStream(Stream stream) {
     if(isCastClient) {
-      // TODO: Implement
+      VoiceControlForPlexApplication.getInstance().castPlayerManager.setActiveStream(stream);
     } else {
       PlexHttpClient.PlexHttpService service = PlexHttpClient.getService(String.format("http://%s:%s", address, port));
       HashMap<String, String> qs = new HashMap<>();
