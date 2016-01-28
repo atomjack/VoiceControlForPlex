@@ -68,6 +68,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -346,6 +347,7 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 			if (resultCode == TextToSpeech.Engine.CHECK_VOICE_DATA_PASS) {
 				// success, create the TTS instance
 				availableVoices = data.getStringArrayListExtra(TextToSpeech.Engine.EXTRA_AVAILABLE_VOICES);
+        Collections.sort(availableVoices);
 				// Need this or else voice selection won't show up:
 				tts = new TextToSpeech(this, this);
 			} else {
