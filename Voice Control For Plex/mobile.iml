@@ -12,10 +12,7 @@
         <option name="SELECTED_TEST_ARTIFACT" value="_android_test_" />
         <option name="ASSEMBLE_TASK_NAME" value="assembleDebug" />
         <option name="COMPILE_JAVA_TASK_NAME" value="compileDebugSources" />
-        <option name="ASSEMBLE_TEST_TASK_NAME" value="assembleDebugAndroidTest" />
-        <option name="COMPILE_JAVA_TEST_TASK_NAME" value="compileDebugAndroidTestSources" />
         <afterSyncTasks>
-          <task>generateDebugAndroidTestSources</task>
           <task>generateDebugSources</task>
         </afterSyncTasks>
         <option name="ALLOW_USER_CONFIGURATION" value="false" />
@@ -28,7 +25,7 @@
   </component>
   <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_1_7" inherit-compiler-output="false">
     <output url="file://$MODULE_DIR$/../mobile/build/intermediates/classes/debug" />
-    <output-test url="file://$MODULE_DIR$/../mobile/build/intermediates/classes/androidTest/debug" />
+    <output-test url="file://$MODULE_DIR$/../mobile/build/intermediates/classes/test/debug" />
     <exclude-output />
     <content url="file://$MODULE_DIR$/../mobile">
       <sourceFolder url="file://$MODULE_DIR$/../mobile/build/generated/source/r/debug" isTestSource="false" generated="true" />
@@ -50,6 +47,13 @@
       <sourceFolder url="file://$MODULE_DIR$/../mobile/src/debug/java" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/../mobile/src/debug/jni" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/../mobile/src/debug/rs" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../mobile/src/testDebug/res" type="java-test-resource" />
+      <sourceFolder url="file://$MODULE_DIR$/../mobile/src/testDebug/resources" type="java-test-resource" />
+      <sourceFolder url="file://$MODULE_DIR$/../mobile/src/testDebug/assets" type="java-test-resource" />
+      <sourceFolder url="file://$MODULE_DIR$/../mobile/src/testDebug/aidl" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/../mobile/src/testDebug/java" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/../mobile/src/testDebug/jni" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/../mobile/src/testDebug/rs" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/../mobile/src/main/res" type="java-resource" />
       <sourceFolder url="file://$MODULE_DIR$/../mobile/src/main/resources" type="java-resource" />
       <sourceFolder url="file://$MODULE_DIR$/../mobile/src/main/assets" type="java-resource" />
@@ -57,6 +61,13 @@
       <sourceFolder url="file://$MODULE_DIR$/../mobile/src/main/java" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/../mobile/src/main/jni" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/../mobile/src/main/rs" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../mobile/src/test/res" type="java-test-resource" />
+      <sourceFolder url="file://$MODULE_DIR$/../mobile/src/test/resources" type="java-test-resource" />
+      <sourceFolder url="file://$MODULE_DIR$/../mobile/src/test/assets" type="java-test-resource" />
+      <sourceFolder url="file://$MODULE_DIR$/../mobile/src/test/aidl" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/../mobile/src/test/java" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/../mobile/src/test/jni" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/../mobile/src/test/rs" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/../mobile/src/androidTest/res" type="java-test-resource" />
       <sourceFolder url="file://$MODULE_DIR$/../mobile/src/androidTest/resources" type="java-test-resource" />
       <sourceFolder url="file://$MODULE_DIR$/../mobile/src/androidTest/assets" type="java-test-resource" />
@@ -65,10 +76,9 @@
       <sourceFolder url="file://$MODULE_DIR$/../mobile/src/androidTest/jni" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/../mobile/src/androidTest/rs" isTestSource="true" />
       <excludeFolder url="file://$MODULE_DIR$/../mobile/build/intermediates/assets" />
+      <excludeFolder url="file://$MODULE_DIR$/../mobile/build/intermediates/blame" />
       <excludeFolder url="file://$MODULE_DIR$/../mobile/build/intermediates/classes" />
-      <excludeFolder url="file://$MODULE_DIR$/../mobile/build/intermediates/debug" />
       <excludeFolder url="file://$MODULE_DIR$/../mobile/build/intermediates/dependency-cache" />
-      <excludeFolder url="file://$MODULE_DIR$/../mobile/build/intermediates/dex" />
       <excludeFolder url="file://$MODULE_DIR$/../mobile/build/intermediates/exploded-aar/com.android.support/appcompat-v7/23.0.0/jars" />
       <excludeFolder url="file://$MODULE_DIR$/../mobile/build/intermediates/exploded-aar/com.android.support/mediarouter-v7/23.0.0/jars" />
       <excludeFolder url="file://$MODULE_DIR$/../mobile/build/intermediates/exploded-aar/com.android.support/support-v4/23.0.1/jars" />
@@ -76,12 +86,17 @@
       <excludeFolder url="file://$MODULE_DIR$/../mobile/build/intermediates/exploded-aar/com.google.android.gms/play-services-base/7.8.0/jars" />
       <excludeFolder url="file://$MODULE_DIR$/../mobile/build/intermediates/exploded-aar/com.google.android.gms/play-services-wearable/7.8.0/jars" />
       <excludeFolder url="file://$MODULE_DIR$/../mobile/build/intermediates/incremental" />
+      <excludeFolder url="file://$MODULE_DIR$/../mobile/build/intermediates/incremental-classes" />
+      <excludeFolder url="file://$MODULE_DIR$/../mobile/build/intermediates/incremental-runtime-classes" />
+      <excludeFolder url="file://$MODULE_DIR$/../mobile/build/intermediates/incremental-verifier" />
+      <excludeFolder url="file://$MODULE_DIR$/../mobile/build/intermediates/instant-run-support" />
+      <excludeFolder url="file://$MODULE_DIR$/../mobile/build/intermediates/jniLibs" />
       <excludeFolder url="file://$MODULE_DIR$/../mobile/build/intermediates/manifests" />
-      <excludeFolder url="file://$MODULE_DIR$/../mobile/build/intermediates/release" />
       <excludeFolder url="file://$MODULE_DIR$/../mobile/build/intermediates/res" />
+      <excludeFolder url="file://$MODULE_DIR$/../mobile/build/intermediates/restart-dex" />
       <excludeFolder url="file://$MODULE_DIR$/../mobile/build/intermediates/rs" />
       <excludeFolder url="file://$MODULE_DIR$/../mobile/build/intermediates/symbols" />
-      <excludeFolder url="file://$MODULE_DIR$/../mobile/build/intermediates/tmp" />
+      <excludeFolder url="file://$MODULE_DIR$/../mobile/build/intermediates/transforms" />
       <excludeFolder url="file://$MODULE_DIR$/../mobile/build/outputs" />
       <excludeFolder url="file://$MODULE_DIR$/../mobile/build/tmp" />
     </content>

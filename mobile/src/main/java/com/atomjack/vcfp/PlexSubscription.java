@@ -409,7 +409,7 @@ public class PlexSubscription {
       public void run() {
         if (listener != null) {
           listener.onTimelineReceived(mc);
-        } else {
+        } else if(notificationListener != null) {
           notificationListener.onTimelineReceived(mc);
         }
       }

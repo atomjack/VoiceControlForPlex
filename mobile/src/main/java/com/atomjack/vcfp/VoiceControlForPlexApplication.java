@@ -195,7 +195,7 @@ public class VoiceControlForPlexApplication extends Application
     } catch(Exception e) {}
 
     // If this build includes chromecast and wear support, no need to setup purchasing
-    if(!mHasChromecast || !mHasWear)
+    if(hasAnyInAppPurchase())
       setupInAppPurchasing();
 
     mNotifyMgr = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
@@ -222,6 +222,10 @@ public class VoiceControlForPlexApplication extends Application
 
   public boolean hasWear() {
     return mHasWear;
+  }
+
+  public boolean hasAnyInAppPurchase() {
+    return !hasChromecast() || !hasWear();
   }
 
   public static VoiceControlForPlexApplication getInstance() {
