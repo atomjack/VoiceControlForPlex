@@ -92,6 +92,7 @@ public class CastPlayerManager {
     public static final String GET_PLAYBACK_STATE = "getPlaybackState";
     public static final String TIME_UPDATE = "timeUpdate";
     public static final String DEVICE_CAPABILITIES = "deviceCapabilities";
+    public static final String SHUTDOWN = "shutdown";
   }
 
   private Context mContext;
@@ -379,6 +380,11 @@ public class CastPlayerManager {
             Capabilities capabilities = VoiceControlForPlexApplication.gsonRead.fromJson(obj.getString("capabilities"), Capabilities.class);
             if(listener != null)
               listener.onGetDeviceCapabilities(capabilities);
+          } else if(obj.has("event") && obj.getString("event").equals(RECEIVER_EVENTS.SHUTDOWN)) {
+            if(listener != null)
+              listener.onCastDisconnected();
+            subscribed = false;
+            mClient = null;
           }
         } catch (Exception ex) {
           ex.printStackTrace();
