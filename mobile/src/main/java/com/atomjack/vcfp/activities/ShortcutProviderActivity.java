@@ -49,7 +49,7 @@ public class ShortcutProviderActivity extends VCFPActivity {
 		servers = gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.SAVED_SERVERS, ""), serverType);
 		clients = gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.SAVED_CLIENTS, ""), clientType);
 
-		Logger.d("server: %s", servers);
+		Logger.d("servers: %s", servers);
 		boolean didScan = false;
 		if(servers != null && servers.size() > 0 && VoiceControlForPlexApplication.getAllClients().size() > 0)
 			didScan = true;

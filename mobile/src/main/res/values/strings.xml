@@ -161,4 +161,8 @@
     <string name="subtitle_active">%s subtitle now active.</string>
     <string name="subtitles_off">Subtitles off.</string>
     <string name="audio_track_active">%s audio track now active.</string>
+    <string name="drawer_open">Open navigation drawer</string>
+    <string name="drawer_close">Close navigation drawer</string>
+    <string name="menu_server">Server:</string>
+    <string name="back">Back</string>
 </resources>

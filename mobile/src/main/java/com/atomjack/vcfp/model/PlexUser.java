@@ -10,4 +10,6 @@ public class PlexUser {
 	public String authenticationToken;
 	@Element
 	public String username;
+  @Element
+  public String email;
 }

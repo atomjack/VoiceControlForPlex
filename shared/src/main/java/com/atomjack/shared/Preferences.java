@@ -22,11 +22,13 @@ public class Preferences {
   public final static String FEEDBACK = "feedback";
   public final static String ERRORS = "errors";
   public final static String PLEX_USERNAME = "pref.plex_username";
+  public final static String PLEX_EMAIL = "pref.plex_email";
   public final static String HAS_SHOWN_WEAR_PURCHASE_POPUP = "pref.has_shown_wear_purchase_popup";
   public final static String NUM_CINEMA_TRAILERS = "pref.num_cinema_trailers";
   public final static String CHROMECAST_VIDEO_QUALITY_LOCAL = "pref.chromecast_video_quality_local";
   public final static String CHROMECAST_VIDEO_QUALITY_REMOTE = "pref.chromecast_video_quality_remote";
   public final static String SUBSCRIBED_CLIENT = "pref.subscribed_client";
+  public final static String LAST_SERVER_SCAN = "pref.last_server_scan";
 
   public Preferences(Context context) {
     mPrefs = context.getSharedPreferences(PREFS, context.MODE_PRIVATE);
@@ -45,6 +47,8 @@ public class Preferences {
     return mPrefs.getInt(pref, defaultValue);
   }
 
+  public long get(String pref, long defaultValue) { return mPrefs.getLong(pref, defaultValue); }
+
   public void put(String pref, String value) {
     mPrefsEditor.putString(pref, value);
     mPrefsEditor.commit();
@@ -52,6 +56,11 @@ public class Preferences {
 
   public void put(String pref, int value) {
     mPrefsEditor.putInt(pref, value);
+    mPrefsEditor.commit();
+  }
+
+  public void put(String pref, long value) {
+    mPrefsEditor.putLong(pref, value);
     mPrefsEditor.commit();
   }
 

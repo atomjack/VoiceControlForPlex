@@ -651,7 +651,7 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
                 public void onSuccess(PlexUser user) {
                   Logger.d("Got user: %s", user);
                   VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.PLEX_USERNAME, user.username);
-                  Logger.d("Saved username %s", user.username);
+                  VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.PLEX_EMAIL, user.email);
                 }
 
                 @Override
@@ -745,6 +745,7 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
             VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.AUTHENTICATION_TOKEN, user.authenticationToken);
             authToken = user.authenticationToken;
             VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.PLEX_USERNAME, user.username);
+            VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.PLEX_EMAIL, user.email);
             feedback.m(R.string.logged_in);
             MenuItem loginItem = menu.findItem(R.id.menu_login);
             loginItem.setVisible(false);

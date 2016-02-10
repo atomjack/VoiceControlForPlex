@@ -7,6 +7,7 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.TextView;
 
+import com.atomjack.shared.Logger;
 import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexServer;
@@ -58,6 +59,17 @@ public class PlexListAdapter extends BaseAdapter {
     else if(m_type == TYPE_CLIENT)
       return m_clients.get(m_clientKeys[position]);
     return null;
+  }
+
+  public int getServerIndex(PlexServer s) {
+    int index = 0;
+    for(int i=0;i<m_servers.size();i++) {
+      if(s.machineIdentifier != null && s.machineIdentifier.equals(((PlexServer)getItem(i)).machineIdentifier)) {
+        index = i;
+        break;
+      }
+    }
+    return index;
   }
 
   @Override

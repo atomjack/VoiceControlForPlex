@@ -7,8 +7,11 @@ import java.math.BigInteger;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 
 public class Utils {
@@ -133,5 +136,47 @@ public class Utils {
 
   public static String generateRandomString(int length) {
     return new BigInteger(130, random).toString(32).substring(0, length);
+  }
+
+  public static final String md5(final String s) {
+    if(s == null)
+      return "";
+    final String MD5 = "MD5";
+    try {
+      // Create MD5 Hash
+      MessageDigest digest = java.security.MessageDigest
+              .getInstance(MD5);
+      digest.update(s.getBytes());
+      byte messageDigest[] = digest.digest();
+
+      // Create Hex String
+      StringBuilder hexString = new StringBuilder();
+      for (byte aMessageDigest : messageDigest) {
+        String h = Integer.toHexString(0xFF & aMessageDigest);
+        while (h.length() < 2)
+          h = "0" + h;
+        hexString.append(h);
+      }
+      return hexString.toString();
+
+    } catch (NoSuchAlgorithmException e) {
+      e.printStackTrace();
+    }
+    return "";
+  }
+
+  /*
+  *  Convenience method to add a specified number of minutes to a Date object
+  *  From: http://stackoverflow.com/questions/9043981/how-to-add-minutes-to-my-date
+  *  @param  minutes  The number of minutes to add
+  *  @param  beforeTime  The time that will have minutes added to it
+  *  @return  A date object with the specified number of minutes added to it
+  */
+  public static Date addMinutesToDate(int minutes, Date beforeTime){
+    final long ONE_MINUTE_IN_MILLIS = 60000;//millisecs
+
+    long curTimeInMs = beforeTime.getTime();
+    Date afterAddingMins = new Date(curTimeInMs + (minutes * ONE_MINUTE_IN_MILLIS));
+    return afterAddingMins;
   }
 }

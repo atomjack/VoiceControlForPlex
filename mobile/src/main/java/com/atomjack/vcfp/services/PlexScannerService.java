@@ -51,6 +51,8 @@ public class PlexScannerService extends Service {
     if(action != null) {
       Logger.d("Action: %s", action);
       if(action.equals(ACTION_SCAN_SERVERS)) {
+        remoteServerScanFinished = false;
+        localServerScanFinished = false;
         setClass(intent);
         scanForServers();
       } else if(action.equals(ACTION_SCAN_CLIENTS)) {
@@ -59,6 +61,7 @@ public class PlexScannerService extends Service {
       } else if(action.equals(ACTION_SERVER_SCAN_FINISHED)) {
         Logger.d("local server scan finished");
         Logger.d("is logged in: %s", VoiceControlForPlexApplication.getInstance().isLoggedIn());
+        Logger.d("remoteServerScanFinished: %s", remoteServerScanFinished);
         localServerScanFinished = true;
         if(remoteServerScanFinished || !VoiceControlForPlexApplication.getInstance().isLoggedIn()) {
           onServerScanFinished();
@@ -86,12 +89,14 @@ public class PlexScannerService extends Service {
     onScanFinished(type, null);
   }
   private void onScanFinished(String type, String extra) {
+    if(type == ACTION_SERVER_SCAN_FINISHED)
+      Logger.d("[PlexScannerService] onScanFinished");
     Intent intent = new Intent(this, callingClass);
     intent.setAction(type);
     intent.putExtra(REMOTE_SERVER_SCAN_UNAUTHORIZED, extra != null && extra.equals(REMOTE_SERVER_SCAN_UNAUTHORIZED));
     intent.addFlags(Intent.FLAG_FROM_BACKGROUND);
     intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+//    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
     if (callingClass.getSuperclass() == Service.class)
       startService(intent);
     else

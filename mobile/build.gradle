@@ -8,6 +8,7 @@ android {
         applicationId "com.atomjack.vcfp"
         minSdkVersion 15
         targetSdkVersion 19
+        multiDexEnabled false
     }
     dexOptions {
         preDexLibraries = false
@@ -120,11 +121,14 @@ dependencies {
     compile 'com.android.support:support-v4:23.0+'
     compile 'com.github.codechimp-org.apprater:library:1.0.+'
     compile 'com.google.android.gms:play-services-wearable:7.8.0'
-    compile 'com.android.support:appcompat-v7:23.0.0'
+    compile 'com.android.support:appcompat-v7:23.1.1'
+    compile 'com.android.support:design:23.1.1'
     compile 'com.android.support:mediarouter-v7:23.0.0'
+    compile 'com.sothree.slidinguppanel:library:3.2.1'
     compile project(':CastCompanionLibrary-android')
     compile 'com.jakewharton:disklrucache:2.0.2'
     compile files('libs/commons-io-2.4.jar')
     compile project(':shared')
     compile files('libs/org.apache.http.legacy.jar')
+    compile 'de.hdodenhof:circleimageview:2.0.0'
 }

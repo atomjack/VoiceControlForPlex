@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <group android:checkableBehavior="single">
+        <item
+            android:title="@string/back"
+            android:onClick="navMenuSettingsBack" />
+        <item
+            android:id="@+id/nav_login"
+            android:icon="@drawable/ic_one"
+            android:visible="false"
+            android:onClick="showLogin"
+            android:title="@string/menu_login" />
+        <item android:id="@+id/menu_about"
+              android:title="@string/menu_about"
+              android:icon="@drawable/menu_about"
+              android:onClick="showAbout" />
+        <item android:id="@+id/menu_donate"
+              android:title="@string/menu_donate"
+              android:onClick="donate">
+        </item>
+        <item android:id="@+id/menu_cinema_trailers"
+              android:title="@string/cinema_trailers"
+              android:onClick="cinemaTrailers"></item>
+        <item android:id="@+id/menu_purchase_wear"
+              android:title="@string/purchase_wear"
+              android:onClick="purchaseWear"></item>
+        <item android:id="@+id/menu_wear_options"
+              android:title="@string/menu_wear_options"
+              android:onClick="showWearOptions"
+              android:visible="false"></item>
+        <item android:id="@+id/menu_chromecast_video"
+              android:title="@string/menu_chromecast_video"
+              android:onClick="showChromecastVideoOptions"
+              android:visible="false"></item>
+        <item android:id="@+id/menu_tasker_import"
+              android:title="@string/menu_tasker_import"
+              android:onClick="importTaskerProject">
+        </item>
+        <item android:id="@+id/menu_install_tasker"
+              android:title="@string/menu_install_tasker"
+              android:visible="false"
+              android:onClick="installTasker">
+        </item>
+        <item android:id="@+id/menu_install_utter"
+              android:title="@string/menu_install_utter"
+              android:visible="false"
+              android:onClick="installUtter">
+        </item>
+        <item android:id="@+id/menu_install_autovoice"
+              android:title="@string/menu_install_autovoice"
+              android:visible="false"
+              android:onClick="installAutoVoice">
+        </item>
+        <item android:id="@+id/menu_email_device_logs"
+              android:title="@string/menu_email_device_logs"
+              android:onClick="emailDeviceLogs">
+        </item>
+        <item android:id="@+id/menu_changelog"
+              android:title="@string/menu_changelog"
+              android:onClick="showChangelog">
+        </item>
+    </group>
+</menu>

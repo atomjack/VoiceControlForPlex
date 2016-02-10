@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+      xmlns:app="http://schemas.android.com/apk/res-auto">
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_login"
+            android:icon="@drawable/menu_login"
+            android:visible="false"
+            android:onClick="showLogin"
+            android:title="@string/menu_login" />
+        <item
+            android:id="@+id/nav_settings"
+            android:icon="@drawable/menu_settings"
+            android:onClick="navMenuSettings"
+            android:title="@string/action_settings" />
+        <item
+            android:id="@+id/nav_server"
+            android:title="@string/menu_server"
+            android:icon="@drawable/menu_server"
+            app:actionLayout="@layout/menu_server_spinner" />
+    </group>
+</menu>
