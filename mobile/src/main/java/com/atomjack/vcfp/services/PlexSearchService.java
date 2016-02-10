@@ -1219,7 +1219,7 @@ public class PlexSearchService extends Service {
   }
 
   private void playMedia(final PlexMedia media, final PlexDirectory album) {
-		if(media.server.owned && false)
+		if(media.server.owned)
 			createPlayQueueAndPlayMedia(media, album, null);
 		else {
 			// TODO: switch this to the PlexServer method and verify
