@@ -407,7 +407,7 @@ public class NewMainActivity extends AppCompatActivity {
     VoiceControlForPlexApplication.getInstance().prefs.remove(Preferences.PLEX_USERNAME);
     authToken = null;
 
-    nvDrawer.getMenu().setGroupVisible(R.id.drawer_group_logout, false);
+//    nvDrawer.getMenu().setGroupVisible(R.id.drawer_group_logout, false);
 
     // TODO: If the currently selected server is not local, reset it to scan all. (MainActivity:541)
 
