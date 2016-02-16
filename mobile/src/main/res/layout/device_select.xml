@@ -1,10 +1,51 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
               android:id="@+id/device_select_root"
-    android:orientation="vertical" >
+              android:orientation="vertical"
+              android:background="@color/device_list_background">
 
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:orientation="horizontal">
+
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/deviceListHeader"
+            android:layout_gravity="center_vertical"
+            android:text="Select Device"
+            android:layout_marginLeft="10dp"
+            android:layout_weight="1"
+            android:textSize="18dp"
+            android:textColor="@color/white"/>
+
+        <FrameLayout
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_weight="0">
+
+            <ImageButton
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/deviceListRefreshButton"
+                android:layout_gravity="center_vertical"
+                android:background="@android:color/transparent"
+                android:layout_marginRight="20dp"
+                android:src="@drawable/button_refresh"/>
+
+            <ProgressBar
+                android:id="@+id/deviceListRefreshSpinner"
+                android:visibility="gone"
+                style="?android:attr/progressBarStyleLarge"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+        </FrameLayout>
+
+    </LinearLayout>
     <ListView
         android:id="@+id/serverListView"
         android:layout_width="match_parent"

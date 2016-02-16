@@ -49,7 +49,7 @@ public class NowPlayingActivity extends PlayerActivity {
 		Logger.d("[NowPlayingActivity] onCreate");
 		super.onCreate(savedInstanceState);
 
-    plexSubscription.setListener(this);
+//    plexSubscription.setListener(this);
 
 		if(BuildConfig.USE_BUGSENSE)
 			BugSenseHandler.initAndStartSession(NowPlayingActivity.this, MainActivity.BUGSENSE_APIKEY);
@@ -206,7 +206,7 @@ public class NowPlayingActivity extends PlayerActivity {
 		super.onResume();
     Logger.d("NowPlaying onResume");
 		VoiceControlForPlexApplication.applicationResumed();
-    plexSubscription.setListener(this);
+//    plexSubscription.setListener(this);
     if(menu != null) {
       Logger.d("Now subscribing");
 //      if(plexSubscription.isSubscribed()) {

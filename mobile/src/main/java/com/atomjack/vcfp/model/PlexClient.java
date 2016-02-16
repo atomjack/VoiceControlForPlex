@@ -68,7 +68,6 @@ public class PlexClient extends PlexDevice {
 		isCastClient = in.readInt() == 1;
 		isAudioOnly = in.readInt() == 1;
 		castDevice = in.readParcelable(CastDevice.class.getClassLoader());
-    Logger.d("set cast device from parcel");
 	}
 
 	public static final Parcelable.Creator<PlexClient> CREATOR = new Parcelable.Creator<PlexClient>() {

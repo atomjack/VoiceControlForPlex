@@ -251,10 +251,10 @@ public abstract class VCFPActivity extends AppCompatActivity implements PlexSubs
           // For some reason we sometimes lose mClient here, even though we're subscribed. If we do, let's try to get the client from the subscription manager
 //          if(mClient == null) {
 //            Logger.d("[VCFPActivity] 0Lost subscribed client.");
-            if(castPlayerManager.mClient != null)
-              mClient = castPlayerManager.mClient;
-            else if(plexSubscription.mClient != null)
-              mClient = plexSubscription.mClient;
+          if(castPlayerManager.mClient != null)
+            mClient = castPlayerManager.mClient;
+          else if(plexSubscription.mClient != null)
+            mClient = plexSubscription.mClient;
 //          }
           if(mClient == null) {
             Logger.d("Lost subscribed client.");
@@ -434,7 +434,7 @@ public abstract class VCFPActivity extends AppCompatActivity implements PlexSubs
 	protected void onDestroy() {
 		super.onDestroy();
     networkMonitor.unregister();
-    plexSubscription.removeListener(this);
+//    plexSubscription.removeListener(this);
 	}
 
 	@Override

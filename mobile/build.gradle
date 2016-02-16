@@ -12,6 +12,7 @@ android {
     }
     dexOptions {
         preDexLibraries = false
+        incremental false
     }
     packagingOptions {
         exclude 'META-INF/LICENSE.txt'
@@ -43,6 +44,7 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
             buildConfigField "boolean", "USE_BUGSENSE", "true"
+            buildConfigField "boolean", "AUTO_REFRESH_DEVICES", "true"
             buildConfigField "boolean", "CHROMECAST_REQUIRES_PURCHASE", "true"
             buildConfigField "boolean", "WEAR_REQUIRES_PURCHASE", "true"
             buildConfigField "String", "SKU_CHROMECAST", "\"chromecast\""
@@ -52,6 +54,7 @@ android {
         debug {
             debuggable true
             buildConfigField "boolean", "USE_BUGSENSE", "false"
+            buildConfigField "boolean", "AUTO_REFRESH_DEVICES", "false"
             buildConfigField "boolean", "CHROMECAST_REQUIRES_PURCHASE", "false"
             buildConfigField "boolean", "WEAR_REQUIRES_PURCHASE", "false"
             buildConfigField "String", "SKU_CHROMECAST", "\"chromecast\""
@@ -131,4 +134,5 @@ dependencies {
     compile project(':shared')
     compile files('libs/org.apache.http.legacy.jar')
     compile 'de.hdodenhof:circleimageview:2.0.0'
+    compile 'com.sothree.slidinguppanel:library:3.2.1'
 }

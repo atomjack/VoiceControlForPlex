@@ -60,7 +60,6 @@ public class Connection implements Parcelable {
 
 	@Commit
 	public void build() {
-		Logger.d("Connection build: %d", localStr);
 		local = localStr == 1;
 	}
 

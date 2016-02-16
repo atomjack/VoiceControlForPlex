@@ -8,6 +8,7 @@ import android.content.Intent;
 import com.atomjack.vcfp.GDMService;
 import com.atomjack.shared.Logger;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
+import com.atomjack.vcfp.activities.NewMainActivity;
 import com.atomjack.vcfp.activities.VCFPActivity;
 import com.atomjack.vcfp.model.Connection;
 import com.atomjack.vcfp.model.PlexClient;
@@ -25,6 +26,8 @@ public class GDMReceiver extends BroadcastReceiver {
   public static final String ACTION_CANCEL = ".GDMReceiver.ACTION_CANCEL";
 
 	private ArrayList<PlexClient> clients = new ArrayList<PlexClient>();
+  private ArrayList<PlexServer> servers = new ArrayList<>();
+
 	@Override
 	public void onReceive(Context context, Intent intent) {
 		Logger.d("GDMReceiver onReceive: %s", intent.getAction());
@@ -48,7 +51,7 @@ public class GDMReceiver extends BroadcastReceiver {
 					Connection connection = new Connection("http", server.address, server.port);
 					server.connections = new ArrayList<>();
 					server.connections.add(connection);
-					VoiceControlForPlexApplication.addPlexServer(server);
+          servers.add(server);
 				} else if(responseMap.get("content-type").equals("plex/media-player") && responseMap.get("protocol") != null && responseMap.get("protocol").equals("plex")) {
 					PlexClient client = new PlexClient();
 					client.port = responseMap.get("port");
@@ -75,6 +78,7 @@ public class GDMReceiver extends BroadcastReceiver {
       Class theClass = (Class) intent.getSerializableExtra(com.atomjack.shared.Intent.EXTRA_CLASS);
       Intent i = new Intent(context, theClass);
 
+      Logger.d("Scantype: %s, class: %s", scanType, theClass);
       i.setAction(scanType.equals(com.atomjack.shared.Intent.SCAN_TYPE_SERVER) ? PlexScannerService.ACTION_SERVER_SCAN_FINISHED : PlexScannerService.ACTION_CLIENT_SCAN_FINISHED);
 
       i.putExtra(com.atomjack.shared.Intent.SHOWRESOURCE, intent.getBooleanExtra(com.atomjack.shared.Intent.SHOWRESOURCE, false));
@@ -82,6 +86,8 @@ public class GDMReceiver extends BroadcastReceiver {
 
       if (clients.size() > 0 && scanType.equals(com.atomjack.shared.Intent.SCAN_TYPE_CLIENT))
         i.putParcelableArrayListExtra(com.atomjack.shared.Intent.EXTRA_CLIENTS, clients);
+      if(scanType.equals(com.atomjack.shared.Intent.SCAN_TYPE_SERVER))
+        i.putParcelableArrayListExtra(com.atomjack.shared.Intent.EXTRA_SERVERS, servers);
 
       i.putExtra(com.atomjack.shared.Intent.SCAN_TYPE, intent.getStringExtra(com.atomjack.shared.Intent.SCAN_TYPE));
       i.putExtra(com.atomjack.shared.Intent.EXTRA_CONNECT_TO_CLIENT, intent.getBooleanExtra(com.atomjack.shared.Intent.EXTRA_CONNECT_TO_CLIENT, false));
@@ -93,15 +99,18 @@ public class GDMReceiver extends BroadcastReceiver {
       i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
       if (theClass.getSuperclass() == Service.class) {
         context.startService(i);
-      } else if (theClass.getSuperclass() == VCFPActivity.class) {
+      } else if (theClass == NewMainActivity.class) {
         Logger.d("Sending to activity");
         context.startActivity(i);
       }
-      // Clear the list of clients so the next scan sends a reinitialized list.
+      // Clear the list of servers & clients so the next scan sends a reinitialized list.
       clients = new ArrayList<>();
+      servers = new ArrayList<>();
 		} else if(intent.getAction().equals(ACTION_CANCEL)) {
       Logger.d("[GDMReceiver] cancel");
       cancel = true;
+      clients = new ArrayList<>();
+      servers = new ArrayList<>();
     }
 	}
 

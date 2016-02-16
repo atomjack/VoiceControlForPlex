@@ -54,10 +54,16 @@ public class PlexListAdapter extends BaseAdapter {
 
   @Override
   public Object getItem(int position) {
-    if(m_type == TYPE_SERVER)
-      return position == 0 ? new PlexServer(context.getString(R.string.scan_all)) : m_servers.get(m_serverKeys[position-1]);
-    else if(m_type == TYPE_CLIENT)
-      return m_clients.get(m_clientKeys[position]);
+    try {
+      if (m_type == TYPE_SERVER) {
+        return position == 0 ? new PlexServer(context.getString(R.string.scan_all)) : m_servers.get(m_serverKeys[position - 1]);
+      } else if (m_type == TYPE_CLIENT)
+        return m_clients.get(m_clientKeys[position]);
+    } catch (Exception e) {
+      Logger.d("Exception trying to get item at position %d", position);
+      Logger.d("servers: %s", m_servers);
+      e.printStackTrace();
+    }
     return null;
   }
 

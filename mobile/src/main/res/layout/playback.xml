@@ -53,7 +53,6 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:background="@android:color/transparent"
-            android:onClick="doRewind"
             android:id="@+id/rewindButton" android:src="@drawable/notif_back15"
             android:layout_weight="1"
             android:layout_marginTop="13dp"/>
@@ -61,7 +60,6 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:background="@android:color/transparent"
-            android:onClick="doPlayPause"
             android:id="@+id/playPauseButton" android:src="@drawable/button_play"
             android:layout_weight="1"
             android:layout_marginTop="10dp"/>
@@ -77,7 +75,6 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:background="@android:color/transparent"
-            android:onClick="doForward"
             android:id="@+id/forwardButton" android:src="@drawable/notif_ff30"
             android:layout_weight="1"
             android:layout_marginTop="13dp"/>
@@ -86,7 +83,6 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:background="@android:color/transparent"
-            android:onClick="doMediaOptions"
             android:id="@+id/mediaOptionsButton"
             android:src="@drawable/button_media_options"
             android:layout_weight="1"/>
@@ -95,7 +91,6 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:background="@android:color/transparent"
-            android:onClick="doMic"
             android:id="@+id/micButton" android:src="@drawable/button_microphone"
             android:layout_weight="1" />
     </LinearLayout>

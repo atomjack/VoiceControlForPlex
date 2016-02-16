@@ -9,6 +9,8 @@ public class Intent {
   public final static String USE_CURRENT = "com.atomjack.vcfp.intent.use_current";
   public final static String EXTRA_SILENT = "com.atomjack.vcfp.intent.extra_silent";
   public final static String EXTRA_FROM_MIC = "com.atomjack.vcfp.intent.extra_from_mic";
+  public final static String EXTRA_PLAYER_FRAGMENT = "com.atomjack.vcfp.intent.extra_player_fragment";
+
 
 
   public final static String SCAN_TYPE = "com.atomjack.vcfp.intent.scan_type";
@@ -26,6 +28,7 @@ public class Intent {
   public final static String EXTRA_CLASS = "com.atomjack.vcfp.intent.EXTRA_CLASS";
   public final static String EXTRA_CONNECT_TO_CLIENT = "com.atomjack.vcfp.intent.EXTRA_CONNECT_TO_CLIENT";
   public final static String SUBSCRIBED = "com.atomjack.vcfp.intent.SUBSCRIBED";
+  public final static String EXTRA_LAYOUT = "com.atomjack.vcfp.intent.EXTRA_LAYOUT";
 
   public final static String EXTRA_QUERYTEXT = "com.atomjack.vcfp.intent.EXTRA_QUERYTEXT";
 

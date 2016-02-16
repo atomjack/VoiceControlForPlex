@@ -165,4 +165,8 @@
     <string name="drawer_close">Close navigation drawer</string>
     <string name="menu_server">Server:</string>
     <string name="back">Back</string>
+    <string name="to_get_the_most_out_of_vcfp">To get the most out of Voice Control for Plex, logging in to your Plex account is recommended.</string>
+    <string name="login_to_plex">Login to Plex</string>
+    <string name="finding_plex_clients_and_servers">Finding Plex Clients &amp; Servers</string>
+    <string name="plex_servers">Plex Servers</string>
 </resources>

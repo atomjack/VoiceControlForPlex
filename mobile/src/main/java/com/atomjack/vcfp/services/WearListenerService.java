@@ -15,8 +15,10 @@ import com.atomjack.vcfp.PlexSubscription;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.activities.CastActivity;
 import com.atomjack.vcfp.activities.MainActivity;
+import com.atomjack.vcfp.activities.NewMainActivity;
 import com.atomjack.vcfp.activities.NowPlayingActivity;
 import com.atomjack.vcfp.activities.VCFPActivity;
+import com.atomjack.vcfp.fragments.PlexPlayerFragment;
 import com.atomjack.vcfp.interfaces.BitmapHandler;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexMedia;
@@ -83,7 +85,8 @@ public class WearListenerService extends WearableListenerService {
 
       PlexSubscription plexSubscription = VoiceControlForPlexApplication.getInstance().plexSubscription;
       CastPlayerManager castPlayerManager = VoiceControlForPlexApplication.getInstance().castPlayerManager;
-      VCFPActivity listener = plexSubscription.getListener();
+      // TODO: FIX
+      PlexPlayerFragment listener = null; //plexSubscription.getListener();
       CastPlayerManager.CastListener castListener = castPlayerManager.getListener();
       PlexClient client = new PlexClient();
       if (plexSubscription.isSubscribed()) {
@@ -122,6 +125,8 @@ public class WearListenerService extends WearableListenerService {
             Logger.d("now playing: %s", listener.getNowPlayingMedia().title);
             VoiceControlForPlexApplication.SetWearMediaTitles(dataMap, listener.getNowPlayingMedia());
             dataMap.putString(WearConstants.MEDIA_TYPE, listener.getNowPlayingMedia().getType());
+            // TODO: Fix
+            /*
             final PlexMedia media = plexSubscription.getListener().getNowPlayingMedia();
             VoiceControlForPlexApplication.getWearMediaImage(media, new BitmapHandler() {
               @Override
@@ -135,6 +140,7 @@ public class WearListenerService extends WearableListenerService {
                 Logger.d("[WearListenerService] sent is playing status (%s) to wearable.", dataMap.getString(WearConstants.PLAYBACK_STATE));
               }
             });
+            */
           } else {
             dataMap.putString(WearConstants.PLAYBACK_STATE, PlayerState.STOPPED.name());
             new SendToDataLayerThread(WearConstants.GET_PLAYBACK_STATE, dataMap, this).start();
@@ -199,8 +205,9 @@ public class WearListenerService extends WearableListenerService {
         PlexMedia media = null;
         if(castPlayerManager.isSubscribed())
           media = castPlayerManager.getListener().getNowPlayingMedia();
-        else if(plexSubscription.isSubscribed())
-          media = plexSubscription.getListener().getNowPlayingMedia();
+        // TODO: Fix  r
+//        else if(plexSubscription.isSubscribed())
+//          media = plexSubscription.getListener().getNowPlayingMedia();
         if(media != null) {
           Intent intent = new android.content.Intent(this, PlexControlService.class);
           intent.setAction(message);

@@ -4,6 +4,7 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 import com.atomjack.shared.Logger;
+import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.interfaces.ActiveConnectionHandler;
 import com.atomjack.vcfp.interfaces.AfterTransientTokenRequest;
 import com.atomjack.vcfp.PlexHeaders;
@@ -46,6 +47,8 @@ public class PlexServer extends PlexDevice {
 
 	public boolean local;
 
+  public boolean isScanAllServer = false;
+
 	public PlexServer() {
 		super();
     connections = new ArrayList<Connection>();
@@ -55,6 +58,13 @@ public class PlexServer extends PlexDevice {
 		name = _name;
 		connections = new ArrayList<Connection>();
 	}
+
+  public static PlexServer getScanAllServer() {
+    PlexServer s = new PlexServer(VoiceControlForPlexApplication.getInstance().getString(R.string.scan_all));
+    s.machineIdentifier = "000000";
+    s.isScanAllServer = true;
+    return s;
+  }
 
 	public static PlexServer fromDevice(Device device) {
 		Logger.d("Creating server %s", device.name);
@@ -136,6 +146,8 @@ public class PlexServer extends PlexDevice {
     parcel.writeStringList(movieSections);
     parcel.writeStringList(tvSections);
     parcel.writeStringList(musicSections);
+    parcel.writeInt(owned ? 1 : 0);
+    parcel.writeString(sourceTitle);
 	}
 
 	public PlexServer(Parcel in) {
@@ -152,6 +164,8 @@ public class PlexServer extends PlexDevice {
     in.readStringList(movieSections);
     in.readStringList(tvSections);
     in.readStringList(musicSections);
+    owned = in.readInt() == 1;
+    sourceTitle = in.readString();
   }
 
 	public static final Parcelable.Creator<PlexServer> CREATOR = new Parcelable.Creator<PlexServer>() {
@@ -164,10 +178,10 @@ public class PlexServer extends PlexDevice {
 	};
 
   public void findServerConnection(final ActiveConnectionHandler activeConnectionHandler) {
-    Logger.d("[PlexServer] finding server connection, current active connection expires %s, number of connections: %d", activeConnectionExpires, connections.size());
     if(activeConnectionExpires != null && activeConnectionExpires.before(Calendar.getInstance())) {
       activeConnectionHandler.onSuccess(activeConnection);
     } else {
+      Logger.d("[PlexServer] finding server connection for %s, current active connection expires %s, number of connections: %d", name, activeConnectionExpires, connections.size());
       findServerConnection(0, activeConnectionHandler);
     }
   }
@@ -201,6 +215,7 @@ public class PlexServer extends PlexDevice {
     call.enqueue(new Callback<MediaContainer>() {
       @Override
       public void onResponse(Response<MediaContainer> response) {
+        Logger.d("Testing connection %s got code: %d", connection, response.code());
         if(response.code() == 200) {
           Logger.d("%s success", connection.uri);
           handler.onFinish(response.code(), true);

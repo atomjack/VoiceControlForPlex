@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@color/black">
+
+    <ImageView
+        android:layout_width="500px"
+        android:layout_height="500px"
+        android:id="@+id/mainLoadingLogo"
+        android:src="@drawable/ic_launcher"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="56dp"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="@string/to_get_the_most_out_of_vcfp"
+        android:id="@+id/textView"
+        android:layout_below="@+id/mainLoadingLogo"
+        android:layout_marginTop="72dp"
+        android:textColor="@color/white"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:layout_marginLeft="20dp"
+        android:layout_marginRight="20dp"
+        android:gravity="center"/>
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/login_to_plex"
+        android:id="@+id/mainLoadingLoginButton"
+        android:layout_marginTop="51dp"
+        android:layout_below="@+id/textView"
+        android:layout_centerHorizontal="true"
+        android:onClick="showLogin"/>
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/no_thanks"
+        android:id="@+id/mainLoadingNoThanksButton"
+        android:layout_below="@+id/mainLoadingLoginButton"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="15dp"
+        android:onClick="mainLoadingBypassLogin"/>
+</RelativeLayout>

@@ -8,10 +8,14 @@ import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
+import android.graphics.drawable.AnimationDrawable;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -21,7 +25,6 @@ import android.os.Handler;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
@@ -30,6 +33,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.media.MediaRouteSelector;
 import android.support.v7.media.MediaRouter;
 import android.support.v7.widget.Toolbar;
+import android.util.DisplayMetrics;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -37,9 +42,14 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
+import android.widget.FrameLayout;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.Spinner;
 import android.widget.TextView;
 
@@ -47,27 +57,44 @@ import com.android.vending.billing.IabHelper;
 import com.android.vending.billing.IabResult;
 import com.android.vending.billing.Purchase;
 import com.atomjack.shared.Logger;
+import com.atomjack.shared.PlayerState;
 import com.atomjack.shared.Preferences;
 import com.atomjack.shared.SendToDataLayerThread;
 import com.atomjack.shared.UriDeserializer;
 import com.atomjack.shared.UriSerializer;
 import com.atomjack.shared.WearConstants;
 import com.atomjack.vcfp.BuildConfig;
+import com.atomjack.vcfp.CastPlayerManager;
 import com.atomjack.vcfp.Feedback;
 import com.atomjack.vcfp.FutureRunnable;
+import com.atomjack.vcfp.NetworkMonitor;
+import com.atomjack.vcfp.PlexSubscription;
 import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.Utils;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.adapters.PlexListAdapter;
+import com.atomjack.vcfp.fragments.CastPlayerFragment;
 import com.atomjack.vcfp.fragments.MainFragment;
+import com.atomjack.vcfp.fragments.PlayerFragment;
+import com.atomjack.vcfp.fragments.PlexPlayerFragment;
+import com.atomjack.vcfp.fragments.SetupFragment;
+import com.atomjack.vcfp.interfaces.ActivityListener;
+import com.atomjack.vcfp.interfaces.PlexSubscriptionListener;
+import com.atomjack.vcfp.interfaces.ScanHandler;
+import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.Pin;
 import com.atomjack.vcfp.model.PlexClient;
+import com.atomjack.vcfp.model.PlexDevice;
+import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexServer;
 import com.atomjack.vcfp.model.PlexUser;
+import com.atomjack.vcfp.model.Stream;
 import com.atomjack.vcfp.net.PlexHttpClient;
+import com.atomjack.vcfp.net.PlexHttpMediaContainerHandler;
 import com.atomjack.vcfp.net.PlexHttpUserHandler;
 import com.atomjack.vcfp.net.PlexPinResponseHandler;
 import com.atomjack.vcfp.services.PlexScannerService;
+import com.bugsense.trace.BugSenseHandler;
 import com.cubeactive.martin.inscription.WhatsNewDialog;
 import com.google.android.gms.cast.CastDevice;
 import com.google.android.gms.cast.CastMediaControlIntent;
@@ -86,23 +113,33 @@ import java.io.Writer;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-public class NewMainActivity extends AppCompatActivity {
+public class NewMainActivity extends AppCompatActivity
+        implements VoiceControlForPlexApplication.NetworkChangeListener,
+        ActivityListener {
 
   public final static int RESULT_VOICE_FEEDBACK_SELECTED = 0;
   public final static int RESULT_TASKER_PROJECT_IMPORTED = 1;
   public final static int RESULT_SHORTCUT_CREATED = 2;
 
+  public final static String ACTION_SHOW_NOW_PLAYING = "com.atomjack.vcfp.action_show_now_playing";
+
   private final static int SERVER_SCAN_INTERVAL = 1000*60*5; // scan for servers every 5 minutes
+
   private Handler handler;
+
+  public final static String BUGSENSE_APIKEY = "879458d0";
 
   private DrawerLayout mDrawer;
   private Toolbar toolbar;
-  private NavigationView nvDrawer;
+  private NavigationView navigationViewMain;
   private ActionBarDrawerToggle drawerToggle;
   private boolean mainNavigationItemsVisible = true;
 
@@ -123,13 +160,11 @@ public class NewMainActivity extends AppCompatActivity {
 
   private FutureRunnable fetchPinTask;
 
-  protected Feedback feedback;
+  public Feedback feedback;
 
   MediaRouter mMediaRouter;
   MediaRouterCallback mMediaRouterCallback;
   MediaRouteSelector mMediaRouteSelector;
-
-  protected Dialog deviceSelectDialog = null;
 
   protected PlexClient postChromecastPurchaseClient = null;
   protected Runnable postChromecastPurchaseAction = null;
@@ -143,56 +178,336 @@ public class NewMainActivity extends AppCompatActivity {
 
   private boolean userIsInteracting;
 
+  // First time setup
+  private boolean doingFirstTimeSetup = false;
+  // The next two booleans will be set to true when their respective scans are finished. This will ensure
+  // that when whichever of the two finishes last, the screen will refresh and first time setup will be done.
+  private boolean firstTimeSetupServerScanFinished = false;
+  private boolean firstTimeSetupClientScanFinished = false;
+
+  Preferences prefs;
+
+  private AlertDialog alertDialog;
+
+  private MenuItem castIconMenuItem;
+  private boolean subscribed = false;
+  private boolean subscribing = false;
+  protected Dialog deviceSelectDialog = null;
+
+  protected PlexSubscription plexSubscription;
+  protected CastPlayerManager castPlayerManager;
+
+  private PlayerFragment playerFragment;
+
+  public enum NetworkState {
+    DISCONNECTED,
+    WIFI,
+    MOBILE;
+
+    public static NetworkState getCurrentNetworkState(Context context) {
+      NetworkState currentNetworkState = NetworkState.DISCONNECTED;
+      ConnectivityManager cm =
+              (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+
+      NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+      if(activeNetwork != null) {
+        if (activeNetwork.getType() == ConnectivityManager.TYPE_MOBILE)
+          currentNetworkState = NetworkState.MOBILE;
+        else if (activeNetwork.getType() == ConnectivityManager.TYPE_WIFI)
+          currentNetworkState = NetworkState.WIFI;
+      }
+      return currentNetworkState;
+    }
+  };
+  protected NetworkState currentNetworkState;
+  protected NetworkMonitor networkMonitor;
+
+  NavigationView navigationFooter;
+
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    setContentView(R.layout.new_activity_main);
+    Logger.d("[NewMainActivity] onCreate");
 
-    handler = new Handler();
+    if(savedInstanceState != null) {
+      client = savedInstanceState.getParcelable(com.atomjack.shared.Intent.EXTRA_CLIENT);
+      playerFragment = savedInstanceState.getParcelable(com.atomjack.shared.Intent.EXTRA_PLAYER_FRAGMENT);
+      Logger.d("playerFragment: %s", playerFragment);
+    } else {
+      Logger.d("savedInstanceState is null");
+    }
 
-    Fragment mainFragment = new MainFragment();
-
-
-    FragmentManager fragmentManager = getSupportFragmentManager();
-    fragmentManager.beginTransaction().replace(R.id.flContent, mainFragment).commit();
-
-    final WhatsNewDialog whatsNewDialog = new WhatsNewDialog(this);
-    whatsNewDialog.show();
-
-    authToken = VoiceControlForPlexApplication.getInstance().prefs.getString(Preferences.AUTHENTICATION_TOKEN);
-
-
-
+    prefs = VoiceControlForPlexApplication.getInstance().prefs;
     feedback = new Feedback(this);
 
-    mMediaRouter = MediaRouter.getInstance(getApplicationContext());
-    mMediaRouteSelector = new MediaRouteSelector.Builder()
-            .addControlCategory(CastMediaControlIntent.categoryForCast(BuildConfig.CHROMECAST_APP_ID))
-            .build();
-    mMediaRouterCallback = new MediaRouterCallback();
-    mMediaRouter.addCallback(mMediaRouteSelector, mMediaRouterCallback, MediaRouter.CALLBACK_FLAG_PERFORM_ACTIVE_SCAN);
+    networkMonitor = new NetworkMonitor(this);
+    VoiceControlForPlexApplication.getInstance().setNetworkChangeListener(this);
 
-    server = gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.SERVER, ""), PlexServer.class);
-    if(server == null)
-      server = new PlexServer(getString(R.string.scan_all));
+    currentNetworkState = NetworkState.getCurrentNetworkState(this);
 
-    client = gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.CLIENT, ""), PlexClient.class);
+    plexSubscription = VoiceControlForPlexApplication.getInstance().plexSubscription;
 
 
-    setupNavigationDrawer();
+    castPlayerManager = VoiceControlForPlexApplication.getInstance().castPlayerManager;
+
+    doingFirstTimeSetup = !prefs.get(Preferences.FIRST_TIME_SETUP_COMPLETED, false);
+
+    setContentView(R.layout.new_activity_main);
+
+    if(!plexSubscription.isSubscribed() && !castPlayerManager.isSubscribed()) {
+      Logger.d("Not subscribed: %s", plexSubscription.mClient);
+      // In case the notification is still up due to a crash
+      VoiceControlForPlexApplication.getInstance().cancelNotification();
+    }
+
+    init();
+    doAutomaticDeviceScan();
+    if(plexSubscription.isSubscribed() || castPlayerManager.isSubscribed())
+      setCastIconActive();
+    else
+      Logger.d("Not subscribed");
+  }
+
+  @Override
+  protected void onSaveInstanceState(Bundle outState) {
+    super.onSaveInstanceState(outState);
+    Logger.d("Saving instance state");
+    outState.putParcelable(com.atomjack.shared.Intent.EXTRA_CLIENT, client);
+    if(playerFragment != null && playerFragment.isVisible()) {
+      getSupportFragmentManager().putFragment(outState, com.atomjack.shared.Intent.EXTRA_PLAYER_FRAGMENT, playerFragment);
+      Logger.d("Saving fragment: %s", playerFragment);
+    }
+  }
+
+  @Override
+  public void onBackPressed() {
+    Intent intent = new Intent();
+    intent.setAction(Intent.ACTION_MAIN);
+    intent.addCategory(Intent.CATEGORY_HOME);
+    startActivity(intent);
+  }
+
+  private PlexSubscriptionListener plexSubscriptionListener = new PlexSubscriptionListener() {
+    @Override
+    public void onSubscribed(final PlexClient client) {
+      Logger.d("[NewMainActivity] onSubscribed");
+
+      VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.SUBSCRIBED_CLIENT, gsonWrite.toJson(client));
+
+      subscribing = false;
+      try {
+        setCastIconActive();
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+      feedback.m(String.format(getString(R.string.connected_to2), client.name));
+
+      // We're subscribed to the plex player, so poll the client now to get the key of the currently playing media, if there is one
+      PlexHttpClient.getClientTimeline(client, VoiceControlForPlexApplication.getInstance().plexSubscription.getCommandId(), new PlexHttpMediaContainerHandler() {
+        @Override
+        public void onSuccess(MediaContainer mediaContainer) {
+//          processTimeline(mediaContainer);
+        }
+
+        @Override
+        public void onFailure(Throwable error) {
+        }
+      });
+    }
+
+    @Override
+    public void onTimeUpdate(int seconds) {
+      Logger.d("[NewMainActivity] onTimeUpdate: %d", seconds);
+      if(playerFragment != null)
+        playerFragment.setPosition(seconds);
+      else
+        Logger.d("Got time update of %d seconds, but for some reason playerFragment is null", seconds);
+    }
+
+    @Override
+    public void onMediaChanged(PlexMedia media) {
+      Logger.d("[NewMainActivity] onMediaChanged: %s", media.getTitle());
+
+      // TODO: Update everything in playerFragment
+    }
+
+    @Override
+    public void onPlayStarted(PlexMedia media, PlayerState state) {
+      Logger.d("[NewMainActivity] onPlayStarted: %s", media.getTitle());
+      if(playerFragment == null) {
+        playerFragment = client.isCastClient ? new CastPlayerFragment() : new PlexPlayerFragment();
+      } else if(client.isCastClient && playerFragment instanceof PlexPlayerFragment)
+        playerFragment = new CastPlayerFragment();
+      else if(!client.isCastClient && playerFragment instanceof CastPlayerFragment)
+        playerFragment = new PlexPlayerFragment();
+
+      playerFragment.setRetainInstance(true);
+      playerFragment.setState(state);
+      playerFragment.setPosition(Integer.parseInt(media.viewOffset)/1000); // View offset from PMS is in ms
+
+      int layout = -1;
+      if(media.isMovie())
+        layout = R.layout.now_playing_movie;
+      else if(media.isShow())
+        layout = R.layout.now_playing_show;
+      else if(media.isMusic())
+        layout = R.layout.now_playing_music;
+
+      if(layout != -1) {
+        if (client.isCastClient) {
+          // TODO: Init cast client
+
+        } else {
+          playerFragment.init(layout, client, media, plexSubscriptionListener);
+        }
+        getSupportFragmentManager().beginTransaction().replace(R.id.flContent, playerFragment).commit();
+      }
+    }
+
+    @Override
+    public void onStateChanged(PlayerState state) {
+      Logger.d("[NewMainActivity] onStateChanged: %s", state);
+      if(playerFragment != null && playerFragment.isVisible()) {
+        if(state == PlayerState.STOPPED) {
+          Logger.d("[NewMainActivity] onStopped");
+          getSupportFragmentManager().beginTransaction().replace(R.id.flContent, new MainFragment()).commit();
+          VoiceControlForPlexApplication.getInstance().cancelNotification();
+          VoiceControlForPlexApplication.getInstance().prefs.remove(Preferences.SUBSCRIBED_CLIENT);
+        } else
+          playerFragment.setState(state);
+      } else
+        Logger.d("Got state change to %s, but for some reason playerFragment is null", state);
+    }
+
+    @Override
+    public void onSubscribeError(String message) {
+      Logger.d("[NewMainActivity] onSubscribeError");
+    }
+
+    @Override
+    public void onUnsubscribed() {
+      Logger.d("[NewMainActivity] unsubscribed");
+      setCastIconInactive();
+      VoiceControlForPlexApplication.getInstance().cancelNotification();
+      VoiceControlForPlexApplication.getInstance().prefs.remove(Preferences.SUBSCRIBED_CLIENT);
+      Fragment fragment = new MainFragment();
+      getSupportFragmentManager().beginTransaction().replace(R.id.flContent, fragment).commit();
+      // TODO: Implement
+//    sendWearPlaybackChange();
+      feedback.m(R.string.disconnected);
+    }
+  };
+
+  private void init() {
+    handler = new Handler();
+
+    if(BuildConfig.USE_BUGSENSE)
+      BugSenseHandler.initAndStartSession(getApplicationContext(), BUGSENSE_APIKEY);
+
+    // Set a Toolbar to replace the ActionBar.
+    toolbar = (Toolbar) findViewById(R.id.toolbar);
+    setSupportActionBar(toolbar);
+
+    mDrawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+
+    Fragment fragment;
+    if (!doingFirstTimeSetup) { // TODO: check for authToken here - if it is defined, and first time setup has not been completed, user has upgraded, so bypass setup
+      Logger.d("Loading main fragment");
+
+      fragment = playerFragment != null ? playerFragment : new MainFragment();
+
+      // Only show the what's new dialog if this is not the first time the app is run
+      final WhatsNewDialog whatsNewDialog = new WhatsNewDialog(this);
+      whatsNewDialog.show();
+
+      authToken = VoiceControlForPlexApplication.getInstance().prefs.getString(Preferences.AUTHENTICATION_TOKEN);
+
+      mMediaRouter = MediaRouter.getInstance(getApplicationContext());
+      mMediaRouteSelector = new MediaRouteSelector.Builder()
+              .addControlCategory(CastMediaControlIntent.categoryForCast(BuildConfig.CHROMECAST_APP_ID))
+              .build();
+      mMediaRouterCallback = new MediaRouterCallback();
+      mMediaRouter.addCallback(mMediaRouteSelector, mMediaRouterCallback, MediaRouter.CALLBACK_FLAG_PERFORM_ACTIVE_SCAN);
+
+      server = gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.SERVER, ""), PlexServer.class);
+      if(server == null)
+        server = new PlexServer(getString(R.string.scan_all));
+
+      client = gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.CLIENT, ""), PlexClient.class);
+
+
+      setupNavigationDrawer();
+    } else {
+      fragment = new SetupFragment();
+    }
+
+    getSupportFragmentManager().beginTransaction().replace(R.id.flContent, fragment).commit();
+
+
   }
 
   @Override
   protected void onPause() {
     super.onPause();
     Logger.d("[NewMainActivity] onPause");
+
+  }
+
+  @Override
+  protected void onStop() {
+    super.onStop();
+    Logger.d("[NewMainActivity] onStop");
+    if(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.SERVER_SCAN_FINISHED, true) == false) {
+      Intent scannerIntent = new Intent(NewMainActivity.this, PlexScannerService.class);
+      scannerIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+      scannerIntent.setAction(PlexScannerService.CANCEL);
+      startService(scannerIntent);
+    }
     handler.removeCallbacks(refreshServers);
+    handler.removeCallbacks(refreshClients);
+    plexSubscription.removeListener(plexSubscriptionListener);
+
+    // TODO: Remove castplayermanager listener
+  }
+
+  @Override
+  protected void onRestart() {
+    super.onRestart();
+    Logger.d("[NewMainActivity] onRestart");
   }
 
   @Override
   protected void onResume() {
     super.onResume();
-    Logger.d("[NewMainActivity] onResume");
+    Logger.d("[NewMainActivity] onResume, interacting: %s", userIsInteracting);
+    plexSubscription.setListener(plexSubscriptionListener);
+    if(!doingFirstTimeSetup) {
+      mDrawer.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);
+    } else
+      mDrawer.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
+  }
+
+  private void doAutomaticDeviceScan() {
+    if(BuildConfig.CHROMECAST_REQUIRES_PURCHASE) {
+      Logger.d("Doing automatic device scan");
+      // Kick off a scan for servers, if it's been more than five minutes since the last one.
+      // We'll do this every five, to keep the list up to date. Also, if the last server scan didn't
+      // finish, kick off another one right now instead (another scan in 5 minutes will be queued up when that one finishes).
+      int s = getSecondsSinceLastServerScan();
+      Logger.d("It's been %d seconds since last scan, last scan finished: %s", s, VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.SERVER_SCAN_FINISHED, true));
+      if (s >= (SERVER_SCAN_INTERVAL / 1000) || VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.SERVER_SCAN_FINISHED, true) == false) {
+        Logger.d("It's been more than 5 minutes since last scan, so scanning now.");
+        refreshServers.run();
+        refreshClients.run();
+      } else {
+        int d = (SERVER_SCAN_INTERVAL - (s * 1000));
+        Logger.d("It's been less than 5 minutes since the last server scan, so doing another in %d ms", d);
+        handler.removeCallbacks(refreshServers);
+        handler.removeCallbacks(refreshClients);
+        handler.postDelayed(refreshServers, d);
+        handler.postDelayed(refreshClients, d);
+      }
+    }
   }
 
   @Override
@@ -210,6 +525,13 @@ public class NewMainActivity extends AppCompatActivity {
     }
   }
 
+  public void mainLoadingBypassLogin(View v) {
+    prefs.put(Preferences.FIRST_TIME_SETUP_COMPLETED, true);
+    doingFirstTimeSetup = false;
+    init();
+  }
+
+  public void showLogin(View v) { showLogin(); }
   public void showLogin(MenuItem item) {
     showLogin();
   }
@@ -277,7 +599,14 @@ public class NewMainActivity extends AppCompatActivity {
                   Logger.d("Got user: %s", user.username);
                   VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.PLEX_USERNAME, user.username);
                   VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.PLEX_EMAIL, user.email);
-                  setupNavigationDrawer();
+                  if(doingFirstTimeSetup) {
+                    showFindingPlexClientsAndServers();
+                    refreshServers.run();
+                    refreshClients.run();
+                  } else {
+                    setupNavigationDrawer();
+                    refreshServers.run();
+                  }
                 }
 
                 @Override
@@ -294,7 +623,7 @@ public class NewMainActivity extends AppCompatActivity {
                   // TODO: switch login
 //                  switchLogin();
 
-
+                  /*
                   PlexScannerService.refreshResources(authToken, new PlexScannerService.RefreshResourcesResponseHandler() {
                     @Override
                     public void onSuccess() {
@@ -306,6 +635,7 @@ public class NewMainActivity extends AppCompatActivity {
                       feedback.e(R.string.remote_scan_error);
                     }
                   });
+                  */
                 }
               });
               // We got the auth token, so cancel this task
@@ -325,6 +655,19 @@ public class NewMainActivity extends AppCompatActivity {
     ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
     Future<?> future = executor.scheduleAtFixedRate(fetchPinTask, 0, 1000, TimeUnit.MILLISECONDS);
     fetchPinTask.setFuture(future);
+  }
+
+  // This gets called in first time setup, after the user has logged in
+  private void showFindingPlexClientsAndServers() {
+    LayoutInflater inflater = getLayoutInflater();
+    View layout = inflater.inflate(R.layout.search_popup, null);
+
+    alertDialog = new AlertDialog.Builder(this)
+            .setTitle(R.string.finding_plex_clients_and_servers)
+            .setCancelable(false)
+            .setView(layout)
+            .create();
+    alertDialog.show();
   }
 
   private void showManualLogin() {
@@ -376,11 +719,11 @@ public class NewMainActivity extends AppCompatActivity {
             VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.PLEX_USERNAME, user.username);
             VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.PLEX_EMAIL, user.email);
             feedback.m(R.string.logged_in);
-            // TODO: more changes due to login here
-//            MenuItem loginItem = menu.findItem(R.id.menu_login);
-//            loginItem.setVisible(false);
-//            MenuItem logoutItem = menu.findItem(R.id.menu_logout);
-//            logoutItem.setVisible(true);
+            if(doingFirstTimeSetup) {
+              showFindingPlexClientsAndServers();
+              refreshServers.run();
+              refreshClients.run();
+            }
             alertD.cancel();
           }
 
@@ -407,8 +750,6 @@ public class NewMainActivity extends AppCompatActivity {
     VoiceControlForPlexApplication.getInstance().prefs.remove(Preferences.PLEX_USERNAME);
     authToken = null;
 
-//    nvDrawer.getMenu().setGroupVisible(R.id.drawer_group_logout, false);
-
     // TODO: If the currently selected server is not local, reset it to scan all. (MainActivity:541)
 
     // Remove any non-local servers from our list
@@ -416,8 +757,10 @@ public class NewMainActivity extends AppCompatActivity {
       if(!s.local)
         VoiceControlForPlexApplication.servers.remove(s.name);
     }
+    refreshNavServers();
 
     VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.SAVED_SERVERS, gsonWrite.toJson(VoiceControlForPlexApplication.servers));
+    saveSettings();
 
     // Refresh the navigation drawer
     setupNavigationDrawer();
@@ -426,46 +769,43 @@ public class NewMainActivity extends AppCompatActivity {
   }
 
   private void setupNavigationDrawer() {
-    // Set a Toolbar to replace the ActionBar.
-    toolbar = (Toolbar) findViewById(R.id.nav_toolbar);
-    setSupportActionBar(toolbar);
 
-    // Find our drawer view
-    mDrawer = (DrawerLayout) findViewById(R.id.drawer_layout);
     mDrawer.setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);
+    mDrawer.setDrawerListener(drawerListener);
     drawerToggle = new ActionBarDrawerToggle(this, mDrawer, toolbar, R.string.drawer_open, R.string.drawer_close);
 
     // Find our drawer view
-    nvDrawer = (NavigationView) findViewById(R.id.nvView);
-    nvDrawer.getMenu().clear();
-    nvDrawer.inflateMenu(R.menu.nav_items_main);
-
-    if(nvDrawer.getHeaderView(0) != null)
-      nvDrawer.removeHeaderView(nvDrawer.getHeaderView(0));
-    // Setup drawer view
-    setupDrawerContent(nvDrawer);
+    navigationViewMain = (NavigationView) findViewById(R.id.navigationViewMain);
+    Logger.d("navigationViewMain: %s", navigationViewMain);
 
 
-    // Kick off a scan for servers, if it's been more than five minutes since the last one.
-    // We'll later want to do this every five minutes or so, to keep the list up to date
-    Date now = new Date();
-    Date lastServerScan = new Date(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.LAST_SERVER_SCAN, 0l));
-    Logger.d("now: %s", now);
-    Logger.d("lastServeRscan: %s", lastServerScan);
-    if(now.after(Utils.addMinutesToDate(5, lastServerScan))) {
-      refreshServers.run();
-    } else
-      handler.postDelayed(refreshServers, SERVER_SCAN_INTERVAL);
+    // Footer view
+    navigationFooter = (NavigationView) findViewById(R.id.navigationViewFooter);
+    ViewGroup.LayoutParams layoutParams = navigationFooter.getLayoutParams();
+    TypedValue value = new TypedValue();
+    getTheme().resolveAttribute(android.R.attr.listPreferredItemHeight, value, true);
+    DisplayMetrics metrics = new DisplayMetrics();
+    getWindowManager().getDefaultDisplay().getMetrics(metrics);
+    layoutParams.height = (int)value.getDimension(metrics)*navigationFooter.getMenu().size();
+    navigationFooter.setLayoutParams(layoutParams);
 
-    // Fill in the list of servers we have now. This will be called again each time we receive an intent from the Scanner Service
+    View headerView = LayoutInflater.from(this).inflate(R.layout.nav_header_dummy, null);
+    navigationFooter.addHeaderView(headerView);
+    navigationFooter.getHeaderView(0).setVisibility(View.GONE);
+
+    drawerToggle.syncState();
+
+    if(navigationViewMain.getHeaderView(0) != null)
+      navigationViewMain.removeHeaderView(navigationViewMain.getHeaderView(0));
+
     refreshNavServers();
 
     if(authToken != null) {
-      nvDrawer.inflateHeaderView(R.layout.nav_header_logged_in);
+      navigationViewMain.inflateHeaderView(R.layout.nav_header_logged_in);
       if(VoiceControlForPlexApplication.getInstance().prefs.getString(Preferences.PLEX_EMAIL) != null) {
         setUserThumb();
         Logger.d("Username = %s", VoiceControlForPlexApplication.getInstance().prefs.getString(Preferences.PLEX_USERNAME));
-        final View navHeader = nvDrawer.getHeaderView(0);
+        final View navHeader = navigationViewMain.getHeaderView(0);
 
         TextView navHeaderUsername = (TextView)navHeader.findViewById(R.id.navHeaderUsername);
         navHeaderUsername.setText(VoiceControlForPlexApplication.getInstance().prefs.getString(Preferences.PLEX_USERNAME));
@@ -493,8 +833,16 @@ public class NewMainActivity extends AppCompatActivity {
         });
       }
     } else {
-      nvDrawer.getMenu().findItem(R.id.nav_login).setVisible(true);
+      navigationViewMain.getMenu().findItem(R.id.nav_login).setVisible(true);
     }
+  }
+
+  private int getSecondsSinceLastServerScan() {
+    Date now = new Date();
+    Date lastServerScan = new Date(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.LAST_SERVER_SCAN, 0l));
+    Logger.d("now: %s", now);
+    Logger.d("lastServerScan: %s", lastServerScan);
+    return (int)((now.getTime() - lastServerScan.getTime())/1000);
   }
 
   @Override
@@ -502,15 +850,67 @@ public class NewMainActivity extends AppCompatActivity {
     super.onNewIntent(intent);
     Logger.d("NewMainActivity onNewIntent: %s", intent.getAction());
 
-    if(intent.getAction().equals(PlexScannerService.ACTION_SERVER_SCAN_FINISHED)) {
-      // Refresh the list of servers in the navigation drawer
-      refreshNavServers();
+    if(intent.getAction() != null) {
+      if (intent.getAction().equals(PlexScannerService.ACTION_SERVER_SCAN_FINISHED)) {
+        HashMap<String, PlexServer> s = (HashMap<String, PlexServer>) intent.getSerializableExtra(com.atomjack.shared.Intent.EXTRA_SERVERS);
+        Logger.d("[NewMainActivity] finished scanning for servers, have %d servers", s.size());
+        // Save the fact that we've finished this server scan
+        VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.SERVER_SCAN_FINISHED, true);
+        VoiceControlForPlexApplication.servers = new ConcurrentHashMap<>(s);
+        VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.SAVED_SERVERS, gsonWrite.toJson(VoiceControlForPlexApplication.servers));
+        if(doingFirstTimeSetup) {
+          firstTimeSetupServerScanFinished = true;
+          if(firstTimeSetupClientScanFinished) {
+            doingFirstTimeSetup = false;
+            prefs.put(Preferences.FIRST_TIME_SETUP_COMPLETED, true);
+            alertDialog.dismiss();
+            init();
+            doAutomaticDeviceScan();
+          }
+        } else {
+          // Refresh the list of servers in the navigation drawer
+          refreshNavServers();
+        }
+        if(onServerRefreshFinished != null)
+          onServerRefreshFinished.run();
+      } else if(intent.getAction().equals(PlexScannerService.ACTION_CLIENT_SCAN_FINISHED)) {
+        VoiceControlForPlexApplication.clients = new HashMap<>();
+        List<PlexClient> c = (ArrayList<PlexClient>)intent.getSerializableExtra(com.atomjack.shared.Intent.EXTRA_CLIENTS);
+        if(c != null) {
+          Logger.d("Got %d clients", c.size());
+          for (PlexClient client : c) {
+            if (!VoiceControlForPlexApplication.clients.containsKey(client.name)) {
+              VoiceControlForPlexApplication.clients.put(client.name, client);
+              Logger.d("Saved %s", client.name);
+            }
+          }
+          VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.SAVED_CLIENTS, gsonWrite.toJson(VoiceControlForPlexApplication.clients));
+          if (doingFirstTimeSetup) {
+            firstTimeSetupClientScanFinished = true;
+            if (firstTimeSetupServerScanFinished) {
+              doingFirstTimeSetup = false;
+              prefs.put(Preferences.FIRST_TIME_SETUP_COMPLETED, true);
+              alertDialog.dismiss();
+              init();
+              doAutomaticDeviceScan();
+            }
+          }
+        }
+        if(onClientRefreshFinished != null) {
+          onClientRefreshFinished.run();
+        }
+
+      }
     }
   }
 
   private Runnable refreshServers = new Runnable() {
     @Override
     public void run() {
+      // First, save the fact that we have started but not yet finished this server scan. On startup, we'll check for this and if it hasn't finished, kick off
+      // a new scan right away.
+      Logger.d("Refreshing servers");
+      VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.SERVER_SCAN_FINISHED, false);
       Intent scannerIntent = new Intent(NewMainActivity.this, PlexScannerService.class);
       scannerIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
       scannerIntent.putExtra(PlexScannerService.CLASS, NewMainActivity.class);
@@ -521,35 +921,73 @@ public class NewMainActivity extends AppCompatActivity {
     }
   };
 
-  public void refreshNavServers() {
-    if(nvDrawer.getMenu().findItem(R.id.nav_server) != null) {
-      Spinner serverSpinner = (Spinner) nvDrawer.getMenu().findItem(R.id.nav_server).getActionView();
-      PlexListAdapter adapter = new PlexListAdapter(this, PlexListAdapter.TYPE_SERVER);
-      adapter.setServers(VoiceControlForPlexApplication.servers);
-      Logger.d("Found %d servers", VoiceControlForPlexApplication.servers.size());
-      serverSpinner.setAdapter(null);
-      serverSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-        @Override
-        public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-          if(userIsInteracting) {
-            PlexServer s = (PlexServer) parent.getItemAtPosition(position);
-            Logger.d("selected %s", s.name);
-            server = s;
-            saveSettings();
-
-          }
-        }
-
-        @Override
-        public void onNothingSelected(AdapterView<?> parent) {
-
-        }
-      });
-      serverSpinner.setAdapter(adapter);
-      if(server != null) {
-        serverSpinner.setSelection(adapter.getServerIndex(server));
-      }
+  private Runnable refreshClients = new Runnable() {
+    @Override
+    public void run() {
+      Logger.d("Refreshing clients");
+      Intent scannerIntent = new Intent(NewMainActivity.this, PlexScannerService.class);
+      scannerIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+      scannerIntent.putExtra(PlexScannerService.CLASS, NewMainActivity.class);
+      scannerIntent.putExtra(com.atomjack.shared.Intent.EXTRA_CONNECT_TO_CLIENT, false);
+      scannerIntent.setAction(PlexScannerService.ACTION_SCAN_CLIENTS);
+      startService(scannerIntent);
+      handler.postDelayed(refreshClients, SERVER_SCAN_INTERVAL);
     }
+  };
+
+  // This needs to be called every time we update the servers list, so the spinner updates and sets the selection to the currently selected server
+  private void refreshNavServers() {
+    final HashMap<Integer, PlexServer> menuItemServerMap = new HashMap<>();
+
+    MenuItem.OnMenuItemClickListener serverItemClickListener = new MenuItem.OnMenuItemClickListener() {
+      @Override
+      public boolean onMenuItemClick(MenuItem item) {
+        PlexServer s = menuItemServerMap.get(item.getItemId());
+        server = s;
+        saveSettings();
+        return true;
+      }
+    };
+
+
+    Menu menu = navigationViewMain.getMenu();
+    menu.clear();
+    PlexServer scanAllServer = PlexServer.getScanAllServer();
+    MenuItem scanAllItem = menu.add(Menu.NONE, 0, 0, scanAllServer.name);
+    scanAllItem.setCheckable(true);
+    scanAllItem.setChecked(server.isScanAllServer);
+    scanAllItem.setOnMenuItemClickListener(serverItemClickListener);
+    scanAllItem.setIcon(R.drawable.menu_server);
+
+    menuItemServerMap.put(0, scanAllServer);
+    int id = 1;
+
+
+    for(PlexServer thisServer : VoiceControlForPlexApplication.servers.values()) {
+//      Logger.d("Adding %s to menu (%d)", thisServer.name, id);
+      MenuItem item = menu.add(Menu.NONE, id, id, thisServer.owned ? thisServer.name : thisServer.sourceTitle);
+      item.setIcon(R.drawable.menu_server);
+      item.setCheckable(true);
+      item.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+      LinearLayout layout = (LinearLayout)getLayoutInflater().inflate(thisServer.owned ? R.layout.nav_server_list_sections : R.layout.nav_server_list_sections_unowned, null);
+      int numSections = server.movieSections.size() + server.tvSections.size() + server.musicSections.size();
+      TextView serverExtra = (TextView)layout.findViewById(R.id.serverListSections);
+      Logger.d("Server %s owned: %s", thisServer.name, thisServer.owned);
+      serverExtra.setText(String.format("(%d %s)", numSections, getString(R.string.sections)));
+      if (!thisServer.owned) {
+        TextView serverExtraName = (TextView)layout.findViewById(R.id.serverListName);
+        serverExtraName.setText(thisServer.name);
+      }
+      item.setActionView(layout);
+
+
+      menuItemServerMap.put(id, thisServer);
+//      Logger.d("Checking: %s", server != null && server.machineIdentifier != null && server.machineIdentifier.equals(thisServer.machineIdentifier));
+      item.setChecked(server != null && server.machineIdentifier != null && server.machineIdentifier.equals(thisServer.machineIdentifier));
+      item.setOnMenuItemClickListener(serverItemClickListener);
+      id++;
+    }
+
   }
 
   public void navMenuSettingsBack(MenuItem item) {
@@ -560,14 +998,76 @@ public class NewMainActivity extends AppCompatActivity {
     setNavGroup(R.menu.nav_items_settings);
   }
 
+  public void navMenuHelp(MenuItem item) {
+    AlertDialog.Builder usageDialog = new AlertDialog.Builder(this);
+    usageDialog.setTitle(R.string.help_usage_button);
+    usageDialog.setMessage(R.string.help_usage);
+    usageDialog.setPositiveButton(R.string.got_it, new DialogInterface.OnClickListener() {
+      public void onClick(DialogInterface dialog, int id) {
+        dialog.dismiss();
+      }
+    });
+    usageDialog.show();
+  }
+
   private void setNavGroup(int group) {
-    nvDrawer.getMenu().clear();
-    nvDrawer.inflateMenu(group);
-    if(group == R.menu.menu_main) {
-      nvDrawer.getMenu().findItem(R.id.nav_login).setVisible(authToken == null);
-    } else if(group == R.menu.nav_items_main) {
-      refreshNavServers();
+    navigationViewMain.getMenu().clear();
+    navigationViewMain.inflateMenu(group);
+    Menu menu = navigationViewMain.getMenu();
+    if(group == R.menu.nav_items_main) {
+      navigationViewMain.setItemBackground(ContextCompat.getDrawable(this, R.drawable.nav_drawer_server_item));
+      navigationFooter.setVisibility(View.VISIBLE);
+      handler.postDelayed(new Runnable() {
+        @Override
+        public void run() {
+          refreshNavServers();
+        }
+      }, 1);
+
+
+    } else if(group == R.menu.nav_items_settings) {
+      navigationViewMain.setItemBackground(ContextCompat.getDrawable(this, R.drawable.nav_drawer_item));
+      navigationFooter.setVisibility(View.GONE);
+      if(VoiceControlForPlexApplication.getInstance().hasWear())
+        hidePurchaseWearMenuItem();
+
+      if(VoiceControlForPlexApplication.getInstance().hasChromecast()) {
+        MenuItem chromecastOptionsItem = menu.findItem(R.id.menu_chromecast_video);
+        chromecastOptionsItem.setVisible(true);
+      }
+
+      if (!hasValidAutoVoice() && !hasValidUtter()) {
+        menu.findItem(R.id.menu_tasker_import).setVisible(false);
+        if (!hasValidTasker()) {
+          menu.findItem(R.id.menu_install_tasker).setVisible(true);
+        }
+        if (!hasValidUtter()) {
+          menu.findItem(R.id.menu_install_utter).setVisible(true);
+        }
+        if (!hasValidAutoVoice()) {
+          menu.findItem(R.id.menu_install_autovoice).setVisible(true);
+        }
+      }
     }
+  }
+
+  public void refreshServers(View v) {
+    FrameLayout layout = (FrameLayout)v;
+    final ImageView refreshButton = (ImageView)layout.findViewById(R.id.serverListRefreshButton);
+    refreshButton.setVisibility(View.GONE);
+    final ProgressBar refreshSpinner = (ProgressBar)layout.findViewById(R.id.serverListRefreshSpinner);
+    refreshSpinner.setVisibility(View.VISIBLE);
+    onServerRefreshFinished = new Runnable() {
+      @Override
+      public void run() {
+        refreshButton.setVisibility(View.VISIBLE);
+        refreshSpinner.setVisibility(View.GONE);
+        refreshNavServers();
+        onServerRefreshFinished = null;
+      }
+    };
+
+    refreshServers.run();
   }
 
   private void setUserThumb() {
@@ -582,7 +1082,7 @@ public class NewMainActivity extends AppCompatActivity {
       runOnUiThread(new Runnable() {
         @Override
         public void run() {
-          View navHeader = nvDrawer.getHeaderView(0);
+          View navHeader = navigationViewMain.getHeaderView(0);
           ImageView imageView = (ImageView) navHeader.findViewById(R.id.navHeaderUserIcon);
           imageView.setImageBitmap(bitmap);
         }
@@ -619,21 +1119,15 @@ public class NewMainActivity extends AppCompatActivity {
 
   @Override
   public boolean onCreateOptionsMenu(Menu menu) {
-    return super.onCreateOptionsMenu(menu);
+    if(!doingFirstTimeSetup) {
+      getMenuInflater().inflate(R.menu.toolbar_cast, menu);
+      castIconMenuItem = menu.findItem(R.id.action_cast);
+      if (plexSubscription.isSubscribed() || castPlayerManager.isSubscribed()) {
+        setCastIconActive();
+      }
+    }
+    return true;
   }
-
-  private void setupDrawerContent(NavigationView navigationView) {
-    navigationView.setNavigationItemSelectedListener(
-            new NavigationView.OnNavigationItemSelectedListener() {
-              @Override
-              public boolean onNavigationItemSelected(MenuItem menuItem) {
-                Logger.d("got here: %d", menuItem.getItemId());
-//                selectDrawerItem(menuItem);
-                return true;
-              }
-            });
-  }
-
 
   @Override
   public boolean onOptionsItemSelected(MenuItem item) {
@@ -645,16 +1139,162 @@ public class NewMainActivity extends AppCompatActivity {
       case android.R.id.home:
         mDrawer.openDrawer(GravityCompat.START);
         return true;
+      case R.id.action_cast:
+        castIconClick(onClientChosen);
+        return true;
     }
 
     return super.onOptionsItemSelected(item);
+  }
+
+
+  // This is the default action that will be taken when a user subscribes to a client via the UI.
+  private ScanHandler onClientChosen = new ScanHandler() {
+    @Override
+    public void onDeviceSelected(PlexDevice device, boolean resume) {
+      if(device != null) {
+        subscribing = true;
+        PlexClient clientSelected = (PlexClient)device;
+        setClient(clientSelected);
+
+        // Start animating the action bar icon
+//        final MenuItem castIcon = menu.findItem(R.id.action_cast);
+        castIconMenuItem.setIcon(R.drawable.mr_ic_media_route_connecting_holo_dark);
+        AnimationDrawable ad = (AnimationDrawable) castIconMenuItem.getIcon();
+        ad.start();
+
+        if (clientSelected.isCastClient) {
+          // TODO: chromecast stuff
+          if(VoiceControlForPlexApplication.getInstance().hasChromecast()) {
+            client = clientSelected;
+            Logger.d("[NewMainActivity] subscribing to %s", client.name);
+            castPlayerManager.subscribe(client);
+          } else {
+            showChromecastPurchase(clientSelected, new Runnable() {
+              @Override
+              public void run() {
+                castPlayerManager.subscribe(postChromecastPurchaseClient);
+              }
+            });
+          }
+        } else {
+          plexSubscription.startSubscription(clientSelected);
+        }
+      }
+    }
+  };
+
+  protected void setClient(PlexClient _client) {
+    Logger.d("[NewMainActivity] setClient");
+    VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.CLIENT, gsonWrite.toJson(_client));
+  }
+
+  private boolean isSubscribed() {
+    return plexSubscription.isSubscribed() || castPlayerManager.isSubscribed();
+  }
+
+  private Runnable onClientRefreshFinished = null;
+  private Runnable onServerRefreshFinished = null;
+
+  private void castIconClick(final ScanHandler onFinish) {
+    if(!isSubscribed() && !subscribing) {
+
+      final PlexListAdapter adapter = new PlexListAdapter(this, PlexListAdapter.TYPE_CLIENT);
+      AlertDialog.Builder builder = new AlertDialog.Builder(this);
+      LayoutInflater inflater = getLayoutInflater();
+      final View layout = inflater.inflate(R.layout.device_select, null);
+      final TextView headerView = (TextView)layout.findViewById(R.id.deviceListHeader);
+      headerView.setText(R.string.select_plex_client);
+      final ImageButton button = (ImageButton)layout.findViewById(R.id.deviceListRefreshButton);
+      final ProgressBar spinnerImage = (ProgressBar) layout.findViewById(R.id.deviceListRefreshSpinner);
+
+      button.setOnClickListener(new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+          onClientRefreshFinished = new Runnable() {
+            @Override
+            public void run() {
+              Logger.d("Changing buttons");
+              button.setVisibility(View.VISIBLE);
+              spinnerImage.setVisibility(View.GONE);
+              adapter.setClients(VoiceControlForPlexApplication.clients);
+              adapter.notifyDataSetChanged();
+              onClientRefreshFinished = null;
+            }
+          };
+          Logger.d("Refreshing");
+          //deviceListRefreshSpinner
+          button.setVisibility(View.GONE);
+          spinnerImage.setVisibility(View.VISIBLE);
+          handler.removeCallbacks(refreshClients);
+          refreshClients.run();
+
+        }
+      });
+
+      builder.setView(layout);
+//      builder.setTitle(getString(R.string.select_plex_client));
+      deviceSelectDialog = builder.create();
+
+      deviceSelectDialog.show();
+
+      final ListView clientListView = (ListView) deviceSelectDialog.findViewById(R.id.serverListView);
+
+      adapter.setClients(VoiceControlForPlexApplication.getAllClients());
+      clientListView.setAdapter(adapter);
+      clientListView.setOnItemClickListener(new ListView.OnItemClickListener() {
+
+        @Override
+        public void onItemClick(AdapterView<?> parentAdapter, View view, int position,
+                                long id) {
+          PlexClient s = (PlexClient) parentAdapter.getItemAtPosition(position);
+          Logger.d("client clicked: %s", s.name);
+          deviceSelectDialog.dismiss();
+          CheckBox resumeCheckbox = (CheckBox) deviceSelectDialog.findViewById(R.id.serverListResume);
+          if (onFinish != null)
+            onFinish.onDeviceSelected(s, resumeCheckbox.isChecked());
+        }
+
+      });
+
+    } else if(!subscribing) {
+      if(castPlayerManager.mClient != null)
+        client = castPlayerManager.mClient;
+      else if(plexSubscription.mClient != null)
+        client = plexSubscription.mClient;
+//          }
+      if(client == null) {
+        Logger.d("Lost subscribed client.");
+        setCastIconInactive();
+      } else {
+        AlertDialog.Builder subscribeDialog = new AlertDialog.Builder(this)
+                .setTitle(client.name)
+                .setIcon(R.drawable.mr_ic_media_route_on_holo_dark)
+                .setNegativeButton(R.string.disconnect, new DialogInterface.OnClickListener() {
+                  @Override
+                  public void onClick(DialogInterface dialogInterface, int i) {
+                    if (client.isCastClient)
+                      castPlayerManager.unsubscribe();
+                    else
+                      plexSubscription.unsubscribe();
+                    dialogInterface.dismiss();
+                  }
+                });
+        if (client.isCastClient) {
+          View subscribeVolume = LayoutInflater.from(this).inflate(R.layout.connected_popup, null);
+          subscribeDialog.setView(subscribeVolume);
+        }
+        subscribeDialog.show();
+      }
+    }
   }
 
   // Make sure this is the method with just `Bundle` as the signature
   @Override
   protected void onPostCreate(Bundle savedInstanceState) {
     super.onPostCreate(savedInstanceState);
-    drawerToggle.syncState();
+    if(drawerToggle != null)
+      drawerToggle.syncState();
   }
 
   @Override
@@ -720,13 +1360,20 @@ public class NewMainActivity extends AppCompatActivity {
     }
   }
 
-  public void showAbout(MenuItem item) {
-    item.setChecked(false);
+  public void showAbout(final MenuItem item) {
+    navigationViewMain.setSelected(false);
     AlertDialog.Builder alertDialog = new AlertDialog.Builder(NewMainActivity.this)
             .setTitle(R.string.app_name)
             .setMessage(R.string.about_text);
 
     alertDialog.show();
+    handler.postDelayed(new Runnable() {
+      @Override
+      public void run() {
+        item.setChecked(false);
+      }
+    }, 500);
+
   }
 
   public void donate(MenuItem item) {
@@ -891,6 +1538,27 @@ public class NewMainActivity extends AppCompatActivity {
     builder.create().show();
   }
 
+  protected void showChromecastPurchase(PlexClient client, Runnable onSuccess) {
+    postChromecastPurchaseClient = client;
+    postChromecastPurchaseAction = onSuccess;
+    new AlertDialog.Builder(this)
+            .setMessage(String.format(getString(R.string.must_purchase_chromecast), VoiceControlForPlexApplication.getChromecastPrice()))
+            .setCancelable(false)
+            .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+              @Override
+              public void onClick(DialogInterface dialogInterface, int i) {
+                dialogInterface.cancel();
+                VoiceControlForPlexApplication.getInstance().getIabHelper().launchPurchaseFlow(NewMainActivity.this, VoiceControlForPlexApplication.SKU_CHROMECAST, 10001, mPurchaseFinishedListener, VoiceControlForPlexApplication.SKU_TEST_PURCHASED == VoiceControlForPlexApplication.SKU_CHROMECAST ? VoiceControlForPlexApplication.getInstance().getEmailHash() : "");
+              }
+            })
+            .setNeutralButton(R.string.no_thanks, new DialogInterface.OnClickListener() {
+              public void onClick(DialogInterface dialog, int id) {
+                dialog.cancel();
+                setCastIconInactive();
+              }
+            }).create().show();
+  }
+
   protected void showWearPurchaseRequired() {
     showWearPurchase(R.string.wear_purchase_required, false);
   }
@@ -966,9 +1634,6 @@ public class NewMainActivity extends AppCompatActivity {
       }
     }
   };
-
-  protected void hidePurchaseWearMenuItem() {
-  }
 
   public void showWearOptions(MenuItem item) {
     AlertDialog.Builder chooserDialog = new AlertDialog.Builder(this);
@@ -1071,7 +1736,172 @@ public class NewMainActivity extends AppCompatActivity {
   @Override
   public void onUserInteraction() {
     super.onUserInteraction();
-    Logger.d("user is interacting");
     userIsInteracting = true;
   }
+
+  public void hidePurchaseWearMenuItem() {
+    MenuItem wearItem = navigationViewMain.getMenu().findItem(R.id.menu_purchase_wear);
+    wearItem.setVisible(false);
+    MenuItem wearOptionsItem = navigationViewMain.getMenu().findItem(R.id.menu_wear_options);
+    wearOptionsItem.setVisible(true);
+
+  }
+
+  private boolean hasValidAutoVoice() {
+    try
+    {
+      if(hasValidTasker()) {
+        PackageInfo pinfo = getPackageManager().getPackageInfo("com.joaomgcd.autovoice", 0);
+        return true;
+      }
+    } catch(Exception e) {
+      Logger.d("Exception getting autovoice version: " + e.getStackTrace());
+    }
+    return false;
+  }
+
+  private boolean hasValidUtter() {
+    try
+    {
+      if(hasValidTasker()) {
+        PackageInfo pinfo = getPackageManager().getPackageInfo("com.brandall.nutter", 0);
+        return true;
+      }
+    } catch(Exception e) {
+      Logger.d("Exception getting utter version: " + e.getStackTrace());
+    }
+    return false;
+  }
+
+  private boolean hasValidTasker() {
+    PackageInfo pinfo;
+    try
+    {
+      pinfo = getPackageManager().getPackageInfo("net.dinglisch.android.tasker", 0);
+      return true;
+    } catch(Exception e) {}
+    try
+    {
+      pinfo = getPackageManager().getPackageInfo("net.dinglisch.android.taskerm", 0);
+      return true;
+    } catch(Exception e) {
+      Logger.d("Exception getting google search version: " + e.getStackTrace());
+    }
+    return false;
+  }
+
+  protected void setCastIconInactive() {
+    Logger.d("[NewMainActivity] setCastIconInactive");
+    try {
+      castIconMenuItem.setIcon(R.drawable.mr_ic_media_route_holo_dark);
+    } catch (Exception e) {}
+  }
+
+  protected void setCastIconActive() {
+    Logger.d("[NewMainActivity] setCastIconActive");
+    try {
+      castIconMenuItem.setIcon(R.drawable.mr_ic_media_route_on_holo_dark);
+    } catch (Exception e) {}
+  }
+
+  @Override
+  protected void onDestroy() {
+    super.onDestroy();
+    networkMonitor.unregister();
+//    plexSubscription.removeListener((PlexPlayerFragment)playerFragment);
+  }
+
+  public void setStream(Stream stream) {
+    client.setStream(stream);
+  }
+
+  @Override
+  protected void onRestoreInstanceState(Bundle savedInstanceState) {
+    super.onRestoreInstanceState(savedInstanceState);
+    // TODO: Restore instance state?
+    client = (PlexClient)savedInstanceState.getParcelable(com.atomjack.shared.Intent.EXTRA_CLIENT);
+  }
+
+  @Override
+  public void onDisconnected() {
+    Logger.d("Disconnected");
+    currentNetworkState = NetworkState.DISCONNECTED;
+
+    // We have no network connection, so hide the cast button
+    castIconMenuItem.setVisible(false);
+  }
+
+  @Override
+  public void onConnected(int connectionType) {
+    Logger.d("Connected with type %d", connectionType);
+    // Only show the cast button if the previous state was disconnected.
+    if(currentNetworkState == NetworkState.DISCONNECTED) {
+      castIconMenuItem.setVisible(true);
+    }
+
+    if(connectionType == ConnectivityManager.TYPE_MOBILE)
+      currentNetworkState = NetworkState.MOBILE;
+    else if(connectionType == ConnectivityManager.TYPE_WIFI)
+      currentNetworkState = NetworkState.WIFI;
+
+    if(plexSubscription.isSubscribed()) {
+      // If it's been more than 30 seconds since we last heard from the subscribed client, force a (non-heartbeat)
+      // subscription request right now to refresh. It shouldn't be a heartbeat request in case the client
+      // booted us off for being unreachable for 90 seconds.
+      if(plexSubscription.timeLastHeardFromClient != null) {
+        if((new Date().getTime() - plexSubscription.timeLastHeardFromClient.getTime()) / 1000 >= 30) {
+          plexSubscription.subscribe(plexSubscription.getClient());
+        }
+      }
+    }
+  }
+
+  /*
+  @Override
+  public void onSubscribed() {
+    Logger.d("[NewMainActivity] onSubscribed: %s", client);
+
+
+  }
+
+  @Override
+  public void onUnsubscribed() {
+
+  }
+
+  @Override
+  public void onStopped() {
+
+  }
+
+  @Override
+  public void onFoundPlayingMedia(final Timeline timeline) {
+    Logger.d("[NewMainActivity] found key: %s", timeline.key);
+
+
+  }
+  */
+
+  private DrawerLayout.DrawerListener drawerListener = new DrawerLayout.DrawerListener() {
+    @Override
+    public void onDrawerSlide(View drawerView, float slideOffset) {
+
+    }
+
+    @Override
+    public void onDrawerOpened(View drawerView) {
+
+    }
+
+    @Override
+    public void onDrawerClosed(View drawerView) {
+      setNavGroup(R.menu.nav_items_main);
+    }
+
+    @Override
+    public void onDrawerStateChanged(int newState) {
+
+    }
+  };
+
 }

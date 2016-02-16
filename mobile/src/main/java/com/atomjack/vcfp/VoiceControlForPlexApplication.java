@@ -246,95 +246,6 @@ public class VoiceControlForPlexApplication extends Application
 		return l;
 	}
 
-  public static void addPlexServer(final PlexServer server) {
-		addPlexServer(server, null);
-	}
-
-	public static void addPlexServer(PlexServer addedServer, final Runnable onFinish) {
-		Logger.d("ADDING PLEX SERVER: %s, %s", addedServer.name, addedServer.address);
-		if(addedServer.name.equals("") || addedServer.address.equals("")) {
-			return;
-		}
-    PlexServer serverToAdd = null;
-    // First, see if we've already found this server from a remote scan. We'll want to use that one instead so the remote connections are included
-    if(onFinish == null) { // onFinish is null when called from a local server scan - otherwise it's from a remote scan
-      for (PlexServer _server : VoiceControlForPlexApplication.servers.values()) {
-        if (_server.machineIdentifier.equals(addedServer.machineIdentifier)) {
-          serverToAdd = _server;
-          break;
-        }
-      }
-    }
-    final PlexServer server = serverToAdd == null ? addedServer : serverToAdd;
-    try {
-      server.findServerConnection(new ActiveConnectionHandler() {
-        @Override
-        public void onSuccess(Connection connection) {
-          Logger.d("active connection: %s", connection);
-          PlexHttpClient.PlexHttpService service = PlexHttpClient.getService(connection, true);
-          Call<MediaContainer> call = service.getLibrarySections(server.accessToken);
-          call.enqueue(new Callback<MediaContainer>() {
-            @Override
-            public void onResponse(Response<MediaContainer> response) {
-              MediaContainer mc = response.body();
-              server.movieSections = new ArrayList<>();
-              server.tvSections = new ArrayList<>();
-              server.musicSections = new ArrayList<>();
-              for(int i=0;i<mc.directories.size();i++) {
-                if(mc.directories.get(i).type.equals("movie")) {
-                  server.addMovieSection(mc.directories.get(i).key);
-                }
-                if(mc.directories.get(i).type.equals("show")) {
-                  server.addTvSection(mc.directories.get(i).key);
-                }
-                if(mc.directories.get(i).type.equals("artist")) {
-                  server.addMusicSection(mc.directories.get(i).key);
-                }
-              }
-              Logger.d("%s has %d directories.", server.name, mc.directories != null ? mc.directories.size() : 0);
-              Logger.d("Servers: %s", servers);
-              if(!server.name.equals("")) {
-                servers.put(server.name, server);
-
-                // Finally, if this server is the current default server, save it in preferences so the access token gets transferred
-                PlexServer defaultServer = gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.SERVER, ""), PlexServer.class);
-                if(defaultServer != null && server.machineIdentifier.equals(defaultServer.machineIdentifier)) {
-                  VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.SERVER, gsonWrite.toJson(server));
-                }
-
-                Logger.d("Added %s.", server.name);
-              }
-              if(onFinish != null)
-                onFinish.run();
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-              if(onFinish != null)
-                onFinish.run();
-            }
-          });
-        }
-
-        @Override
-        public void onFailure(int statusCode) {
-          Logger.d("Failed to find connection for %s: %d", server.name, statusCode);
-          if(statusCode == 401) {
-            getInstance().unauthorizedLocalServersFound.add(server.machineIdentifier);
-          }
-          if (onFinish != null)
-            onFinish.run();
-        }
-      });
-
-
-    } catch (Exception e) {
-      Logger.e("Exception getting clients: %s", e.toString());
-      if(onFinish != null)
-        onFinish.run();
-    }
-	}
-
 	public static boolean isVersionLessThan(String v1, String v2) {
 		VersionComparator cmp = new VersionComparator();
 		return cmp.compare(v1, v2) < 0;
@@ -866,5 +777,16 @@ public class VoiceControlForPlexApplication extends Application
 
   public boolean isLoggedIn() {
     return getInstance().prefs.getString(Preferences.AUTHENTICATION_TOKEN) != null;
+  }
+
+  public static PlexServer getServerByMachineIdentifier(String machineIdentifier) {
+    if(machineIdentifier == null)
+      return null;
+    for(PlexServer server : servers.values()) {
+      if(server.machineIdentifier != null && server.machineIdentifier.equals(machineIdentifier)) {
+        return server;
+      }
+    }
+    return null;
   }
 }

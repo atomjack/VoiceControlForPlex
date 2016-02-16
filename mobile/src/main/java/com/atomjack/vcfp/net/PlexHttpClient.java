@@ -262,7 +262,7 @@ public class PlexHttpClient
       public void onSuccess(Connection connection) {
 
         PlexHttpService service = getService(connection.uri);
-        Logger.d("using path %s %s", connection.uri, path.substring(1));
+//        Logger.d("using path %s %s", connection.uri, path.substring(1));
         Call<MediaContainer> call = service.getMediaContainer(path.substring(1), server.accessToken);
         call.enqueue(new Callback<MediaContainer>() {
           @Override
@@ -305,7 +305,7 @@ public class PlexHttpClient
   public static void subscribe(PlexClient client, int subscriptionPort, int commandId, String uuid, String deviceName, final PlexHttpResponseHandler responseHandler) {
     String url = String.format("http://%s:%s", client.address, client.port);
     Logger.d("Subscribing at url %s", url);
-    PlexHttpService service = getService(url);
+    PlexHttpService service = getService(url, true);
 
     Call<PlexResponse> call = service.subscribe(uuid, deviceName, subscriptionPort, commandId);
     call.enqueue(new Callback<PlexResponse>() {
@@ -508,7 +508,7 @@ public class PlexHttpClient
 
   public static void getClientTimeline(PlexClient client, final int commandId, final PlexHttpMediaContainerHandler responseHandler) {
     String url = String.format("http://%s:%s", client.address, client.port);
-    PlexHttpService service = getService(url);
+    PlexHttpService service = getService(url, true);
     Logger.d("Polling timeline with uuid %s", VoiceControlForPlexApplication.getInstance().prefs.getUUID());
     Call<MediaContainer> call = service.pollTimeline(VoiceControlForPlexApplication.getInstance().prefs.getUUID(), commandId);
     call.enqueue(new Callback<MediaContainer>() {

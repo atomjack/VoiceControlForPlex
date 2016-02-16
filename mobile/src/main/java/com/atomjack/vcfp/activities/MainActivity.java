@@ -666,6 +666,7 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
                 public void run() {
                   feedback.m(R.string.logged_in);
                   switchLogin();
+                  /*
                   PlexScannerService.refreshResources(authToken, new PlexScannerService.RefreshResourcesResponseHandler() {
                     @Override
                     public void onSuccess() {
@@ -677,6 +678,7 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
                       feedback.e(R.string.remote_scan_error);
                     }
                   });
+                  */
                 }
               });
               // We got the auth token, so cancel this task
@@ -1067,8 +1069,8 @@ public class MainActivity extends VCFPActivity implements TextToSpeech.OnInitLis
 //		Logger.d("MainActivity onResume");
 		super.onResume();
 		VoiceControlForPlexApplication.applicationResumed();
-    plexSubscription.setListener(this);
-    castPlayerManager.setListener(this);
+//    plexSubscription.setListener(this);
+//    castPlayerManager.setListener(this);
 	}
 
 	@Override

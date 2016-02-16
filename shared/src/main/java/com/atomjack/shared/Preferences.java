@@ -29,6 +29,8 @@ public class Preferences {
   public final static String CHROMECAST_VIDEO_QUALITY_REMOTE = "pref.chromecast_video_quality_remote";
   public final static String SUBSCRIBED_CLIENT = "pref.subscribed_client";
   public final static String LAST_SERVER_SCAN = "pref.last_server_scan";
+  public final static String SERVER_SCAN_FINISHED = "pref.server_scan_finished";
+  public final static String FIRST_TIME_SETUP_COMPLETED = "pref.first_time_setup_completed";
 
   public Preferences(Context context) {
     mPrefs = context.getSharedPreferences(PREFS, context.MODE_PRIVATE);

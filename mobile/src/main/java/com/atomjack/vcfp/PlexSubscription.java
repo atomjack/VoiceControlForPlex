@@ -6,11 +6,16 @@ import android.os.Handler;
 import com.atomjack.shared.Logger;
 import com.atomjack.shared.PlayerState;
 import com.atomjack.shared.model.Timeline;
-import com.atomjack.vcfp.activities.VCFPActivity;
+import com.atomjack.vcfp.fragments.PlexPlayerFragment;
+import com.atomjack.vcfp.interfaces.PlexMediaHandler;
+import com.atomjack.vcfp.interfaces.PlexSubscriptionListener;
 import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.PlexClient;
+import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexResponse;
+import com.atomjack.vcfp.model.PlexServer;
 import com.atomjack.vcfp.net.PlexHttpClient;
+import com.atomjack.vcfp.net.PlexHttpMediaContainerHandler;
 import com.atomjack.vcfp.net.PlexHttpResponseHandler;
 
 import org.simpleframework.xml.Serializer;
@@ -26,6 +31,7 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -37,8 +43,10 @@ public class PlexSubscription {
 
   public PlexClient mClient; // the client we are subscribing to
 
-  private VCFPActivity listener;
-  private VCFPActivity notificationListener; // This will be the listener but will not be reset, and will be used for changing the notification
+  private PlexSubscriptionListener listener;
+  private PlexSubscriptionListener notificationListener; // This will be the listener but will not be reset, and will be used for changing the notification
+
+//  private PlexSubscriptionListener plexSubscriptionListener;
 
   private int commandId = 0;
   private int subscriptionPort = 59409;
@@ -46,6 +54,8 @@ public class PlexSubscription {
   private ServerSocket serverSocket;
   Thread serverThread = null;
   Handler updateConversationHandler;
+
+  private PlexMedia nowPlayingMedia;
 
   private int failedHeartbeats = 0;
   private final int failedHeartbeatMax = 5;
@@ -61,7 +71,7 @@ public class PlexSubscription {
     mHandler = new Handler();
   }
 
-  public void setListener(VCFPActivity _listener) {
+  public void setListener(PlexSubscriptionListener _listener) {
     if(_listener != null)
       Logger.d("Setting listener to %s", _listener.getClass().getSimpleName());
     listener = _listener;
@@ -70,14 +80,18 @@ public class PlexSubscription {
     }
   }
 
-  public void removeListener(VCFPActivity _listener) {
+  public void removeListener(PlexSubscriptionListener _listener) {
     if(listener == _listener) {
       Logger.d("removing listener");
       listener = null;
     }
   }
 
-  public VCFPActivity getListener() {
+//  public void setPlexSubscriptionListener(PlexSubscriptionListener plexSubscriptionListener) {
+//    this.plexSubscriptionListener = plexSubscriptionListener;
+//  }
+
+  public PlexSubscriptionListener getListener() {
     return listener;
   }
 
@@ -167,20 +181,15 @@ public class PlexSubscription {
 					 */
 
           String xml = requestContent.toString();
+//          Logger.d("xml: %s", xml);
           MediaContainer mediaContainer = new MediaContainer();
 
-//					Logger.d("xml: %s", xml);
           try {
             mediaContainer = serial.read(MediaContainer.class, xml);
           } catch (Resources.NotFoundException e) {
             e.printStackTrace();
           } catch (Exception e) {
             e.printStackTrace();
-          }
-
-          currentTimeline = mediaContainer.getActiveTimeline();
-          if(currentTimeline != null) {
-            currentState = PlayerState.getState(currentTimeline);
           }
 
           onMessage(mediaContainer);
@@ -237,7 +246,7 @@ public class PlexSubscription {
     serverThread.start();
   }
 
-  public void subscribe(PlexClient client) {
+  public void subscribe(final PlexClient client) {
     Logger.d("PlexSubscription subscribe: %s, handler is null: %s", client, updateConversationHandler == null);
     if(updateConversationHandler == null)
       startSubscription(client);
@@ -279,6 +288,7 @@ public class PlexSubscription {
           if (!isHeartbeat) {
             // Start the heartbeat subscription (so the plex client knows we're still here)
             mHandler.removeCallbacks(subscriptionHeartbeat);
+//            subscriptionHeartbeat.run();
             mHandler.postDelayed(subscriptionHeartbeat, SUBSCRIBE_INTERVAL);
             onSubscribed();
           }
@@ -303,9 +313,8 @@ public class PlexSubscription {
               mHandler.post(new Runnable() {
                 @Override
                 public void run() {
-                  if(listener != null) {
-                    listener.onSubscribeError(String.format(listener.getString(R.string.client_lost_connection), mClient.name));
-                  }
+                  // TODO: this
+//                  listener.onSubscribeError(String.format(listener.getString(R.string.client_lost_connection), mClient.name));
                 }
               });
           }
@@ -329,9 +338,9 @@ public class PlexSubscription {
       @Override
       public void run() {
         Logger.d("PlexSubscription onSubscribed, client: %s, listener: %s", mClient, listener);
-        if (listener != null && mClient != null) {
+
+        if(listener != null)
           listener.onSubscribed(mClient);
-        }
       }
     });
   }
@@ -364,7 +373,7 @@ public class PlexSubscription {
     PlexHttpClient.unsubscribe(mClient, commandId, VoiceControlForPlexApplication.getInstance().prefs.getUUID(), VoiceControlForPlexApplication.getInstance().getString(R.string.app_name), new PlexHttpResponseHandler() {
       @Override
       public void onSuccess(PlexResponse response) {
-        Logger.d("Unsubscribed");
+        Logger.d("[PlexSubscription] Unsubscribed");
         subscribed = false;
         commandId++;
         mClient = null;
@@ -403,20 +412,164 @@ public class PlexSubscription {
 
   }
 
-  private void onMessage(final MediaContainer mc) {
+  private void onMessage(final MediaContainer mediaContainer) {
+    Logger.d("[PlexSubscription] onMessage, listener: %s", listener);
+    // Parse the media container here to figure out what message to send to the listeners
     mHandler.post(new Runnable() {
       @Override
       public void run() {
-        if (listener != null) {
-          listener.onTimelineReceived(mc);
-        } else if(notificationListener != null) {
-          notificationListener.onTimelineReceived(mc);
+        // listener methods need to be called in here: onTimeUpdate, onMediaChanged, and onStateChanged
+        /*
+ <MediaContainer location="fullScreenVideo" commandID="3">
+  <Timeline seekRange="0-0" state="stopped" time="0" type="music" />
+  <Timeline address="192-168-1-101.8edd41fdf10b43e29f7b399edc1e7b34.plex.direct"
+  audioStreamID="70496" containerKey="/playQueues/12159"
+  controllable="playPause,stop,shuffle,repeat,stepBack,stepForward,seekTo,subtitleStream,audioStream"
+  duration="9266976" guid="com.plexapp.agents.imdb://tt0090605?lang=en" key="/library/metadata/14"
+  location="fullScreenVideo" machineIdentifier="a667225557b46d69d2d037fbd42c9a639928780c"
+  mute="0" playQueueID="12159" playQueueItemID="36647" playQueueVersion="1" port="32400"
+  protocol="https" ratingKey="14" repeat="0" seekRange="0-9266976" shuffle="0"
+  state="paused" subtitleStreamID="-1" time="866388" type="video" volume="100" />
+  <Timeline seekRange="0-0" state="stopped" time="0" type="photo" />
+</MediaContainer>
+
+
+
+         */
+
+        List<Timeline> timelines = mediaContainer.timelines;
+        if(timelines != null) {
+          for (final Timeline timeline : timelines) {
+            if (timeline.key != null) {
+              if(timeline.state == null)
+                timeline.state = "stopped";
+
+              PlexServer server = null;
+              for(PlexServer s : VoiceControlForPlexApplication.servers.values()) {
+                if(s.machineIdentifier.equals(timeline.machineIdentifier)) {
+                  server = s;
+                  break;
+                }
+              }
+
+              PlayerState oldState = currentState;
+              currentState = PlayerState.getState(timeline);
+
+              // If we don't currently have now playing media, or the media has changed, update nowPlayingMedia and call this method back
+              if((nowPlayingMedia == null || (nowPlayingMedia != null && !nowPlayingMedia.key.equals(timeline.key))) && currentState != PlayerState.STOPPED) {
+                getPlayingMedia(server, timeline, new PlexMediaHandler() {
+                  @Override
+                  public void onFinish(PlexMedia media) {
+                    Logger.d("media: %s, listener: %s, state: %s", media.getTitle(), listener, currentState);
+
+//                    if(nowPlayingMedia == null) {
+//                      // No media was playing
+                      if(listener != null && currentState != PlayerState.STOPPED)
+                        listener.onPlayStarted(media, PlayerState.getState(timeline));
+//                    } else {
+//                      if (listener != null)
+//                        listener.onMediaChanged(media);
+//                    }
+                    nowPlayingMedia = media;
+                  }
+                });
+              } else {
+                if(oldState != currentState) {
+                  // State has changed
+                  if(listener != null)
+                    listener.onStateChanged(currentState);
+                  if(currentState == PlayerState.STOPPED)
+                    nowPlayingMedia = null;
+                } else {
+                  // State has not changed, so alert listener of the current timecode
+                  if(listener != null && currentState != PlayerState.STOPPED)
+                    listener.onTimeUpdate(timeline.time/1000); // timecode in Timeline is in ms
+                }
+              }
+            }
+          }
         }
+
+        /*
+
+
+
+        currentTimeline = mediaContainer.getActiveTimeline();
+        PlayerState oldState = currentState;
+        if(currentTimeline != null) {
+          currentState = PlayerState.getState(currentTimeline);
+        }
+
+        List<Timeline> timelines = mediaContainer.timelines;
+        int numStopped = 0;
+        for(final Timeline timeline : timelines) {
+          if(!PlayerState.getState(timeline).equals(PlayerState.STOPPED)) {
+            PlexServer server = VoiceControlForPlexApplication.getServerByMachineIdentifier(timeline.machineIdentifier);
+            if(server != null) {
+              PlexHttpClient.get(server, timeline.key, new PlexHttpMediaContainerHandler() {
+                @Override
+                public void onSuccess(MediaContainer mediaContainer) {
+                  PlexMedia media = null;
+                  if (timeline.type.equals("video"))
+                    media = mediaContainer.videos.get(0);
+                  else if (timeline.type.equals("music"))
+                    media = mediaContainer.tracks.get(0);
+
+                  if (media != null) {
+                    if(listener != null)
+                      listener.onMediaStateUpdate(media, PlayerState.getState(timeline), timeline.time);
+                  }
+                }
+
+                @Override
+                public void onFailure(Throwable error) {
+                  error.printStackTrace();
+                }
+              });
+            } else {
+              Logger.d("Server is null!");
+            }
+          } else {
+            // If all of the timelines are stopped, let the activity know.
+            numStopped++;
+            if(numStopped == timelines.size()) {
+              if (listener != null && !oldState.equals(PlayerState.STOPPED))
+                listener.onStopped();
+            }
+          }
+        }
+
+
+        */
+
+      }
+    });
+  }
+
+  private void getPlayingMedia(final PlexServer server, final Timeline timeline, final PlexMediaHandler onFinish) {
+    PlexHttpClient.get(server, timeline.key, new PlexHttpMediaContainerHandler() {
+      @Override
+      public void onSuccess(MediaContainer mediaContainer) {
+        PlexMedia media = null;
+        if (timeline.type.equals("video"))
+          media = mediaContainer.videos.get(0);
+        else if (timeline.type.equals("music"))
+          media = mediaContainer.tracks.get(0);
+
+        Logger.d("Got playing media: %s", media.getTitle());
+        if(onFinish != null)
+          onFinish.onFinish(media);
+      }
+
+      @Override
+      public void onFailure(Throwable error) {
+        error.printStackTrace();
       }
     });
   }
 
   private void onUnsubscribed() {
+    nowPlayingMedia = null;
     mHandler.post(new Runnable() {
       @Override
       public void run() {
@@ -426,6 +579,7 @@ public class PlexSubscription {
     });
   }
 
+  // TODO: Get rid of this
   public interface PlexListener {
     void onSubscribed(PlexClient client);
     void onUnsubscribed();
@@ -443,5 +597,9 @@ public class PlexSubscription {
 
   public Timeline getCurrentTimeline() {
     return currentTimeline;
+  }
+
+  public int getCommandId() {
+    return commandId;
   }
 }

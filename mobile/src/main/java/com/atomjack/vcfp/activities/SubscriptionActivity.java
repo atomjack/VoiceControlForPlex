@@ -35,7 +35,7 @@ public class SubscriptionActivity extends VCFPActivity {
   }
 
   private void handleIntent(Intent intent) {
-    PlexClient client = null;
+    PlexClient client;
     if(intent.getAction().equals(ACTION_SUBSCRIBE)) {
       client = getIntent().getParcelableExtra(CLIENT);
       if (client != null)
@@ -45,8 +45,9 @@ public class SubscriptionActivity extends VCFPActivity {
         finish();
       }
     } else if(intent.getAction().equals(ACTION_UNSUBSCRIBE)) {
-      plexSubscription.setListener(this);
-      plexSubscription.unsubscribe();
+      // TODO: fix this?
+//      plexSubscription.setListener(this);
+//      plexSubscription.unsubscribe();
       VoiceControlForPlexApplication.getInstance().cancelNotification();
       feedback.m(R.string.disconnected, new Runnable() {
         @Override
@@ -59,8 +60,9 @@ public class SubscriptionActivity extends VCFPActivity {
   }
 
   private void connectTo(PlexClient client) {
-    plexSubscription.setListener(this);
-    plexSubscription.subscribe(client);
+    // TODO: fix this?
+//    plexSubscription.setListener(this);
+//    plexSubscription.subscribe(client);
     feedback.m(String.format(getString(R.string.connected_to2), client.name), new Runnable() {
       @Override
       public void run() {

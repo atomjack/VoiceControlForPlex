@@ -15,6 +15,7 @@ import com.atomjack.shared.SendToDataLayerThread;
 import com.atomjack.shared.WearConstants;
 import com.atomjack.shared.model.Timeline;
 import com.atomjack.vcfp.Utils;
+import com.atomjack.vcfp.activities.NewMainActivity;
 import com.atomjack.vcfp.activities.PlayerActivity;
 import com.atomjack.vcfp.interfaces.ActiveConnectionHandler;
 import com.atomjack.vcfp.interfaces.AfterTransientTokenRequest;
@@ -864,8 +865,9 @@ public class PlexSearchService extends Service {
             }
           } else {
             if (VoiceControlForPlexApplication.getInstance().plexSubscription.getListener() != null) {
-              PlayerActivity act = (PlayerActivity) VoiceControlForPlexApplication.getInstance().plexSubscription.getListener();
-              act.cycleStreams(Stream.SUBTITLE);
+              // TODO: FIX
+//              NewMainActivity act = VoiceControlForPlexApplication.getInstance().plexSubscription.getListener();
+//              act.cycleStreams(Stream.SUBTITLE);
             }
           }
         }
@@ -882,8 +884,9 @@ public class PlexSearchService extends Service {
             VoiceControlForPlexApplication.getInstance().castPlayerManager.cycleStreams(Stream.AUDIO);
           } else {
             if (VoiceControlForPlexApplication.getInstance().plexSubscription.getListener() != null) {
-              PlayerActivity act = (PlayerActivity) VoiceControlForPlexApplication.getInstance().plexSubscription.getListener();
-              act.cycleStreams(Stream.AUDIO);
+              // TODO: FIX
+//              NewMainActivity act = VoiceControlForPlexApplication.getInstance().plexSubscription.getListener();
+//              act.cycleStreams(Stream.AUDIO);
             }
           }
         }
@@ -900,8 +903,9 @@ public class PlexSearchService extends Service {
             VoiceControlForPlexApplication.getInstance().castPlayerManager.subtitlesOff();
           } else {
             if (VoiceControlForPlexApplication.getInstance().plexSubscription.getListener() != null) {
-              PlayerActivity act = (PlayerActivity) VoiceControlForPlexApplication.getInstance().plexSubscription.getListener();
-              act.subtitlesOff();
+              // TODO: FIX
+//              NewMainActivity act = VoiceControlForPlexApplication.getInstance().plexSubscription.getListener();
+//              act.subtitlesOff();
             }
           }
         }
@@ -918,8 +922,9 @@ public class PlexSearchService extends Service {
             VoiceControlForPlexApplication.getInstance().castPlayerManager.subtitlesOn();
           } else {
             if (VoiceControlForPlexApplication.getInstance().plexSubscription.getListener() != null) {
-              PlayerActivity act = (PlayerActivity) VoiceControlForPlexApplication.getInstance().plexSubscription.getListener();
-              act.subtitlesOn();
+              // TODO: FIX
+//              NewMainActivity act = VoiceControlForPlexApplication.getInstance().plexSubscription.getListener();
+//              act.subtitlesOn();
             }
           }
         }
@@ -1379,7 +1384,8 @@ public class PlexSearchService extends Service {
 
 	private void showPlayingMedia(PlexMedia media) {
     Logger.d("[PlexSearchService] nowPlayingMedia: %s", media.title);
-		Intent nowPlayingIntent = new Intent(this, NowPlayingActivity.class);
+		Intent nowPlayingIntent = new Intent(this, NewMainActivity.class);
+    nowPlayingIntent.setAction(NewMainActivity.ACTION_SHOW_NOW_PLAYING);
     nowPlayingIntent.putExtra(WearConstants.FROM_WEAR, fromWear);
 		nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_MEDIA, media);
 		nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_CLIENT, client);

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+      xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item android:id="@+id/action_cast"
+          android:icon="@drawable/mr_ic_media_route_holo_dark"
+          android:title="Cast"
+          android:actionProviderClass="com.atomjack.vcfp.ClientConnectActionProvider"
+          app:showAsAction="always" />
+</menu>
