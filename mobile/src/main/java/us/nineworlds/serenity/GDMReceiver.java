@@ -7,9 +7,7 @@ import android.content.Intent;
 
 import com.atomjack.vcfp.GDMService;
 import com.atomjack.shared.Logger;
-import com.atomjack.vcfp.VoiceControlForPlexApplication;
-import com.atomjack.vcfp.activities.NewMainActivity;
-import com.atomjack.vcfp.activities.VCFPActivity;
+import com.atomjack.vcfp.activities.MainActivity;
 import com.atomjack.vcfp.model.Connection;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexServer;
@@ -99,7 +97,7 @@ public class GDMReceiver extends BroadcastReceiver {
       i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
       if (theClass.getSuperclass() == Service.class) {
         context.startService(i);
-      } else if (theClass == NewMainActivity.class) {
+      } else if (theClass == MainActivity.class) {
         Logger.d("Sending to activity");
         context.startActivity(i);
       }

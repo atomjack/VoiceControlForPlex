@@ -960,7 +960,7 @@ public abstract class VCFPActivity extends AppCompatActivity implements PlexSubs
   protected void searchForPlexClients(boolean connectToClient) {
     Intent scannerIntent = new Intent(VCFPActivity.this, PlexScannerService.class);
     scannerIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-    scannerIntent.putExtra(PlexScannerService.CLASS, MainActivity.class);
+    scannerIntent.putExtra(PlexScannerService.CLASS, OldMainActivity.class);
     scannerIntent.putExtra(com.atomjack.shared.Intent.EXTRA_CONNECT_TO_CLIENT, connectToClient);
     scannerIntent.setAction(PlexScannerService.ACTION_SCAN_CLIENTS);
     startService(scannerIntent);

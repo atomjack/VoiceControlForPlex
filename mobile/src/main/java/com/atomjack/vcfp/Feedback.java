@@ -9,11 +9,13 @@ import android.widget.Toast;
 
 import com.atomjack.shared.Logger;
 import com.atomjack.shared.Preferences;
-import com.atomjack.vcfp.activities.MainActivity;
 
 import java.util.HashMap;
 
 public class Feedback implements TextToSpeech.OnInitListener {
+  public final static int FEEDBACK_VOICE = 0;
+  public final static int FEEDBACK_TOAST = 1;
+
 	private TextToSpeech feedbackTts = null;
 	private TextToSpeech errorsTts = null;
 	private Context context;
@@ -100,7 +102,7 @@ public class Feedback implements TextToSpeech.OnInitListener {
 
   protected void feedback(String text, boolean errors, boolean forceToast) {
 
-		if(!forceToast && VoiceControlForPlexApplication.getInstance().prefs.get(errors ? Preferences.ERRORS : Preferences.FEEDBACK, MainActivity.FEEDBACK_TOAST) == MainActivity.FEEDBACK_VOICE) {
+		if(!forceToast && VoiceControlForPlexApplication.getInstance().prefs.get(errors ? Preferences.ERRORS : Preferences.FEEDBACK, FEEDBACK_TOAST) == FEEDBACK_VOICE) {
 			TextToSpeech tts = errors ? errorsTts : feedbackTts;
 			if (tts == null) {
 				// This tts not set up yet, so initiate it and add the text to be spoken to the appropriate queue.

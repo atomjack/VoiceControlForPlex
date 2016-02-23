@@ -17,7 +17,6 @@ import android.os.Build;
 import android.support.v4.app.NotificationCompat;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.RemoteViews;
 
@@ -34,8 +33,8 @@ import com.atomjack.shared.SendToDataLayerThread;
 import com.atomjack.shared.UriDeserializer;
 import com.atomjack.shared.UriSerializer;
 import com.atomjack.shared.WearConstants;
+import com.atomjack.vcfp.activities.OldMainActivity;
 import com.atomjack.vcfp.activities.MainActivity;
-import com.atomjack.vcfp.activities.NewMainActivity;
 import com.atomjack.vcfp.interfaces.BitmapHandler;
 import com.atomjack.vcfp.model.Connection;
 import com.atomjack.vcfp.model.MediaContainer;
@@ -148,7 +147,7 @@ public class VoiceControlForPlexApplication extends Application
   GoogleApiClient googleApiClient;
 
   // This is needed so that we can let the main activity know that wear support is enabled, after querying the inventory from Google
-  private MainActivity mainActivity;
+  private OldMainActivity mainActivity;
 
   @Override
   public void onCreate() {
@@ -452,10 +451,10 @@ public class VoiceControlForPlexApplication extends Application
     disconnectIntent.putExtra(PlexControlService.MEDIA, media);
     PendingIntent piDisconnect = PendingIntent.getService(VoiceControlForPlexApplication.this, 0, disconnectIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
-    android.content.Intent nowPlayingIntent = new android.content.Intent(VoiceControlForPlexApplication.this, NewMainActivity.class);
+    android.content.Intent nowPlayingIntent = new android.content.Intent(VoiceControlForPlexApplication.this, MainActivity.class);
     nowPlayingIntent.setFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK |
             android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK);
-    nowPlayingIntent.setAction(NewMainActivity.ACTION_SHOW_NOW_PLAYING);
+    nowPlayingIntent.setAction(MainActivity.ACTION_SHOW_NOW_PLAYING);
     nowPlayingIntent.putExtra(Intent.EXTRA_MEDIA, media);
     nowPlayingIntent.putExtra(Intent.EXTRA_CLIENT, client);
     PendingIntent piNowPlaying = PendingIntent.getActivity(VoiceControlForPlexApplication.this, 0, nowPlayingIntent, PendingIntent.FLAG_UPDATE_CURRENT);
@@ -633,7 +632,8 @@ public class VoiceControlForPlexApplication extends Application
     }
   }
 
-  public void setOnHasWearActivity(MainActivity activity) {
+  // TODO: Change this to new mainactivity?
+  public void setOnHasWearActivity(OldMainActivity activity) {
     mainActivity = activity;
   }
 

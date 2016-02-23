@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.os.Parcelable;
 import android.speech.RecognizerIntent;
 import android.support.v7.media.MediaRouteSelector;
 import android.support.v7.media.MediaRouter;
@@ -15,7 +14,7 @@ import com.atomjack.shared.SendToDataLayerThread;
 import com.atomjack.shared.WearConstants;
 import com.atomjack.shared.model.Timeline;
 import com.atomjack.vcfp.Utils;
-import com.atomjack.vcfp.activities.NewMainActivity;
+import com.atomjack.vcfp.activities.MainActivity;
 import com.atomjack.vcfp.interfaces.ActiveConnectionHandler;
 import com.atomjack.vcfp.interfaces.AfterTransientTokenRequest;
 import com.atomjack.vcfp.BuildConfig;
@@ -27,7 +26,6 @@ import com.atomjack.shared.Preferences;
 import com.atomjack.vcfp.QueryString;
 import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
-import com.atomjack.vcfp.activities.CastActivity;
 import com.atomjack.vcfp.interfaces.PlexPlayQueueHandler;
 import com.atomjack.vcfp.model.Connection;
 import com.atomjack.vcfp.model.MediaContainer;
@@ -92,7 +90,7 @@ public class PlexSearchService extends Service {
 
   private PlexSubscription plexSubscription;
 
-  private NewMainActivity.NetworkState currentNetworkState;
+  private MainActivity.NetworkState currentNetworkState;
 
   private boolean fromWear = false;
 
@@ -119,7 +117,7 @@ public class PlexSearchService extends Service {
 		Logger.d("PlexSearch: onStartCommand");
 
 		if(BuildConfig.USE_BUGSENSE)
-			BugSenseHandler.initAndStartSession(PlexSearchService.this, NewMainActivity.BUGSENSE_APIKEY);
+			BugSenseHandler.initAndStartSession(PlexSearchService.this, MainActivity.BUGSENSE_APIKEY);
 
 		videoPlayed = false;
     shuffle = false;
@@ -141,7 +139,7 @@ public class PlexSearchService extends Service {
       fromWear = true;
     }
 
-    currentNetworkState = NewMainActivity.NetworkState.getCurrentNetworkState(this);
+    currentNetworkState = MainActivity.NetworkState.getCurrentNetworkState(this);
 
 		Logger.d("action: %s", intent.getAction());
 		Logger.d("scan type: %s", intent.getStringExtra(com.atomjack.shared.Intent.SCAN_TYPE));
@@ -1355,9 +1353,9 @@ public class PlexSearchService extends Service {
 		Logger.d("Client: %s", client);
 
     Logger.d("currentNetworkState: %s", currentNetworkState);
-    if(currentNetworkState == NewMainActivity.NetworkState.MOBILE) {
+    if(currentNetworkState == MainActivity.NetworkState.MOBILE) {
       media.server.localPlay(media, resumePlayback, transientToken);
-    } else if(currentNetworkState == NewMainActivity.NetworkState.WIFI) {
+    } else if(currentNetworkState == MainActivity.NetworkState.WIFI) {
 
       media.server.findServerConnection(new ActiveConnectionHandler() {
         @Override
@@ -1386,8 +1384,8 @@ public class PlexSearchService extends Service {
 
 	private void showPlayingMedia(PlexMedia media) {
     Logger.d("[PlexSearchService] nowPlayingMedia: %s", media.title);
-		Intent nowPlayingIntent = new Intent(this, NewMainActivity.class);
-    nowPlayingIntent.setAction(NewMainActivity.ACTION_SHOW_NOW_PLAYING);
+		Intent nowPlayingIntent = new Intent(this, MainActivity.class);
+    nowPlayingIntent.setAction(MainActivity.ACTION_SHOW_NOW_PLAYING);
     nowPlayingIntent.putExtra(WearConstants.FROM_WEAR, fromWear);
 		nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_MEDIA, media);
 		nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_CLIENT, client);

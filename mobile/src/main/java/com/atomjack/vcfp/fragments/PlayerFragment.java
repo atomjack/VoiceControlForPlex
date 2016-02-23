@@ -38,7 +38,7 @@ import com.atomjack.vcfp.PlexHeaders;
 import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.Utils;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
-import com.atomjack.vcfp.activities.NewMainActivity;
+import com.atomjack.vcfp.activities.MainActivity;
 import com.atomjack.vcfp.adapters.StreamAdapter;
 import com.atomjack.vcfp.interfaces.ActiveConnectionHandler;
 import com.atomjack.vcfp.interfaces.ActivityListener;
@@ -166,7 +166,7 @@ public abstract class PlayerFragment extends Fragment
   public void onAttach(Context context) {
     super.onAttach(context);
 
-    feedback = ((NewMainActivity)context).feedback;
+    feedback = ((MainActivity)context).feedback;
     try {
       activityListener = (ActivityListener) context;
     } catch (ClassCastException e) {

@@ -105,7 +105,7 @@ All recognized commands without filter
 		<pids>50,51</pids>
 		<tids>49,46,48</tids>
 		<Img sr="icon" ve="2">
-			<cls>com.atomjack.vcfp.activities.MainActivity</cls>
+			<cls>com.atomjack.vcfp.activities.OldMainActivity</cls>
 			<pkg>com.atomjack.vcfp</pkg>
 		</Img>
 	</Project>

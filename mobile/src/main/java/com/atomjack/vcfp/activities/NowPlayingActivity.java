@@ -4,12 +4,8 @@ import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.os.Handler;
-import android.support.v4.view.GestureDetectorCompat;
-import android.view.GestureDetector;
 import android.view.Menu;
-import android.view.MotionEvent;
 import android.view.View;
-import android.widget.ScrollView;
 import android.widget.SeekBar;
 
 import com.atomjack.shared.PlayerState;
@@ -17,26 +13,15 @@ import com.atomjack.shared.SendToDataLayerThread;
 import com.atomjack.shared.WearConstants;
 import com.atomjack.vcfp.BuildConfig;
 import com.atomjack.shared.Logger;
-import com.atomjack.vcfp.PlexHeaders;
-import com.atomjack.vcfp.QueryString;
 import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
-import com.atomjack.vcfp.model.Connection;
-import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.PlexClient;
-import com.atomjack.vcfp.model.PlexDirectory;
-import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexResponse;
 import com.atomjack.shared.model.Timeline;
-import com.atomjack.vcfp.model.PlexTrack;
-import com.atomjack.vcfp.model.Stream;
 import com.atomjack.vcfp.net.PlexHttpResponseHandler;
 import com.bugsense.trace.BugSenseHandler;
-import com.google.android.gms.wearable.DataMap;
 
 import org.codechimp.apprater.AppRater;
-
-import java.util.List;
 
 public class NowPlayingActivity extends PlayerActivity {
 	private boolean subscribed = false;
@@ -52,7 +37,7 @@ public class NowPlayingActivity extends PlayerActivity {
 //    plexSubscription.setListener(this);
 
 		if(BuildConfig.USE_BUGSENSE)
-			BugSenseHandler.initAndStartSession(NowPlayingActivity.this, MainActivity.BUGSENSE_APIKEY);
+			BugSenseHandler.initAndStartSession(NowPlayingActivity.this, OldMainActivity.BUGSENSE_APIKEY);
 
 		setContentView(R.layout.play_media);
 

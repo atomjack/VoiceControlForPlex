@@ -10,7 +10,7 @@
               android:background="@color/black"
               android:orientation="vertical"
               tools:showIn="@layout/new_content_main"
-              tools:context="com.atomjack.vcfp.activities.NewMainActivity"
+              tools:context=".activities.MainActivity"
               android:gravity="center_horizontal">
 
     <TextView
