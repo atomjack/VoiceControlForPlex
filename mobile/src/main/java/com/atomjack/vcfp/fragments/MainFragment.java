@@ -41,7 +41,10 @@ public class MainFragment extends Fragment {
   public void setServer(PlexServer server) {
     this.server = server;
     if(mainStreamingFromTo != null) {
-      mainStreamingFromTo.setText(String.format(getString(R.string.ready_to_cast_from_to), server.name, client.name));
+      if(server.isScanAllServer)
+        mainStreamingFromTo.setText(String.format(getString(R.string.ready_to_scan_servers_to), client.name));
+      else
+        mainStreamingFromTo.setText(String.format(getString(R.string.ready_to_cast_from_to), server.name, client.name));
     }
   }
 
@@ -53,7 +56,7 @@ public class MainFragment extends Fragment {
     client = VoiceControlForPlexApplication.gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.CLIENT, ""), PlexClient.class);
     server = VoiceControlForPlexApplication.gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.SERVER, ""), PlexServer.class);
     if (server == null)
-      server = new PlexServer(getString(R.string.scan_all));
+      server = PlexServer.getScanAllServer();
 
     mainStreamingFromTo = (TextView)view.findViewById(R.id.mainStreamingFromTo);
     mainStreamingFromTo.setText(String.format(getString(R.string.ready_to_cast_from_to), server.name, client.name));

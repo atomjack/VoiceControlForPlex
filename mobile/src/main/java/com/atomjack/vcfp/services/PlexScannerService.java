@@ -173,6 +173,8 @@ public class PlexScannerService extends Service {
               @Override
               public void onFailure(int statusCode) {
                 Logger.d("Couldn't find active connection for %s", server.name);
+                // Remove this server from the servers we found
+                servers.remove(server.machineIdentifier);
                 serversScanned[0]++;
                 if (serversScanned[0] >= numServers) {
                   sendServerScanFinishedIntent(foundUnauthorized);
