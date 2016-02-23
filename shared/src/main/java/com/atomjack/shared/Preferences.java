@@ -31,6 +31,7 @@ public class Preferences {
   public final static String LAST_SERVER_SCAN = "pref.last_server_scan";
   public final static String SERVER_SCAN_FINISHED = "pref.server_scan_finished";
   public final static String FIRST_TIME_SETUP_COMPLETED = "pref.first_time_setup_completed";
+  public final static String IMAGE_CACHE_VERSION = "pref.image_cache_version";
 
   public Preferences(Context context) {
     mPrefs = context.getSharedPreferences(PREFS, context.MODE_PRIVATE);

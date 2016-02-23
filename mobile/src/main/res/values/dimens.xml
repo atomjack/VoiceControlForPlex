@@ -5,9 +5,12 @@
     <dimen name="activity_vertical_margin">16dp</dimen>
     <dimen name="notification_icon_width">114dp</dimen>
     <dimen name="notification_icon_width_music">64dp</dimen>
+    <dimen name="notification_icon_height_music">64dp</dimen>
     <dimen name="notification_icon_height">64dp</dimen>
     <dimen name="notification_large_icon_width">87dp</dimen>
     <dimen name="notification_large_icon_width_music">128dp</dimen>
+    <dimen name="notification_large_icon_height_music">128dp</dimen>
     <dimen name="notification_large_icon_height">128dp</dimen>
     <dimen name="fab_margin">16dp</dimen>
+
 </resources>

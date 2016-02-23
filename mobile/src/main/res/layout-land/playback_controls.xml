@@ -1,31 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:layout_width="fill_parent"
-              android:layout_height="120dp"
+              android:layout_height="110dp"
               android:orientation="vertical"
               android:layout_alignParentBottom="true"
               android:layout_centerHorizontal="true"
-              android:id="@+id/nowPlayingControls">
+              android:id="@+id/nowPlayingControls"
+              android:background="@color/now_playing_background"
+              android:paddingBottom="10dp">
     <SeekBar
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:id="@+id/seekBar"
-        android:paddingBottom="10dp"/>
+        android:paddingBottom="10dp"
+        android:layout_marginTop="20dp"
+        android:layout_marginLeft="20dp"
+        android:layout_marginRight="20dp"/>
     <LinearLayout
         android:orientation="horizontal"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="20dp"
+        android:layout_marginRight="20dp">
         <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:textAppearance="?android:attr/textAppearanceSmall"
             android:text="00:00"
             android:id="@+id/currentTimeView"
-            android:gravity="center_vertical"
+            android:gravity="center_vertical|left"
             android:maxLines="1"
             android:layout_weight="1"
-            android:paddingLeft="15sp"
-            android:layout_marginTop="18dp"/>
+            android:layout_marginTop="18dp"
+            android:textColor="@color/white"/>
         <ImageButton
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -83,6 +90,8 @@
             android:id="@+id/durationView"
             android:maxLines="1"
             android:layout_weight="1"
-            android:layout_marginTop="18dp"/>
+            android:layout_marginTop="18dp"
+            android:textColor="@color/white"
+            android:gravity="right"/>
     </LinearLayout>
 </LinearLayout>

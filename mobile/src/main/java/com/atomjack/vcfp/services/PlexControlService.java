@@ -106,7 +106,7 @@ public class PlexControlService extends IntentService {
         }
       } else if(intent.getAction().equals(ACTION_DISCONNECT)) {
         if(client.isCastClient) {
-
+          castPlayerManager.unsubscribe();
         } else {
           plexSubscription.unsubscribe();
         }

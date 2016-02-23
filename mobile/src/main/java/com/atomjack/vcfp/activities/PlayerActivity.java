@@ -269,8 +269,8 @@ public abstract class PlayerActivity extends VCFPActivity implements SeekBar.OnS
         year.setText(video.year);
         TextView duration = (TextView) findViewById(R.id.nowPlayingDuration);
         duration.setText(video.getDuration());
-        TextView summary = (TextView) findViewById(R.id.nowPlayingSummary);
-        summary.setText(video.summary);
+//        TextView summary = (TextView) findViewById(R.id.nowPlayingSummary);
+//        summary.setText(video.summary);
       } else {
         if(setView)
           setContentView(R.layout.now_playing_show);
@@ -282,8 +282,8 @@ public abstract class PlayerActivity extends VCFPActivity implements SeekBar.OnS
         year.setText(video.year);
         TextView duration = (TextView)findViewById(R.id.nowPlayingDuration);
         duration.setText(video.getDuration());
-        TextView summary = (TextView)findViewById(R.id.nowPlayingSummary);
-        summary.setText(video.summary);
+//        TextView summary = (TextView)findViewById(R.id.nowPlayingSummary);
+//        summary.setText(video.summary);
       }
 
     } else if (nowPlayingMedia instanceof PlexTrack) {

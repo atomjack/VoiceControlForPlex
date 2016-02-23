@@ -212,7 +212,7 @@ public class CastActivity extends PlayerActivity {
 	protected void onResume() {
 		Logger.d("CastActivity onResume");
 		castManager = castPlayerManager.getCastManager();
-    castPlayerManager.setListener(this);
+//    castPlayerManager.setListener(this);
 		if (null != castManager) {
 			castManager.addVideoCastConsumer(castConsumer);
 			castManager.incrementUiCounter();

@@ -1,23 +1,48 @@
 package com.atomjack.vcfp.fragments;
 
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
+import android.speech.RecognizerIntent;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
+import android.widget.ImageButton;
+import android.widget.TextView;
 
-import com.atomjack.shared.Logger;
+import com.atomjack.shared.Preferences;
 import com.atomjack.vcfp.R;
-import com.atomjack.vcfp.activities.NewMainActivity;
-import com.atomjack.vcfp.activities.ShortcutProviderActivity;
-import com.sothree.slidinguppanel.SlidingUpPanelLayout;
+import com.atomjack.vcfp.VoiceControlForPlexApplication;
+import com.atomjack.vcfp.model.PlexClient;
+import com.atomjack.vcfp.model.PlexServer;
+import com.atomjack.vcfp.services.PlexSearchService;
+
+import java.math.BigInteger;
+import java.security.SecureRandom;
 
 public class MainFragment extends Fragment {
+  TextView mainStreamingFromTo;
+  PlexServer server;
+  PlexClient client;
+
   public MainFragment() {
+  }
+
+  public void setClient(PlexClient client) {
+    this.client = client;
+    if(mainStreamingFromTo != null) {
+      mainStreamingFromTo.setText(String.format(getString(R.string.ready_to_cast_from_to), server.name, client.name));
+    }
+  }
+
+  public void setServer(PlexServer server) {
+    this.server = server;
+    if(mainStreamingFromTo != null) {
+      mainStreamingFromTo.setText(String.format(getString(R.string.ready_to_cast_from_to), server.name, client.name));
+    }
   }
 
   @Override
@@ -25,23 +50,49 @@ public class MainFragment extends Fragment {
                            Bundle savedInstanceState) {
     final View view = inflater.inflate(R.layout.fragment_main, container, false);
 
+    client = VoiceControlForPlexApplication.gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.CLIENT, ""), PlexClient.class);
+    server = VoiceControlForPlexApplication.gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.SERVER, ""), PlexServer.class);
+    if (server == null)
+      server = new PlexServer(getString(R.string.scan_all));
 
-    FloatingActionButton fab = (FloatingActionButton) view.findViewById(R.id.fab);
-    fab.setOnClickListener(new View.OnClickListener() {
+    mainStreamingFromTo = (TextView)view.findViewById(R.id.mainStreamingFromTo);
+    mainStreamingFromTo.setText(String.format(getString(R.string.ready_to_cast_from_to), server.name, client.name));
+//
+    ImageButton mainMicButton = (ImageButton)view.findViewById(R.id.mainMicButton);
+    mainMicButton.setOnClickListener(new View.OnClickListener() {
       @Override
-      public void onClick(View view) {
-        Logger.d("activity: %s", getActivity());
-        Intent intent = new Intent(getActivity(), ShortcutProviderActivity.class);
+      public void onClick(View v) {
+        Intent serviceIntent = new Intent(getActivity(), PlexSearchService.class);
 
-        getActivity().startActivityForResult(intent, NewMainActivity.RESULT_SHORTCUT_CREATED);
+        serviceIntent.putExtra(com.atomjack.shared.Intent.EXTRA_SERVER, VoiceControlForPlexApplication.gsonWrite.toJson(server));
+        serviceIntent.putExtra(com.atomjack.shared.Intent.EXTRA_CLIENT, VoiceControlForPlexApplication.gsonWrite.toJson(client));
+        serviceIntent.putExtra(com.atomjack.shared.Intent.EXTRA_RESUME, false);
+        serviceIntent.putExtra(com.atomjack.shared.Intent.USE_CURRENT, true);
+
+        SecureRandom random = new SecureRandom();
+        serviceIntent.setData(Uri.parse(new BigInteger(130, random).toString(32)));
+        PendingIntent resultsPendingIntent = PendingIntent.getService(getActivity(), 0, serviceIntent, Intent.FLAG_ACTIVITY_NEW_TASK);
+
+
+
+        Intent listenerIntent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+        listenerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+        listenerIntent.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, "voice.recognition.test");
+        listenerIntent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 5);
+        listenerIntent.putExtra(RecognizerIntent.EXTRA_RESULTS_PENDINGINTENT, resultsPendingIntent);
+        listenerIntent.putExtra(RecognizerIntent.EXTRA_PROMPT, getResources().getString(R.string.voice_prompt));
+
+        startActivity(listenerIntent);
       }
     });
-
-//    Button button = (Button) view.findViewById(R.id.button);
-//    button.setOnClickListener(new View.OnClickListener() {
+//    FloatingActionButton fab = (FloatingActionButton) view.findViewById(R.id.fab);
+//    fab.setOnClickListener(new View.OnClickListener() {
 //      @Override
-//      public void onClick(View v) {
-//        testListener.test();
+//      public void onClick(View view) {
+//        Logger.d("activity: %s", getActivity());
+//        Intent intent = new Intent(getActivity(), ShortcutProviderActivity.class);
+//
+//        getActivity().startActivityForResult(intent, NewMainActivity.RESULT_SHORTCUT_CREATED);
 //      }
 //    });
 

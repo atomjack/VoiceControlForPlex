@@ -5,6 +5,7 @@ import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.SeekBar;
 
 import com.atomjack.shared.Logger;
 import com.atomjack.shared.PlayerState;
@@ -34,144 +35,17 @@ public class PlexPlayerFragment extends PlayerFragment {
     return super.onCreateView(inflater, container, savedInstanceState);
   }
 
-  /*
-  @Override
-  public void onSubscribed(PlexClient client) {
-    Logger.d("[PlexPlayerFragment] onSubscribed");
-  }
-
-  @Override
-  public void onUnsubscribed() {
-    Logger.d("[PlexPlayerFragment] Unsubscribed");
-//    if(activityListener != null)
-//      activityListener.onUnsubscribed();
-  }
-
-  @Override
-  public void onStopped() {
-
-  }
-
-  @Override
-  public void onTimelineReceived(MediaContainer mc) {
-    List<Timeline> timelines = mc.timelines;
-    if(timelines != null) {
-      for (Timeline timeline : timelines) {
-        if (timeline.key != null) {
-          if(timeline.state == null)
-            timeline.state = "stopped";
-//          Logger.d("[PlexPlayerFragment] onTimelineReceived: %s", timeline.state);
-//          Logger.d("nowPlayingMedia: %s", nowPlayingMedia);
-          // Get this media's info
-          PlexServer server = null;
-          for(PlexServer s : VoiceControlForPlexApplication.servers.values()) {
-            if(s.machineIdentifier.equals(timeline.machineIdentifier)) {
-              server = s;
-              break;
-            }
-          }
-          if((!timeline.state.equals("stopped") && nowPlayingMedia == null) || continuing) {
-            // TODO: Might need to refresh server?
-            if(server != null)
-              getPlayingMedia(server, timeline);
-          }
-
-          if(nowPlayingMedia != null) {
-//            Logger.d("timeline key: %s, now playing key: %s", timeline.key, nowPlayingMedia.key);
-            if(timeline.key != null && timeline.key.equals(nowPlayingMedia.key)) {
-              // Found an update for the currently playing media
-              PlayerState oldState = currentState;
-              currentState = PlayerState.getState(timeline.state);
-              nowPlayingMedia.viewOffset = Integer.toString(timeline.time);
-              if(oldState != currentState) {
-                sendWearPlaybackChange();
-                if(currentState == PlayerState.PLAYING) {
-                  Logger.d("client is now playing");
-                } else if(currentState == PlayerState.PAUSED) {
-                  Logger.d("client is now paused");
-                } else if(currentState == PlayerState.STOPPED) {
-                  Logger.d("client is now stopped");
-                  if(!continuing) {
-                    VoiceControlForPlexApplication.getInstance().cancelNotification();
-                    nowPlayingMedia = null;
-                  }
-                }
-                if(currentState != PlayerState.STOPPED && oldState != currentState && VoiceControlForPlexApplication.getInstance().getNotificationStatus() != VoiceControlForPlexApplication.NOTIFICATION_STATUS.initializing) {
-                  Logger.d("onTimelineReceived setting notification with %s", currentState);
-                  VoiceControlForPlexApplication.getInstance().setNotification(client, currentState, nowPlayingMedia);
-                }
-              }
-            } else if(timeline.key != null) {
-              // A different piece of media is playing
-              getPlayingMedia(server, timeline);
-            }
-            position = timeline.time;
-          }
-            onSubscriptionMessage(timeline);
-        }
-      }
-    }
-  }
-
-  @Override
-  public void onSubscribeError(String errorMessage) {
-
-  }
-
-  @Override
-  protected void onMediaChange() {
-    Logger.d("[PlexPlayerFragment] onMediaChange: %s, duration %d", nowPlayingMedia.title, nowPlayingMedia.duration);
-    seekBar.setMax(nowPlayingMedia.duration);
-    durationDisplay.setText(VoiceControlForPlexApplication.secondsToTimecode(nowPlayingMedia.duration / 1000));
-    Logger.d("[PlexPlayerFragment] Setting thumb in onSubscriptionMessage");
-    setThumb();
-    showNowPlaying(false);
-  }
-  */
-
-  protected void onSubscriptionMessage(Timeline timeline) {
-    Logger.d("[NowPlaying] onSubscriptionMessage: %d, Continuing: %s", timeline.time, continuing);
-    if(!isSeeking)
-      seekBar.setProgress(timeline.time);
-
-    if(continuing) {
-      onMediaChange();
-      continuing = false;
-    }
-
-    if(timeline.state.equals("stopped")) {
-      Logger.d("PlexPlayerFragment stopping");
-      if(timeline.continuing != null && timeline.continuing.equals("1")) {
-        Logger.d("Continuing to next track");
-      } else {
-        VoiceControlForPlexApplication.getInstance().cancelNotification();
-//        if(activityListener != null)
-//          activityListener.onStopped();
-//        else
-//          Logger.d("activitylistener is null");
-      }
-    } else if(timeline.state.equals("playing")) {
-      setState(PlayerState.PLAYING);
-    } else if(timeline.state.equals("paused")) {
-      setState(PlayerState.PAUSED);
-    }
-  }
-
-//  private void setState(PlayerState newState) {
-//
-//  }
-
   @Override
   protected void doRewind() {
     if(position > -1) {
-      client.seekTo(position - 15000, null);
+      client.seekTo((position * 1000) - 15000, null);
     }
   }
 
   @Override
   protected void doForward() {
     if(position > -1) {
-      client.seekTo(position + 30000, null);
+      client.seekTo((position * 1000) + 30000, null);
     }
   }
 
@@ -231,12 +105,19 @@ public class PlexPlayerFragment extends PlayerFragment {
   }
 
   @Override
-  protected void doMediaOptions() {
+  public void onStopTrackingTouch(SeekBar _seekBar) {
+    client.seekTo(_seekBar.getProgress()*1000, new PlexHttpResponseHandler() {
+      @Override
+      public void onSuccess(PlexResponse response) {
+        isSeeking = false;
+      }
 
-  }
-
-  @Override
-  protected void doMic() {
+      @Override
+      public void onFailure(Throwable error) {
+        isSeeking = false;
+        feedback.e(String.format(getString(R.string.error_seeking), error.getMessage()));
+      }
+    });
 
   }
 }

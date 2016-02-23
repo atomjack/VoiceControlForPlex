@@ -5,4 +5,5 @@ import com.google.android.libraries.cast.companionlibrary.cast.callbacks.VideoCa
 
 public class VCFPCastConsumer extends VideoCastConsumerImpl {
 	public void setOnConnected(Runnable runnable) {}
+  public void onApplicationConnectionFailed(int errorCode) {}
 }

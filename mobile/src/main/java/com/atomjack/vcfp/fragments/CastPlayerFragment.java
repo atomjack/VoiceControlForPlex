@@ -1,106 +1,86 @@
 package com.atomjack.vcfp.fragments;
 
-import android.view.View;
+import android.widget.SeekBar;
 
+import com.atomjack.shared.Logger;
 import com.atomjack.shared.PlayerState;
 import com.atomjack.vcfp.CastPlayerManager;
-import com.atomjack.vcfp.model.Capabilities;
-import com.atomjack.vcfp.model.PlexClient;
+import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.model.PlexMedia;
 
-public class CastPlayerFragment extends PlayerFragment implements CastPlayerManager.CastListener {
+public class CastPlayerFragment extends PlayerFragment {
+  private CastPlayerManager castPlayerManager;
+
   public CastPlayerFragment() {
     super();
-
-  }
-
-  @Override
-  public void onCastConnected(PlexClient client) {
-
-  }
-
-  @Override
-  public void onCastDisconnected() {
-
-  }
-
-  @Override
-  public void onCastPlayerStateChanged(PlayerState state) {
-
-  }
-
-  @Override
-  public void onCastPlayerTimeUpdate(int seconds) {
-    // This is the equivalent to onTimelineReceived
-  }
-
-  @Override
-  public void onCastPlayerPlaylistAdvance(PlexMedia media) {
-
-  }
-
-  @Override
-  public void onCastPlayerState(PlayerState state, PlexMedia media) {
-
-  }
-
-  @Override
-  public void onCastConnectionFailed() {
-
-  }
-
-  @Override
-  public void onCastSeek() {
-
-  }
-
-  @Override
-  public void onGetDeviceCapabilities(Capabilities capabilities) {
-
+    castPlayerManager = VoiceControlForPlexApplication.getInstance().castPlayerManager;
   }
 
   @Override
   public PlexMedia getNowPlayingMedia() {
-    return null;
+    return nowPlayingMedia;
   }
 
   @Override
   protected void doRewind() {
-
+    if(position > -1) {
+      nowPlayingMedia.viewOffset = Integer.toString(position - 15000);
+      if (Integer.parseInt(nowPlayingMedia.viewOffset) < 0) {
+        position = 0;
+        nowPlayingMedia.viewOffset = "0";
+      }
+      castPlayerManager.seekTo(Integer.parseInt(nowPlayingMedia.viewOffset) / 1000);
+    }
   }
 
   @Override
   protected void doForward() {
-
+    if(position > -1) {
+      nowPlayingMedia.viewOffset = Integer.toString(position + 30000);
+      castPlayerManager.seekTo(Integer.parseInt(nowPlayingMedia.viewOffset) / 1000);
+    }
   }
 
   @Override
   protected void doPlayPause() {
-
+    try {
+      Logger.d("doPlayPause, currentState: %s", currentState);
+      if(currentState !=  PlayerState.PLAYING) {
+        castPlayerManager.play();
+      } else if(currentState ==  PlayerState.PLAYING) {
+        castPlayerManager.pause();
+      }
+    } catch (Exception ex) {}
   }
 
   @Override
   protected void doStop() {
-
+    try {
+      castPlayerManager.stop();
+    } catch (Exception ex) {
+      ex.printStackTrace();
+    }
   }
 
   @Override
   protected void doNext() {
-
+    castPlayerManager.doNext();
   }
 
   @Override
   protected void doPrevious() {
-
+    castPlayerManager.doPrevious();
   }
 
   @Override
-  protected void doMediaOptions() {
-
-  }
-
-  @Override
-  protected void doMic() {
-
+  public void onStopTrackingTouch(SeekBar seekBar) {
+    Logger.d("stopped changing progress: %d", seekBar.getProgress());
+    try {
+      nowPlayingMedia.viewOffset = Integer.toString(seekBar.getProgress());
+      castPlayerManager.seekTo(Integer.parseInt(nowPlayingMedia.viewOffset) / 1000);
+    } catch (Exception ex) {
+      ex.printStackTrace();
+    }
+    isSeeking = false;
   }
 }

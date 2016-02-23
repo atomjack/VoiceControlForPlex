@@ -19,4 +19,5 @@
     <color name="notification_background">#344446</color>
     <color name="navigation_drawer_background">#1D3B4F</color>
     <color name="device_list_background">#201d1d</color>
+    <color name="now_playing_background">#1D3B4F</color>
 </resources>

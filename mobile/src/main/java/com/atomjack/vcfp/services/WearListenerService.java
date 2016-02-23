@@ -87,7 +87,7 @@ public class WearListenerService extends WearableListenerService {
       CastPlayerManager castPlayerManager = VoiceControlForPlexApplication.getInstance().castPlayerManager;
       // TODO: FIX
       PlexPlayerFragment listener = null; //plexSubscription.getListener();
-      CastPlayerManager.CastListener castListener = castPlayerManager.getListener();
+      CastPlayerManager.CastListener castListener = null; //castPlayerManager.getListener();
       PlexClient client = new PlexClient();
       if (plexSubscription.isSubscribed()) {
         client = plexSubscription.mClient;
@@ -154,7 +154,8 @@ public class WearListenerService extends WearableListenerService {
             Logger.d("now playing: %s", castListener.getNowPlayingMedia().title);
             VoiceControlForPlexApplication.SetWearMediaTitles(dataMap, castListener.getNowPlayingMedia());
             dataMap.putString(WearConstants.MEDIA_TYPE, castListener.getNowPlayingMedia().getType());
-            final PlexMedia media = castPlayerManager.getListener().getNowPlayingMedia();
+            // TODO: Fix
+            final PlexMedia media = null; //castPlayerManager.getListener().getNowPlayingMedia();
             VoiceControlForPlexApplication.getWearMediaImage(media, new BitmapHandler() {
               @Override
               public void onSuccess(Bitmap bitmap) {
@@ -203,9 +204,10 @@ public class WearListenerService extends WearableListenerService {
         }
       } else if(message.equals(WearConstants.ACTION_PAUSE) || message.equals(WearConstants.ACTION_PLAY) || message.equals(WearConstants.ACTION_STOP)) {
         PlexMedia media = null;
-        if(castPlayerManager.isSubscribed())
-          media = castPlayerManager.getListener().getNowPlayingMedia();
-        // TODO: Fix  r
+        // TODO: Fix
+//        if(castPlayerManager.isSubscribed()) {
+//          media = castPlayerManager.getListener().getNowPlayingMedia();
+//        }
 //        else if(plexSubscription.isSubscribed())
 //          media = plexSubscription.getListener().getNowPlayingMedia();
         if(media != null) {

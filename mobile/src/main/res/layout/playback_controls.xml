@@ -1,36 +1,59 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:layout_width="fill_parent"
-              android:layout_height="120dp"
+              android:layout_height="100dp"
               android:orientation="vertical"
               android:layout_alignParentBottom="true"
               android:layout_centerHorizontal="true"
               android:id="@+id/nowPlayingControls">
-    <SeekBar
+
+    <LinearLayout
+        android:orientation="horizontal"
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/seekBar"
-        android:paddingBottom="10dp"/>
+        android:layout_height="40dp"
+        android:weightSum="100"
+        android:layout_marginLeft="20dp"
+        android:layout_marginRight="20dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:text="00:00:00"
+            android:id="@+id/currentTimeView"
+            android:maxLines="1"
+            android:gravity="left"
+            android:textColor="@color/white"
+            android:layout_weight="0"/>
+
+        <SeekBar
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:id="@+id/seekBar"
+            android:paddingBottom="10dp"
+            android:layout_weight="100"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:text="00:00:00"
+            android:id="@+id/durationView"
+            android:maxLines="1"
+            android:textColor="@color/white"
+            android:layout_weight="0"/>
+
+    </LinearLayout>
+
     <LinearLayout
         android:orientation="horizontal"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:textAppearance="?android:attr/textAppearanceSmall"
-            android:text="00:00"
-            android:id="@+id/currentTimeView"
-            android:gravity="center_vertical"
-            android:maxLines="1"
-            android:layout_weight="1"
-            android:paddingLeft="15sp"
-            android:layout_marginTop="18dp"/>
+        android:layout_height="60dp">
+
         <ImageButton
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:background="@android:color/transparent"
-            android:onClick="doRewind"
             android:id="@+id/rewindButton" android:src="@drawable/notif_back15"
             android:layout_weight="1"
             android:layout_marginTop="13dp"/>
@@ -38,7 +61,6 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:background="@android:color/transparent"
-            android:onClick="doPlayPause"
             android:id="@+id/playPauseButton" android:src="@drawable/button_play"
             android:layout_weight="1"
             android:layout_marginTop="10dp"/>
@@ -54,7 +76,6 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:background="@android:color/transparent"
-            android:onClick="doForward"
             android:id="@+id/forwardButton" android:src="@drawable/notif_ff30"
             android:layout_weight="1"
             android:layout_marginTop="13dp"/>
@@ -63,7 +84,6 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:background="@android:color/transparent"
-            android:onClick="doMediaOptions"
             android:id="@+id/mediaOptionsButton"
             android:src="@drawable/button_media_options"
             android:layout_weight="1"/>
@@ -72,17 +92,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:background="@android:color/transparent"
-            android:onClick="doMic"
             android:id="@+id/micButton" android:src="@drawable/button_microphone"
             android:layout_weight="1" />
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:textAppearance="?android:attr/textAppearanceSmall"
-            android:text="00:00"
-            android:id="@+id/durationView"
-            android:maxLines="1"
-            android:layout_weight="1"
-            android:layout_marginTop="18dp"/>
     </LinearLayout>
 </LinearLayout>

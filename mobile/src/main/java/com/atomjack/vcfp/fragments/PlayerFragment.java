@@ -2,11 +2,14 @@ package com.atomjack.vcfp.fragments;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.res.Configuration;
-import android.graphics.drawable.Drawable;
-import android.os.Build;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Bundle;
+import android.speech.RecognizerIntent;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.view.GestureDetectorCompat;
@@ -15,8 +18,12 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 import android.widget.AdapterView;
+import android.widget.FrameLayout;
 import android.widget.ImageButton;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -29,6 +36,7 @@ import com.atomjack.shared.model.Timeline;
 import com.atomjack.vcfp.Feedback;
 import com.atomjack.vcfp.PlexHeaders;
 import com.atomjack.vcfp.R;
+import com.atomjack.vcfp.Utils;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.activities.NewMainActivity;
 import com.atomjack.vcfp.adapters.StreamAdapter;
@@ -47,12 +55,15 @@ import com.atomjack.vcfp.model.PlexVideo;
 import com.atomjack.vcfp.model.Stream;
 import com.atomjack.vcfp.net.PlexHttpClient;
 import com.atomjack.vcfp.net.PlexHttpMediaContainerHandler;
+import com.atomjack.vcfp.services.PlexSearchService;
 
 import org.apache.commons.io.IOUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigInteger;
+import java.security.SecureRandom;
 import java.util.List;
 
 import cz.fhucho.android.util.SimpleDiskCache;
@@ -82,6 +93,7 @@ public abstract class PlayerFragment extends Fragment
   protected SeekBar seekBar;
   protected TextView currentTimeDisplay;
   protected TextView durationDisplay;
+  protected ImageView nowPlayingPoster;
 
   protected GestureDetectorCompat mDetector;
 
@@ -106,23 +118,23 @@ public abstract class PlayerFragment extends Fragment
     }
     Logger.d("[PlayerFragment] layout: %d", layout);
 
-    // TODO: If layout can't be found, alert activity something went wrong so it closes fragment out
-    if(layout == -1)
+    if(layout == -1) { // Layout can't be found, so alert activity something went wrong so it closes fragment out
       mainView = inflater.inflate(R.layout.player_fragment, container, false);
-    else
+      activityListener.onLayoutNotFound();
+    } else {
       mainView = inflater.inflate(layout, container, false);
 
-    this.inflater = inflater;
+      this.inflater = inflater;
 
-    showNowPlaying();
-    seekBar = (SeekBar) mainView.findViewById(R.id.seekBar);
-    seekBar.setOnSeekBarChangeListener(this);
-    seekBar.setMax(nowPlayingMedia.duration/1000);
-    seekBar.setProgress(Integer.parseInt(nowPlayingMedia.viewOffset)/1000);
+      showNowPlaying();
+      seekBar = (SeekBar) mainView.findViewById(R.id.seekBar);
+      seekBar.setOnSeekBarChangeListener(this);
+      seekBar.setMax(nowPlayingMedia.duration / 1000);
+      seekBar.setProgress(Integer.parseInt(nowPlayingMedia.viewOffset) / 1000);
 
-    setCurrentTimeDisplay(getOffset(nowPlayingMedia));
-    durationDisplay.setText(VoiceControlForPlexApplication.secondsToTimecode(nowPlayingMedia.duration / 1000));
-
+      setCurrentTimeDisplay(getOffset(nowPlayingMedia));
+      durationDisplay.setText(VoiceControlForPlexApplication.secondsToTimecode(nowPlayingMedia.duration / 1000));
+    }
     return mainView;
   }
 
@@ -257,8 +269,10 @@ public abstract class PlayerFragment extends Fragment
         year.setText(video.year);
         TextView duration = (TextView) mainView.findViewById(R.id.nowPlayingDuration);
         duration.setText(video.getDuration());
-        TextView summary = (TextView) mainView.findViewById(R.id.nowPlayingSummary);
-        summary.setText(video.summary);
+//        TextView summary = (TextView) mainView.findViewById(R.id.nowPlayingSummary);
+//        if(summary != null) {
+//          summary.setText(video.summary);
+//        }
       } else {
         TextView showTitle = (TextView)mainView.findViewById(R.id.nowPlayingShowTitle);
         showTitle.setText(video.grandparentTitle);
@@ -267,9 +281,12 @@ public abstract class PlayerFragment extends Fragment
         TextView year = (TextView)mainView.findViewById(R.id.nowPlayingYear);
         year.setText(video.year);
         TextView duration = (TextView)mainView.findViewById(R.id.nowPlayingDuration);
+
         duration.setText(video.getDuration());
-        TextView summary = (TextView)mainView.findViewById(R.id.nowPlayingSummary);
-        summary.setText(video.summary);
+//        TextView summary = (TextView)mainView.findViewById(R.id.nowPlayingSummary);
+//        if(summary != null)
+//          summary.setText(video.summary);
+
       }
 
     } else if (nowPlayingMedia instanceof PlexTrack) {
@@ -291,64 +308,44 @@ public abstract class PlayerFragment extends Fragment
       mainView.findViewById(R.id.mediaOptionsButton).setVisibility(View.GONE);
     }
 
-    Logger.d("[PlayerActivity] Setting thumb in showNowPlaying");
-    setThumb();
+    Logger.d("[PlayerFragment] Setting thumb in showNowPlaying");
     attachUIElements();
-  }
 
-  private void setContentView(int layout) {
-    LayoutInflater inflater = (LayoutInflater) getActivity().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-    mainView = inflater.inflate(layout, null);
-    ViewGroup rootView = (ViewGroup) getView();
-    rootView.removeAllViews();
-    rootView.addView(mainView);
-  }
-
-  @SuppressWarnings("deprecation")
-  private void setThumb(InputStream is) {
-    Logger.d("Setting thumb: %s", is);
-    final View layout;
-    View backgroundLayout = mainView.findViewById(R.id.background);
-    View musicLayout = mainView.findViewById(R.id.nowPlayingMusicCover);
-    if(nowPlayingMedia instanceof PlexTrack && getOrientation() == Configuration.ORIENTATION_PORTRAIT) {
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
-        backgroundLayout.setBackground(null);
-      else
-        backgroundLayout.setBackgroundDrawable(null);
-      layout = musicLayout;
-    } else {
-      if(musicLayout != null)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
-          musicLayout.setBackground(null);
-        else
-          musicLayout.setBackgroundDrawable(null);
-      layout = backgroundLayout;
-    }
-
-    try {
-      is.reset();
-    } catch (IOException e) {
-//      e.printStackTrace();
-    }
-
-    if(layout == null)
-      return;
-
-    final Drawable d = Drawable.createFromStream(is, "thumb");
-    getActivity().runOnUiThread(new Runnable() {
+    final FrameLayout nowPlayingPosterContainer = (FrameLayout)mainView.findViewById(R.id.nowPlayingPosterContainer);
+    ViewTreeObserver vto = nowPlayingPosterContainer.getViewTreeObserver();
+    vto.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
       @Override
-      public void run() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
-          layout.setBackground(d);
-        else
-          layout.setBackgroundDrawable(d);
+      public void onGlobalLayout() {
+        nowPlayingPosterContainer.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+        int height = nowPlayingPosterContainer.getMeasuredHeight();
+        int width = nowPlayingPosterContainer.getMeasuredWidth();
+        Logger.d("Found dimensions: %d/%d", width, height);
+        setThumb(width, height);
       }
     });
   }
 
-  protected void setThumb() {
-    String thumb = nowPlayingMedia.thumb;
+  @Override
+  public void onResume() {
+    Logger.d("[PlayerFragment] onResume");
 
+    super.onResume();
+  }
+
+  private void setThumb(final byte[] bytes) {
+    Logger.d("Setting thumb width %d bytes", bytes.length);
+
+    getActivity().runOnUiThread(new Runnable() {
+      @Override
+      public void run() {
+        Bitmap posterBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+        nowPlayingPoster.setImageBitmap(posterBitmap);
+      }
+    });
+  }
+
+  protected void setThumb(int maxWidth, int maxHeight) {
+    String thumb = nowPlayingMedia.thumb;
 
     Logger.d("setThumb: %s", thumb);
     if(nowPlayingMedia instanceof PlexVideo) {
@@ -372,34 +369,32 @@ public abstract class PlayerFragment extends Fragment
     }
     Logger.d("thumb: %s", thumb);
 
-    if(thumb != null || true) {
-      SimpleDiskCache.InputStreamEntry thumbEntry = null;
+    SimpleDiskCache.InputStreamEntry thumbEntry = null;
+    try {
+      thumbEntry = simpleDiskCache.getInputStream(nowPlayingMedia.getCacheKey(thumb != null ? thumb : nowPlayingMedia.key));
+//      Logger.d("Got size: %d", IOUtils.toByteArray(thumbEntry.getInputStream()).length);
+    } catch (Exception ex) {
+      ex.printStackTrace();
+    }
+    if (thumbEntry != null) {
+      Logger.d("Using cached thumb: %s", nowPlayingMedia.getCacheKey(thumb));
       try {
-        Logger.d("Server: %s", nowPlayingMedia.server);
-        thumbEntry = simpleDiskCache.getInputStream(nowPlayingMedia.getCacheKey(thumb != null ? thumb : nowPlayingMedia.key));
-      } catch (Exception ex) {
-        ex.printStackTrace();
-      }
-      if (thumbEntry != null) {
-        Logger.d("Using cached thumb: %s", nowPlayingMedia.getCacheKey(thumb));
-        setThumb(thumbEntry.getInputStream());
-      } else {
-        Logger.d("Downloading thumb");
-        getThumb(thumb, nowPlayingMedia);
-      }
+        setThumb(IOUtils.toByteArray(thumbEntry.getInputStream()));
+      } catch (Exception e) { e.printStackTrace(); }
     } else {
-      Logger.d("Couldn't find a background");
+      Logger.d("Downloading thumb");
+      getThumb(maxWidth, maxHeight, thumb, nowPlayingMedia);
     }
   }
 
-  private void getThumb(final String thumb, final PlexMedia media) {
+  private void getThumb(final int maxWidth, final int maxHeight, final String thumb, final PlexMedia media) {
     if(thumb == null) {
-      InputStream is = getResources().openRawResource(+ R.drawable.ic_launcher);
+      InputStream is = getResources().openRawResource(R.drawable.ic_launcher);
       try {
         InputStream iss = new ByteArrayInputStream(IOUtils.toByteArray(is));
         iss.reset();
         simpleDiskCache.put(media.getCacheKey(media.key), iss);
-        setThumb(iss);
+        setThumb(IOUtils.toByteArray(iss));
       } catch (IOException e) {
         Logger.d("Exception getting/saving thumb");
         e.printStackTrace();
@@ -416,10 +411,9 @@ public abstract class PlayerFragment extends Fragment
             @Override
             public void onSuccess(InputStream is) {
               try {
-                InputStream iss = new ByteArrayInputStream(IOUtils.toByteArray(is));
-                iss.reset();
-                simpleDiskCache.put(media.getCacheKey(thumb), iss);
-                setThumb(iss);
+                byte[] bytes = Utils.resizeImage(is, maxWidth, maxHeight);
+                simpleDiskCache.put(media.getCacheKey(thumb), new ByteArrayInputStream(bytes));
+                setThumb(bytes);
               } catch (IOException e) {
                 Logger.d("Exception getting/saving thumb");
                 e.printStackTrace();
@@ -445,6 +439,7 @@ public abstract class PlayerFragment extends Fragment
       }
     });
 
+    nowPlayingPoster = (ImageView) mainView.findViewById(R.id.nowPlayingPoster);
 
     ImageButton rewindButton = (ImageButton)mainView.findViewById(R.id.rewindButton);
     rewindButton.setOnClickListener(new View.OnClickListener() {
@@ -490,17 +485,25 @@ public abstract class PlayerFragment extends Fragment
 
     currentTimeDisplay = (TextView)mainView.findViewById(R.id.currentTimeView);
     durationDisplay = (TextView)mainView.findViewById(R.id.durationView);
-//    mDetector = new GestureDetectorCompat(getActivity(), new TouchGestureListener());
-//    View nowPlayingScrollView = mainView.findViewById(R.id.nowPlayingScrollView);
-//    nowPlayingScrollView.setOnTouchListener(new View.OnTouchListener() {
-//      @Override
-//      public boolean onTouch(View v, MotionEvent event) {
-//        return mDetector.onTouchEvent(event);
-//      }
-//    });
+
+    mDetector = new GestureDetectorCompat(getActivity(), new TouchGestureListener());
+    LinearLayout target = (LinearLayout)mainView.findViewById(R.id.nowPlayingTapTarget);
+    if(target != null) {
+      target.setOnTouchListener(new View.OnTouchListener() {
+        @Override
+        public boolean onTouch(View v, MotionEvent event) {
+          return mDetector.onTouchEvent(event);
+        }
+      });
+    }
   }
 
   class TouchGestureListener extends GestureDetector.SimpleOnGestureListener {
+    @Override
+    public boolean onDown(MotionEvent e) {
+      return true;
+    }
+
     @Override
     public boolean onSingleTapUp(MotionEvent e) {
       Logger.d("Single tap.");
@@ -540,7 +543,29 @@ public abstract class PlayerFragment extends Fragment
   protected abstract void doForward();
   protected abstract void doPlayPause();
   protected abstract void doStop();
-  protected abstract void doMic();
+  protected void doMic() {
+    if(nowPlayingMedia.server != null) {
+      android.content.Intent serviceIntent = new android.content.Intent(getActivity(), PlexSearchService.class);
+
+      serviceIntent.putExtra(com.atomjack.shared.Intent.EXTRA_SERVER, VoiceControlForPlexApplication.gsonWrite.toJson(nowPlayingMedia.server));
+      serviceIntent.putExtra(com.atomjack.shared.Intent.EXTRA_CLIENT, VoiceControlForPlexApplication.gsonWrite.toJson(client));
+      serviceIntent.putExtra(com.atomjack.shared.Intent.EXTRA_RESUME, resumePlayback);
+      serviceIntent.putExtra(com.atomjack.shared.Intent.EXTRA_FROM_MIC, true);
+
+      SecureRandom random = new SecureRandom();
+      serviceIntent.setData(Uri.parse(new BigInteger(130, random).toString(32)));
+      PendingIntent resultsPendingIntent = PendingIntent.getService(getActivity(), 0, serviceIntent, android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+
+      android.content.Intent listenerIntent = new android.content.Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+      listenerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+      listenerIntent.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, "voice.recognition.test");
+      listenerIntent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 5);
+      listenerIntent.putExtra(RecognizerIntent.EXTRA_RESULTS_PENDINGINTENT, resultsPendingIntent);
+      listenerIntent.putExtra(RecognizerIntent.EXTRA_PROMPT, getResources().getString(R.string.voice_prompt));
+
+      startActivity(listenerIntent);
+    }
+  }
   protected abstract void doNext();
   protected abstract void doPrevious();
 
@@ -549,6 +574,8 @@ public abstract class PlayerFragment extends Fragment
   }
 
   protected void doMediaOptions() {
+    Logger.d("[PlayerFragment] doMediaOptions!!!");
+
     if(nowPlayingMedia == null) {
       return;
     }
@@ -628,17 +655,12 @@ public abstract class PlayerFragment extends Fragment
 
   @Override
   public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-
+    setCurrentTimeDisplay(progress);
   }
 
   @Override
   public void onStartTrackingTouch(SeekBar seekBar) {
-
-  }
-
-  @Override
-  public void onStopTrackingTouch(SeekBar seekBar) {
-
+    isSeeking = true;
   }
 
   public void setState(PlayerState newState) {
@@ -651,13 +673,16 @@ public abstract class PlayerFragment extends Fragment
   }
 
   public void setPosition(int position) {
-    Logger.d("[PlayerFragment] setting position to %d", position);
-    this.position = position;
-    if(seekBar != null)
-      seekBar.setProgress(position);
-    else
-      Logger.d("Seekbar is null");
-    if(currentTimeDisplay != null)
-      setCurrentTimeDisplay(position);
+    if(!isSeeking) {
+      if(position != this.position)
+        Logger.d("[PlayerFragment] setting position to %d", position);
+      this.position = position;
+      if (seekBar != null)
+        seekBar.setProgress(position);
+      else
+        Logger.d("Seekbar is null");
+      if (currentTimeDisplay != null)
+        setCurrentTimeDisplay(position);
+    }
   }
 }

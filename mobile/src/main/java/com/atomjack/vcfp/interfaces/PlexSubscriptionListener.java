@@ -7,10 +7,9 @@ import com.atomjack.vcfp.model.PlexMedia;
 public interface PlexSubscriptionListener {
   void onSubscribed(PlexClient client);
   void onUnsubscribed();
-  void onTimeUpdate(int seconds);
+  void onTimeUpdate(PlayerState state, int seconds);
   void onMediaChanged(PlexMedia media);
-  void onStateChanged(PlayerState state);
+  void onStateChanged(PlexMedia media, PlayerState state);
   void onPlayStarted(PlexMedia media, PlayerState state);
-//  void onTimelineReceived(MediaContainer mediaContainer); // Will probably have to be changed to match with cast clients
   void onSubscribeError(String message);
 }

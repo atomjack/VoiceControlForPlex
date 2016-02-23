@@ -4,29 +4,43 @@
               android:layout_height="fill_parent"
               android:orientation="vertical"
               android:background="@color/now_playing_background">
-    <LinearLayout
-        android:layout_width="fill_parent"
-        android:layout_height="0dp"
-        android:orientation="vertical"
-        android:fillViewport="true"
-        android:gravity="center_horizontal"
-        android:layout_weight="1"
-        android:id="@+id/nowPlayingTapTarget">
 
-        <TextView
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentLeft="true"
+        android:layout_weight="1"
+        android:layout_marginLeft="20dp"
+        android:layout_marginRight="20dp"
+        android:id="@+id/nowPlayingTapTarget"
+        android:layout_marginTop="17dp">
+
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="2">
+
+            <TextView
                 android:id="@+id/nowPlayingOnClient"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="17dp"
+                android:layout_alignParentLeft="true"
+                android:layout_alignParentTop="true"
                 style="@style/showShadow"
                 android:textColor="@color/white"
-                android:text="@string/now_playing_on"
-                />
+                android:text="@string/now_playing_on" />
 
-        <TextView
+            <TextView
                 android:id="@+id/nowPlayingTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_alignLeft="@+id/nowPlayingOnClient"
+                android:layout_alignParentRight="true"
+                android:layout_below="@+id/nowPlayingOnClient"
                 android:layout_marginTop="16dp"
                 android:textSize="24sp"
                 android:textStyle="bold"
@@ -34,46 +48,53 @@
                 android:text="Aliens"
                 android:textColor="@color/white"/>
 
-        <TextView
+            <TextView
                 android:id="@+id/nowPlayingGenre"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_alignLeft="@+id/nowPlayingTitle"
+                android:layout_alignParentRight="true"
+                android:layout_below="@+id/nowPlayingTitle"
                 style="@style/showShadow"
-                android:text="Horror"
+                android:text=""
                 android:textColor="@color/white"/>
 
-        <TextView
+            <TextView
                 android:id="@+id/nowPlayingYear"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_alignLeft="@+id/nowPlayingGenre"
+                android:layout_alignParentRight="true"
+                android:layout_below="@+id/nowPlayingGenre"
                 style="@style/showShadow"
-                android:text="1986"
+                android:text="2016"
                 android:textColor="@color/white"/>
 
-        <TextView
+            <TextView
                 android:id="@+id/nowPlayingDuration"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_alignLeft="@+id/nowPlayingYear"
+                android:layout_alignParentRight="true"
+                android:layout_below="@+id/nowPlayingYear"
                 style="@style/showShadow"
-                android:text="2:30:00"
+                android:text="2:00:00"
                 android:textColor="@color/white"/>
+
+        </LinearLayout>
 
         <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:id="@+id/nowPlayingPosterContainer"
-            android:layout_marginTop="30dp"
-            android:layout_marginBottom="30dp">
+            android:id="@+id/nowPlayingPosterContainer">
 
             <ImageView
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_height="fill_parent"
                 android:id="@+id/nowPlayingPoster"
-                android:adjustViewBounds="true"
-                android:src="@drawable/inception"
-                android:scaleType="fitXY"
-                android:layout_gravity="center_horizontal"/>
+                android:layout_weight="1"
+                android:layout_gravity="right"/>
         </FrameLayout>
 
     </LinearLayout>
@@ -81,12 +102,11 @@
 
     <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="100dp"
-        android:layout_alignParentBottom="true"
-        android:background="@color/now_playing_background">
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true">
 
         <include layout="@layout/playback_controls"
-                 android:layout_height="120dp"
+                 android:layout_height="110dp"
                  android:layout_width="fill_parent"/>
     </RelativeLayout>
 

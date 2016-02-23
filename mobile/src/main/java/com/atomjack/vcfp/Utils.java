@@ -1,8 +1,12 @@
 package com.atomjack.vcfp;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
+import java.io.InputStream;
 import java.math.BigInteger;
 import java.net.Inet4Address;
 import java.net.InetAddress;
@@ -178,5 +182,24 @@ public class Utils {
     long curTimeInMs = beforeTime.getTime();
     Date afterAddingMins = new Date(curTimeInMs + (minutes * ONE_MINUTE_IN_MILLIS));
     return afterAddingMins;
+  }
+
+  // Return a resize bitmap, keeping aspect ratio, using provided max width and height.
+  // If this algorithm is ever updated, make sure to update VoiceControlForPlex.currentImageCacheVersion
+  // so that users' caches are cleared
+  public static byte[] resizeImage(InputStream original, int maxWidth, int maxHeight) {
+    Bitmap originalBitmap = BitmapFactory.decodeStream(original);
+    double scale = determineImageScale(originalBitmap.getWidth(), originalBitmap.getHeight(), maxWidth, maxHeight);
+    Bitmap resizedBitmap = Bitmap.createScaledBitmap(originalBitmap, (int)(scale*originalBitmap.getWidth()), (int)(scale*originalBitmap.getHeight()), true);
+    ByteArrayOutputStream stream = new ByteArrayOutputStream();
+    resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream);
+    byte[] bytes = stream.toByteArray();
+    return bytes;
+  }
+
+  private static double determineImageScale(int sourceWidth, int sourceHeight, int targetWidth, int targetHeight) {
+    double scalex = (double) targetWidth / sourceWidth;
+    double scaley = (double) targetHeight / sourceHeight;
+    return Math.min(scalex, scaley);
   }
 }

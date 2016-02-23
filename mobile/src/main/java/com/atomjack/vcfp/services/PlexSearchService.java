@@ -16,7 +16,6 @@ import com.atomjack.shared.WearConstants;
 import com.atomjack.shared.model.Timeline;
 import com.atomjack.vcfp.Utils;
 import com.atomjack.vcfp.activities.NewMainActivity;
-import com.atomjack.vcfp.activities.PlayerActivity;
 import com.atomjack.vcfp.interfaces.ActiveConnectionHandler;
 import com.atomjack.vcfp.interfaces.AfterTransientTokenRequest;
 import com.atomjack.vcfp.BuildConfig;
@@ -29,10 +28,6 @@ import com.atomjack.vcfp.QueryString;
 import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.activities.CastActivity;
-import com.atomjack.vcfp.activities.MainActivity;
-import com.atomjack.vcfp.activities.NowPlayingActivity;
-import com.atomjack.vcfp.activities.SubscriptionActivity;
-import com.atomjack.vcfp.activities.VCFPActivity;
 import com.atomjack.vcfp.interfaces.PlexPlayQueueHandler;
 import com.atomjack.vcfp.model.Connection;
 import com.atomjack.vcfp.model.MediaContainer;
@@ -97,7 +92,7 @@ public class PlexSearchService extends Service {
 
   private PlexSubscription plexSubscription;
 
-  private VCFPActivity.NetworkState currentNetworkState;
+  private NewMainActivity.NetworkState currentNetworkState;
 
   private boolean fromWear = false;
 
@@ -124,7 +119,7 @@ public class PlexSearchService extends Service {
 		Logger.d("PlexSearch: onStartCommand");
 
 		if(BuildConfig.USE_BUGSENSE)
-			BugSenseHandler.initAndStartSession(PlexSearchService.this, MainActivity.BUGSENSE_APIKEY);
+			BugSenseHandler.initAndStartSession(PlexSearchService.this, NewMainActivity.BUGSENSE_APIKEY);
 
 		videoPlayed = false;
     shuffle = false;
@@ -146,7 +141,7 @@ public class PlexSearchService extends Service {
       fromWear = true;
     }
 
-    currentNetworkState = VCFPActivity.NetworkState.getCurrentNetworkState(this);
+    currentNetworkState = NewMainActivity.NetworkState.getCurrentNetworkState(this);
 
 		Logger.d("action: %s", intent.getAction());
 		Logger.d("scan type: %s", intent.getStringExtra(com.atomjack.shared.Intent.SCAN_TYPE));
@@ -816,17 +811,18 @@ public class PlexSearchService extends Service {
           @Override
           public void run() {
             Logger.d("PlexSearchService Subscribing to %s", theClient.name);
-            if(VoiceControlForPlexApplication.getInstance().plexSubscription.getListener() != null)
+            // TODO: Check this
+//            if(VoiceControlForPlexApplication.getInstance().plexSubscription.getListener() != null)
               VoiceControlForPlexApplication.getInstance().plexSubscription.subscribe(theClient);
-            else {
-              Intent sendIntent = new Intent(PlexSearchService.this, SubscriptionActivity.class);
-              sendIntent.setAction(SubscriptionActivity.ACTION_SUBSCRIBE);
-              sendIntent.putExtra(SubscriptionActivity.CLIENT, theClient);
-              sendIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-              sendIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-              sendIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-              startActivity(sendIntent);
-            }
+//            else {
+//              Intent sendIntent = new Intent(PlexSearchService.this, SubscriptionActivity.class);
+//              sendIntent.setAction(SubscriptionActivity.ACTION_SUBSCRIBE);
+//              sendIntent.putExtra(SubscriptionActivity.CLIENT, theClient);
+//              sendIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+//              sendIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+//              sendIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+//              startActivity(sendIntent);
+//            }
           }
         };
       }
@@ -838,16 +834,17 @@ public class PlexSearchService extends Service {
       return new StopRunnable() {
         @Override
         public void run() {
-          if(VoiceControlForPlexApplication.getInstance().plexSubscription.getListener() != null)
+          // TODO: Check this
+//          if(VoiceControlForPlexApplication.getInstance().plexSubscription.getListener() != null)
             VoiceControlForPlexApplication.getInstance().plexSubscription.unsubscribe();
-          else {
-            Intent sendIntent = new Intent(PlexSearchService.this, SubscriptionActivity.class);
-            sendIntent.setAction(SubscriptionActivity.ACTION_UNSUBSCRIBE);
-            sendIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-            sendIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-            sendIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(sendIntent);
-          }
+//          else {
+//            Intent sendIntent = new Intent(PlexSearchService.this, SubscriptionActivity.class);
+//            sendIntent.setAction(SubscriptionActivity.ACTION_UNSUBSCRIBE);
+//            sendIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+//            sendIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+//            sendIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+//            startActivity(sendIntent);
+//          }
         }
       };
     }
@@ -999,6 +996,8 @@ public class PlexSearchService extends Service {
 
 	private void stopPlayback() {
 		adjustPlayback("stop", getResources().getString(R.string.playback_stopped));
+    // TODO: Is anything more needed here?
+    /*
 		if(VoiceControlForPlexApplication.isApplicationVisible()) {
 			Intent stopIntent = new Intent(this, NowPlayingActivity.class);
 			stopIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
@@ -1007,6 +1006,7 @@ public class PlexSearchService extends Service {
 			stopIntent.putExtra("finish", true);
 			startActivity(stopIntent);
 		}
+		*/
 	}
 
 	private void seekTo(int hours, int minutes, int seconds) {
@@ -1062,7 +1062,7 @@ public class PlexSearchService extends Service {
 				@Override
 				public void onSuccess(Connection connection) {
 					server.movieSectionsSearched = 0;
-					Logger.d("!Searching server (for movies): %s, %d sections", server.name, server.movieSections.size());
+					Logger.d("Searching server (for movies): %s, %d sections", server.name, server.movieSections.size());
 //          Logger.d("Server active connection: %s", server.activeConnection);
 
 					if(server.movieSections.size() == 0) {
@@ -1289,8 +1289,9 @@ public class PlexSearchService extends Service {
           castPlayerManager.loadMedia(media instanceof PlexTrack ? mediaContainer.tracks.get(0) : mediaContainer.videos.get(0),
                   media instanceof PlexTrack ? mediaContainer.tracks : mediaContainer.videos,
                   getOffset(media instanceof PlexTrack ? mediaContainer.tracks.get(0) : mediaContainer.videos.get(0)));
-
-          if(!fromMic || true) {
+          showPlayingMedia(media);
+          /*
+          if(!fromMic) {
             Intent sendIntent = new Intent(PlexSearchService.this, CastActivity.class);
             sendIntent.setAction(com.atomjack.shared.Intent.CAST_MEDIA);
             sendIntent.putExtra(com.atomjack.shared.Intent.EXTRA_MEDIA, media instanceof PlexTrack ? mediaContainer.tracks.get(0) : mediaContainer.videos.get(0));
@@ -1302,6 +1303,7 @@ public class PlexSearchService extends Service {
             sendIntent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
             startActivity(sendIntent);
           }
+          */
         }
       };
 
@@ -1353,9 +1355,9 @@ public class PlexSearchService extends Service {
 		Logger.d("Client: %s", client);
 
     Logger.d("currentNetworkState: %s", currentNetworkState);
-    if(currentNetworkState == VCFPActivity.NetworkState.MOBILE) {
+    if(currentNetworkState == NewMainActivity.NetworkState.MOBILE) {
       media.server.localPlay(media, resumePlayback, transientToken);
-    } else if(currentNetworkState == VCFPActivity.NetworkState.WIFI) {
+    } else if(currentNetworkState == NewMainActivity.NetworkState.WIFI) {
 
       media.server.findServerConnection(new ActiveConnectionHandler() {
         @Override
@@ -2185,6 +2187,7 @@ public class PlexSearchService extends Service {
 		});
 	}
 
+  /*
 	private void showPlayingTrack(PlexTrack track) {
 		Intent nowPlayingIntent = new Intent(this, NowPlayingActivity.class);
 		nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_MEDIA, track);
@@ -2192,6 +2195,7 @@ public class PlexSearchService extends Service {
 		nowPlayingIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 		startActivity(nowPlayingIntent);
 	}
+*/
 
 	private class MediaRouterCallback extends MediaRouter.Callback {
 		@Override

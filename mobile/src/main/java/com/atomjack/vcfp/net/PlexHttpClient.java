@@ -35,6 +35,7 @@ import retrofit.Response;
 import retrofit.Retrofit;
 import retrofit.SimpleXmlConverterFactory;
 import retrofit.http.GET;
+import retrofit.http.Header;
 import retrofit.http.Headers;
 import retrofit.http.POST;
 import retrofit.http.Path;
@@ -109,6 +110,9 @@ public class PlexHttpClient
 
     @GET("/player/playback/setStreams")
     Call<PlexResponse> setStreams(@QueryMap Map<String, String> options);
+
+    @GET("/users/account.xml")
+    Call<PlexUser> getPlexAccount(@retrofit.http.Header(PlexHeaders.XPlexToken) String authToken);
   }
 
   public static void getThumb(String url, final InputStreamHandler inputStreamHandler) {
@@ -537,6 +541,24 @@ public class PlexHttpClient
       @Override
       public void onFailure(Throwable t) {
         responseHandler.onFailure(t);
+      }
+    });
+  }
+
+  public static void getPlexAccount(String authToken, final PlexHttpUserHandler responseHandler) {
+    String url = "https://plex.tv:443";
+    PlexHttpService service = getService(url);
+    Call<PlexUser> call = service.getPlexAccount(authToken);
+    call.enqueue(new Callback<PlexUser>() {
+      @Override
+      public void onResponse(Response<PlexUser> response) {
+        if(responseHandler != null)
+          responseHandler.onSuccess(response.body());
+      }
+
+      @Override
+      public void onFailure(Throwable t) {
+
       }
     });
   }

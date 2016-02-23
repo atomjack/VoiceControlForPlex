@@ -52,7 +52,7 @@
                 android:layout_height="0dp"
                 android:background="@color/navigation_drawer_background"
                 app:menu="@menu/nav_items_main"
-                app:itemTextColor="@color/state_list"
+                app:itemTextColor="@color/white"
                 app:itemBackground="@drawable/nav_drawer_server_item"
                 app:itemIconTint="@color/white"
                 android:layout_weight="1"/>

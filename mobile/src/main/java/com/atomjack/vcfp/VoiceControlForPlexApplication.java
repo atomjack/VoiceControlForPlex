@@ -16,6 +16,8 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.support.v4.app.NotificationCompat;
 import android.text.TextUtils;
+import android.util.DisplayMetrics;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.RemoteViews;
 
@@ -32,12 +34,9 @@ import com.atomjack.shared.SendToDataLayerThread;
 import com.atomjack.shared.UriDeserializer;
 import com.atomjack.shared.UriSerializer;
 import com.atomjack.shared.WearConstants;
-import com.atomjack.vcfp.activities.CastActivity;
 import com.atomjack.vcfp.activities.MainActivity;
-import com.atomjack.vcfp.activities.NowPlayingActivity;
-import com.atomjack.vcfp.interfaces.ActiveConnectionHandler;
+import com.atomjack.vcfp.activities.NewMainActivity;
 import com.atomjack.vcfp.interfaces.BitmapHandler;
-import com.atomjack.vcfp.interfaces.PlexStreamHandler;
 import com.atomjack.vcfp.model.Connection;
 import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.PlexClient;
@@ -45,8 +44,6 @@ import com.atomjack.vcfp.model.PlexDirectory;
 import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexServer;
 import com.atomjack.vcfp.model.PlexTrack;
-import com.atomjack.vcfp.model.Stream;
-import com.atomjack.vcfp.net.PlexHttpClient;
 import com.atomjack.vcfp.services.PlexControlService;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.wearable.Asset;
@@ -59,6 +56,7 @@ import com.google.gson.reflect.TypeToken;
 import org.simpleframework.xml.Serializer;
 import org.simpleframework.xml.core.Persister;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -77,9 +75,6 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import cz.fhucho.android.util.SimpleDiskCache;
-import retrofit.Call;
-import retrofit.Callback;
-import retrofit.Response;
 
 public class VoiceControlForPlexApplication extends Application
 {
@@ -127,6 +122,7 @@ public class VoiceControlForPlexApplication extends Application
   public PlexSubscription plexSubscription;
   public CastPlayerManager castPlayerManager;
   public SimpleDiskCache mSimpleDiskCache;
+  private int currentImageCacheVersion = 1;
 
   private NetworkChangeListener networkChangeListener;
 
@@ -210,6 +206,7 @@ public class VoiceControlForPlexApplication extends Application
     try {
       PackageInfo pInfo = getPackageManager().getPackageInfo(getPackageName(), 0);
       mSimpleDiskCache = SimpleDiskCache.open(getCacheDir(), pInfo.versionCode, Long.parseLong(Integer.toString(10 * 1024 * 1024)));
+      checkImageCacheVersion();
       Logger.d("Cache initialized");
     } catch (Exception ex) {
       ex.printStackTrace();
@@ -338,11 +335,19 @@ public class VoiceControlForPlexApplication extends Application
                 inputStream.reset();
               } catch (IOException e) {
               }
+//              getApplicationContext().getResources().getDimension(R.dimen.notification_icon_height);
+              float height = getApplicationContext().getResources().getDimension(getNotificationIconHeight(media, key));
+              Logger.d("height: %f", height);
+
+
+              byte[] bytes = Utils.resizeImage(inputStream, dpToPx(128), dpToPx(128));
+
               try {
                 Logger.d("image key: %s", media.getImageKey(key));
-                mSimpleDiskCache.put(media.getImageKey(key), inputStream);
+                mSimpleDiskCache.put(media.getImageKey(key), new ByteArrayInputStream(bytes));
+
                 inputStream.close();
-                Logger.d("Downloaded thumb. Redoing notification.");
+                Logger.d("Downloaded notification thumb. Redoing notification.");
                 setNotification(client, currentState, media, true);
               } catch (Exception e) {
               }
@@ -351,6 +356,21 @@ public class VoiceControlForPlexApplication extends Application
           return null;
         }
       }.execute();
+  }
+
+  private int getNotificationIconHeight(PlexMedia media, PlexMedia.IMAGE_KEY key) {
+    boolean big = key == PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB_BIG;
+    if(media.isMusic()) {
+      return big ? R.dimen.notification_large_icon_height_music : R.dimen.notification_icon_height_music;
+    }
+    return big ? R.dimen.notification_large_icon_height : R.dimen.notification_icon_height;
+
+  }
+
+  public int dpToPx(int dp) {
+    DisplayMetrics displayMetrics = getResources().getDisplayMetrics();
+    int px = Math.round(dp * (displayMetrics.xdpi / DisplayMetrics.DENSITY_DEFAULT));
+    return px;
   }
 
   public void fetchNotificationBitmap(final PlexMedia.IMAGE_KEY key, final PlexMedia media, final Runnable onFinish) {
@@ -432,13 +452,10 @@ public class VoiceControlForPlexApplication extends Application
     disconnectIntent.putExtra(PlexControlService.MEDIA, media);
     PendingIntent piDisconnect = PendingIntent.getService(VoiceControlForPlexApplication.this, 0, disconnectIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
-    android.content.Intent nowPlayingIntent;
-    if(client.isCastClient) {
-      nowPlayingIntent = new android.content.Intent(VoiceControlForPlexApplication.this, CastActivity.class);
-    } else
-      nowPlayingIntent = new android.content.Intent(VoiceControlForPlexApplication.this, NowPlayingActivity.class);
+    android.content.Intent nowPlayingIntent = new android.content.Intent(VoiceControlForPlexApplication.this, NewMainActivity.class);
     nowPlayingIntent.setFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK |
             android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK);
+    nowPlayingIntent.setAction(NewMainActivity.ACTION_SHOW_NOW_PLAYING);
     nowPlayingIntent.putExtra(Intent.EXTRA_MEDIA, media);
     nowPlayingIntent.putExtra(Intent.EXTRA_CLIENT, client);
     PendingIntent piNowPlaying = PendingIntent.getActivity(VoiceControlForPlexApplication.this, 0, nowPlayingIntent, PendingIntent.FLAG_UPDATE_CURRENT);
@@ -469,6 +486,7 @@ public class VoiceControlForPlexApplication extends Application
       notificationStatus = NOTIFICATION_STATUS.on;
       Logger.d("Notification set");
 
+      // TODO: Implement
 //      sendWearNotification(media);
     } catch (Exception ex) {
       ex.printStackTrace();
@@ -499,8 +517,6 @@ public class VoiceControlForPlexApplication extends Application
       title = String.format("%s - %s", media.grandparentTitle, media.title);
     else if(media.isShow())
       title = String.format("%s - %s", media.grandparentTitle, media.title);
-//    else if(media.isShow())
-//      title = String.format("%s - %s", media.grandparentTitle, media.title);
     remoteViews.setTextViewText(R.id.title, title);
     remoteViews.setTextViewText(R.id.playingOn, String.format(getString(R.string.playing_on), client.name));
 
@@ -788,5 +804,17 @@ public class VoiceControlForPlexApplication extends Application
       }
     }
     return null;
+  }
+
+  private void checkImageCacheVersion() {
+    if(prefs.get(Preferences.IMAGE_CACHE_VERSION, 0) < currentImageCacheVersion) {
+      try {
+        Logger.d("Clearing cache");
+        mSimpleDiskCache.clear();
+        prefs.put(Preferences.IMAGE_CACHE_VERSION, currentImageCacheVersion);
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+    }
   }
 }

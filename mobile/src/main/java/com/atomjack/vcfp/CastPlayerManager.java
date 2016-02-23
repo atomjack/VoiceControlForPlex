@@ -7,6 +7,7 @@ import com.atomjack.shared.Logger;
 import com.atomjack.shared.PlayerState;
 import com.atomjack.shared.Preferences;
 import com.atomjack.vcfp.interfaces.ActiveConnectionHandler;
+import com.atomjack.vcfp.interfaces.PlexSubscriptionListener;
 import com.atomjack.vcfp.model.Capabilities;
 import com.atomjack.vcfp.model.Connection;
 import com.atomjack.vcfp.model.PlexClient;
@@ -16,6 +17,7 @@ import com.atomjack.vcfp.model.PlexTrack;
 import com.atomjack.vcfp.model.PlexVideo;
 import com.atomjack.vcfp.model.Stream;
 import com.google.android.gms.cast.ApplicationMetadata;
+import com.google.android.libraries.cast.companionlibrary.cast.CastConfiguration;
 import com.google.android.libraries.cast.companionlibrary.cast.VideoCastManager;
 
 import org.json.JSONObject;
@@ -29,6 +31,8 @@ public class CastPlayerManager {
 
   private static VideoCastManager castManager = null;
   private VCFPCastConsumer castConsumer;
+
+  private PlexSubscriptionListener listener;
 
   private String mSessionId;
   private String plexSessionId;
@@ -97,7 +101,7 @@ public class CastPlayerManager {
 
   private Context mContext;
 
-  private CastListener listener;
+//  private CastListener listener;
 
   private boolean subscribed = false;
 
@@ -137,6 +141,7 @@ public class CastPlayerManager {
     castManager.onDeviceSelected(_client.castDevice);
 //    castManager.setDevice(_client.castDevice);
     Logger.d("device selected");
+//    castConsumer.onApp
     castConsumer.setOnConnected(new Runnable() {
       @Override
       public void run() {
@@ -165,7 +170,7 @@ public class CastPlayerManager {
 
         subscribed = true;
         if(listener != null)
-          listener.onCastConnected(_client);
+          listener.onSubscribed(_client);
         else
           Logger.d("[CastPlayerManager] listener is null");
 
@@ -192,19 +197,20 @@ public class CastPlayerManager {
     subscribed = false;
     mClient = null;
     if(listener != null)
-      listener.onCastDisconnected();
+      listener.onUnsubscribed();
   }
 
-  public void setListener(CastListener _listener) {
+  public void setListener(PlexSubscriptionListener _listener) {
     listener = _listener;
 //    if(_listener != null)
 //      notificationListener = _listener;
   }
 
-  public CastListener getListener() {
+  public PlexSubscriptionListener getListener() {
     return listener;
   }
 
+  // TODO: Get rid of this
   public interface CastListener {
     void onCastConnected(PlexClient client);
     void onCastDisconnected();
@@ -268,7 +274,7 @@ public class CastPlayerManager {
             obj.put(PARAMS.SRC, getTranscodeUrl(nowPlayingMedia, connection, seconds));
           obj.put(PARAMS.RESUME, VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.RESUME, false));
           sendMessage(obj);
-          listener.onCastSeek();
+          listener.onTimeUpdate(currentState, seconds);
         } catch (Exception ex) {
         }
       }
@@ -318,12 +324,19 @@ public class CastPlayerManager {
 
   private static VideoCastManager getCastManager(Context context) {
     if (null == castManager) {
+      CastConfiguration options = new CastConfiguration.Builder(BuildConfig.CHROMECAST_APP_ID)
+              .addNamespace("urn:x-cast:com.atomjack.vcfp")
+              .build();
+      VideoCastManager.initialize(context, options);
+
+/*
       VideoCastManager.initialize(context, BuildConfig.CHROMECAST_APP_ID,
               null, "urn:x-cast:com.atomjack.vcfp")
           .enableFeatures(
                   VideoCastManager.FEATURE_NOTIFICATION |
                           VideoCastManager.FEATURE_LOCKSCREEN |
                           VideoCastManager.FEATURE_DEBUGGING);
+                          */
 
     }
 //    castManager.setContext(context);
@@ -338,6 +351,7 @@ public class CastPlayerManager {
 
       @Override
       public void onApplicationDisconnected(int errorCode) {
+        Logger.d("[CastPlayerManager] onApplicationDisconnected: %d", errorCode);
 //        super.onApplicationDisconnected(errorCode);
       }
 
@@ -351,11 +365,11 @@ public class CastPlayerManager {
               Logger.d("playerStatusChanged: %s", obj.getString("status"));
               currentState = PlayerState.getState(obj.getString("status"));
               if(listener != null)
-                listener.onCastPlayerStateChanged(currentState);
+                listener.onStateChanged(nowPlayingMedia, currentState);
             }
           } else if(obj.has("event") && obj.getString("event").equals(RECEIVER_EVENTS.TIME_UPDATE) && obj.has("currentTime")) {
             if(listener != null)
-              listener.onCastPlayerTimeUpdate(obj.getInt("currentTime"));
+              listener.onTimeUpdate(currentState, obj.getInt("currentTime"));
           } else if(obj.has("event") && obj.getString("event").equals(RECEIVER_EVENTS.PLAYLIST_ADVANCE) && obj.has("media") && obj.has("type")) {
             Logger.d("[CastPlayerManager] playlistAdvance");
             if(obj.getString("type").equals(PARAMS.MEDIA_TYPE_VIDEO))
@@ -363,7 +377,7 @@ public class CastPlayerManager {
             else
               nowPlayingMedia = VoiceControlForPlexApplication.gsonRead.fromJson(obj.getString("media"), PlexTrack.class);
             if(listener != null)
-              listener.onCastPlayerPlaylistAdvance(nowPlayingMedia);
+              listener.onMediaChanged(nowPlayingMedia);
           } else if(obj.has("event") && obj.getString("event").equals(RECEIVER_EVENTS.GET_PLAYBACK_STATE) && obj.has("state")) {
             currentState = PlayerState.getState(obj.getString("state"));
             PlexMedia media = null;
@@ -375,14 +389,16 @@ public class CastPlayerManager {
               mClient = VoiceControlForPlexApplication.gsonRead.fromJson(obj.getString("client"), PlexClient.class);
             }
             if(listener != null)
-              listener.onCastPlayerState(PlayerState.getState(obj.getString("state")), media);
+              listener.onStateChanged(media, PlayerState.getState(obj.getString("state")));
           } else if(obj.has("event") && obj.getString("event").equals(RECEIVER_EVENTS.DEVICE_CAPABILITIES) && obj.has("capabilities")) {
             Capabilities capabilities = VoiceControlForPlexApplication.gsonRead.fromJson(obj.getString("capabilities"), Capabilities.class);
-            if(listener != null)
-              listener.onGetDeviceCapabilities(capabilities);
+            mClient.isAudioOnly = !capabilities.displaySupported;
+
+//            if(listener != null)
+//              listener.onGetDeviceCapabilities(capabilities);
           } else if(obj.has("event") && obj.getString("event").equals(RECEIVER_EVENTS.SHUTDOWN)) {
             if(listener != null)
-              listener.onCastDisconnected();
+              listener.onUnsubscribed();
             subscribed = false;
             mClient = null;
           }
@@ -440,8 +456,9 @@ public class CastPlayerManager {
       @Override
       public void onApplicationConnectionFailed(int errorCode) {
         Logger.d("[CastPlayerManager] onApplicationConnectionFailed: %d", errorCode);
+        // TODO: handle error properly
         if(listener != null)
-          listener.onCastConnectionFailed();
+          listener.onSubscribeError("");
       }
 
       @Override
