@@ -372,7 +372,6 @@ public abstract class PlayerFragment extends Fragment
     SimpleDiskCache.InputStreamEntry thumbEntry = null;
     try {
       thumbEntry = simpleDiskCache.getInputStream(nowPlayingMedia.getCacheKey(thumb != null ? thumb : nowPlayingMedia.key));
-//      Logger.d("Got size: %d", IOUtils.toByteArray(thumbEntry.getInputStream()).length);
     } catch (Exception ex) {
       ex.printStackTrace();
     }
@@ -389,7 +388,7 @@ public abstract class PlayerFragment extends Fragment
 
   private void getThumb(final int maxWidth, final int maxHeight, final String thumb, final PlexMedia media) {
     if(thumb == null) {
-      InputStream is = getResources().openRawResource(R.drawable.ic_launcher);
+      InputStream is = getResources().openRawResource(+ R.drawable.ic_launcher);
       try {
         InputStream iss = new ByteArrayInputStream(IOUtils.toByteArray(is));
         iss.reset();
@@ -403,17 +402,16 @@ public abstract class PlayerFragment extends Fragment
       media.server.findServerConnection(new ActiveConnectionHandler() {
         @Override
         public void onSuccess(Connection connection) {
-          String url = String.format("http://%s:%s%s", connection.address, connection.port, thumb);
-          if (media.server.accessToken != null)
-            url += String.format("?%s=%s", PlexHeaders.XPlexToken, media.server.accessToken);
+          String path = String.format("/photo/:/transcode?width=%d&height=%d&url=%s", maxWidth, maxHeight, Uri.encode(String.format("http://127.0.0.1:32400%s", thumb)));
+          String url = media.server.buildURL(path);
+          Logger.d("thumb url: %s", url);
 
           PlexHttpClient.getThumb(url, new InputStreamHandler() {
             @Override
             public void onSuccess(InputStream is) {
               try {
-                byte[] bytes = Utils.resizeImage(is, maxWidth, maxHeight);
-                simpleDiskCache.put(media.getCacheKey(thumb), new ByteArrayInputStream(bytes));
-                setThumb(bytes);
+                simpleDiskCache.put(media.getCacheKey(thumb), is);
+                setThumb(maxWidth, maxHeight);
               } catch (IOException e) {
                 Logger.d("Exception getting/saving thumb");
                 e.printStackTrace();

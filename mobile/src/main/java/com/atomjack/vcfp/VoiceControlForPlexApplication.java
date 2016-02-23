@@ -334,42 +334,21 @@ public class VoiceControlForPlexApplication extends Application
                 inputStream.reset();
               } catch (IOException e) {
               }
-//              getApplicationContext().getResources().getDimension(R.dimen.notification_icon_height);
-              float height = getApplicationContext().getResources().getDimension(getNotificationIconHeight(media, key));
-              Logger.d("height: %f", height);
-
-
-              byte[] bytes = Utils.resizeImage(inputStream, dpToPx(128), dpToPx(128));
-
               try {
                 Logger.d("image key: %s", media.getImageKey(key));
-                mSimpleDiskCache.put(media.getImageKey(key), new ByteArrayInputStream(bytes));
+                mSimpleDiskCache.put(media.getImageKey(key), inputStream);
 
                 inputStream.close();
                 Logger.d("Downloaded notification thumb. Redoing notification.");
                 setNotification(client, currentState, media, true);
               } catch (Exception e) {
+                e.printStackTrace();
               }
             }
           }
           return null;
         }
       }.execute();
-  }
-
-  private int getNotificationIconHeight(PlexMedia media, PlexMedia.IMAGE_KEY key) {
-    boolean big = key == PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB_BIG;
-    if(media.isMusic()) {
-      return big ? R.dimen.notification_large_icon_height_music : R.dimen.notification_icon_height_music;
-    }
-    return big ? R.dimen.notification_large_icon_height : R.dimen.notification_icon_height;
-
-  }
-
-  public int dpToPx(int dp) {
-    DisplayMetrics displayMetrics = getResources().getDisplayMetrics();
-    int px = Math.round(dp * (displayMetrics.xdpi / DisplayMetrics.DENSITY_DEFAULT));
-    return px;
   }
 
   public void fetchNotificationBitmap(final PlexMedia.IMAGE_KEY key, final PlexMedia media, final Runnable onFinish) {

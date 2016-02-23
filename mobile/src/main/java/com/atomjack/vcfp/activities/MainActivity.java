@@ -248,8 +248,18 @@ public class MainActivity extends AppCompatActivity
     currentNetworkState = NetworkState.getCurrentNetworkState(this);
 
     plexSubscription = VoiceControlForPlexApplication.getInstance().plexSubscription;
-
     castPlayerManager = VoiceControlForPlexApplication.getInstance().castPlayerManager;
+
+    if(gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.SUBSCRIBED_CLIENT, ""), PlexClient.class) != null) {
+      client = gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.SUBSCRIBED_CLIENT, ""), PlexClient.class);
+      if(client.isCastClient) {
+        if(!castPlayerManager.isSubscribed()) {
+          castPlayerManager.subscribe(client);
+        }
+      } else if(!plexSubscription.isSubscribed()) {
+        plexSubscription.subscribe(client);
+      }
+    }
 
     doingFirstTimeSetup = !prefs.get(Preferences.FIRST_TIME_SETUP_COMPLETED, false);
     // If auth token has already been set even though first time setup isn't complete, assume user
@@ -353,7 +363,6 @@ public class MainActivity extends AppCompatActivity
         if(state == PlayerState.STOPPED) {
           Logger.d("[NewMainActivity] onStopped");
           switchToFragment(getMainFragment());
-          VoiceControlForPlexApplication.getInstance().prefs.remove(Preferences.SUBSCRIBED_CLIENT);
         } else {
           playerFragment.setState(state);
         }

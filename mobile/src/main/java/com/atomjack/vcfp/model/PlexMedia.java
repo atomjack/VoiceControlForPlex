@@ -123,7 +123,6 @@ public abstract class PlexMedia implements Parcelable {
     height = IMAGE_SIZES.get(key)[1];
     String whichThumb = null;
     if(isMovie()) {
-      Logger.d("width/height: %d/%d", width, height);
       if(width > height)
         whichThumb = art;
       else
