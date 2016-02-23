@@ -253,14 +253,19 @@ public class MainActivity extends AppCompatActivity
     castPlayerManager = VoiceControlForPlexApplication.getInstance().castPlayerManager;
 
     if(gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.SUBSCRIBED_CLIENT, ""), PlexClient.class) != null) {
-      client = gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.SUBSCRIBED_CLIENT, ""), PlexClient.class);
-      if(client.isCastClient) {
-        if(!castPlayerManager.isSubscribed()) {
-          castPlayerManager.subscribe(client);
+      if(prefs.get(Preferences.CRASHED, false)) {
+        prefs.remove(Preferences.SUBSCRIBED_CLIENT);
+      } else {
+        client = gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.SUBSCRIBED_CLIENT, ""), PlexClient.class);
+        if (client.isCastClient) {
+          if (!castPlayerManager.isSubscribed()) {
+            castPlayerManager.subscribe(client);
+          }
+        } else if (!plexSubscription.isSubscribed()) {
+          plexSubscription.subscribe(client);
         }
-      } else if(!plexSubscription.isSubscribed()) {
-        plexSubscription.subscribe(client);
       }
+      prefs.put(Preferences.CRASHED, false);
     }
 
     doingFirstTimeSetup = !prefs.get(Preferences.FIRST_TIME_SETUP_COMPLETED, false);
@@ -338,8 +343,7 @@ public class MainActivity extends AppCompatActivity
     @Override
     public void onMediaChanged(PlexMedia media) {
       Logger.d("[MainActivity] onMediaChanged: %s", media.getTitle());
-
-      // TODO: Update everything in playerFragment
+      playerFragment.mediaChanged(media);
     }
 
     @Override
@@ -348,12 +352,7 @@ public class MainActivity extends AppCompatActivity
       int layout = getLayoutForMedia(media, state);
 
       if(layout != -1) {
-        if (client.isCastClient && false) {
-          // TODO: Init cast client
-
-        } else {
-          playerFragment.init(layout, client, media, plexSubscriptionListener);
-        }
+        playerFragment.init(layout, client, media, plexSubscriptionListener);
         switchToFragment(playerFragment);
       }
     }
@@ -448,11 +447,6 @@ public class MainActivity extends AppCompatActivity
       fragment = new SetupFragment();
       switchToFragment(fragment);
     }
-
-
-//    getSupportFragmentManager().beginTransaction().replace(R.id.flContent, fragment).commit();
-
-
   }
 
   @Override
@@ -829,7 +823,7 @@ public class MainActivity extends AppCompatActivity
     navigationFooter.addHeaderView(headerView);
     navigationFooter.getHeaderView(0).setVisibility(View.GONE);
 
-    drawerToggle.syncState();
+
 
     if(navigationViewMain.getHeaderView(0) != null)
       navigationViewMain.removeHeaderView(navigationViewMain.getHeaderView(0));
@@ -1203,9 +1197,9 @@ public class MainActivity extends AppCompatActivity
 
   @Override
   public boolean onOptionsItemSelected(MenuItem item) {
-    if (drawerToggle.onOptionsItemSelected(item)) {
-      return true;
-    }
+//    if (drawerToggle.onOptionsItemSelected(item)) {
+//      return true;
+//    }
     // The action bar home/up action should open or close the drawer.
     switch (item.getItemId()) {
       case android.R.id.home:

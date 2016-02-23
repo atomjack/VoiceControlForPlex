@@ -158,8 +158,14 @@ public abstract class PlayerFragment extends Fragment
     this.plexSubscriptionListener = plexSubscriptionListener;
   }
 
-  public void test() {
-    Logger.d("[PlayerFragment] test");
+  public void mediaChanged(PlexMedia media) {
+
+    nowPlayingMedia = media;
+    setCurrentTimeDisplay(getOffset(nowPlayingMedia));
+    seekBar.setMax(nowPlayingMedia.duration / 1000);
+    seekBar.setProgress(Integer.parseInt(nowPlayingMedia.viewOffset) / 1000);
+    durationDisplay.setText(VoiceControlForPlexApplication.secondsToTimecode(nowPlayingMedia.duration / 1000));
+    showNowPlaying();
   }
 
   @Override
@@ -312,17 +318,20 @@ public abstract class PlayerFragment extends Fragment
     attachUIElements();
 
     final FrameLayout nowPlayingPosterContainer = (FrameLayout)mainView.findViewById(R.id.nowPlayingPosterContainer);
-    ViewTreeObserver vto = nowPlayingPosterContainer.getViewTreeObserver();
-    vto.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-      @Override
-      public void onGlobalLayout() {
-        nowPlayingPosterContainer.getViewTreeObserver().removeOnGlobalLayoutListener(this);
-        int height = nowPlayingPosterContainer.getMeasuredHeight();
-        int width = nowPlayingPosterContainer.getMeasuredWidth();
-        Logger.d("Found dimensions: %d/%d", width, height);
-        setThumb(width, height);
-      }
-    });
+    Logger.d("nowPlayingPosterContainer: %s", nowPlayingPosterContainer);
+    if(nowPlayingPosterContainer != null) {
+      ViewTreeObserver vto = nowPlayingPosterContainer.getViewTreeObserver();
+      vto.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+        @Override
+        public void onGlobalLayout() {
+          nowPlayingPosterContainer.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+          int height = nowPlayingPosterContainer.getMeasuredHeight();
+          int width = nowPlayingPosterContainer.getMeasuredWidth();
+          Logger.d("Found dimensions: %d/%d", width, height);
+          setThumb(width, height);
+        }
+      });
+    }
   }
 
   @Override
@@ -361,7 +370,10 @@ public abstract class PlayerFragment extends Fragment
       }
     } else if(nowPlayingMedia instanceof PlexTrack) {
       PlexTrack track = (PlexTrack)nowPlayingMedia;
-      thumb = track.thumb;
+      if(getOrientation() == Configuration.ORIENTATION_LANDSCAPE)
+        thumb = track.art;
+      else
+        thumb = track.thumb;
     }
 
     if(thumb != null && thumb.equals("")) {
@@ -440,7 +452,8 @@ public abstract class PlayerFragment extends Fragment
     nowPlayingPoster = (ImageView) mainView.findViewById(R.id.nowPlayingPoster);
 
     ImageButton rewindButton = (ImageButton)mainView.findViewById(R.id.rewindButton);
-    rewindButton.setOnClickListener(new View.OnClickListener() {
+    if(rewindButton != null)
+      rewindButton.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View v) {
         doRewind();
@@ -448,12 +461,33 @@ public abstract class PlayerFragment extends Fragment
     });
 
     ImageButton forwardButton = (ImageButton)mainView.findViewById(R.id.forwardButton);
-    forwardButton.setOnClickListener(new View.OnClickListener() {
+    if(forwardButton != null)
+      forwardButton.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View v) {
         doForward();
       }
     });
+
+    ImageButton previousButton = (ImageButton)mainView.findViewById(R.id.previousButton);
+    if(previousButton != null)
+      previousButton.setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View v) {
+        doPrevious();
+      }
+    });
+
+    ImageButton nextButton = (ImageButton)mainView.findViewById(R.id.nextButton);
+    if(nextButton != null)
+      nextButton.setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View v) {
+        doNext();
+      }
+    });
+
+
 
     ImageButton mediaOptionsButton = (ImageButton)mainView.findViewById(R.id.mediaOptionsButton);
     if(mediaOptionsButton != null) {
@@ -537,10 +571,14 @@ public abstract class PlayerFragment extends Fragment
     return getResources().getConfiguration().orientation;
   }
 
+  // The follow methods are defined in the PlexPlayerFragment and CastPlayerFragment subclasses
   protected abstract void doRewind();
   protected abstract void doForward();
   protected abstract void doPlayPause();
   protected abstract void doStop();
+  protected abstract void doNext();
+  protected abstract void doPrevious();
+
   protected void doMic() {
     if(nowPlayingMedia.server != null) {
       android.content.Intent serviceIntent = new android.content.Intent(getActivity(), PlexSearchService.class);
@@ -564,8 +602,7 @@ public abstract class PlayerFragment extends Fragment
       startActivity(listenerIntent);
     }
   }
-  protected abstract void doNext();
-  protected abstract void doPrevious();
+
 
   protected void setStream(Stream stream) {
     client.setStream(stream);

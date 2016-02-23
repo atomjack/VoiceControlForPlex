@@ -16,7 +16,6 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.support.v4.app.NotificationCompat;
 import android.text.TextUtils;
-import android.util.DisplayMetrics;
 import android.view.View;
 import android.widget.RemoteViews;
 
@@ -55,7 +54,6 @@ import com.google.gson.reflect.TypeToken;
 import org.simpleframework.xml.Serializer;
 import org.simpleframework.xml.core.Persister;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -163,6 +161,15 @@ public class VoiceControlForPlexApplication extends Application
 
     plexSubscription = new PlexSubscription();
     castPlayerManager = new CastPlayerManager(getApplicationContext());
+
+    Thread.setDefaultUncaughtExceptionHandler (new Thread.UncaughtExceptionHandler()
+    {
+      @Override
+      public void uncaughtException (Thread thread, Throwable e)
+      {
+        handleUncaughtException (thread, e);
+      }
+    });
 
 //    chromecastVideoOptions.put(getString(R.string.original), new String[]{"12000", "1920x1080", "1"}); // Disabled for now. Don't know how to get PMS to direct play to chromecast
     chromecastVideoOptions.put("20mbps 720p", new String[]{"20000", "1280x720"});
@@ -795,5 +802,10 @@ public class VoiceControlForPlexApplication extends Application
         e.printStackTrace();
       }
     }
+  }
+
+  public void handleUncaughtException (Thread thread, Throwable e) {
+    e.printStackTrace();
+    prefs.put(Preferences.CRASHED, true);
   }
 }

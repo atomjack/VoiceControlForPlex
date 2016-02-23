@@ -180,6 +180,7 @@ public class PlexSubscription {
 
           String xml = requestContent.toString();
 //          Logger.d("xml: %s", xml);
+
           MediaContainer mediaContainer = new MediaContainer();
 
           try {
@@ -443,7 +444,10 @@ public class PlexSubscription {
                   public void onFinish(PlexMedia media) {
                     Logger.d("media: %s, listener: %s, state: %s", media.getTitle(), listener, currentState);
                     if(listener != null && currentState != PlayerState.STOPPED)
-                      listener.onPlayStarted(media, PlayerState.getState(timeline));
+                      if(nowPlayingMedia != null)
+                        listener.onMediaChanged(media);
+                      else
+                        listener.onPlayStarted(media, PlayerState.getState(timeline));
                     nowPlayingMedia = media;
                     VoiceControlForPlexApplication.getInstance().setNotification(mClient, currentState, media);
                   }

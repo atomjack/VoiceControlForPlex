@@ -79,15 +79,9 @@
     </LinearLayout>
 
 
-    <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="100dp"
-        android:layout_alignParentBottom="true"
-        android:background="@color/now_playing_background">
-
-        <include layout="@layout/playback_controls"
-                 android:layout_height="120dp"
-                 android:layout_width="fill_parent"/>
-    </RelativeLayout>
+    <include layout="@layout/playback_controls"
+             android:layout_height="120dp"
+             android:background="@color/now_playing_background"
+             android:layout_width="fill_parent"/>
 
 </LinearLayout>
