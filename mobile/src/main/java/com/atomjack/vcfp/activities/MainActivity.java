@@ -275,7 +275,8 @@ public class MainActivity extends AppCompatActivity
       prefs.put(Preferences.FIRST_TIME_SETUP_COMPLETED, true);
     }
 
-    // If plex email hasn't been saved, fetch it and refresh the navigation drawer when done
+    // If plex email hasn't been saved, fetch it and refresh the navigation drawer when done. Previous versions
+    // of the app were not saving the email, which is needed for the user icon.
     checkForMissingPlexEmail();
 
     setContentView(R.layout.new_activity_main);
@@ -368,7 +369,6 @@ public class MainActivity extends AppCompatActivity
         }
       } else {
         Logger.d("Got state change to %s, but for some reason playerFragment is null", state);
-         getLayoutForMedia(media, state);
       }
 
     }
@@ -412,6 +412,21 @@ public class MainActivity extends AppCompatActivity
     Fragment fragment;
     if (!doingFirstTimeSetup) { // TODO: check for authToken here - if it is defined, and first time setup has not been completed, user has upgraded, so bypass setup
 
+      mMediaRouter = MediaRouter.getInstance(getApplicationContext());
+      mMediaRouteSelector = new MediaRouteSelector.Builder()
+              .addControlCategory(CastMediaControlIntent.categoryForCast(BuildConfig.CHROMECAST_APP_ID))
+              .build();
+      mMediaRouterCallback = new MediaRouterCallback();
+      mMediaRouter.addCallback(mMediaRouteSelector, mMediaRouterCallback, MediaRouter.CALLBACK_FLAG_REQUEST_DISCOVERY);
+
+      server = gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.SERVER, ""), PlexServer.class);
+      if (server == null)
+        server = PlexServer.getScanAllServer();
+
+      client = gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.CLIENT, ""), PlexClient.class);
+
+      setupNavigationDrawer();
+
       Logger.d("Intent action: %s", getIntent().getAction());
       if(getIntent().getAction() != null && getIntent().getAction().equals(ACTION_SHOW_NOW_PLAYING)) {
         handleShowNowPlayingIntent(getIntent());
@@ -425,21 +440,6 @@ public class MainActivity extends AppCompatActivity
         final WhatsNewDialog whatsNewDialog = new WhatsNewDialog(this);
         whatsNewDialog.show();
 
-        mMediaRouter = MediaRouter.getInstance(getApplicationContext());
-        mMediaRouteSelector = new MediaRouteSelector.Builder()
-                .addControlCategory(CastMediaControlIntent.categoryForCast(BuildConfig.CHROMECAST_APP_ID))
-                .build();
-        mMediaRouterCallback = new MediaRouterCallback();
-        mMediaRouter.addCallback(mMediaRouteSelector, mMediaRouterCallback, MediaRouter.CALLBACK_FLAG_PERFORM_ACTIVE_SCAN);
-
-        server = gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.SERVER, ""), PlexServer.class);
-        if (server == null)
-          server = PlexServer.getScanAllServer();
-
-        client = gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.CLIENT, ""), PlexClient.class);
-
-
-        setupNavigationDrawer();
         switchToFragment(fragment);
       }
     } else {
@@ -483,6 +483,7 @@ public class MainActivity extends AppCompatActivity
   private Runnable autoDisconnectPlayerTimer = new Runnable() {
     @Override
     public void run() {
+      Logger.d("Auto disconnecting player");
       if(playerFragment.isVisible()) {
         VoiceControlForPlexApplication.getInstance().cancelNotification();
         switchToFragment(mainFragment);
@@ -500,14 +501,10 @@ public class MainActivity extends AppCompatActivity
       mDrawer.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);
     } else
       mDrawer.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
-    if(playerFragment != null && playerFragment.isVisible()) {
-      Logger.d("Setting auto disconnect for 3 seconds");
-      handler.postDelayed(autoDisconnectPlayerTimer, 3000);
-    }
   }
 
   private void doAutomaticDeviceScan() {
-    if(BuildConfig.CHROMECAST_REQUIRES_PURCHASE) {
+    if(BuildConfig.AUTO_REFRESH_DEVICES) {
       Logger.d("Doing automatic device scan");
       // Kick off a scan for servers, if it's been more than five minutes since the last one.
       // We'll do this every five, to keep the list up to date. Also, if the last server scan didn't
@@ -973,6 +970,9 @@ public class MainActivity extends AppCompatActivity
     if(layout != -1) {
       playerFragment.init(layout, client, media, plexSubscriptionListener);
       switchToFragment(playerFragment);
+      int seconds = intent.getBooleanExtra(com.atomjack.shared.Intent.EXTRA_STARTING_PLAYBACK, false) ? 10 : 3;
+      Logger.d("Setting auto disconnect for %d seconds", seconds);
+      handler.postDelayed(autoDisconnectPlayerTimer, seconds*1000);
     }
   }
 
@@ -1301,7 +1301,9 @@ public class MainActivity extends AppCompatActivity
               Logger.d("Changing buttons");
               button.setVisibility(View.VISIBLE);
               spinnerImage.setVisibility(View.GONE);
-              adapter.setClients(VoiceControlForPlexApplication.clients);
+              Logger.d("Setting %d clients", VoiceControlForPlexApplication.getAllClients().size());
+              adapter.setClients(VoiceControlForPlexApplication.getAllClients());
+
               adapter.notifyDataSetChanged();
               onClientRefreshFinished = null;
             }
@@ -1424,8 +1426,10 @@ public class MainActivity extends AppCompatActivity
       client.isCastClient = true;
       client.name = route.getName();
       client.product = route.getDescription();
+//      client.castRouteInfo = route;
       client.castDevice = CastDevice.getFromBundle(route.getExtras());
       client.machineIdentifier = client.castDevice.getDeviceId();
+//      VoiceControlForPlexApplication.castRoutes.put(client.machineIdentifier, route);
       VoiceControlForPlexApplication.castClients.put(client.name, client);
       Logger.d("Added cast client %s (%s)", client.name, client.machineIdentifier);
       VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.SAVED_CAST_CLIENTS, gsonWrite.toJson(VoiceControlForPlexApplication.castClients));

@@ -88,7 +88,7 @@ public class PlexControlService extends IntentService {
         }
       } else if (intent.getAction().equals(ACTION_REWIND)) {
         if(client.isCastClient) {
-
+          castPlayerManager.seekTo(castPlayerManager.getPosition() - 15);
         } else {
           if (t != null) {
             int position = t.time;
@@ -97,7 +97,7 @@ public class PlexControlService extends IntentService {
         }
       } else if(intent.getAction().equals(ACTION_FORWARD)) {
         if(client.isCastClient) {
-
+          castPlayerManager.seekTo(castPlayerManager.getPosition() + 30);
         } else {
           if (t != null) {
             int position = t.time;

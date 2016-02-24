@@ -37,6 +37,8 @@ public class CastPlayerManager {
   private String mSessionId;
   private String plexSessionId;
 
+  private int position = 0; // current position in seconds of the playing media
+
   public static final class PARAMS {
     public static final String MEDIA_TYPE = "media_type";
     public static final String MEDIA_TYPE_VIDEO = "media_type_video";
@@ -138,10 +140,9 @@ public class CastPlayerManager {
       castManager.disconnect();
     }
     Logger.d("selecting device: %s", _client.castDevice);
-    castManager.onDeviceSelected(_client.castDevice);
-//    castManager.setDevice(_client.castDevice);
+    // TODO: Figure out routeinfo here
+    castManager.onDeviceSelected(_client.castDevice, null);
     Logger.d("device selected");
-//    castConsumer.onApp
     castConsumer.setOnConnected(new Runnable() {
       @Override
       public void run() {
@@ -275,6 +276,7 @@ public class CastPlayerManager {
           obj.put(PARAMS.RESUME, VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.RESUME, false));
           sendMessage(obj);
           listener.onTimeUpdate(currentState, seconds);
+          position = seconds;
         } catch (Exception ex) {
         }
       }
@@ -358,16 +360,24 @@ public class CastPlayerManager {
       @Override
       public void onDataMessageReceived(String message) {
 //        Logger.d("DATA MESSAGE RECEIVED: %s", message);
+
         try {
           JSONObject obj = new JSONObject(message);
           if(obj.has("event") && obj.has("status")) {
             if(obj.getString("event").equals(RECEIVER_EVENTS.PLAYER_STATUS_CHANGED)) {
               Logger.d("playerStatusChanged: %s", obj.getString("status"));
+              PlayerState oldState = currentState;
               currentState = PlayerState.getState(obj.getString("status"));
-              if(listener != null)
+              Logger.d("current state: %s", currentState);
+
+              if(listener != null && oldState != currentState)
                 listener.onStateChanged(nowPlayingMedia, currentState);
+              if(currentState != PlayerState.STOPPED) {
+                VoiceControlForPlexApplication.getInstance().setNotification(mClient, currentState, nowPlayingMedia);
+              }
             }
           } else if(obj.has("event") && obj.getString("event").equals(RECEIVER_EVENTS.TIME_UPDATE) && obj.has("currentTime")) {
+            position = obj.getInt("currentTime");
             if(listener != null)
               listener.onTimeUpdate(currentState, obj.getInt("currentTime"));
           } else if(obj.has("event") && obj.getString("event").equals(RECEIVER_EVENTS.PLAYLIST_ADVANCE) && obj.has("media") && obj.has("type")) {
@@ -379,17 +389,26 @@ public class CastPlayerManager {
             if(listener != null)
               listener.onMediaChanged(nowPlayingMedia);
           } else if(obj.has("event") && obj.getString("event").equals(RECEIVER_EVENTS.GET_PLAYBACK_STATE) && obj.has("state")) {
+            Logger.d("Got playback state back: %s", obj.getString("state"));
+            PlayerState oldState = currentState;
             currentState = PlayerState.getState(obj.getString("state"));
-            PlexMedia media = null;
             if(obj.has("media") && obj.has("type") && obj.has("client")) {
               if(obj.getString("type").equals(PARAMS.MEDIA_TYPE_VIDEO))
-                media = VoiceControlForPlexApplication.gsonRead.fromJson(obj.getString("media"), PlexVideo.class);
+                nowPlayingMedia = VoiceControlForPlexApplication.gsonRead.fromJson(obj.getString("media"), PlexVideo.class);
               else
-                media = VoiceControlForPlexApplication.gsonRead.fromJson(obj.getString("media"), PlexTrack.class);
+                nowPlayingMedia = VoiceControlForPlexApplication.gsonRead.fromJson(obj.getString("media"), PlexTrack.class);
               mClient = VoiceControlForPlexApplication.gsonRead.fromJson(obj.getString("client"), PlexClient.class);
             }
-            if(listener != null)
-              listener.onStateChanged(media, PlayerState.getState(obj.getString("state")));
+            if(listener != null && oldState != currentState) {
+              if(oldState == PlayerState.STOPPED)
+                listener.onPlayStarted(nowPlayingMedia, currentState);
+              else
+                listener.onStateChanged(nowPlayingMedia, PlayerState.getState(obj.getString("state")));
+            }
+            if(currentState != PlayerState.STOPPED) {
+              VoiceControlForPlexApplication.getInstance().setNotification(mClient, currentState, nowPlayingMedia);
+            } else
+              VoiceControlForPlexApplication.getInstance().cancelNotification();
           } else if(obj.has("event") && obj.getString("event").equals(RECEIVER_EVENTS.DEVICE_CAPABILITIES) && obj.has("capabilities")) {
             Capabilities capabilities = VoiceControlForPlexApplication.gsonRead.fromJson(obj.getString("capabilities"), Capabilities.class);
             mClient.isAudioOnly = !capabilities.displaySupported;
@@ -621,5 +640,9 @@ public class CastPlayerManager {
   public void subtitlesOff() {
     mClient.setStream(nowPlayingMedia.getStreams(Stream.SUBTITLE).get(0));
     nowPlayingMedia.setActiveStream(nowPlayingMedia.getStreams(Stream.SUBTITLE).get(0));
+  }
+
+  public int getPosition() {
+    return position;
   }
 }

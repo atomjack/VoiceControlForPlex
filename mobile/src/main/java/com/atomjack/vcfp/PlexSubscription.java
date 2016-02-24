@@ -423,6 +423,7 @@ public class PlexSubscription {
         if(timelines != null) {
           for (final Timeline timeline : timelines) {
             if (timeline.key != null) {
+              currentTimeline = timeline;
               if(timeline.state == null)
                 timeline.state = "stopped";
 

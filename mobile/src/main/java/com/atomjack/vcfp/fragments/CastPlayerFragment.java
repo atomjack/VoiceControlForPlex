@@ -24,7 +24,7 @@ public class CastPlayerFragment extends PlayerFragment {
   @Override
   protected void doRewind() {
     if(position > -1) {
-      nowPlayingMedia.viewOffset = Integer.toString(position - 15000);
+      nowPlayingMedia.viewOffset = Integer.toString((position * 1000) - 15000);
       if (Integer.parseInt(nowPlayingMedia.viewOffset) < 0) {
         position = 0;
         nowPlayingMedia.viewOffset = "0";
@@ -35,8 +35,9 @@ public class CastPlayerFragment extends PlayerFragment {
 
   @Override
   protected void doForward() {
+    Logger.d("Doing forward, position: %d", position);
     if(position > -1) {
-      nowPlayingMedia.viewOffset = Integer.toString(position + 30000);
+      nowPlayingMedia.viewOffset = Integer.toString((position * 1000) + 30000);
       castPlayerManager.seekTo(Integer.parseInt(nowPlayingMedia.viewOffset) / 1000);
     }
   }
@@ -76,7 +77,7 @@ public class CastPlayerFragment extends PlayerFragment {
   public void onStopTrackingTouch(SeekBar seekBar) {
     Logger.d("stopped changing progress: %d", seekBar.getProgress());
     try {
-      nowPlayingMedia.viewOffset = Integer.toString(seekBar.getProgress());
+      nowPlayingMedia.viewOffset = Integer.toString(seekBar.getProgress() * 1000);
       castPlayerManager.seekTo(Integer.parseInt(nowPlayingMedia.viewOffset) / 1000);
     } catch (Exception ex) {
       ex.printStackTrace();

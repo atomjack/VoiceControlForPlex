@@ -15,6 +15,7 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.support.v4.app.NotificationCompat;
+import android.support.v7.media.MediaRouter;
 import android.text.TextUtils;
 import android.view.View;
 import android.widget.RemoteViews;
@@ -113,6 +114,7 @@ public class VoiceControlForPlexApplication extends Application
 	public static ConcurrentHashMap<String, PlexServer> servers = new ConcurrentHashMap<String, PlexServer>();
 	public static Map<String, PlexClient> clients = new HashMap<String, PlexClient>();
 	public static Map<String, PlexClient> castClients = new HashMap<String, PlexClient>();
+  public static Map<String, MediaRouter.RouteInfo> castRoutes;
 
 	private static Serializer serial = new Persister();
 

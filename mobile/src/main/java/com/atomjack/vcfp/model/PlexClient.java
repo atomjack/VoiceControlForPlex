@@ -2,6 +2,7 @@ package com.atomjack.vcfp.model;
 
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.support.v7.media.MediaRouter;
 
 import com.atomjack.shared.Logger;
 import com.atomjack.vcfp.Utils;
@@ -15,6 +16,7 @@ import org.simpleframework.xml.Root;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 
 import retrofit.Call;
 import retrofit.Callback;
@@ -23,7 +25,8 @@ import retrofit.Response;
 @Root(name="Server", strict=false)
 public class PlexClient extends PlexDevice {
 	public boolean isCastClient = false;
-	public CastDevice castDevice;
+//  public List<MediaRouter.RouteInfo> castRoutes;
+  public CastDevice castDevice;
 	public boolean isAudioOnly = false;
 
 	public PlexClient() {
@@ -36,7 +39,6 @@ public class PlexClient extends PlexDevice {
 		client.address = device.connections.get(0).address;
 		client.port = device.connections.get(0).port;
 		client.version = device.productVersion;
-
 		return client;
 	}
 

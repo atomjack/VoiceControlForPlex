@@ -46,11 +46,6 @@
             android:name=".activities.OldMainActivity"
             android:label="@string/app_name"
              >
-            <!--<intent-filter>-->
-                <!--<action android:name="android.intent.action.MAIN" />-->
-                <!--<category android:name="android.intent.category.LAUNCHER" />-->
-                <!--<action android:name="com.twofortyfouram.locale.intent.action.EDIT_SETTING" />-->
-            <!--</intent-filter>-->
         </activity>
         <service android:name=".services.PlexSearchService"
                   android:label="Plex Search">

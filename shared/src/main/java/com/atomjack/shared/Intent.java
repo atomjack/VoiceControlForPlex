@@ -29,6 +29,7 @@ public class Intent {
   public final static String EXTRA_CONNECT_TO_CLIENT = "com.atomjack.vcfp.intent.EXTRA_CONNECT_TO_CLIENT";
   public final static String SUBSCRIBED = "com.atomjack.vcfp.intent.SUBSCRIBED";
   public final static String EXTRA_LAYOUT = "com.atomjack.vcfp.intent.EXTRA_LAYOUT";
+  public final static String EXTRA_STARTING_PLAYBACK = "com.atomjack.vcfp.intent.EXTRA_STARTING_PLAYBACK";
 
   public final static String EXTRA_QUERYTEXT = "com.atomjack.vcfp.intent.EXTRA_QUERYTEXT";
 

@@ -1387,6 +1387,7 @@ public class PlexSearchService extends Service {
 		Intent nowPlayingIntent = new Intent(this, MainActivity.class);
     nowPlayingIntent.setAction(MainActivity.ACTION_SHOW_NOW_PLAYING);
     nowPlayingIntent.putExtra(WearConstants.FROM_WEAR, fromWear);
+    nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_STARTING_PLAYBACK, true);
 		nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_MEDIA, media);
 		nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_CLIENT, client);
 		nowPlayingIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
