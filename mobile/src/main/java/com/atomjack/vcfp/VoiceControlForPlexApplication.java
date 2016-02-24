@@ -448,7 +448,7 @@ public class VoiceControlForPlexApplication extends Application
     try {
       NotificationCompat.Builder mBuilder =
               new NotificationCompat.Builder(VoiceControlForPlexApplication.this)
-                      .setSmallIcon(R.drawable.ic_launcher)
+                      .setSmallIcon(R.drawable.vcfp_notification)
                       .setAutoCancel(false)
                       .setOngoing(true)
                       .setOnlyAlertOnce(true)

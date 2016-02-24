@@ -44,7 +44,6 @@ import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
-import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -484,8 +483,10 @@ public class MainActivity extends AppCompatActivity
   private Runnable autoDisconnectPlayerTimer = new Runnable() {
     @Override
     public void run() {
-      if(playerFragment.isVisible())
+      if(playerFragment.isVisible()) {
+        VoiceControlForPlexApplication.getInstance().cancelNotification();
         switchToFragment(mainFragment);
+      }
     }
   };
 
@@ -1065,7 +1066,20 @@ public class MainActivity extends AppCompatActivity
   }
 
   public void navMenuHelp(MenuItem item) {
+    final Dialog usageDialog = new Dialog(this);
+    usageDialog.setContentView(R.layout.help_dialog);
+    usageDialog.setTitle(R.string.help_usage_button);
+    Button button = (Button)usageDialog.findViewById(R.id.helpCloseButton);
+    button.setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View v) {
+        usageDialog.dismiss();
+      }
+    });
+    usageDialog.show();
+    /*
     AlertDialog.Builder usageDialog = new AlertDialog.Builder(this);
+
     usageDialog.setTitle(R.string.help_usage_button);
     usageDialog.setMessage(R.string.help_usage);
     usageDialog.setPositiveButton(R.string.got_it, new DialogInterface.OnClickListener() {
@@ -1074,6 +1088,7 @@ public class MainActivity extends AppCompatActivity
       }
     });
     usageDialog.show();
+    */
   }
 
   private void setNavGroup(int group) {
@@ -1897,7 +1912,7 @@ public class MainActivity extends AppCompatActivity
   protected void onRestoreInstanceState(Bundle savedInstanceState) {
     super.onRestoreInstanceState(savedInstanceState);
     // TODO: Restore instance state?
-    client = (PlexClient)savedInstanceState.getParcelable(com.atomjack.shared.Intent.EXTRA_CLIENT);
+    client = savedInstanceState.getParcelable(com.atomjack.shared.Intent.EXTRA_CLIENT);
   }
 
   @Override

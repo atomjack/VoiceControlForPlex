@@ -10,6 +10,7 @@
               android:icon="@drawable/menu_about"
               android:onClick="showAbout" />
         <item android:id="@+id/menu_install_shortcut"
+              android:icon="@drawable/menu_home"
               android:title="@string/menu_install_shortcut"
               android:onClick="installShortcut" />
         <item android:id="@+id/menu_donate"
