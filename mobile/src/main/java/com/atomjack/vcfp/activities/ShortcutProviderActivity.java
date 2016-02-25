@@ -1,14 +1,23 @@
 package com.atomjack.vcfp.activities;
 
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.CheckBox;
+import android.widget.ListView;
+import android.widget.TextView;
 
 import com.atomjack.shared.Logger;
 import com.atomjack.shared.Preferences;
 import com.atomjack.vcfp.R;
+import com.atomjack.vcfp.adapters.PlexListAdapter;
 import com.atomjack.vcfp.interfaces.ScanHandler;
 import com.atomjack.shared.UriDeserializer;
 import com.atomjack.shared.UriSerializer;
@@ -24,7 +33,7 @@ import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class ShortcutProviderActivity extends VCFPActivity {
+public class ShortcutProviderActivity extends AppCompatActivity implements DialogInterface.OnCancelListener {
 	private Gson gsonWrite = new GsonBuilder()
 					.registerTypeAdapter(Uri.class, new UriSerializer())
 					.create();
@@ -36,6 +45,10 @@ public class ShortcutProviderActivity extends VCFPActivity {
 	private PlexClient client;
 	ConcurrentHashMap<String, PlexServer> servers;
 	HashMap<String, PlexClient> clients;
+
+  private  boolean cancelScan = false;
+  private Dialog deviceSelectDialog;
+  private boolean clientScanCanceled = false;
 
 	private boolean resume = false;
 
@@ -93,6 +106,7 @@ public class ShortcutProviderActivity extends VCFPActivity {
 				finish();
 			}
 		});
+    chooserDialog.setOnCancelListener(this);
 		chooserDialog.show();
 	}
 
@@ -139,4 +153,101 @@ public class ShortcutProviderActivity extends VCFPActivity {
 	protected void onResume() {
 		super.onResume();
 	}
+
+  public void showPlexServers(ConcurrentHashMap<String, PlexServer> servers, final ScanHandler scanHandler) {
+    if(cancelScan) {
+      cancelScan = false;
+      return;
+    }
+
+    deviceSelectDialog = getDeviceSelectDialog(true, getResources().getString(R.string.select_plex_server));
+    deviceSelectDialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
+      @Override
+      public void onCancel(DialogInterface dialog) {
+        finish();
+      }
+    });
+    deviceSelectDialog.show();
+
+    final ListView serverListView = (ListView) deviceSelectDialog.findViewById(R.id.serverListView);
+    if(servers == null)
+      servers = new ConcurrentHashMap<>(VoiceControlForPlexApplication.servers);
+    final PlexListAdapter adapter = new PlexListAdapter(this, PlexListAdapter.TYPE_SERVER);
+    adapter.setServers(servers);
+    serverListView.setAdapter(adapter);
+    serverListView.setOnItemClickListener(new ListView.OnItemClickListener() {
+
+      @Override
+      public void onItemClick(AdapterView<?> parentAdapter, View view, int position, long id) {
+        Logger.d("Clicked position %d", position);
+        PlexServer s = (PlexServer)parentAdapter.getItemAtPosition(position);
+        deviceSelectDialog.dismiss();
+        scanHandler.onDeviceSelected(s, false);
+      }
+    });
+  }
+
+  public Dialog getDeviceSelectDialog(boolean isServer, String title) {
+    AlertDialog.Builder builder = new AlertDialog.Builder(this);
+    LayoutInflater inflater = getLayoutInflater();
+    View layout = inflater.inflate(R.layout.device_select, null);
+    if(VoiceControlForPlexApplication.getInstance().unauthorizedLocalServersFound.size() > 0 && isServer) {
+      layout.findViewById(R.id.unauthorizedLocalServerFoundFrameView).setVisibility(View.VISIBLE);
+      if(VoiceControlForPlexApplication.getInstance().isLoggedIn()) {
+        layout.findViewById(R.id.unauthorizedLocalServerFoundTextViewLoggedIn).setVisibility(View.VISIBLE);
+        layout.findViewById(R.id.unauthorizedLocalServerFoundTextViewLoggedOut).setVisibility(View.INVISIBLE);
+      } else {
+        layout.findViewById(R.id.unauthorizedLocalServerFoundTextViewLoggedOut).setVisibility(View.VISIBLE);
+        layout.findViewById(R.id.unauthorizedLocalServerFoundTextViewLoggedIn).setVisibility(View.INVISIBLE);
+      }
+    } else {
+      layout.findViewById(R.id.unauthorizedLocalServerFoundFrameView).setVisibility(View.GONE);
+    }
+    builder.setView(layout);
+    final TextView headerView = (TextView)layout.findViewById(R.id.deviceListHeader);
+    headerView.setText(title);
+    return builder.create();
+  }
+
+  public void showPlexClients(boolean showResume, final ScanHandler onFinish) {
+    if(cancelScan) {
+      cancelScan = false;
+      return;
+    }
+    deviceSelectDialog = getDeviceSelectDialog(false, getString(R.string.select_plex_client));
+
+
+    deviceSelectDialog.setOnCancelListener(this);
+    deviceSelectDialog.show();
+    if(deviceSelectDialog.findViewById(R.id.unauthorizedLocalServerFoundFrameView) != null)
+      deviceSelectDialog.findViewById(R.id.unauthorizedLocalServerFoundFrameView).setVisibility(View.GONE);
+
+    if (showResume) {
+      CheckBox resumeCheckbox = (CheckBox) deviceSelectDialog.findViewById(R.id.serverListResume);
+      resumeCheckbox.setVisibility(View.VISIBLE);
+    }
+
+    final ListView clientListView = (ListView) deviceSelectDialog.findViewById(R.id.serverListView);
+    final PlexListAdapter adapter = new PlexListAdapter(this, PlexListAdapter.TYPE_CLIENT);
+    adapter.setClients(VoiceControlForPlexApplication.getAllClients());
+    clientListView.setAdapter(adapter);
+    clientListView.setOnItemClickListener(new ListView.OnItemClickListener() {
+
+      @Override
+      public void onItemClick(AdapterView<?> parentAdapter, View view, int position,
+                              long id) {
+        PlexClient s = (PlexClient) parentAdapter.getItemAtPosition(position);
+        deviceSelectDialog.dismiss();
+        CheckBox resumeCheckbox = (CheckBox) deviceSelectDialog.findViewById(R.id.serverListResume);
+        if (onFinish != null)
+          onFinish.onDeviceSelected(s, resumeCheckbox.isChecked());
+      }
+
+    });
+  }
+
+  @Override
+  public void onCancel(DialogInterface dialog) {
+    finish();
+  }
 }

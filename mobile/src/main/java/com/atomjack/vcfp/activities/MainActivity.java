@@ -13,6 +13,7 @@ import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.graphics.drawable.AnimationDrawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -32,6 +33,7 @@ import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.media.MediaRouteSelector;
 import android.support.v7.media.MediaRouter;
+import android.support.v7.view.ContextThemeWrapper;
 import android.support.v7.widget.Toolbar;
 import android.util.DisplayMetrics;
 import android.util.TypedValue;
@@ -41,14 +43,17 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.CheckedTextView;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ProgressBar;
+import android.widget.SimpleAdapter;
 import android.widget.TextView;
 
 import com.android.vending.billing.IabHelper;
@@ -90,13 +95,13 @@ import com.atomjack.vcfp.net.PlexHttpClient;
 import com.atomjack.vcfp.net.PlexHttpUserHandler;
 import com.atomjack.vcfp.net.PlexPinResponseHandler;
 import com.atomjack.vcfp.services.PlexScannerService;
-import com.bugsense.trace.BugSenseHandler;
 import com.cubeactive.martin.inscription.WhatsNewDialog;
 import com.google.android.gms.cast.CastDevice;
 import com.google.android.gms.cast.CastMediaControlIntent;
 import com.google.android.gms.wearable.DataMap;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.splunk.mint.Mint;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -401,7 +406,7 @@ public class MainActivity extends AppCompatActivity
     handler = new Handler();
 
     if(BuildConfig.USE_BUGSENSE)
-      BugSenseHandler.initAndStartSession(getApplicationContext(), BUGSENSE_APIKEY);
+      Mint.initAndStartSession(getApplicationContext(), BUGSENSE_APIKEY);
 
     // Set a Toolbar to replace the ActionBar.
     toolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -1453,10 +1458,10 @@ public class MainActivity extends AppCompatActivity
 
   public void showAbout(final MenuItem item) {
     navigationViewMain.setSelected(false);
-    AlertDialog.Builder alertDialog = new AlertDialog.Builder(MainActivity.this)
-            .setTitle(R.string.app_name)
-            .setMessage(R.string.about_text);
-
+    AlertDialog.Builder alertDialog = new AlertDialog.Builder(MainActivity.this);
+    LayoutInflater inflater = getLayoutInflater();
+    View layout = inflater.inflate(R.layout.popup_about, null);
+    alertDialog.setView(layout);
     alertDialog.show();
     handler.postDelayed(new Runnable() {
       @Override
@@ -1469,7 +1474,6 @@ public class MainActivity extends AppCompatActivity
 
   public void installShortcut(MenuItem item) {
     Intent intent = new Intent(this, ShortcutProviderActivity.class);
-
     startActivityForResult(intent, RESULT_SHORTCUT_CREATED);
   }
 
@@ -1621,18 +1625,42 @@ public class MainActivity extends AppCompatActivity
 
   public void cinemaTrailers(MenuItem item) {
     AlertDialog.Builder builder = new AlertDialog.Builder(this);
-    builder.setTitle(getString(R.string.cinema_trailers_title));
-    final CharSequence[] items = {getString(R.string.none), "1", "2", "3", "4", "5"};
+    LayoutInflater inflater = getLayoutInflater();
+    View layout = inflater.inflate(R.layout.popup_cinema_trailers, null);
+    final ListView listView = (ListView)layout.findViewById(R.id.cinemaTrailersList);
+    List<String> list = new ArrayList<>();
+    list.add(getString(R.string.none));
+    list.add("1");
+    list.add("2");
+    list.add("3");
+    list.add("4");
+    list.add("5");
+    ArrayAdapter arrayAdapter = new ArrayAdapter(getApplicationContext(), android.R.layout.simple_list_item_single_choice, list);
+
+    listView.setAdapter(arrayAdapter);
     int numTrailers = VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.NUM_CINEMA_TRAILERS, 0);
-    builder.setSingleChoiceItems(items, numTrailers, new DialogInterface.OnClickListener() {
+    listView.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
+    listView.setItemChecked(numTrailers, true);
+
+    builder.setView(layout);
+
+    final AlertDialog dialog = builder.create();
+    listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
       @Override
-      public void onClick(DialogInterface dialog, int which) {
-        Logger.d("clicked %d", which);
-        VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.NUM_CINEMA_TRAILERS, which);
-        dialog.dismiss();
+      public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+        CheckedTextView item = (CheckedTextView)view;
+        item.setChecked(true);
+        VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.NUM_CINEMA_TRAILERS, position);
+        handler.postDelayed(new Runnable() {
+          @Override
+          public void run() {
+            dialog.dismiss();
+          }
+        }, 500);
       }
     });
-    builder.create().show();
+    dialog.show();
+
   }
 
   protected void showChromecastPurchase(PlexClient client, Runnable onSuccess) {
@@ -1733,10 +1761,37 @@ public class MainActivity extends AppCompatActivity
   };
 
   public void showWearOptions(MenuItem item) {
-    AlertDialog.Builder chooserDialog = new AlertDialog.Builder(this);
+    AlertDialog.Builder builder = new AlertDialog.Builder(this);
+    LayoutInflater inflater = getLayoutInflater();
+    View layout = inflater.inflate(R.layout.popup_wear_options, null);
+    builder.setView(layout);
+    final AlertDialog chooserDialog = builder.create();
+    Button playPauseButton = (Button)layout.findViewById(R.id.wearOptionsPlayPauseButton);
+    playPauseButton.setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View v) {
+        DataMap dataMap = new DataMap();
+        dataMap.putBoolean(WearConstants.PRIMARY_FUNCTION_VOICE_INPUT, true);
+        new SendToDataLayerThread(WearConstants.SET_WEAR_OPTIONS, dataMap, MainActivity.this).start();
+        chooserDialog.dismiss();
+      }
+    });
+    Button voiceInputButton = (Button)layout.findViewById(R.id.wearOptionsVoiceInputButton);
+    voiceInputButton.setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View v) {
+        DataMap dataMap = new DataMap();
+        dataMap.putBoolean(WearConstants.PRIMARY_FUNCTION_VOICE_INPUT, false);
+        new SendToDataLayerThread(WearConstants.SET_WEAR_OPTIONS, dataMap, MainActivity.this).start();
+        chooserDialog.dismiss();
+      }
+    });
+    chooserDialog.show();
+
+    /*
     chooserDialog.setTitle(R.string.wear_primary_function);
     chooserDialog.setMessage(R.string.wear_primary_function_option_description);
-    chooserDialog.setPositiveButton(R.string.voice_input, new DialogInterface.OnClickListener() {
+      chooserDialog.setPositiveButton(R.string.voice_input, new DialogInterface.OnClickListener() {
       public void onClick(DialogInterface dialog, int id) {
         DataMap dataMap = new DataMap();
         dataMap.putBoolean(WearConstants.PRIMARY_FUNCTION_VOICE_INPUT, true);
@@ -1752,7 +1807,7 @@ public class MainActivity extends AppCompatActivity
         dialog.dismiss();
       }
     });
-    chooserDialog.show();
+    */
   }
 
   public void showChromecastVideoOptions(MenuItem item) {

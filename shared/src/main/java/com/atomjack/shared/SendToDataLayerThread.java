@@ -2,7 +2,9 @@ package com.atomjack.shared;
 
 import android.content.Context;
 import android.net.Uri;
+import android.os.Bundle;
 
+import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.wearable.DataApi;
@@ -35,6 +37,23 @@ public class SendToDataLayerThread extends Thread {
     dataMap = data;
     if(googleApiClient == null) {
       googleApiClient = new GoogleApiClient.Builder(context)
+              .addConnectionCallbacks(new GoogleApiClient.ConnectionCallbacks() {
+                @Override
+                public void onConnected(Bundle connectionHint) {
+                  Logger.d("onConnected: " + connectionHint);
+                  // Now you can use the Data Layer API
+                }
+                @Override
+                public void onConnectionSuspended(int cause) {
+                  Logger.d("onConnectionSuspended: " + cause);
+                }
+              })
+              .addOnConnectionFailedListener(new GoogleApiClient.OnConnectionFailedListener() {
+                @Override
+                public void onConnectionFailed(ConnectionResult result) {
+                  Logger.d("onConnectionFailed: " + result);
+                }
+              })
               .addApi(Wearable.API)
               .build();
       googleApiClient.connect();

@@ -40,7 +40,6 @@ import com.atomjack.vcfp.model.Stream;
 import com.atomjack.vcfp.net.PlexHttpClient;
 import com.atomjack.vcfp.net.PlexHttpMediaContainerHandler;
 import com.atomjack.vcfp.net.PlexHttpResponseHandler;
-import com.bugsense.trace.BugSenseHandler;
 import com.google.android.gms.cast.ApplicationMetadata;
 import com.google.android.gms.cast.Cast;
 import com.google.android.gms.cast.CastMediaControlIntent;
@@ -49,6 +48,7 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.wearable.DataMap;
+import com.splunk.mint.Mint;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -117,7 +117,7 @@ public class PlexSearchService extends Service {
 		Logger.d("PlexSearch: onStartCommand");
 
 		if(BuildConfig.USE_BUGSENSE)
-			BugSenseHandler.initAndStartSession(PlexSearchService.this, MainActivity.BUGSENSE_APIKEY);
+			Mint.initAndStartSession(PlexSearchService.this, MainActivity.BUGSENSE_APIKEY);
 
 		videoPlayed = false;
     shuffle = false;
@@ -994,17 +994,6 @@ public class PlexSearchService extends Service {
 
 	private void stopPlayback() {
 		adjustPlayback("stop", getResources().getString(R.string.playback_stopped));
-    // TODO: Is anything more needed here?
-    /*
-		if(VoiceControlForPlexApplication.isApplicationVisible()) {
-			Intent stopIntent = new Intent(this, NowPlayingActivity.class);
-			stopIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-			stopIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-			stopIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-			stopIntent.putExtra("finish", true);
-			startActivity(stopIntent);
-		}
-		*/
 	}
 
 	private void seekTo(int hours, int minutes, int seconds) {

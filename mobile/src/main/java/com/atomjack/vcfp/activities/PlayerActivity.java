@@ -25,7 +25,6 @@ import com.atomjack.shared.WearConstants;
 import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.adapters.StreamAdapter;
-import com.atomjack.vcfp.interfaces.PlexStreamHandler;
 import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexServer;
 import com.atomjack.vcfp.model.PlexTrack;

@@ -60,10 +60,10 @@ import com.atomjack.shared.model.Timeline;
 import com.atomjack.vcfp.net.PlexHttpClient;
 import com.atomjack.vcfp.net.PlexHttpMediaContainerHandler;
 import com.atomjack.vcfp.services.PlexScannerService;
-import com.bugsense.trace.BugSenseHandler;
 import com.google.android.gms.wearable.DataMap;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.splunk.mint.Mint;
 
 
 import org.apache.commons.io.IOUtils;
@@ -184,7 +184,7 @@ public abstract class VCFPActivity extends AppCompatActivity implements PlexSubs
     castPlayerManager.setContext(this);
 
 		if(BuildConfig.USE_BUGSENSE)
-			BugSenseHandler.initAndStartSession(getApplicationContext(), BUGSENSE_APIKEY);
+			Mint.initAndStartSession(getApplicationContext(), BUGSENSE_APIKEY);
 
     mHandler = new Handler();
 	}

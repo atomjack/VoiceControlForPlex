@@ -1,5 +1,11 @@
 apply plugin: 'com.android.application'
 
+repositories {
+    maven {
+        url "https://mint.splunk.com/gradle/"
+    }
+}
+
 android {
     useLibrary  'org.apache.http.legacy'
     compileSdkVersion 23
@@ -116,17 +122,17 @@ dependencies {
         exclude group: 'stax', module: 'stax-api'
         exclude group: 'stax', module: 'stax'
     }
-    compile files('libs/bugsense-3.6.jar')
+    compile "com.splunk.mint:mint:4.4.0"
     compile('org.simpleframework:simple-xml:2.7.1') {
         exclude group: 'stax', module: 'stax-api'
         exclude group: 'xpp3', module: 'xpp3'
     }
     compile 'com.android.support:support-v4:23.0+'
     compile 'com.github.codechimp-org.apprater:library:1.0.+'
-    compile 'com.google.android.gms:play-services-wearable:+'
+    compile 'com.google.android.gms:play-services-wearable:8.4.0'
     compile 'com.android.support:appcompat-v7:23.1.1'
     compile 'com.android.support:design:23.1.1'
-    compile 'com.android.support:mediarouter-v7:23.0.0'
+    compile 'com.android.support:mediarouter-v7:23.1.1'
     compile 'com.sothree.slidinguppanel:library:3.2.1'
     compile project(':CastCompanionLibrary-android')
     compile 'com.jakewharton:disklrucache:2.0.2'
@@ -134,5 +140,4 @@ dependencies {
     compile project(':shared')
     compile files('libs/org.apache.http.legacy.jar')
     compile 'de.hdodenhof:circleimageview:2.0.0'
-    compile 'com.sothree.slidinguppanel:library:3.2.1'
 }

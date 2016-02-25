@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:orientation="vertical"
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:padding="20dp"
+              android:background="@color/settings_popup_background">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="@string/wear_primary_function"
+        android:id="@+id/textView8"
+        android:textColor="@color/white"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="@string/wear_primary_function_option_description"
+        android:id="@+id/textView9"
+        android:textColor="@color/white"
+        android:paddingTop="20dp"/>
+
+    <RelativeLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="20dp">
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/play_pause"
+            android:id="@+id/wearOptionsPlayPauseButton"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentTop="true"/>
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/voice_input"
+            android:id="@+id/wearOptionsVoiceInputButton"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentTop="true"/>
+    </RelativeLayout>
+</LinearLayout>

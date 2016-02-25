@@ -19,7 +19,6 @@ import com.atomjack.vcfp.VCFPCastConsumer;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexMedia;
-import com.atomjack.vcfp.model.Stream;
 import com.google.android.libraries.cast.companionlibrary.cast.VideoCastManager;
 
 import java.util.ArrayList;

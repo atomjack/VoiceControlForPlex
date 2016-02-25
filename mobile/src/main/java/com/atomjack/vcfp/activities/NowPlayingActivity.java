@@ -19,7 +19,7 @@ import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexResponse;
 import com.atomjack.shared.model.Timeline;
 import com.atomjack.vcfp.net.PlexHttpResponseHandler;
-import com.bugsense.trace.BugSenseHandler;
+import com.splunk.mint.Mint;
 
 import org.codechimp.apprater.AppRater;
 
@@ -37,7 +37,7 @@ public class NowPlayingActivity extends PlayerActivity {
 //    plexSubscription.setListener(this);
 
 		if(BuildConfig.USE_BUGSENSE)
-			BugSenseHandler.initAndStartSession(NowPlayingActivity.this, OldMainActivity.BUGSENSE_APIKEY);
+			Mint.initAndStartSession(NowPlayingActivity.this, OldMainActivity.BUGSENSE_APIKEY);
 
 		setContentView(R.layout.play_media);
 

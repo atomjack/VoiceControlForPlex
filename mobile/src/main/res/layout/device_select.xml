@@ -4,7 +4,7 @@
               android:layout_height="match_parent"
               android:id="@+id/device_select_root"
               android:orientation="vertical"
-              android:background="@color/device_list_background">
+              android:background="@color/settings_popup_background">
 
     <LinearLayout
         android:layout_width="match_parent"

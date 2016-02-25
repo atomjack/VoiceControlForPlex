@@ -164,14 +164,14 @@ public class VoiceControlForPlexApplication extends Application
     plexSubscription = new PlexSubscription();
     castPlayerManager = new CastPlayerManager(getApplicationContext());
 
-    Thread.setDefaultUncaughtExceptionHandler (new Thread.UncaughtExceptionHandler()
-    {
-      @Override
-      public void uncaughtException (Thread thread, Throwable e)
-      {
-        handleUncaughtException (thread, e);
-      }
-    });
+//    Thread.setDefaultUncaughtExceptionHandler (new Thread.UncaughtExceptionHandler()
+//    {
+//      @Override
+//      public void uncaughtException (Thread thread, Throwable e)
+//      {
+//        handleUncaughtException (thread, e);
+//      }
+//    });
 
 //    chromecastVideoOptions.put(getString(R.string.original), new String[]{"12000", "1920x1080", "1"}); // Disabled for now. Don't know how to get PMS to direct play to chromecast
     chromecastVideoOptions.put("20mbps 720p", new String[]{"20000", "1280x720"});
