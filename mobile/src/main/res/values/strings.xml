@@ -170,6 +170,7 @@
     <string name="finding_plex_clients_and_servers">Finding Plex Clients &amp; Servers</string>
     <string name="plex_servers">Plex Servers</string>
     <string name="cast_connect_error">Sorry, but I got an error trying to connect to %s.</string>
-    <string name="ready_to_cast_from_to">Ready to cast from %1$s to %2$s</string>
-    <string name="ready_to_scan_servers_to">Ready to scan all servers to %s</string>
+    <string name="ready_to_cast_from_to">Ready to cast from %1$s to %2$s.</string>
+    <string name="ready_to_scan_servers_to">Ready to scan all servers to %s.</string>
+    <string name="connect_to_a_client_to_begin">Connect to a Plex Client via the Cast button to begin.</string>
 </resources>

@@ -37,6 +37,8 @@ public class CastPlayerManager {
   private String mSessionId;
   private String plexSessionId;
 
+  private double volume = 1.0;
+
   private int position = 0; // current position in seconds of the playing media
 
   public static final class PARAMS {
@@ -50,7 +52,8 @@ public class CastPlayerManager {
     public static final String KEY = "key";
     public static final String THUMB = "thumb";
     public static final String OFFSET = "offset";
-    public static final String RESUME="resume";
+    public static final String RESUME = "resume";
+    public static final String VOLUME = "volume";
 
     public static final String SRC = "src";
     public static final String SUBTITLE_SRC = "subtitle_src";
@@ -83,6 +86,7 @@ public class CastPlayerManager {
     public static final String ACTION_PREV = "prev";
     public static final String ACTION_SET_STREAM = "setStream";
     public static final String ACTION_CYCLE_STREAMS = "cycleStreams";
+    public static final String ACTION_SET_VOLUME = "setVolume";
 
     public static final String PLEX_USERNAME = "plexUsername";
     public static final String ACCESS_TOKEN = "accessToken";
@@ -182,7 +186,7 @@ public class CastPlayerManager {
   }
 
   public boolean isSubscribed() {
-    Logger.d("[CastPlayerManager] subscribed: %s, client: %s", subscribed, mClient);
+//    Logger.d("[CastPlayerManager] subscribed: %s, client: %s", subscribed, mClient);
     return subscribed && mClient != null;
   }
 
@@ -231,7 +235,7 @@ public class CastPlayerManager {
 
   // This will send a message to the cast device to load the passed in media
   public void loadMedia(PlexMedia media, List<? extends PlexMedia> album, final int offset) {
-    Logger.d("Loading media");
+    Logger.d("Loading media: %s", album);
     nowPlayingMedia = media;
     nowPlayingAlbum = album;
     nowPlayingMedia.server.findServerConnection(new ActiveConnectionHandler() {
@@ -484,6 +488,7 @@ public class CastPlayerManager {
       public void onVolumeChanged(double value, boolean isMute) {
         super.onVolumeChanged(value, isMute);
         Logger.d("Volume is now %s", Double.toString(value));
+        volume = value;
       }
 
       @Override
@@ -491,6 +496,22 @@ public class CastPlayerManager {
         Logger.d("onCastDeviceDetected: %s", info);
       }
     };
+  }
+
+  public double getVolume() {
+    return volume;
+  }
+
+  public void setVolume(double v) {
+    JSONObject obj = new JSONObject();
+    try {
+      obj.put(PARAMS.ACTION, PARAMS.ACTION_SET_VOLUME);
+      obj.put(PARAMS.VOLUME, v);
+      sendMessage(obj);
+      volume = v;
+    } catch (Exception ex) {
+      ex.printStackTrace();
+    }
   }
 
   public String getTranscodeUrl(PlexMedia media, Connection connection, int offset) {
@@ -564,10 +585,12 @@ public class CastPlayerManager {
       data.put(PARAMS.SESSION_ID, plexSessionId);
       Logger.d("[CastPlayerManager] setting src to %s", getTranscodeUrl(nowPlayingMedia, connection, offset));
       data.put(PARAMS.SRC, getTranscodeUrl(nowPlayingMedia, connection, offset));
-      data.put(PARAMS.SUBTITLE_SRC, getTranscodeUrl(nowPlayingMedia, connection, offset, true));
-      data.put(PARAMS.AUDIO_STREAMS, VoiceControlForPlexApplication.gsonWrite.toJson(nowPlayingMedia.getStreams(Stream.AUDIO)));
-      data.put(PARAMS.SUBTITLE_STREAMS, VoiceControlForPlexApplication.gsonWrite.toJson(nowPlayingMedia.getStreams(Stream.SUBTITLE)));
-      data.put(PARAMS.ACTIVE_SUBTITLE, nowPlayingMedia.getActiveStream(Stream.SUBTITLE).id);
+      if(nowPlayingMedia instanceof PlexVideo) {
+        data.put(PARAMS.SUBTITLE_SRC, getTranscodeUrl(nowPlayingMedia, connection, offset, true));
+        data.put(PARAMS.AUDIO_STREAMS, VoiceControlForPlexApplication.gsonWrite.toJson(nowPlayingMedia.getStreams(Stream.AUDIO)));
+        data.put(PARAMS.SUBTITLE_STREAMS, VoiceControlForPlexApplication.gsonWrite.toJson(nowPlayingMedia.getStreams(Stream.SUBTITLE)));
+        data.put(PARAMS.ACTIVE_SUBTITLE, nowPlayingMedia.getActiveStream(Stream.SUBTITLE).id);
+      }
       data.put(PARAMS.ACCESS_TOKEN, nowPlayingMedia.server.accessToken);
       data.put(PARAMS.PLAYLIST, getPlaylistJson());
     } catch (Exception ex) {

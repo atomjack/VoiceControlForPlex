@@ -20,4 +20,7 @@
     <color name="navigation_drawer_background">#1D3B4F</color>
     <color name="settings_popup_background">#0c2c37</color>
     <color name="now_playing_background">#1D3B4F</color>
+    <color name="primary_600">#1E88E5</color>
+    <color name="primary">#ffffff</color>
+    <color name="primaryDark">#0000ff</color>
 </resources>

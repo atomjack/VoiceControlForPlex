@@ -709,8 +709,8 @@ public abstract class PlayerFragment extends Fragment
 
   public void setPosition(int position) {
     if(!isSeeking) {
-      if(position != this.position)
-        Logger.d("[PlayerFragment] setting position to %d", position);
+//      if(position != this.position)
+//        Logger.d("[PlayerFragment] setting position to %d", position);
       this.position = position;
       if (seekBar != null)
         seekBar.setProgress(position);

@@ -13,7 +13,6 @@ import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
-import android.graphics.Color;
 import android.graphics.drawable.AnimationDrawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -33,10 +32,10 @@ import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.media.MediaRouteSelector;
 import android.support.v7.media.MediaRouter;
-import android.support.v7.view.ContextThemeWrapper;
 import android.support.v7.widget.Toolbar;
 import android.util.DisplayMetrics;
 import android.util.TypedValue;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -53,7 +52,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ProgressBar;
-import android.widget.SimpleAdapter;
+import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.android.vending.billing.IabHelper;
@@ -301,16 +300,6 @@ public class MainActivity extends AppCompatActivity
   }
 
   @Override
-  protected void onSaveInstanceState(Bundle outState) {
-    super.onSaveInstanceState(outState);
-    Logger.d("Saving instance state");
-    outState.putParcelable(com.atomjack.shared.Intent.EXTRA_CLIENT, client);
-    if(playerFragment != null && playerFragment.isVisible()) {
-      getSupportFragmentManager().putFragment(outState, com.atomjack.shared.Intent.EXTRA_PLAYER_FRAGMENT, playerFragment);
-    }
-  }
-
-  @Override
   public void onBackPressed() {
     Intent intent = new Intent();
     intent.setAction(Intent.ACTION_MAIN);
@@ -415,7 +404,7 @@ public class MainActivity extends AppCompatActivity
     mDrawer = (DrawerLayout) findViewById(R.id.drawer_layout);
 
     Fragment fragment;
-    if (!doingFirstTimeSetup) { // TODO: check for authToken here - if it is defined, and first time setup has not been completed, user has upgraded, so bypass setup
+    if (!doingFirstTimeSetup) {
 
       mMediaRouter = MediaRouter.getInstance(getApplicationContext());
       mMediaRouteSelector = new MediaRouteSelector.Builder()
@@ -547,9 +536,9 @@ public class MainActivity extends AppCompatActivity
   }
 
   public void mainLoadingBypassLogin(View v) {
-    prefs.put(Preferences.FIRST_TIME_SETUP_COMPLETED, true);
-    doingFirstTimeSetup = false;
-    init();
+    showFindingPlexClientsAndServers();
+    refreshServers.run();
+    refreshClients.run();
   }
 
   public void showLogin(View v) { showLogin(); }
@@ -622,8 +611,7 @@ public class MainActivity extends AppCompatActivity
                   VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.PLEX_EMAIL, user.email);
                   if(doingFirstTimeSetup) {
                     showFindingPlexClientsAndServers();
-                    refreshServers(null);
-//                    refreshServers.run();
+                    refreshServers.run();
                     refreshClients.run();
                   } else {
                     setupNavigationDrawer();
@@ -643,22 +631,6 @@ public class MainActivity extends AppCompatActivity
                 @Override
                 public void run() {
                   feedback.m(R.string.logged_in);
-                  // TODO: switch login
-//                  switchLogin();
-
-                  /*
-                  PlexScannerService.refreshResources(authToken, new PlexScannerService.RefreshResourcesResponseHandler() {
-                    @Override
-                    public void onSuccess() {
-                      feedback.t(R.string.servers_refreshed);
-                    }
-
-                    @Override
-                    public void onFailure(int statusCode) {
-                      feedback.e(R.string.remote_scan_error);
-                    }
-                  });
-                  */
                 }
               });
               // We got the auth token, so cancel this task
@@ -770,7 +742,8 @@ public class MainActivity extends AppCompatActivity
     saveSettings();
     if(getMainFragment().isVisible())
       getMainFragment().setServer(s);
-    refreshNavServers();
+    if(!doingFirstTimeSetup)
+      refreshNavServers();
   }
 
   public void logout(MenuItem item) {
@@ -805,12 +778,17 @@ public class MainActivity extends AppCompatActivity
 
     mDrawer.setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);
     mDrawer.setDrawerListener(drawerListener);
-    drawerToggle = new ActionBarDrawerToggle(this, mDrawer, toolbar, R.string.drawer_open, R.string.drawer_close);
+    drawerToggle = new ActionBarDrawerToggle(this, mDrawer, toolbar, R.string.drawer_open, R.string.drawer_close) {
+      @Override
+      public void onDrawerSlide(View drawerView, float slideOffset) {
+//        super.onDrawerSlide(drawerView, 0);
+      }
 
+    };
+    mDrawer.setDrawerListener(drawerToggle);
     // Find our drawer view
-    navigationViewMain = (NavigationView) findViewById(R.id.navigationViewMain);
-    Logger.d("navigationViewMain: %s", navigationViewMain);
-
+    if(navigationViewMain == null)
+      navigationViewMain = (NavigationView) findViewById(R.id.navigationViewMain);
 
     // Footer view
     navigationFooter = (NavigationView) findViewById(R.id.navigationViewFooter);
@@ -826,8 +804,6 @@ public class MainActivity extends AppCompatActivity
     navigationFooter.addHeaderView(headerView);
     navigationFooter.getHeaderView(0).setVisibility(View.GONE);
 
-
-
     if(navigationViewMain.getHeaderView(0) != null)
       navigationViewMain.removeHeaderView(navigationViewMain.getHeaderView(0));
 
@@ -842,7 +818,6 @@ public class MainActivity extends AppCompatActivity
 
         serverListRefreshSpinner = (ProgressBar)navHeader.findViewById(R.id.serverListRefreshSpinner);
         serverListRefreshButton = (ImageView)navHeader.findViewById(R.id.serverListRefreshButton);
-        Logger.d("serverListRefreshSpinner: %s", serverListRefreshSpinner);
 
         TextView navHeaderUsername = (TextView)navHeader.findViewById(R.id.navHeaderUsername);
         navHeaderUsername.setText(VoiceControlForPlexApplication.getInstance().prefs.getString(Preferences.PLEX_USERNAME));
@@ -895,7 +870,7 @@ public class MainActivity extends AppCompatActivity
   @Override
   protected void onNewIntent(Intent intent) {
     super.onNewIntent(intent);
-    Logger.d("NewMainActivity onNewIntent: %s", intent.getAction());
+    Logger.d("[MainActivity] onNewIntent: %s", intent.getAction());
 
     if(intent.getAction() != null) {
       if (intent.getAction().equals(PlexScannerService.ACTION_SERVER_SCAN_FINISHED)) {
@@ -909,15 +884,11 @@ public class MainActivity extends AppCompatActivity
           setServer(PlexServer.getScanAllServer());
         }
         VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.SAVED_SERVERS, gsonWrite.toJson(VoiceControlForPlexApplication.servers));
+        Logger.d("doing first time setup: %s", doingFirstTimeSetup);
         if(doingFirstTimeSetup) {
           firstTimeSetupServerScanFinished = true;
-          if(firstTimeSetupClientScanFinished) {
-            doingFirstTimeSetup = false;
-            prefs.put(Preferences.FIRST_TIME_SETUP_COMPLETED, true);
-            alertDialog.dismiss();
-            init();
-            doAutomaticDeviceScan();
-          }
+          if(firstTimeSetupClientScanFinished)
+            onFirstTimeScanFinished();
         } else {
           // Refresh the list of servers in the navigation drawer
           refreshNavServers();
@@ -938,13 +909,8 @@ public class MainActivity extends AppCompatActivity
           VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.SAVED_CLIENTS, gsonWrite.toJson(VoiceControlForPlexApplication.clients));
           if (doingFirstTimeSetup) {
             firstTimeSetupClientScanFinished = true;
-            if (firstTimeSetupServerScanFinished) {
-              doingFirstTimeSetup = false;
-              prefs.put(Preferences.FIRST_TIME_SETUP_COMPLETED, true);
-              alertDialog.dismiss();
-              init();
-              doAutomaticDeviceScan();
-            }
+            if(firstTimeSetupServerScanFinished)
+              onFirstTimeScanFinished();
           }
         }
         if(onClientRefreshFinished != null) {
@@ -955,6 +921,16 @@ public class MainActivity extends AppCompatActivity
         handleShowNowPlayingIntent(intent);
       }
     }
+  }
+
+  // This is called after first time setup client & server scan is done.
+  private void onFirstTimeScanFinished() {
+    doingFirstTimeSetup = false;
+    prefs.put(Preferences.FIRST_TIME_SETUP_COMPLETED, true);
+    alertDialog.dismiss();
+    init();
+    drawerToggle.syncState();
+    doAutomaticDeviceScan();
   }
 
   private void handleShowNowPlayingIntent(Intent intent) {
@@ -1082,18 +1058,6 @@ public class MainActivity extends AppCompatActivity
       }
     });
     usageDialog.show();
-    /*
-    AlertDialog.Builder usageDialog = new AlertDialog.Builder(this);
-
-    usageDialog.setTitle(R.string.help_usage_button);
-    usageDialog.setMessage(R.string.help_usage);
-    usageDialog.setPositiveButton(R.string.got_it, new DialogInterface.OnClickListener() {
-      public void onClick(DialogInterface dialog, int id) {
-        dialog.dismiss();
-      }
-    });
-    usageDialog.show();
-    */
   }
 
   private void setNavGroup(int group) {
@@ -1361,6 +1325,60 @@ public class MainActivity extends AppCompatActivity
         Logger.d("Lost subscribed client.");
         setCastIconInactive();
       } else {
+        View view = getLayoutInflater().inflate(R.layout.popup_connected_to_client, null);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this)
+                .setView(view);
+        final AlertDialog subscribeDialog = builder.create();
+
+        TextView clientName = (TextView)view.findViewById(R.id.popupConnectedToClientName);
+        clientName.setText(client.name);
+        Button cancelButton = (Button)view.findViewById(R.id.popupConnectedToClientCancelButton);
+        cancelButton.setOnClickListener(new View.OnClickListener() {
+          @Override
+          public void onClick(View v) {
+            if (client.isCastClient)
+              castPlayerManager.unsubscribe();
+            else
+              plexSubscription.unsubscribe();
+            subscribeDialog.dismiss();
+          }
+        });
+        if(client.isCastClient) {
+          final SeekBar volumeSeekBar = (SeekBar)view.findViewById(R.id.volumeSeekBar);
+          volumeSeekBar.setVisibility(View.VISIBLE);
+          volumeSeekBar.setMax(100);
+          volumeSeekBar.setProgress((int)(castPlayerManager.getVolume()*100));
+          Logger.d("Volume is %f, setting progress to %d", castPlayerManager.getVolume(), ((int)(castPlayerManager.getVolume()*100)));
+          volumeSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+              Logger.d("Volume: %d", progress);
+              double v = ((double)progress) / 100;
+              Logger.d("v: %s", v);
+              castPlayerManager.setVolume(v);
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+          });
+          // React to volume button controls while this dialog is open
+          subscribeDialog.setOnKeyListener(new DialogInterface.OnKeyListener() {
+            @Override
+            public boolean onKey(DialogInterface dialog, int keyCode, KeyEvent event) {
+              boolean ret = MainActivity.this.dispatchKeyEvent(event);
+              volumeSeekBar.setProgress((int)(castPlayerManager.getVolume()*100));
+              return ret;
+            }
+          });
+        }
+        /*
         AlertDialog.Builder subscribeDialog = new AlertDialog.Builder(this)
                 .setTitle(client.name)
                 .setIcon(R.drawable.mr_ic_media_route_on_holo_dark)
@@ -1378,6 +1396,7 @@ public class MainActivity extends AppCompatActivity
           View subscribeVolume = LayoutInflater.from(this).inflate(R.layout.connected_popup, null);
           subscribeDialog.setView(subscribeVolume);
         }
+        */
         subscribeDialog.show();
       }
     }
@@ -1787,43 +1806,29 @@ public class MainActivity extends AppCompatActivity
       }
     });
     chooserDialog.show();
-
-    /*
-    chooserDialog.setTitle(R.string.wear_primary_function);
-    chooserDialog.setMessage(R.string.wear_primary_function_option_description);
-      chooserDialog.setPositiveButton(R.string.voice_input, new DialogInterface.OnClickListener() {
-      public void onClick(DialogInterface dialog, int id) {
-        DataMap dataMap = new DataMap();
-        dataMap.putBoolean(WearConstants.PRIMARY_FUNCTION_VOICE_INPUT, true);
-        new SendToDataLayerThread(WearConstants.SET_WEAR_OPTIONS, dataMap, MainActivity.this).start();
-        dialog.dismiss();
-      }
-    });
-    chooserDialog.setNeutralButton(R.string.play_pause, new DialogInterface.OnClickListener() {
-      public void onClick(DialogInterface dialog, int id) {
-        DataMap dataMap = new DataMap();
-        dataMap.putBoolean(WearConstants.PRIMARY_FUNCTION_VOICE_INPUT, false);
-        new SendToDataLayerThread(WearConstants.SET_WEAR_OPTIONS, dataMap, MainActivity.this).start();
-        dialog.dismiss();
-      }
-    });
-    */
   }
 
   public void showChromecastVideoOptions(MenuItem item) {
-    AlertDialog.Builder chooserDialog = new AlertDialog.Builder(this);
-    chooserDialog.setTitle(R.string.chromecast_video_options_header);
-//		chooserDialog.setMessage(R.string.wear_primary_function_option_description);
-    chooserDialog.setPositiveButton(R.string.chromecast_video_local, new DialogInterface.OnClickListener() {
-      public void onClick(DialogInterface dialog, int id) {
-        showChromecastVideoOptions(true);
-        dialog.dismiss();
+    AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+    View layout = getLayoutInflater().inflate(R.layout.popup_chromecast_video_options, null);
+    builder.setView(layout);
+    final AlertDialog chooserDialog = builder.create();
+
+    Button popupChromecastOptionsRemoteButton = (Button)layout.findViewById(R.id.popupChromecastOptionsRemoteButton);
+    popupChromecastOptionsRemoteButton.setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View v) {
+        chooserDialog.dismiss();
+        showChromecastVideoOptions(false);
       }
     });
-    chooserDialog.setNeutralButton(R.string.chromecast_video_remote, new DialogInterface.OnClickListener() {
-      public void onClick(DialogInterface dialog, int id) {
-        showChromecastVideoOptions(false);
-        dialog.dismiss();
+    Button popupChromecastOptionsLocalButton = (Button)layout.findViewById(R.id.popupChromecastOptionsLocalButton);
+    popupChromecastOptionsLocalButton.setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View v) {
+        chooserDialog.dismiss();
+        showChromecastVideoOptions(true);
       }
     });
     chooserDialog.show();
@@ -1968,10 +1973,23 @@ public class MainActivity extends AppCompatActivity
   }
 
   @Override
+  protected void onSaveInstanceState(Bundle outState) {
+    super.onSaveInstanceState(outState);
+    Logger.d("Saving instance state");
+    outState.putParcelable(com.atomjack.shared.Intent.EXTRA_CLIENT, client);
+    if(playerFragment != null && playerFragment.isVisible()) {
+      getSupportFragmentManager().putFragment(outState, com.atomjack.shared.Intent.EXTRA_PLAYER_FRAGMENT, playerFragment);
+    }
+  }
+
+
+  @Override
   protected void onRestoreInstanceState(Bundle savedInstanceState) {
-    super.onRestoreInstanceState(savedInstanceState);
-    // TODO: Restore instance state?
+    try {
+      super.onRestoreInstanceState(savedInstanceState);
+    } catch (Exception e) {}
     client = savedInstanceState.getParcelable(com.atomjack.shared.Intent.EXTRA_CLIENT);
+
   }
 
   @Override
@@ -2106,5 +2124,32 @@ public class MainActivity extends AppCompatActivity
         }
       });
     }
+  }
+
+  @Override
+  public boolean dispatchKeyEvent(KeyEvent event) {
+    double VOLUME_INCREMENT = 0.05;
+    if(castPlayerManager.isSubscribed()) {
+      int action = event.getAction();
+      int keyCode = event.getKeyCode();
+      if(keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
+        if(action == KeyEvent.ACTION_DOWN) {
+          double currentVolume = castPlayerManager.getVolume();
+          if(currentVolume < 1.0) {
+            castPlayerManager.setVolume(Math.min(currentVolume + VOLUME_INCREMENT, 1.0));
+          }
+        }
+        return true;
+      } else if(keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
+        if(action == KeyEvent.ACTION_DOWN) {
+          double currentVolume = castPlayerManager.getVolume();
+          if(currentVolume > 0.0) {
+            castPlayerManager.setVolume(Math.max(currentVolume - VOLUME_INCREMENT, 0.0));
+          }
+        }
+        return true;
+      }
+    }
+    return super.dispatchKeyEvent(event);
   }
 }

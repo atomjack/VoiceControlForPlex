@@ -10,6 +10,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -48,7 +49,6 @@ public class ShortcutProviderActivity extends AppCompatActivity implements Dialo
 
   private  boolean cancelScan = false;
   private Dialog deviceSelectDialog;
-  private boolean clientScanCanceled = false;
 
 	private boolean resume = false;
 
@@ -67,13 +67,24 @@ public class ShortcutProviderActivity extends AppCompatActivity implements Dialo
 		if(servers != null && servers.size() > 0 && VoiceControlForPlexApplication.getAllClients().size() > 0)
 			didScan = true;
 
-		AlertDialog.Builder chooserDialog = new AlertDialog.Builder(ShortcutProviderActivity.this);
-		chooserDialog.setTitle(R.string.create_shortcut);
-		chooserDialog.setMessage(didScan ? R.string.create_shortcut_blurb : R.string.create_shortcut_blurb_no_servers);
-		if(didScan) {
-			chooserDialog.setPositiveButton(R.string.specify_now, new DialogInterface.OnClickListener() {
-				public void onClick(DialogInterface dialog, int id) {
-					dialog.dismiss();
+		AlertDialog.Builder builder = new AlertDialog.Builder(ShortcutProviderActivity.this);
+    LayoutInflater inflater = getLayoutInflater();
+    View layout = inflater.inflate(R.layout.popup_create_shortcut, null);
+    builder.setOnCancelListener(this);
+    builder.setView(layout);
+
+    final AlertDialog chooserDialog = builder.create();
+
+    Button popupCreateShortcutSpecifyButton = (Button)layout.findViewById(R.id.popupCreateShortcutSpecifyButton);
+    TextView popupCreateShortcutMessage = (TextView)layout.findViewById(R.id.popupCreateShortcutMessage);
+    if(!didScan) {
+      popupCreateShortcutMessage.setText(R.string.create_shortcut_blurb_no_servers);
+      popupCreateShortcutSpecifyButton.setVisibility(View.GONE);
+    } else {
+      popupCreateShortcutSpecifyButton.setOnClickListener(new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+          chooserDialog.dismiss();
           showPlexServers(servers, new ScanHandler() {
             @Override
             public void onDeviceSelected(PlexDevice device, boolean unused) {
@@ -91,23 +102,27 @@ public class ShortcutProviderActivity extends AppCompatActivity implements Dialo
               });
             }
           });
-				}
-			});
-		}
-		chooserDialog.setNeutralButton(R.string.use_current, new DialogInterface.OnClickListener() {
-			public void onClick(DialogInterface dialog, int id) {
-				dialog.dismiss();
-				createShortcut(true);
-			}
-		});
-		chooserDialog.setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
-			public void onClick(DialogInterface dialog, int id) {
-				dialog.dismiss();
-				finish();
-			}
-		});
-    chooserDialog.setOnCancelListener(this);
-		chooserDialog.show();
+        }
+      });
+    }
+    Button popupCreateShortcutUseCurrentButton = (Button)layout.findViewById(R.id.popupCreateShortcutUseCurrentButton);
+    popupCreateShortcutUseCurrentButton.setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View v) {
+        chooserDialog.dismiss();
+        createShortcut(true);
+      }
+    });
+
+    Button popupCreateShortcutCancelButton = (Button)layout.findViewById(R.id.popupCreateShortcutCancelButton);
+    popupCreateShortcutCancelButton.setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View v) {
+        chooserDialog.dismiss();
+        finish();
+      }
+    });
+    chooserDialog.show();
 	}
 
 	private void createShortcut(boolean use_current) {

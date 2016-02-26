@@ -266,7 +266,7 @@ public class PlexSearchService extends Service {
 			}
 
 			if(castPlayerManager.isSubscribed()) {
-				if(!client.machineIdentifier.equals(castPlayerManager.mClient.machineIdentifier)) {
+				if(client != null && castPlayerManager.mClient != null && !client.machineIdentifier.equals(castPlayerManager.mClient.machineIdentifier)) {
 					Logger.d("Subscribed to a chromecast but need to play on a different client.");
 					castPlayerManager.unsubscribe();
 				}

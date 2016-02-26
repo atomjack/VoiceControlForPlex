@@ -31,6 +31,11 @@
         <!-- All customizations that are NOT specific to a particular API-level can go here. -->
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
+        <!--<item name="android:buttonStyle">@style/Button</item>-->
+        <item name="colorPrimary">@color/white</item>
+        <item name="colorPrimaryDark">@color/blue</item>
+        <item name="colorButtonNormal">@color/ccl_blue</item>
+        <item name="android:textColorPrimary">@color/white</item>
     </style>
     <style name="Line">
 	    <item name="android:layout_width">fill_parent</item>
@@ -44,6 +49,8 @@
         <item name="android:windowNoTitle">true</item>
         <item name="android:windowIsFloating">true</item>
         <item name="android:backgroundDimEnabled">false</item>
+        <item name="colorButtonNormal">@color/ccl_blue</item>
+        <item name="android:textColorPrimary">@color/white</item>
     </style>
     <style name="NotificationTitle" parent="android:style/TextAppearance.StatusBar.EventContent.Title"></style>
     <style name="NotificationText" parent="android:style/TextAppearance.StatusBar.EventContent"></style>
