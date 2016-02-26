@@ -10,12 +10,12 @@ Den här filen innehåller reguljära uttryck som används för att räkna ut vi
     detta är uppbyggt.
     -->
 
-    <item name="pattern_recognition" type="string">^(((titta|spela|fortsätt titta|lyssna|titta på filmen|spela filmen) (.+)( på (.+))?( med blandad uppspelning)?)|((spola fram) (.+)( på (.+))?)|((forward|rewind|back) (.+)( on (.+))?)|((pausa|stoppa|återuppta|fortsätt)( uppspelingen)?( på (.+))?))|(anslut till (.+)|koppla från)|(cycle (subtitles|audio))|(.*subtitle.*(off|on))$</item>
+    <item name="pattern_recognition" type="string">^(((titta|spela|fortsätt titta|fortsätt spela|lyssna|titta på filmen|spela filmen) (.+)( på (.+))?( med blandad uppspelning)?)|((spola fram) (.+)( på (.+))?)|((forward|rewind|back) (.+)( on (.+))?)|((pausa|stoppa|återuppta|fortsätt)( uppspelingen)?( på (.+))?))|(anslut till (.+)|koppla från)|(cycle (subtitles|audio))|(.*subtitle.*(off|on))$</item>
 
     <item name="pattern_on_client" type="string">(.+) på (.+)$</item>
-    <item name="pattern_resume_watching" type="string">^fortsätt (titta|spela) (.+)</item>
+    <item name="pattern_resume_watching" type="string">^fortsätt titta|spela (.+)</item>
     <item name="pattern_on_shuffle" type="string"> med blandad uppspelning$</item>
-    <item name="pattern_watch" type="string">(titta|spela) $1</item>
+    <item name="pattern_watch" type="string">titta $1</item>
     <item name="pattern_watch_movie" type="string">(titta på|spela) filmen (.+)</item>
     <item name="pattern_watch_season_episode_of_show" type="string">(titta på|spela) säsong ([0-9]+) avsnitt ([0-9]+) av (.+)</item>
     <item name="pattern_watch_show_season_episode" type="string">(titta på|spela) (.+) säsong ([0-9]+) avsnitt ([0-9]+)</item>

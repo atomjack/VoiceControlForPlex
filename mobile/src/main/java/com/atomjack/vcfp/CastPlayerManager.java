@@ -391,7 +391,7 @@ public class CastPlayerManager {
             else
               nowPlayingMedia = VoiceControlForPlexApplication.gsonRead.fromJson(obj.getString("media"), PlexTrack.class);
             if(listener != null)
-              listener.onMediaChanged(nowPlayingMedia);
+              listener.onMediaChanged(nowPlayingMedia, PlayerState.PLAYING);
           } else if(obj.has("event") && obj.getString("event").equals(RECEIVER_EVENTS.GET_PLAYBACK_STATE) && obj.has("state")) {
             Logger.d("Got playback state back: %s", obj.getString("state"));
             PlayerState oldState = currentState;

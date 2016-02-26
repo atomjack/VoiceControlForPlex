@@ -81,6 +81,7 @@ import com.atomjack.vcfp.fragments.PlayerFragment;
 import com.atomjack.vcfp.fragments.PlexPlayerFragment;
 import com.atomjack.vcfp.fragments.SetupFragment;
 import com.atomjack.vcfp.interfaces.ActivityListener;
+import com.atomjack.vcfp.interfaces.BitmapHandler;
 import com.atomjack.vcfp.interfaces.PlexSubscriptionListener;
 import com.atomjack.vcfp.interfaces.ScanHandler;
 import com.atomjack.vcfp.model.Pin;
@@ -335,9 +336,10 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
-    public void onMediaChanged(PlexMedia media) {
-      Logger.d("[MainActivity] onMediaChanged: %s", media.getTitle());
+    public void onMediaChanged(PlexMedia media, PlayerState state) {
+      Logger.d("[MainActivity] onMediaChanged: %s %s", media.getTitle(), state);
       playerFragment.mediaChanged(media);
+      sendWearPlaybackChange(state, media);
     }
 
     @Override
@@ -349,6 +351,7 @@ public class MainActivity extends AppCompatActivity
         playerFragment.init(layout, client, media, plexSubscriptionListener);
         switchToFragment(playerFragment);
       }
+      sendWearPlaybackChange(state, media);
     }
 
     @Override
@@ -364,7 +367,7 @@ public class MainActivity extends AppCompatActivity
       } else {
         Logger.d("Got state change to %s, but for some reason playerFragment is null", state);
       }
-
+      sendWearPlaybackChange(state, media);
     }
 
     @Override
@@ -381,8 +384,9 @@ public class MainActivity extends AppCompatActivity
       setCastIconInactive();
       VoiceControlForPlexApplication.getInstance().prefs.remove(Preferences.SUBSCRIBED_CLIENT);
       switchToFragment(getMainFragment());
-      // TODO: Implement
-//    sendWearPlaybackChange();
+      if(VoiceControlForPlexApplication.getInstance().hasWear()) {
+        new SendToDataLayerThread(WearConstants.DISCONNECTED, MainActivity.this).start();
+      }
       feedback.m(R.string.disconnected);
     }
   };
@@ -940,8 +944,7 @@ public class MainActivity extends AppCompatActivity
     boolean fromWear = intent.getBooleanExtra(WearConstants.FROM_WEAR, false);
     PlayerState state;
     if(client.isCastClient) {
-      // TODO: Get current state from CastPlayerManager
-      state = PlayerState.STOPPED;
+      state = castPlayerManager.getCurrentState();
     } else {
       state = plexSubscription.getCurrentState();
       plexSubscription.subscribe(client);
@@ -950,7 +953,10 @@ public class MainActivity extends AppCompatActivity
     Logger.d("Layout: %d", layout);
     if(layout != -1) {
       playerFragment.init(layout, client, media, plexSubscriptionListener);
-      switchToFragment(playerFragment);
+      if(playerFragment.isVisible())
+        playerFragment.mediaChanged(media);
+      else
+        switchToFragment(playerFragment);
       int seconds = intent.getBooleanExtra(com.atomjack.shared.Intent.EXTRA_STARTING_PLAYBACK, false) ? 10 : 3;
       Logger.d("Setting auto disconnect for %d seconds", seconds);
       handler.postDelayed(autoDisconnectPlayerTimer, seconds*1000);
@@ -2151,5 +2157,38 @@ public class MainActivity extends AppCompatActivity
       }
     }
     return super.dispatchKeyEvent(event);
+  }
+
+  public void sendWearPlaybackChange(final PlayerState state, PlexMedia media) {
+    if(VoiceControlForPlexApplication.getInstance().hasWear()) {
+      Logger.d("[PlayerFragment] Sending Wear Notification: %s", state);
+      final DataMap data = new DataMap();
+      String msg = null;
+      if (state == PlayerState.PLAYING) {
+        data.putString(WearConstants.MEDIA_TYPE, media.getType());
+        VoiceControlForPlexApplication.SetWearMediaTitles(data, media);
+        msg = WearConstants.MEDIA_PLAYING;
+      } else if (state == PlayerState.STOPPED) {
+        msg = WearConstants.MEDIA_STOPPED;
+      } else if (state == PlayerState.PAUSED) {
+        msg = WearConstants.MEDIA_PAUSED;
+        VoiceControlForPlexApplication.SetWearMediaTitles(data, media);
+      }
+      if (msg != null) {
+        if (msg.equals(WearConstants.MEDIA_PLAYING)) {
+          VoiceControlForPlexApplication.getWearMediaImage(media, new BitmapHandler() {
+            @Override
+            public void onSuccess(Bitmap bitmap) {
+              DataMap binaryDataMap = new DataMap();
+              binaryDataMap.putAll(data);
+              binaryDataMap.putAsset(WearConstants.IMAGE, VoiceControlForPlexApplication.createAssetFromBitmap(bitmap));
+              binaryDataMap.putString(WearConstants.PLAYBACK_STATE, state.name());
+              new SendToDataLayerThread(WearConstants.RECEIVE_MEDIA_IMAGE, binaryDataMap, MainActivity.this).sendDataItem();
+            }
+          });
+        }
+        new SendToDataLayerThread(msg, data, this).start();
+      }
+    }
   }
 }

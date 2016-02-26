@@ -419,13 +419,13 @@ public class PlexSearchService extends Service {
 				}
 			}
 
-			// Check for a sentence starting with "resume watching"
+			// Check for a sentence starting with "resume watching/playing"
 			p = Pattern.compile(getString(R.string.pattern_resume_watching));
 			matcher = p.matcher(queryText);
 			if(matcher.find()) {
 				resumePlayback = true;
-				// Replace "resume watching" with just "watch" so the pattern matching below works
-				queryText = matcher.replaceAll(getString(R.string.pattern_watch));
+				// Replace "resume watching/playing" with just "watch" so the pattern matching below works
+        queryText = matcher.replaceAll(getString(R.string.pattern_watch));
 			}
 
       // Check for a sentence ending with "on shuffle"
@@ -810,17 +810,7 @@ public class PlexSearchService extends Service {
           public void run() {
             Logger.d("PlexSearchService Subscribing to %s", theClient.name);
             // TODO: Check this
-//            if(VoiceControlForPlexApplication.getInstance().plexSubscription.getListener() != null)
               VoiceControlForPlexApplication.getInstance().plexSubscription.subscribe(theClient);
-//            else {
-//              Intent sendIntent = new Intent(PlexSearchService.this, SubscriptionActivity.class);
-//              sendIntent.setAction(SubscriptionActivity.ACTION_SUBSCRIBE);
-//              sendIntent.putExtra(SubscriptionActivity.CLIENT, theClient);
-//              sendIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-//              sendIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-//              sendIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-//              startActivity(sendIntent);
-//            }
           }
         };
       }
@@ -833,16 +823,7 @@ public class PlexSearchService extends Service {
         @Override
         public void run() {
           // TODO: Check this
-//          if(VoiceControlForPlexApplication.getInstance().plexSubscription.getListener() != null)
             VoiceControlForPlexApplication.getInstance().plexSubscription.unsubscribe();
-//          else {
-//            Intent sendIntent = new Intent(PlexSearchService.this, SubscriptionActivity.class);
-//            sendIntent.setAction(SubscriptionActivity.ACTION_UNSUBSCRIBE);
-//            sendIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-//            sendIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-//            sendIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-//            startActivity(sendIntent);
-//          }
         }
       };
     }

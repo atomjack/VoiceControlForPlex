@@ -84,9 +84,6 @@ public class WearListenerService extends WearableListenerService {
 
       PlexSubscription plexSubscription = VoiceControlForPlexApplication.getInstance().plexSubscription;
       CastPlayerManager castPlayerManager = VoiceControlForPlexApplication.getInstance().castPlayerManager;
-      // TODO: FIX
-      PlexPlayerFragment listener = null; //plexSubscription.getListener();
-      CastPlayerManager.CastListener castListener = null; //castPlayerManager.getListener();
       PlexClient client = new PlexClient();
       if (plexSubscription.isSubscribed()) {
         client = plexSubscription.mClient;
@@ -109,24 +106,18 @@ public class WearListenerService extends WearableListenerService {
       } else if(message.equals(WearConstants.GET_PLAYBACK_STATE)) {
         Logger.d("[WearListenerService] get playback state");
         dataMap.putBoolean(WearConstants.LAUNCHED, receivedDataMap.getBoolean(WearConstants.LAUNCHED, false));
-//        PlexSubscription plexSubscription = VoiceControlForPlexApplication.getInstance().plexSubscription;
-//        CastPlayerManager castPlayerManager = VoiceControlForPlexApplication.getInstance().castPlayerManager;
         if (plexSubscription.isSubscribed()) {
-//          PlexClient client = plexSubscription.mClient;
-
           PlayerState currentState = plexSubscription.getCurrentState();
           Logger.d("[WearListenerService] current State: %s", currentState);
 
           dataMap.putString(WearConstants.CLIENT_NAME, client.name);
           dataMap.putString(WearConstants.PLAYBACK_STATE, currentState.name());
 
-          if(listener != null && listener.getNowPlayingMedia() != null) {
-            Logger.d("now playing: %s", listener.getNowPlayingMedia().title);
-            VoiceControlForPlexApplication.SetWearMediaTitles(dataMap, listener.getNowPlayingMedia());
-            dataMap.putString(WearConstants.MEDIA_TYPE, listener.getNowPlayingMedia().getType());
-            // TODO: Fix
-            /*
-            final PlexMedia media = plexSubscription.getListener().getNowPlayingMedia();
+          if(plexSubscription.getNowPlayingMedia() != null) {
+            PlexMedia media = plexSubscription.getNowPlayingMedia();
+            Logger.d("now playing: %s", plexSubscription.getNowPlayingMedia().title);
+            VoiceControlForPlexApplication.SetWearMediaTitles(dataMap, media);
+            dataMap.putString(WearConstants.MEDIA_TYPE, media.getType());
             VoiceControlForPlexApplication.getWearMediaImage(media, new BitmapHandler() {
               @Override
               public void onSuccess(Bitmap bitmap) {
@@ -139,7 +130,6 @@ public class WearListenerService extends WearableListenerService {
                 Logger.d("[WearListenerService] sent is playing status (%s) to wearable.", dataMap.getString(WearConstants.PLAYBACK_STATE));
               }
             });
-            */
           } else {
             dataMap.putString(WearConstants.PLAYBACK_STATE, PlayerState.STOPPED.name());
             new SendToDataLayerThread(WearConstants.GET_PLAYBACK_STATE, dataMap, this).start();
@@ -149,13 +139,11 @@ public class WearListenerService extends WearableListenerService {
           dataMap.putString(WearConstants.CLIENT_NAME, client.name);
           dataMap.putString(WearConstants.PLAYBACK_STATE, currentState.name());
 
-          if(castListener != null && castListener.getNowPlayingMedia() != null) {
-            Logger.d("now playing: %s", castListener.getNowPlayingMedia().title);
-            VoiceControlForPlexApplication.SetWearMediaTitles(dataMap, castListener.getNowPlayingMedia());
-            dataMap.putString(WearConstants.MEDIA_TYPE, castListener.getNowPlayingMedia().getType());
-            // TODO: Fix
-            final PlexMedia media = null; //castPlayerManager.getListener().getNowPlayingMedia();
-            VoiceControlForPlexApplication.getWearMediaImage(media, new BitmapHandler() {
+          if(castPlayerManager.getNowPlayingMedia() != null) {
+            Logger.d("now playing: %s", castPlayerManager.getNowPlayingMedia().title);
+            VoiceControlForPlexApplication.SetWearMediaTitles(dataMap, castPlayerManager.getNowPlayingMedia());
+            dataMap.putString(WearConstants.MEDIA_TYPE, castPlayerManager.getNowPlayingMedia().getType());
+            VoiceControlForPlexApplication.getWearMediaImage(castPlayerManager.getNowPlayingMedia(), new BitmapHandler() {
               @Override
               public void onSuccess(Bitmap bitmap) {
                 DataMap binaryDataMap = new DataMap();
@@ -203,12 +191,10 @@ public class WearListenerService extends WearableListenerService {
         }
       } else if(message.equals(WearConstants.ACTION_PAUSE) || message.equals(WearConstants.ACTION_PLAY) || message.equals(WearConstants.ACTION_STOP)) {
         PlexMedia media = null;
-        // TODO: Fix
-//        if(castPlayerManager.isSubscribed()) {
-//          media = castPlayerManager.getListener().getNowPlayingMedia();
-//        }
-//        else if(plexSubscription.isSubscribed())
-//          media = plexSubscription.getListener().getNowPlayingMedia();
+        if(castPlayerManager.isSubscribed())
+          media = castPlayerManager.getNowPlayingMedia();
+        else if(plexSubscription.isSubscribed())
+          media = plexSubscription.getNowPlayingMedia();
         if(media != null) {
           Intent intent = new android.content.Intent(this, PlexControlService.class);
           intent.setAction(message);

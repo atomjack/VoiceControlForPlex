@@ -446,7 +446,7 @@ public class PlexSubscription {
                     Logger.d("media: %s, listener: %s, state: %s", media.getTitle(), listener, currentState);
                     if(listener != null && currentState != PlayerState.STOPPED)
                       if(nowPlayingMedia != null)
-                        listener.onMediaChanged(media);
+                        listener.onMediaChanged(media, PlayerState.getState(timeline));
                       else
                         listener.onPlayStarted(media, PlayerState.getState(timeline));
                     nowPlayingMedia = media;
@@ -533,5 +533,9 @@ public class PlexSubscription {
 
   public int getCommandId() {
     return commandId;
+  }
+
+  public PlexMedia getNowPlayingMedia() {
+    return nowPlayingMedia;
   }
 }

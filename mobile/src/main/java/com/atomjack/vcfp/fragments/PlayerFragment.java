@@ -32,6 +32,8 @@ import com.atomjack.shared.Intent;
 import com.atomjack.shared.Logger;
 import com.atomjack.shared.PlayerState;
 import com.atomjack.shared.Preferences;
+import com.atomjack.shared.SendToDataLayerThread;
+import com.atomjack.shared.WearConstants;
 import com.atomjack.shared.model.Timeline;
 import com.atomjack.vcfp.Feedback;
 import com.atomjack.vcfp.PlexHeaders;
@@ -39,9 +41,11 @@ import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.Utils;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.activities.MainActivity;
+import com.atomjack.vcfp.activities.VCFPActivity;
 import com.atomjack.vcfp.adapters.StreamAdapter;
 import com.atomjack.vcfp.interfaces.ActiveConnectionHandler;
 import com.atomjack.vcfp.interfaces.ActivityListener;
+import com.atomjack.vcfp.interfaces.BitmapHandler;
 import com.atomjack.vcfp.interfaces.InputStreamHandler;
 import com.atomjack.vcfp.interfaces.PlayerFragmentListener;
 import com.atomjack.vcfp.interfaces.PlexSubscriptionListener;
@@ -56,6 +60,7 @@ import com.atomjack.vcfp.model.Stream;
 import com.atomjack.vcfp.net.PlexHttpClient;
 import com.atomjack.vcfp.net.PlexHttpMediaContainerHandler;
 import com.atomjack.vcfp.services.PlexSearchService;
+import com.google.android.gms.wearable.DataMap;
 
 import org.apache.commons.io.IOUtils;
 
@@ -159,7 +164,6 @@ public abstract class PlayerFragment extends Fragment
   }
 
   public void mediaChanged(PlexMedia media) {
-
     nowPlayingMedia = media;
     setCurrentTimeDisplay(getOffset(nowPlayingMedia));
     seekBar.setMax(nowPlayingMedia.duration / 1000);
@@ -214,44 +218,6 @@ public abstract class PlayerFragment extends Fragment
     } else {
       feedback.m(String.format(getString(R.string.audio_track_active), newStream.getTitle()));
     }
-  }
-
-  protected void getPlayingMedia(final PlexServer server, final Timeline timeline) {
-    Logger.d("[PlayerFragment] getPlayingMedia: %s", timeline.key);
-    // TODO: Find out why server can sometimes be null
-    PlexHttpClient.get(server, timeline.key, new PlexHttpMediaContainerHandler() {
-      @Override
-      public void onSuccess(MediaContainer mediaContainer) {
-        if(timeline.type.equals("video"))
-          nowPlayingMedia = mediaContainer.videos.get(0);
-        else if(timeline.type.equals("music"))
-          nowPlayingMedia = mediaContainer.tracks.get(0);
-        else {
-          // TODO: Handle failure
-          Logger.d("Failed to get media with type %s", timeline.type);
-        }
-
-        if(nowPlayingMedia != null) {
-          nowPlayingMedia.server = server;
-
-          VoiceControlForPlexApplication.getInstance().setNotification(client, currentState, nowPlayingMedia);
-          if (timeline.continuing != null && timeline.continuing.equals("1"))
-            continuing = true;
-          onMediaChange();
-          sendWearPlaybackChange();
-        }
-      }
-
-      @Override
-      public void onFailure(Throwable error) {
-        // TODO: Handle failure
-      }
-    });
-  }
-
-  // TODO: Implement
-  protected void sendWearPlaybackChange() {
-
   }
 
   protected void onMediaChange() {

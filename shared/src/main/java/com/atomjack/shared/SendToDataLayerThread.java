@@ -40,18 +40,18 @@ public class SendToDataLayerThread extends Thread {
               .addConnectionCallbacks(new GoogleApiClient.ConnectionCallbacks() {
                 @Override
                 public void onConnected(Bundle connectionHint) {
-                  Logger.d("onConnected: " + connectionHint);
+                  Logger.d("[SendToDataLayerThread] onConnected: " + connectionHint);
                   // Now you can use the Data Layer API
                 }
                 @Override
                 public void onConnectionSuspended(int cause) {
-                  Logger.d("onConnectionSuspended: " + cause);
+                  Logger.d("[SendToDataLayerThread] onConnectionSuspended: " + cause);
                 }
               })
               .addOnConnectionFailedListener(new GoogleApiClient.OnConnectionFailedListener() {
                 @Override
                 public void onConnectionFailed(ConnectionResult result) {
-                  Logger.d("onConnectionFailed: " + result);
+                  Logger.d("[SendToDataLayerThread] onConnectionFailed: " + result);
                 }
               })
               .addApi(Wearable.API)

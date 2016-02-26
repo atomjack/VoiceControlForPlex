@@ -12,9 +12,9 @@ Wenn du eine Übersetzung hinzufügst bitte modifiziere nicht die Muster (.*), $
     <item name="pattern_recognition" type="string">^(((schaue|spiele|weiterschauen|höre|schaue film|spiele film) (.+)( auf (.+))?( mit zufallswiedergabe)?)|((springe) (.+)( auf (.+))?)|((forward|rewind|back) (.+)( on (.+))?)|(( wiedergabe)?(pausieren|anhalten|fortsetzen)( auf (.+))?))|(verbinde mit (.+)|trenne)|(cycle (subtitles|audio))|(.*subtitle.*(off|on))$</item>
 
     <item name="pattern_on_client" type="string">(.+) auf (.+)$</item>
-    <item name="pattern_resume_watching" type="string">^weiterschauen (.+)</item>
+    <item name="pattern_resume_watching" type="string">^schaue|weiterschauen (.+)</item>
     <item name="pattern_on_shuffle" type="string"> mit zufallswiedergabe$</item>
-    <item name="pattern_watch" type="string">(schaue|spiele) $1</item>
+    <item name="pattern_watch" type="string">schaue $1</item>
     <item name="pattern_watch_movie" type="string">(schaue|spiele) film (.+)</item>
     <item name="pattern_watch_season_episode_of_show" type="string">(schaue|spiele) staffel ([0-9]+) episode ([0-9]+) von (.+)</item>
     <item name="pattern_watch_show_season_episode" type="string">(schaue|spiele) (.+) staffel ([0-9]+) episode ([0-9]+)</item>
