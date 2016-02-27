@@ -14,9 +14,8 @@ import com.atomjack.shared.PlayerState;
 import com.atomjack.vcfp.PlexSubscription;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.activities.CastActivity;
-import com.atomjack.vcfp.activities.OldMainActivity;
+import com.atomjack.vcfp.activities.MainActivity;
 import com.atomjack.vcfp.activities.NowPlayingActivity;
-import com.atomjack.vcfp.fragments.PlexPlayerFragment;
 import com.atomjack.vcfp.interfaces.BitmapHandler;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexMedia;
@@ -67,9 +66,9 @@ public class WearListenerService extends WearableListenerService {
       // popup on the handheld. However, if the message is 'pong', a response to a 'ping', skip since we want to react to a pong
       // even if wear support has not been purchased (so we can alert the user to the option to purchase)
       new SendToDataLayerThread(WearConstants.WEAR_UNAUTHORIZED, this).start();
+      Logger.d("Showing wear popup: %s", VoiceControlForPlexApplication.isApplicationVisible());
       if(VoiceControlForPlexApplication.isApplicationVisible()) {
-        // TODO: Change this to MainActivity.class & implement there
-        Intent intent = new Intent(this, OldMainActivity.class);
+        Intent intent = new Intent(this, MainActivity.class);
         intent.setAction(com.atomjack.shared.Intent.SHOW_WEAR_PURCHASE_REQUIRED);
         intent.addFlags(Intent.FLAG_FROM_BACKGROUND);
         intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
@@ -168,10 +167,9 @@ public class WearListenerService extends WearableListenerService {
 
 
       } else if(message.equals(WearConstants.GET_PLAYING_MEDIA)) {
-        // Send an intent to NowPlayingActivity to tell it to forward on information about the currently playing media back to the wear device
+        // Send an intent to MainActivity to tell it to forward on information about the currently playing media back to the wear device
         if(VoiceControlForPlexApplication.isApplicationVisible()) {
-          Class theClass = castPlayerManager.isSubscribed() ? CastActivity.class : NowPlayingActivity.class;
-          Intent intent = new Intent(this, theClass);
+          Intent intent = new Intent(this, MainActivity.class);
           intent.setAction(com.atomjack.shared.Intent.GET_PLAYING_MEDIA);
           intent.addFlags(Intent.FLAG_FROM_BACKGROUND);
           intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
@@ -182,7 +180,7 @@ public class WearListenerService extends WearableListenerService {
         // Received a pong back from the user, so show a popup allowing the user to purchase wear support.
         Logger.d("[WearListenerService] Received pong");
         if(VoiceControlForPlexApplication.isApplicationVisible()) {
-          Intent intent = new Intent(this, OldMainActivity.class);
+          Intent intent = new Intent(this, MainActivity.class);
           intent.setAction(com.atomjack.shared.Intent.SHOW_WEAR_PURCHASE);
           intent.addFlags(Intent.FLAG_FROM_BACKGROUND);
           intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
@@ -204,7 +202,7 @@ public class WearListenerService extends WearableListenerService {
           Logger.d("[WearListenerService] Sent %s to %s", message, client.name);
         }
       } else if(message.equals(WearConstants.GET_DEVICE_LOGS)) {
-        Intent intent = new android.content.Intent(this, OldMainActivity.class);
+        Intent intent = new android.content.Intent(this, MainActivity.class);
         intent.setAction(message);
         intent.addFlags(Intent.FLAG_FROM_BACKGROUND);
         intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);

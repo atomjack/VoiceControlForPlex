@@ -6,6 +6,15 @@
               android:background="@color/now_playing_background"
               android:padding="20dp">
 
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="@string/help_usage_button"
+        android:id="@+id/textView13"
+        android:layout_marginBottom="20dp"
+        android:textColor="@color/white"/>
+
     <ScrollView
         android:layout_width="wrap_content"
         android:layout_height="0dp"

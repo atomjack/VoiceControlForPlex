@@ -70,8 +70,6 @@ public abstract class PlayerFragment extends Fragment
 
   private View mainView;
 
-  protected boolean continuing = false;
-
   protected Feedback feedback;
 
   protected PlayerState currentState = PlayerState.STOPPED;

@@ -44,16 +44,19 @@
         <item android:id="@+id/menu_install_tasker"
               android:title="@string/menu_install_tasker"
               android:visible="false"
+              android:icon="@drawable/menu_tasker"
               android:onClick="installTasker">
         </item>
         <item android:id="@+id/menu_install_utter"
               android:title="@string/menu_install_utter"
+              android:icon="@drawable/menu_utter"
               android:visible="false"
               android:onClick="installUtter">
         </item>
         <item android:id="@+id/menu_install_autovoice"
               android:title="@string/menu_install_autovoice"
               android:visible="false"
+              android:icon="@drawable/menu_autovoice"
               android:onClick="installAutoVoice">
         </item>
         <item android:id="@+id/menu_email_device_logs"

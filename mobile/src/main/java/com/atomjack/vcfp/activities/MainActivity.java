@@ -52,6 +52,8 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ProgressBar;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
@@ -246,7 +248,7 @@ public class MainActivity extends AppCompatActivity
     prefs = VoiceControlForPlexApplication.getInstance().prefs;
     feedback = new Feedback(this);
 
-    authToken = VoiceControlForPlexApplication.getInstance().prefs.getString(Preferences.AUTHENTICATION_TOKEN);
+    authToken = prefs.getString(Preferences.AUTHENTICATION_TOKEN);
 
     networkMonitor = new NetworkMonitor(this);
     VoiceControlForPlexApplication.getInstance().setNetworkChangeListener(this);
@@ -256,11 +258,11 @@ public class MainActivity extends AppCompatActivity
     plexSubscription = VoiceControlForPlexApplication.getInstance().plexSubscription;
     castPlayerManager = VoiceControlForPlexApplication.getInstance().castPlayerManager;
 
-    if(gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.SUBSCRIBED_CLIENT, ""), PlexClient.class) != null) {
+    if(gsonRead.fromJson(prefs.get(Preferences.SUBSCRIBED_CLIENT, ""), PlexClient.class) != null) {
       if(prefs.get(Preferences.CRASHED, false)) {
         prefs.remove(Preferences.SUBSCRIBED_CLIENT);
       } else {
-        client = gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.SUBSCRIBED_CLIENT, ""), PlexClient.class);
+        client = gsonRead.fromJson(prefs.get(Preferences.SUBSCRIBED_CLIENT, ""), PlexClient.class);
         if (client.isCastClient) {
           if (!castPlayerManager.isSubscribed()) {
             castPlayerManager.subscribe(client);
@@ -313,7 +315,7 @@ public class MainActivity extends AppCompatActivity
     public void onSubscribed(final PlexClient client) {
       Logger.d("[MainActivity] onSubscribed");
 
-      VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.SUBSCRIBED_CLIENT, gsonWrite.toJson(client));
+      prefs.put(Preferences.SUBSCRIBED_CLIENT, gsonWrite.toJson(client));
 
       subscribing = false;
       try {
@@ -382,7 +384,7 @@ public class MainActivity extends AppCompatActivity
     public void onUnsubscribed() {
       Logger.d("[MainActivity] unsubscribed");
       setCastIconInactive();
-      VoiceControlForPlexApplication.getInstance().prefs.remove(Preferences.SUBSCRIBED_CLIENT);
+      prefs.remove(Preferences.SUBSCRIBED_CLIENT);
       switchToFragment(getMainFragment());
       if(VoiceControlForPlexApplication.getInstance().hasWear()) {
         new SendToDataLayerThread(WearConstants.DISCONNECTED, MainActivity.this).start();
@@ -417,11 +419,11 @@ public class MainActivity extends AppCompatActivity
       mMediaRouterCallback = new MediaRouterCallback();
       mMediaRouter.addCallback(mMediaRouteSelector, mMediaRouterCallback, MediaRouter.CALLBACK_FLAG_REQUEST_DISCOVERY);
 
-      server = gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.SERVER, ""), PlexServer.class);
+      server = gsonRead.fromJson(prefs.get(Preferences.SERVER, ""), PlexServer.class);
       if (server == null)
         server = PlexServer.getScanAllServer();
 
-      client = gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.CLIENT, ""), PlexClient.class);
+      client = gsonRead.fromJson(prefs.get(Preferences.CLIENT, ""), PlexClient.class);
 
       setupNavigationDrawer();
 
@@ -450,6 +452,7 @@ public class MainActivity extends AppCompatActivity
   protected void onPause() {
     super.onPause();
     Logger.d("[MainActivity] onPause");
+    VoiceControlForPlexApplication.applicationPaused();
     if (isFinishing()) {
       mMediaRouter.removeCallback(mMediaRouterCallback);
     }
@@ -459,7 +462,7 @@ public class MainActivity extends AppCompatActivity
   protected void onStop() {
     super.onStop();
     Logger.d("[MainActivity] onStop");
-    if(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.SERVER_SCAN_FINISHED, true) == false) {
+    if(prefs.get(Preferences.SERVER_SCAN_FINISHED, true) == false) {
       Intent scannerIntent = new Intent(MainActivity.this, PlexScannerService.class);
       scannerIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
       scannerIntent.setAction(PlexScannerService.CANCEL);
@@ -493,6 +496,7 @@ public class MainActivity extends AppCompatActivity
   protected void onResume() {
     super.onResume();
     Logger.d("[MainActivity] onResume, interacting: %s", userIsInteracting);
+    VoiceControlForPlexApplication.applicationResumed();
     plexSubscription.setListener(plexSubscriptionListener);
     castPlayerManager.setListener(plexSubscriptionListener);
     if(!doingFirstTimeSetup) {
@@ -508,8 +512,8 @@ public class MainActivity extends AppCompatActivity
       // We'll do this every five, to keep the list up to date. Also, if the last server scan didn't
       // finish, kick off another one right now instead (another scan in 5 minutes will be queued up when that one finishes).
       int s = getSecondsSinceLastServerScan();
-      Logger.d("It's been %d seconds since last scan, last scan finished: %s", s, VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.SERVER_SCAN_FINISHED, true));
-      if (s >= (SERVER_SCAN_INTERVAL / 1000) || VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.SERVER_SCAN_FINISHED, true) == false) {
+      Logger.d("It's been %d seconds since last scan, last scan finished: %s", s, prefs.get(Preferences.SERVER_SCAN_FINISHED, true));
+      if (s >= (SERVER_SCAN_INTERVAL / 1000) || prefs.get(Preferences.SERVER_SCAN_FINISHED, true) == false) {
         Logger.d("It's been more than 5 minutes since last scan, so scanning now.");
         refreshServers.run();
         refreshClients.run();
@@ -528,14 +532,18 @@ public class MainActivity extends AppCompatActivity
   protected void onActivityResult(int requestCode, int resultCode, Intent data) {
     super.onActivityResult(requestCode, resultCode, data);
     Logger.d("onActivityResult: %d, %d", requestCode, resultCode);
+    // Pass on the activity result to the helper for handling
+    if (VoiceControlForPlexApplication.getInstance().getIabHelper() == null || !VoiceControlForPlexApplication.getInstance().getIabHelper().handleActivityResult(requestCode, resultCode, data)) {
+      if (requestCode == RESULT_SHORTCUT_CREATED) {
+        if (resultCode == RESULT_OK) {
+          data.setAction("com.android.launcher.action.INSTALL_SHORTCUT");
+          sendBroadcast(data);
 
-    if(requestCode == RESULT_SHORTCUT_CREATED) {
-      if(resultCode == RESULT_OK) {
-        data.setAction("com.android.launcher.action.INSTALL_SHORTCUT");
-        sendBroadcast(data);
-
-        feedback.m(getString(R.string.shortcut_created));
+          feedback.m(getString(R.string.shortcut_created));
+        }
       }
+    } else {
+      Logger.d("onActivityResult handled by IABUtil.");
     }
   }
 
@@ -606,13 +614,13 @@ public class MainActivity extends AppCompatActivity
           public void onSuccess(Pin pin) {
             if(pin.authToken != null) {
               authToken = pin.authToken;
-              VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.AUTHENTICATION_TOKEN, authToken);
+              prefs.put(Preferences.AUTHENTICATION_TOKEN, authToken);
               PlexHttpClient.signin(authToken, new PlexHttpUserHandler() {
                 @Override
                 public void onSuccess(PlexUser user) {
                   Logger.d("Got user: %s", user.username);
-                  VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.PLEX_USERNAME, user.username);
-                  VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.PLEX_EMAIL, user.email);
+                  prefs.put(Preferences.PLEX_USERNAME, user.username);
+                  prefs.put(Preferences.PLEX_EMAIL, user.email);
                   if(doingFirstTimeSetup) {
                     showFindingPlexClientsAndServers();
                     refreshServers.run();
@@ -713,10 +721,10 @@ public class MainActivity extends AppCompatActivity
         PlexHttpClient.signin(usernameInput.getText().toString(), passwordInput.getText().toString(), new PlexHttpUserHandler() {
           @Override
           public void onSuccess(PlexUser user) {
-            VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.AUTHENTICATION_TOKEN, user.authenticationToken);
+            prefs.put(Preferences.AUTHENTICATION_TOKEN, user.authenticationToken);
             authToken = user.authenticationToken;
-            VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.PLEX_USERNAME, user.username);
-            VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.PLEX_EMAIL, user.email);
+            prefs.put(Preferences.PLEX_USERNAME, user.username);
+            prefs.put(Preferences.PLEX_EMAIL, user.email);
             feedback.m(R.string.logged_in);
             if(doingFirstTimeSetup) {
               showFindingPlexClientsAndServers();
@@ -753,8 +761,8 @@ public class MainActivity extends AppCompatActivity
   public void logout(MenuItem item) {
     Logger.d("logging out");
 
-    VoiceControlForPlexApplication.getInstance().prefs.remove(Preferences.AUTHENTICATION_TOKEN);
-    VoiceControlForPlexApplication.getInstance().prefs.remove(Preferences.PLEX_USERNAME);
+    prefs.remove(Preferences.AUTHENTICATION_TOKEN);
+    prefs.remove(Preferences.PLEX_USERNAME);
     authToken = null;
 
     if(!server.local) {
@@ -769,7 +777,7 @@ public class MainActivity extends AppCompatActivity
 
     refreshNavServers();
 
-    VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.SAVED_SERVERS, gsonWrite.toJson(VoiceControlForPlexApplication.servers));
+    prefs.put(Preferences.SAVED_SERVERS, gsonWrite.toJson(VoiceControlForPlexApplication.servers));
     saveSettings();
 
     // Refresh the navigation drawer
@@ -779,14 +787,20 @@ public class MainActivity extends AppCompatActivity
   }
 
   private void setupNavigationDrawer() {
-
     mDrawer.setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);
-    mDrawer.setDrawerListener(drawerListener);
     drawerToggle = new ActionBarDrawerToggle(this, mDrawer, toolbar, R.string.drawer_open, R.string.drawer_close) {
       @Override
       public void onDrawerSlide(View drawerView, float slideOffset) {
 //        super.onDrawerSlide(drawerView, 0);
+        // Do nothing. This will ensure the hamburger icon is restored
       }
+
+      @Override
+      public void onDrawerClosed(View drawerView) {
+        super.onDrawerClosed(drawerView);
+        setNavGroup(R.menu.nav_items_main);
+      }
+
 
     };
     mDrawer.setDrawerListener(drawerToggle);
@@ -815,16 +829,16 @@ public class MainActivity extends AppCompatActivity
 
     if(authToken != null) {
       navigationViewMain.inflateHeaderView(R.layout.nav_header_logged_in);
-      if(VoiceControlForPlexApplication.getInstance().prefs.getString(Preferences.PLEX_EMAIL) != null) {
+      if(prefs.getString(Preferences.PLEX_EMAIL) != null) {
         setUserThumb();
-        Logger.d("Username = %s", VoiceControlForPlexApplication.getInstance().prefs.getString(Preferences.PLEX_USERNAME));
+        Logger.d("Username = %s", prefs.getString(Preferences.PLEX_USERNAME));
         final View navHeader = navigationViewMain.getHeaderView(0);
 
         serverListRefreshSpinner = (ProgressBar)navHeader.findViewById(R.id.serverListRefreshSpinner);
         serverListRefreshButton = (ImageView)navHeader.findViewById(R.id.serverListRefreshButton);
 
         TextView navHeaderUsername = (TextView)navHeader.findViewById(R.id.navHeaderUsername);
-        navHeaderUsername.setText(VoiceControlForPlexApplication.getInstance().prefs.getString(Preferences.PLEX_USERNAME));
+        navHeaderUsername.setText(prefs.getString(Preferences.PLEX_USERNAME));
 
         // When the user clicks on their username, show the logout button
         final LinearLayout navHeaderUserRow = (LinearLayout)navHeader.findViewById(R.id.navHeaderUserRow);
@@ -865,7 +879,7 @@ public class MainActivity extends AppCompatActivity
 
   private int getSecondsSinceLastServerScan() {
     Date now = new Date();
-    Date lastServerScan = new Date(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.LAST_SERVER_SCAN, 0l));
+    Date lastServerScan = new Date(prefs.get(Preferences.LAST_SERVER_SCAN, 0l));
     Logger.d("now: %s", now);
     Logger.d("lastServerScan: %s", lastServerScan);
     return (int)((now.getTime() - lastServerScan.getTime())/1000);
@@ -881,13 +895,13 @@ public class MainActivity extends AppCompatActivity
         HashMap<String, PlexServer> s = (HashMap<String, PlexServer>) intent.getSerializableExtra(com.atomjack.shared.Intent.EXTRA_SERVERS);
         Logger.d("[MainActivity] finished scanning for servers, have %d servers", s.size());
         // Save the fact that we've finished this server scan
-        VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.SERVER_SCAN_FINISHED, true);
+        prefs.put(Preferences.SERVER_SCAN_FINISHED, true);
         VoiceControlForPlexApplication.servers = new ConcurrentHashMap<>(s);
         // If the currently selected server is not in the list of servers we now have, set the current server to scan all
         if(server == null || !VoiceControlForPlexApplication.servers.containsKey(server.name)) {
           setServer(PlexServer.getScanAllServer());
         }
-        VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.SAVED_SERVERS, gsonWrite.toJson(VoiceControlForPlexApplication.servers));
+        prefs.put(Preferences.SAVED_SERVERS, gsonWrite.toJson(VoiceControlForPlexApplication.servers));
         Logger.d("doing first time setup: %s", doingFirstTimeSetup);
         if(doingFirstTimeSetup) {
           firstTimeSetupServerScanFinished = true;
@@ -910,7 +924,7 @@ public class MainActivity extends AppCompatActivity
               Logger.d("Saved %s", client.name);
             }
           }
-          VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.SAVED_CLIENTS, gsonWrite.toJson(VoiceControlForPlexApplication.clients));
+          prefs.put(Preferences.SAVED_CLIENTS, gsonWrite.toJson(VoiceControlForPlexApplication.clients));
           if (doingFirstTimeSetup) {
             firstTimeSetupClientScanFinished = true;
             if(firstTimeSetupServerScanFinished)
@@ -923,6 +937,34 @@ public class MainActivity extends AppCompatActivity
 
       } else if(intent.getAction().equals(ACTION_SHOW_NOW_PLAYING)) {
         handleShowNowPlayingIntent(intent);
+      } else if(intent.getAction() != null && intent.getAction().equals(com.atomjack.shared.Intent.SHOW_WEAR_PURCHASE)) {
+        // An Android Wear device was successfully pinged, so show popup alerting the
+        // user that they can purchase wear support, but only if we've never shown the popup before.
+        if(VoiceControlForPlexApplication.getInstance().hasWear()) {
+          hidePurchaseWearMenuItem();
+        } else {
+          if (prefs.get(Preferences.HAS_SHOWN_WEAR_PURCHASE_POPUP, false) == false)
+            showWearPurchase();
+        }
+      } else if(intent.getAction() != null && intent.getAction().equals(com.atomjack.shared.Intent.SHOW_WEAR_PURCHASE_REQUIRED)) {
+        showWearPurchaseRequired();
+      } else if(intent.getAction() != null && intent.getAction().equals(WearConstants.GET_DEVICE_LOGS)) {
+        String wearLog = intent.getStringExtra(WearConstants.LOG_CONTENTS);
+        receivedWearLogsResponse = true;
+        emailDeviceLogs(wearLog);
+      } else if(intent.getAction().equals(com.atomjack.shared.Intent.GET_PLAYING_MEDIA)) {
+        PlexMedia media = null;
+        if(plexSubscription.isSubscribed())
+          media = plexSubscription.getNowPlayingMedia();
+        else if(castPlayerManager.isSubscribed())
+          media = castPlayerManager.getNowPlayingMedia();
+        if(media != null) {
+          // Send information on the currently playing media to the wear device
+          DataMap data = new DataMap();
+          data.putString(WearConstants.MEDIA_TITLE, media.title);
+          data.putString(WearConstants.IMAGE, media.art);
+          new SendToDataLayerThread(WearConstants.GET_PLAYING_MEDIA, data, this).start();
+        }
       }
     }
   }
@@ -969,13 +1011,13 @@ public class MainActivity extends AppCompatActivity
       // First, save the fact that we have started but not yet finished this server scan. On startup, we'll check for this and if it hasn't finished, kick off
       // a new scan right away.
       Logger.d("Refreshing servers");
-      VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.SERVER_SCAN_FINISHED, false);
+      prefs.put(Preferences.SERVER_SCAN_FINISHED, false);
       Intent scannerIntent = new Intent(MainActivity.this, PlexScannerService.class);
       scannerIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
       scannerIntent.putExtra(PlexScannerService.CLASS, MainActivity.class);
       scannerIntent.setAction(PlexScannerService.ACTION_SCAN_SERVERS);
       startService(scannerIntent);
-      VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.LAST_SERVER_SCAN, new Date().getTime());
+      prefs.put(Preferences.LAST_SERVER_SCAN, new Date().getTime());
       handler.postDelayed(refreshServers, SERVER_SCAN_INTERVAL);
     }
   };
@@ -1053,10 +1095,11 @@ public class MainActivity extends AppCompatActivity
   }
 
   public void navMenuHelp(MenuItem item) {
-    final Dialog usageDialog = new Dialog(this);
-    usageDialog.setContentView(R.layout.help_dialog);
-    usageDialog.setTitle(R.string.help_usage_button);
-    Button button = (Button)usageDialog.findViewById(R.id.helpCloseButton);
+    AlertDialog.Builder builder = new AlertDialog.Builder(this);
+    View view = getLayoutInflater().inflate(R.layout.help_dialog, null);
+    builder.setView(view);
+    final AlertDialog usageDialog = builder.create();
+    Button button = (Button)view.findViewById(R.id.helpCloseButton);
     button.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View v) {
@@ -1151,7 +1194,7 @@ public class MainActivity extends AppCompatActivity
       @Override
       protected Void doInBackground(Void... params) {
         try {
-          String url = String.format("http://www.gravatar.com/avatar/%s?s=60", Utils.md5(VoiceControlForPlexApplication.getInstance().prefs.getString(Preferences.PLEX_EMAIL)));
+          String url = String.format("http://www.gravatar.com/avatar/%s?s=60", Utils.md5(prefs.getString(Preferences.PLEX_EMAIL)));
           Logger.d("url: %s", url);
           byte[] imageData = PlexHttpClient.getSyncBytes(url);
           Logger.d("got %d bytes", imageData.length);
@@ -1203,6 +1246,11 @@ public class MainActivity extends AppCompatActivity
     return super.onOptionsItemSelected(item);
   }
 
+  private void animateCastIcon() {
+    castIconMenuItem.setIcon(R.drawable.mr_ic_media_route_connecting_holo_dark);
+    AnimationDrawable ad = (AnimationDrawable) castIconMenuItem.getIcon();
+    ad.start();
+  }
 
   // This is the default action that will be taken when a user subscribes to a client via the UI.
   private ScanHandler onClientChosen = new ScanHandler() {
@@ -1214,21 +1262,21 @@ public class MainActivity extends AppCompatActivity
         setClient(clientSelected);
 
         // Start animating the action bar icon
-//        final MenuItem castIcon = menu.findItem(R.id.action_cast);
-        castIconMenuItem.setIcon(R.drawable.mr_ic_media_route_connecting_holo_dark);
-        AnimationDrawable ad = (AnimationDrawable) castIconMenuItem.getIcon();
-        ad.start();
+        animateCastIcon();
 
         if (clientSelected.isCastClient) {
-          // TODO: chromecast stuff
           if(VoiceControlForPlexApplication.getInstance().hasChromecast()) {
             client = clientSelected;
             Logger.d("[MainActivity] subscribing to %s", client.name);
             castPlayerManager.subscribe(client);
           } else {
+            subscribing = false;
+            setCastIconInactive();
             showChromecastPurchase(clientSelected, new Runnable() {
               @Override
               public void run() {
+                animateCastIcon();
+                subscribing = true;
                 castPlayerManager.subscribe(postChromecastPurchaseClient);
               }
             });
@@ -1243,7 +1291,7 @@ public class MainActivity extends AppCompatActivity
   protected void setClient(PlexClient _client) {
     Logger.d("[MainActivity] setClient");
     client = _client;
-    VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.CLIENT, gsonWrite.toJson(_client));
+    prefs.put(Preferences.CLIENT, gsonWrite.toJson(_client));
     if(mainFragment.isVisible())
       mainFragment.setClient(_client);
   }
@@ -1294,11 +1342,11 @@ public class MainActivity extends AppCompatActivity
 
       CheckBox resumeCheckbox = (CheckBox) layout.findViewById(R.id.deviceListResume);
       resumeCheckbox.setVisibility(View.VISIBLE);
-      resumeCheckbox.setChecked(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.RESUME, false));
+      resumeCheckbox.setChecked(prefs.get(Preferences.RESUME, false));
       resumeCheckbox.setOnClickListener(new View.OnClickListener() {
         @Override
         public void onClick(View v) {
-          VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.RESUME, ((CheckBox) v).isChecked());
+          prefs.put(Preferences.RESUME, ((CheckBox) v).isChecked());
         }
       });
 
@@ -1346,11 +1394,11 @@ public class MainActivity extends AppCompatActivity
         final AlertDialog subscribeDialog = builder.create();
 
         CheckBox resumeCheckbox = (CheckBox)view.findViewById(R.id.resumeCheckbox);
-        resumeCheckbox.setChecked(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.RESUME, false));
+        resumeCheckbox.setChecked(prefs.get(Preferences.RESUME, false));
         resumeCheckbox.setOnClickListener(new View.OnClickListener() {
           @Override
           public void onClick(View v) {
-            VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.RESUME, ((CheckBox) v).isChecked());
+            prefs.put(Preferences.RESUME, ((CheckBox) v).isChecked());
           }
         });
         TextView clientName = (TextView)view.findViewById(R.id.popupConnectedToClientName);
@@ -1401,25 +1449,6 @@ public class MainActivity extends AppCompatActivity
             }
           });
         }
-        /*
-        AlertDialog.Builder subscribeDialog = new AlertDialog.Builder(this)
-                .setTitle(client.name)
-                .setIcon(R.drawable.mr_ic_media_route_on_holo_dark)
-                .setNegativeButton(R.string.disconnect, new DialogInterface.OnClickListener() {
-                  @Override
-                  public void onClick(DialogInterface dialogInterface, int i) {
-                    if (client.isCastClient)
-                      castPlayerManager.unsubscribe();
-                    else
-                      plexSubscription.unsubscribe();
-                    dialogInterface.dismiss();
-                  }
-                });
-        if (client.isCastClient) {
-          View subscribeVolume = LayoutInflater.from(this).inflate(R.layout.connected_popup, null);
-          subscribeDialog.setView(subscribeVolume);
-        }
-        */
         subscribeDialog.show();
       }
     }
@@ -1441,9 +1470,9 @@ public class MainActivity extends AppCompatActivity
   }
 
   private void saveSettings() {
-    VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.SERVER, gsonWrite.toJson(server));
-    VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.CLIENT, gsonWrite.toJson(client));
-    VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.RESUME, VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.RESUME, false));
+    prefs.put(Preferences.SERVER, gsonWrite.toJson(server));
+    prefs.put(Preferences.CLIENT, gsonWrite.toJson(client));
+    prefs.put(Preferences.RESUME, prefs.get(Preferences.RESUME, false));
   }
 
   private class MediaRouterCallback extends MediaRouter.Callback {
@@ -1453,7 +1482,7 @@ public class MainActivity extends AppCompatActivity
       Logger.d("Cast Client %s has gone missing. Removing.", route.getName());
       if(VoiceControlForPlexApplication.castClients.containsKey(route.getName())) {
         VoiceControlForPlexApplication.castClients.remove(route.getName());
-        VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.SAVED_CAST_CLIENTS, gsonWrite.toJson(VoiceControlForPlexApplication.castClients));
+        prefs.put(Preferences.SAVED_CAST_CLIENTS, gsonWrite.toJson(VoiceControlForPlexApplication.castClients));
         // If the "select a plex client" dialog is showing, refresh the list of clients
         // TODO: Refresh device dialog if needed
 //        if(localScan.isDeviceDialogShowing()) {
@@ -1479,7 +1508,7 @@ public class MainActivity extends AppCompatActivity
 //      VoiceControlForPlexApplication.castRoutes.put(client.machineIdentifier, route);
       VoiceControlForPlexApplication.castClients.put(client.name, client);
       Logger.d("Added cast client %s (%s)", client.name, client.machineIdentifier);
-      VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.SAVED_CAST_CLIENTS, gsonWrite.toJson(VoiceControlForPlexApplication.castClients));
+      prefs.put(Preferences.SAVED_CAST_CLIENTS, gsonWrite.toJson(VoiceControlForPlexApplication.castClients));
       // If the "select a plex client" dialog is showing, refresh the list of clients
       // TODO: implement this?
 //      if(deviceSelectDialog != null && deviceSelectDialog.isShowing()) {
@@ -1594,7 +1623,7 @@ public class MainActivity extends AppCompatActivity
             body.append(String.format("Version: %s\n", Build.VERSION.RELEASE));
             body.append(String.format("App Version: %s\n\n", getPackageManager().getPackageInfo(getPackageName(), 0).versionName));
 
-            body.append(String.format("Logged in: %s\n\n", VoiceControlForPlexApplication.getInstance().prefs.getString(Preferences.PLEX_USERNAME) != null ? "yes" : "no"));
+            body.append(String.format("Logged in: %s\n\n", prefs.getString(Preferences.PLEX_USERNAME) != null ? "yes" : "no"));
 
             body.append("Description of the issue:\n\n");
 
@@ -1680,7 +1709,7 @@ public class MainActivity extends AppCompatActivity
     ArrayAdapter arrayAdapter = new ArrayAdapter(getApplicationContext(), android.R.layout.simple_list_item_single_choice, list);
 
     listView.setAdapter(arrayAdapter);
-    int numTrailers = VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.NUM_CINEMA_TRAILERS, 0);
+    int numTrailers = prefs.get(Preferences.NUM_CINEMA_TRAILERS, 0);
     listView.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
     listView.setItemChecked(numTrailers, true);
 
@@ -1692,7 +1721,7 @@ public class MainActivity extends AppCompatActivity
       public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         CheckedTextView item = (CheckedTextView)view;
         item.setChecked(true);
-        VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.NUM_CINEMA_TRAILERS, position);
+        prefs.put(Preferences.NUM_CINEMA_TRAILERS, position);
         handler.postDelayed(new Runnable() {
           @Override
           public void run() {
@@ -1734,18 +1763,55 @@ public class MainActivity extends AppCompatActivity
     showWearPurchase(R.string.wear_detected_can_purchase, true);
   }
 
-  protected void showWearPurchase(boolean showPurchaseFromMenu) {
-    showWearPurchase(R.string.wear_detected_can_purchase, showPurchaseFromMenu);
-  }
-
   protected void showWearPurchase(int stringResource, final boolean showPurchaseFromMenu) {
+    AlertDialog.Builder builder = new AlertDialog.Builder(this);
+    View view = getLayoutInflater().inflate(R.layout.popup_wear_purchase_required, null);
+    builder.setView(view);
+    final AlertDialog dialog = builder.create();
+    TextView wearPurchaseRequiredTitle = (TextView)view.findViewById(R.id.wearPurchaseRequiredTitle);
+    wearPurchaseRequiredTitle.setText(String.format(getString(stringResource), VoiceControlForPlexApplication.getWearPrice()));
+    Button wearPurchaseRequiredNoThanksButton = (Button)view.findViewById(R.id.wearPurchaseRequiredNoThanksButton);
+    wearPurchaseRequiredNoThanksButton.setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View v) {
+        dialog.cancel();
+        prefs.put(Preferences.HAS_SHOWN_WEAR_PURCHASE_POPUP, true);
+        if(showPurchaseFromMenu) {
+          new AlertDialog.Builder(MainActivity.this)
+                  .setMessage(R.string.wear_purchase_from_menu)
+                  .setCancelable(false)
+                  .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                      dialog.cancel();
+                    }
+                  }).create().show();
+        }
+      }
+    });
+    Button wearPurchaseRequiredOKButton = (Button)view.findViewById(R.id.wearPurchaseRequiredOKButton);
+    wearPurchaseRequiredOKButton.setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View v) {
+        prefs.put(Preferences.HAS_SHOWN_WEAR_PURCHASE_POPUP, true);
+        dialog.cancel();
+        VoiceControlForPlexApplication.getInstance().getIabHelper().flagEndAsync();
+        VoiceControlForPlexApplication.getInstance().getIabHelper().launchPurchaseFlow(MainActivity.this,
+                VoiceControlForPlexApplication.SKU_WEAR, 10001, mPurchaseFinishedListener,
+                VoiceControlForPlexApplication.SKU_TEST_PURCHASED == VoiceControlForPlexApplication.SKU_WEAR ? VoiceControlForPlexApplication.getInstance().getEmailHash() : "");
+      }
+    });
+
+
+    dialog.show();
+/*
     new AlertDialog.Builder(MainActivity.this)
             .setMessage(String.format(getString(stringResource), VoiceControlForPlexApplication.getWearPrice()))
             .setCancelable(false)
             .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
               @Override
               public void onClick(DialogInterface dialogInterface, int i) {
-                VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.HAS_SHOWN_WEAR_PURCHASE_POPUP, true);
+                prefs.put(Preferences.HAS_SHOWN_WEAR_PURCHASE_POPUP, true);
                 dialogInterface.cancel();
                 VoiceControlForPlexApplication.getInstance().getIabHelper().launchPurchaseFlow(MainActivity.this,
                         VoiceControlForPlexApplication.SKU_WEAR, 10001, mPurchaseFinishedListener,
@@ -1755,7 +1821,7 @@ public class MainActivity extends AppCompatActivity
             .setNeutralButton(R.string.no_thanks, new DialogInterface.OnClickListener() {
               public void onClick(DialogInterface dialog, int id) {
                 dialog.cancel();
-                VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.HAS_SHOWN_WEAR_PURCHASE_POPUP, true);
+                prefs.put(Preferences.HAS_SHOWN_WEAR_PURCHASE_POPUP, true);
                 if(showPurchaseFromMenu) {
                   new AlertDialog.Builder(MainActivity.this)
                           .setMessage(R.string.wear_purchase_from_menu)
@@ -1769,6 +1835,7 @@ public class MainActivity extends AppCompatActivity
                 }
               }
             }).create().show();
+            */
   }
 
   IabHelper.OnIabPurchaseFinishedListener mPurchaseFinishedListener
@@ -1859,21 +1926,35 @@ public class MainActivity extends AppCompatActivity
 
   private void showChromecastVideoOptions(final boolean local) {
     AlertDialog.Builder builder = new AlertDialog.Builder(this);
-    builder.setTitle(local ? getString(R.string.chromecast_video_local_full) : getString(R.string.chromecast_video_remote_full));
+    View view = getLayoutInflater().inflate(R.layout.popup_chromecast_video_options_detail, null);
+    builder.setView(view);
+    final AlertDialog dialog = builder.create();
+    TextView chromecastVideoOptionsTitle = (TextView)view.findViewById(R.id.chromecastVideoOptionsTitle);
+    chromecastVideoOptionsTitle.setText(local ? R.string.chromecast_video_local_full : R.string.chromecast_video_remote_full);
+    RadioGroup chromecastVideoOptionsRadioGroup = (RadioGroup)view.findViewById(R.id.chromecastVideoOptionsRadioGroup);
     final CharSequence[] items = VoiceControlForPlexApplication.chromecastVideoOptions.keySet().toArray(new CharSequence[VoiceControlForPlexApplication.chromecastVideoOptions.size()]);
-    int videoQuality = new ArrayList<>(VoiceControlForPlexApplication.chromecastVideoOptions.keySet()).indexOf(VoiceControlForPlexApplication.getInstance().prefs.getString(local ? Preferences.CHROMECAST_VIDEO_QUALITY_LOCAL : Preferences.CHROMECAST_VIDEO_QUALITY_REMOTE));
+    int videoQuality = new ArrayList<>(VoiceControlForPlexApplication.chromecastVideoOptions.keySet()).indexOf(prefs.getString(local ? Preferences.CHROMECAST_VIDEO_QUALITY_LOCAL : Preferences.CHROMECAST_VIDEO_QUALITY_REMOTE));
     if(videoQuality == -1)
-      videoQuality = new ArrayList<>(VoiceControlForPlexApplication.chromecastVideoOptions.keySet()).indexOf("8mbps 1080p");
-    Logger.d("video quality: %d", videoQuality);
-    builder.setSingleChoiceItems(items, videoQuality, new DialogInterface.OnClickListener() {
+      videoQuality = new ArrayList<>(VoiceControlForPlexApplication.chromecastVideoOptions.keySet()).indexOf("8mbps 720p");
+    LinearLayout.LayoutParams layoutParams = new RadioGroup.LayoutParams(
+            RadioGroup.LayoutParams.WRAP_CONTENT,
+            RadioGroup.LayoutParams.WRAP_CONTENT);
+    for(int i=0;i<items.length;i++) {
+      RadioButton button = (RadioButton)getLayoutInflater().inflate(R.layout.popup_chromecast_video_options_button, null);
+      button.setText(items[i]);
+      button.setId(i);
+      chromecastVideoOptionsRadioGroup.addView(button, layoutParams);
+    }
+    chromecastVideoOptionsRadioGroup.check(videoQuality);
+    chromecastVideoOptionsRadioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
       @Override
-      public void onClick(DialogInterface dialog, int which) {
-        Logger.d("clicked %d (%s) (%s)", which, (String)items[which], local);
-        VoiceControlForPlexApplication.getInstance().prefs.put(local ? Preferences.CHROMECAST_VIDEO_QUALITY_LOCAL : Preferences.CHROMECAST_VIDEO_QUALITY_REMOTE, (String)items[which]);
+      public void onCheckedChanged(RadioGroup group, int checkedId) {
+        Logger.d("Checked %s", items[checkedId]);
+        prefs.put(local ? Preferences.CHROMECAST_VIDEO_QUALITY_LOCAL : Preferences.CHROMECAST_VIDEO_QUALITY_REMOTE, (String)items[checkedId]);
         dialog.dismiss();
       }
     });
-    builder.create().show();
+    dialog.show();
   }
 
   public void importTaskerProject(MenuItem item) {
@@ -1965,7 +2046,7 @@ public class MainActivity extends AppCompatActivity
       pinfo = getPackageManager().getPackageInfo("net.dinglisch.android.taskerm", 0);
       return true;
     } catch(Exception e) {
-      Logger.d("Exception getting google search version: " + e.getStackTrace());
+      Logger.d("Exception getting tasker version: " + e.getStackTrace());
     }
     return false;
   }
@@ -2049,59 +2130,10 @@ public class MainActivity extends AppCompatActivity
     }
   }
 
-  /*
-  @Override
-  public void onSubscribed() {
-    Logger.d("[MainActivity] onSubscribed: %s", client);
-
-
-  }
-
-  @Override
-  public void onUnsubscribed() {
-
-  }
-
-  @Override
-  public void onStopped() {
-
-  }
-
-  @Override
-  public void onFoundPlayingMedia(final Timeline timeline) {
-    Logger.d("[MainActivity] found key: %s", timeline.key);
-
-
-  }
-  */
-
-  private DrawerLayout.DrawerListener drawerListener = new DrawerLayout.DrawerListener() {
-    @Override
-    public void onDrawerSlide(View drawerView, float slideOffset) {
-
-    }
-
-    @Override
-    public void onDrawerOpened(View drawerView) {
-
-    }
-
-    @Override
-    public void onDrawerClosed(View drawerView) {
-      setNavGroup(R.menu.nav_items_main);
-    }
-
-    @Override
-    public void onDrawerStateChanged(int newState) {
-
-    }
-  };
-
   @Override
   public void onLayoutNotFound() {
     // This is passed by PlayerFragment in the case where it is not able to tell which layout (tv/movie/music) to use. We should switch back to the main fragment
     switchToFragment(getMainFragment());
-
   }
 
   private MainFragment getMainFragment() {

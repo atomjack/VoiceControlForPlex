@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog>
+    <release version="2.1.0" versioncode="60">
+        <change>Material Design UI Overhaul</change>
+        <change>Added volume control for Chromecast clients</change>
+    </release>
     <release version="2.0.8" versioncode="59">
         <change>Added audio/subtitle stream support for Chromecast clients.</change>
         <change>Other fixes and improvements related to Chromecast.</change>

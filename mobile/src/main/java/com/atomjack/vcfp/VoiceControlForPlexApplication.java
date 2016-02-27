@@ -530,9 +530,9 @@ public class VoiceControlForPlexApplication extends Application
 
     mIabHelper.startSetup(new IabHelper.OnIabSetupFinishedListener() {
       public void onIabSetupFinished(IabResult result) {
-        Logger.d("Setup finished.");
+        Logger.d("IABHelper Setup finished.");
 
-        Logger.d("Hash: %s", getEmailHash());
+//        Logger.d("Hash: %s", getEmailHash());
         if (!result.isSuccess()) {
           // Oh noes, there was a problem.
           Logger.d("Problem setting up in-app billing: " + result);
@@ -566,7 +566,7 @@ public class VoiceControlForPlexApplication extends Application
       Logger.d("Query inventory was successful.");
 
       // Get the price for chromecast & wear support
-      mIabHelper.queryInventoryAsync(true, new ArrayList<String>(Arrays.asList(SKU_CHROMECAST, SKU_WEAR)), new IabHelper.QueryInventoryFinishedListener() {
+      mIabHelper.queryInventoryAsync(true, new ArrayList<>(Arrays.asList(SKU_CHROMECAST, SKU_WEAR)), new IabHelper.QueryInventoryFinishedListener() {
         @Override
         public void onQueryInventoryFinished(IabResult result, Inventory inv) {
           SkuDetails skuDetails = inv.getSkuDetails(SKU_CHROMECAST);
