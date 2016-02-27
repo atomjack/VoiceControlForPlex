@@ -27,6 +27,15 @@
             android:textColor="@color/white"/>
     </LinearLayout>
 
+    <CheckBox
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/resume_if_in_progress"
+        android:id="@+id/resumeCheckbox"
+        android:textColor="@color/white"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="15dp"/>
+
     <SeekBar
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"

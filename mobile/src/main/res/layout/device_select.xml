@@ -64,15 +64,24 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content" >
     </ListView>
-    <CheckBox
-        android:id="@+id/serverListResume"
-        android:layout_width="match_parent"
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="30dp"
-        android:layout_marginTop="10dp"
-        android:visibility="gone"
-        android:text="@string/resume_if_in_progress"
-        android:textColor="@color/white" />
+        android:gravity="center_horizontal">
+
+        <CheckBox
+            android:id="@+id/deviceListResume"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="30dp"
+            android:layout_marginTop="10dp"
+            android:text="@string/resume_if_in_progress"
+            android:textColor="@color/white"
+            android:allowUndo="false"
+            android:visibility="gone"/>
+    </LinearLayout>
 
     <FrameLayout
         android:layout_width="match_parent"

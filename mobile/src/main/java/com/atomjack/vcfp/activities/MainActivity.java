@@ -1284,12 +1284,21 @@ public class MainActivity extends AppCompatActivity
             }
           };
           Logger.d("Refreshing");
-          //deviceListRefreshSpinner
           button.setVisibility(View.GONE);
           spinnerImage.setVisibility(View.VISIBLE);
           handler.removeCallbacks(refreshClients);
           refreshClients.run();
 
+        }
+      });
+
+      CheckBox resumeCheckbox = (CheckBox) layout.findViewById(R.id.deviceListResume);
+      resumeCheckbox.setVisibility(View.VISIBLE);
+      resumeCheckbox.setChecked(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.RESUME, false));
+      resumeCheckbox.setOnClickListener(new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+          VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.RESUME, ((CheckBox) v).isChecked());
         }
       });
 
@@ -1314,7 +1323,7 @@ public class MainActivity extends AppCompatActivity
           PlexClient s = (PlexClient) parentAdapter.getItemAtPosition(position);
           Logger.d("client clicked: %s", s.name);
           deviceSelectDialog.dismiss();
-          CheckBox resumeCheckbox = (CheckBox) deviceSelectDialog.findViewById(R.id.serverListResume);
+          CheckBox resumeCheckbox = (CheckBox) deviceSelectDialog.findViewById(R.id.deviceListResume);
           if (onFinish != null)
             onFinish.onDeviceSelected(s, resumeCheckbox.isChecked());
         }
@@ -1336,6 +1345,14 @@ public class MainActivity extends AppCompatActivity
                 .setView(view);
         final AlertDialog subscribeDialog = builder.create();
 
+        CheckBox resumeCheckbox = (CheckBox)view.findViewById(R.id.resumeCheckbox);
+        resumeCheckbox.setChecked(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.RESUME, false));
+        resumeCheckbox.setOnClickListener(new View.OnClickListener() {
+          @Override
+          public void onClick(View v) {
+            VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.RESUME, ((CheckBox) v).isChecked());
+          }
+        });
         TextView clientName = (TextView)view.findViewById(R.id.popupConnectedToClientName);
         clientName.setText(client.name);
         Button cancelButton = (Button)view.findViewById(R.id.popupConnectedToClientCancelButton);

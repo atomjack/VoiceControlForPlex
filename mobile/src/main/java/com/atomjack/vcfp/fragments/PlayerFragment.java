@@ -127,7 +127,10 @@ public abstract class PlayerFragment extends Fragment
       seekBar = (SeekBar) mainView.findViewById(R.id.seekBar);
       seekBar.setOnSeekBarChangeListener(this);
       seekBar.setMax(nowPlayingMedia.duration / 1000);
-      seekBar.setProgress(Integer.parseInt(nowPlayingMedia.viewOffset) / 1000);
+      if(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.RESUME, false))
+        seekBar.setProgress(Integer.parseInt(nowPlayingMedia.viewOffset) / 1000);
+      else
+        seekBar.setProgress(0);
 
       setCurrentTimeDisplay(getOffset(nowPlayingMedia));
       durationDisplay.setText(VoiceControlForPlexApplication.secondsToTimecode(nowPlayingMedia.duration / 1000));

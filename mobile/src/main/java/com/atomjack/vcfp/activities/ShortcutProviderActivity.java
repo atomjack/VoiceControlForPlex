@@ -238,7 +238,7 @@ public class ShortcutProviderActivity extends AppCompatActivity implements Dialo
       deviceSelectDialog.findViewById(R.id.unauthorizedLocalServerFoundFrameView).setVisibility(View.GONE);
 
     if (showResume) {
-      CheckBox resumeCheckbox = (CheckBox) deviceSelectDialog.findViewById(R.id.serverListResume);
+      CheckBox resumeCheckbox = (CheckBox) deviceSelectDialog.findViewById(R.id.deviceListResume);
       resumeCheckbox.setVisibility(View.VISIBLE);
     }
 
@@ -253,7 +253,7 @@ public class ShortcutProviderActivity extends AppCompatActivity implements Dialo
                               long id) {
         PlexClient s = (PlexClient) parentAdapter.getItemAtPosition(position);
         deviceSelectDialog.dismiss();
-        CheckBox resumeCheckbox = (CheckBox) deviceSelectDialog.findViewById(R.id.serverListResume);
+        CheckBox resumeCheckbox = (CheckBox) deviceSelectDialog.findViewById(R.id.deviceListResume);
         if (onFinish != null)
           onFinish.onDeviceSelected(s, resumeCheckbox.isChecked());
       }
