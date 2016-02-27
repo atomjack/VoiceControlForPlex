@@ -83,7 +83,6 @@
                     android:layout_height="wrap_content"
                     android:id="@+id/nowPlayingPoster"
                     android:adjustViewBounds="true"
-                    android:src="@drawable/inception"
                     android:scaleType="fitXY"
                     android:layout_gravity="center_horizontal"/>
             </FrameLayout>

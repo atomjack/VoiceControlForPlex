@@ -12,9 +12,9 @@ adding translations, please do not modify (.*), $1, ([0-9]+), etc.
     <item name="pattern_recognition" type="string">^(((ver|continuar viendo|escuchar|ver película) (.+)( en (.+))?( en modo aleatorio)?)|((posición) (.+)( en (.+))?)|((forward|rewind|back) (.+)( on (.+))?)|((pausar|detener|continuar)( reproducción)?( en (.+))?))|(conectar a (.+)|desconectar)|(cycle (subtitles|audio))|(.*subtitle.*(off|on))$</item>
 
     <item name="pattern_on_client" type="string">(.+) en (.+)$</item>
-    <item name="pattern_resume_watching" type="string">^ver|(continuar viendo) (.+)</item>
+    <item name="pattern_resume_watching" type="string">^(ver|(continuar viendo)) (.+)</item>
     <item name="pattern_on_shuffle" type="string"> en modo aleatorio$</item>
-    <item name="pattern_watch" type="string">ver $2</item>
+    <item name="pattern_watch" type="string">ver $3</item>
     <item name="pattern_watch_movie" type="string">(ver) película (.+)</item>
     <item name="pattern_watch_season_episode_of_show" type="string">(ver) temporada ([0-9]+) episodio ([0-9]+) de (.+)</item>
     <item name="pattern_watch_show_season_episode" type="string">(ver) (.+) temporada ([0-9]+) episodio ([0-9]+)</item>

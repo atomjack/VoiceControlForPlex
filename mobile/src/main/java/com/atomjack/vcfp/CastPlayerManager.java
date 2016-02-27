@@ -589,7 +589,8 @@ public class CastPlayerManager {
         data.put(PARAMS.SUBTITLE_SRC, getTranscodeUrl(nowPlayingMedia, connection, offset, true));
         data.put(PARAMS.AUDIO_STREAMS, VoiceControlForPlexApplication.gsonWrite.toJson(nowPlayingMedia.getStreams(Stream.AUDIO)));
         data.put(PARAMS.SUBTITLE_STREAMS, VoiceControlForPlexApplication.gsonWrite.toJson(nowPlayingMedia.getStreams(Stream.SUBTITLE)));
-        data.put(PARAMS.ACTIVE_SUBTITLE, nowPlayingMedia.getActiveStream(Stream.SUBTITLE).id);
+        if(nowPlayingMedia.getActiveStream(Stream.SUBTITLE) != null)
+          data.put(PARAMS.ACTIVE_SUBTITLE, nowPlayingMedia.getActiveStream(Stream.SUBTITLE).id);
       }
       data.put(PARAMS.ACCESS_TOKEN, nowPlayingMedia.server.accessToken);
       data.put(PARAMS.PLAYLIST, getPlaylistJson());

@@ -84,7 +84,7 @@
                 android:id="@+id/nowPlayingPoster"
                 android:layout_weight="1"
                 android:layout_gravity="right"
-                android:src="@drawable/bonobo2"/>
+                />
         </FrameLayout>
 
     </LinearLayout>

@@ -75,7 +75,6 @@
                 android:layout_height="fill_parent"
                 android:id="@+id/nowPlayingPoster"
                 android:adjustViewBounds="true"
-                android:src="@drawable/bonobothumb2"
                 android:layout_gravity="center_horizontal"
                 android:scaleType="fitCenter"/>
         </FrameLayout>

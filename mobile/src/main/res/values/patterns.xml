@@ -14,9 +14,9 @@ Also, you don't need to translate these comments.
     <item name="pattern_recognition" type="string">^(((watch|play|resume watching|resume playing|listen to|watch movie|play movie) (.+)( on (.+))?( on shuffle)?)|((offset|timecode) (.+)( on (.+))?)|((forward|rewind|back) (.+)( on (.+))?)|((pause|stop|resume)( playback)?( on (.+))?))|(connect to (.+)|disconnect)|(cycle (subtitles|audio))|(.*subtitle.*(off|on))$</item>
 
     <item name="pattern_on_client" type="string">(.+) on (.+)$</item>
-    <item name="pattern_resume_watching" type="string">^resume watching|playing (.+)</item>
+    <item name="pattern_resume_watching" type="string">^resume (watching|playing) (.+)</item>
     <item name="pattern_on_shuffle" type="string"> on shuffle$</item>
-    <item name="pattern_watch" type="string">watch $1</item>
+    <item name="pattern_watch" type="string">watch $2</item>
     <item name="pattern_watch_movie" type="string">(watch|play) movie (.+)</item>
     <item name="pattern_watch_season_episode_of_show" type="string">(watch|play) season ([0-9]+) episode ([0-9]+) of (.+)</item>
     <item name="pattern_watch_show_season_episode" type="string">(watch|play) (.+) season ([0-9]+) episode ([0-9]+)</item>

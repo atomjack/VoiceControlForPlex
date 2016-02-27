@@ -14,9 +14,9 @@ Also, you don't need to translate these comments.
     <item name="pattern_recognition" type="string">^(((regarder|reprendre lecture|écouter|regarder film) (.+)( sur (.+))?)|((position) (.+)( sur (.+))?)|((forward|rewind|back) (.+)( on (.+))?)|((pauser|reprendre|arrêter)( lecture)?( sur (.+))?))|(cycle (subtitles|audio))|(.*subtitle.*(off|on))$</item>
 
     <item name="pattern_on_client" type="string">(.+) sur (.+)$</item>
-    <item name="pattern_resume_watching" type="string">^regarder|(reprendre lecture) (.+)</item>
+    <item name="pattern_resume_watching" type="string">^(regarder|(reprendre lecture)) (.+)</item>
     <item name="pattern_on_shuffle" type="string"> on shuffle$</item>
-    <item name="pattern_watch" type="string">regarder $2</item>
+    <item name="pattern_watch" type="string">regarder $3</item>
     <item name="pattern_watch_movie" type="string">(regarder) film (.+)</item>
     <item name="pattern_watch_season_episode_of_show" type="string">(regarder) saison ([0-9]+) épisode ([0-9]+) of (.+)</item>
     <item name="pattern_watch_show_season_episode" type="string">(regarder) (.+) saison ([0-9]+) épisode ([0-9]+)</item>

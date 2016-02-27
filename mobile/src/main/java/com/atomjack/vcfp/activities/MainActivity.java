@@ -348,7 +348,7 @@ public class MainActivity extends AppCompatActivity
       int layout = getLayoutForMedia(media, state);
 
       if(layout != -1) {
-        playerFragment.init(layout, client, media, plexSubscriptionListener);
+        playerFragment.init(layout, client, media, false, plexSubscriptionListener);
         switchToFragment(playerFragment);
       }
       sendWearPlaybackChange(state, media);
@@ -952,7 +952,7 @@ public class MainActivity extends AppCompatActivity
     int layout = getLayoutForMedia(media, state);
     Logger.d("Layout: %d", layout);
     if(layout != -1) {
-      playerFragment.init(layout, client, media, plexSubscriptionListener);
+      playerFragment.init(layout, client, media, fromWear, plexSubscriptionListener);
       if(playerFragment.isVisible())
         playerFragment.mediaChanged(media);
       else

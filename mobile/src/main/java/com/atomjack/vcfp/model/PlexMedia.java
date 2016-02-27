@@ -214,7 +214,7 @@ public abstract class PlexMedia implements Parcelable {
         return stream;
     }
 
-    return streams.get(0);
+    return null;
   }
 
   public void setActiveStream(Stream s) {

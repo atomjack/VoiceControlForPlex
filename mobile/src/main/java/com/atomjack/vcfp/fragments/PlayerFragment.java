@@ -8,6 +8,7 @@ import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.speech.RecognizerIntent;
 import android.support.annotation.Nullable;
@@ -32,35 +33,24 @@ import com.atomjack.shared.Intent;
 import com.atomjack.shared.Logger;
 import com.atomjack.shared.PlayerState;
 import com.atomjack.shared.Preferences;
-import com.atomjack.shared.SendToDataLayerThread;
 import com.atomjack.shared.WearConstants;
-import com.atomjack.shared.model.Timeline;
 import com.atomjack.vcfp.Feedback;
-import com.atomjack.vcfp.PlexHeaders;
 import com.atomjack.vcfp.R;
-import com.atomjack.vcfp.Utils;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.activities.MainActivity;
-import com.atomjack.vcfp.activities.VCFPActivity;
 import com.atomjack.vcfp.adapters.StreamAdapter;
 import com.atomjack.vcfp.interfaces.ActiveConnectionHandler;
 import com.atomjack.vcfp.interfaces.ActivityListener;
-import com.atomjack.vcfp.interfaces.BitmapHandler;
 import com.atomjack.vcfp.interfaces.InputStreamHandler;
-import com.atomjack.vcfp.interfaces.PlayerFragmentListener;
 import com.atomjack.vcfp.interfaces.PlexSubscriptionListener;
 import com.atomjack.vcfp.model.Connection;
-import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexMedia;
-import com.atomjack.vcfp.model.PlexServer;
 import com.atomjack.vcfp.model.PlexTrack;
 import com.atomjack.vcfp.model.PlexVideo;
 import com.atomjack.vcfp.model.Stream;
 import com.atomjack.vcfp.net.PlexHttpClient;
-import com.atomjack.vcfp.net.PlexHttpMediaContainerHandler;
 import com.atomjack.vcfp.services.PlexSearchService;
-import com.google.android.gms.wearable.DataMap;
 
 import org.apache.commons.io.IOUtils;
 
@@ -75,7 +65,6 @@ import cz.fhucho.android.util.SimpleDiskCache;
 
 public abstract class PlayerFragment extends Fragment
         implements SeekBar.OnSeekBarChangeListener {
-  protected PlayerFragmentListener playerFragmentListener;
   protected PlexMedia nowPlayingMedia;
   protected PlexClient client;
 
@@ -100,6 +89,8 @@ public abstract class PlayerFragment extends Fragment
   protected TextView durationDisplay;
   protected ImageView nowPlayingPoster;
 
+  protected boolean fromWear = false;
+
   protected GestureDetectorCompat mDetector;
 
   protected Dialog mediaOptionsDialog;
@@ -118,6 +109,7 @@ public abstract class PlayerFragment extends Fragment
     if(savedInstanceState != null) {
       Logger.d("[PlayerFragment] onSavedInstanceState is not null");
       nowPlayingMedia = savedInstanceState.getParcelable(Intent.EXTRA_MEDIA);
+      fromWear = savedInstanceState.getBoolean(WearConstants.FROM_WEAR, false);
       layout = savedInstanceState.getInt(Intent.EXTRA_LAYOUT);
       client = savedInstanceState.getParcelable(Intent.EXTRA_CLIENT);
     }
@@ -156,10 +148,11 @@ public abstract class PlayerFragment extends Fragment
     simpleDiskCache = VoiceControlForPlexApplication.getInstance().mSimpleDiskCache;
   }
 
-  public void init(int layout, PlexClient client, PlexMedia media, PlexSubscriptionListener plexSubscriptionListener) {
+  public void init(int layout, PlexClient client, PlexMedia media, boolean fromWear, PlexSubscriptionListener plexSubscriptionListener) {
     this.layout = layout;
     this.client = client;
     nowPlayingMedia = media;
+    this.fromWear = fromWear;
     this.plexSubscriptionListener = plexSubscriptionListener;
   }
 
@@ -290,7 +283,8 @@ public abstract class PlayerFragment extends Fragment
       vto.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
         @Override
         public void onGlobalLayout() {
-          nowPlayingPosterContainer.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+          if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
+            nowPlayingPosterContainer.getViewTreeObserver().removeOnGlobalLayoutListener(this);
           int height = nowPlayingPosterContainer.getMeasuredHeight();
           int width = nowPlayingPosterContainer.getMeasuredWidth();
           Logger.d("Found dimensions: %d/%d", width, height);
@@ -556,7 +550,7 @@ public abstract class PlayerFragment extends Fragment
 
       SecureRandom random = new SecureRandom();
       serviceIntent.setData(Uri.parse(new BigInteger(130, random).toString(32)));
-      PendingIntent resultsPendingIntent = PendingIntent.getService(getActivity(), 0, serviceIntent, android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+      PendingIntent resultsPendingIntent = PendingIntent.getService(getActivity(), 0, serviceIntent, PendingIntent.FLAG_ONE_SHOT);
 
       android.content.Intent listenerIntent = new android.content.Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
       listenerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
@@ -637,7 +631,6 @@ public abstract class PlayerFragment extends Fragment
     }
 
     builder.setView(layout);
-    builder.setTitle(getResources().getString(R.string.stream_selection));
     mediaOptionsDialog = builder.create();
     mediaOptionsDialog.show();
   }
