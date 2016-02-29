@@ -3,19 +3,75 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:orientation="vertical"
               android:layout_width="match_parent"
-              android:layout_height="match_parent">
+              android:layout_height="match_parent"
+              android:background="@color/settings_popup_background"
+              android:padding="20dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="@string/login_title"
+        android:id="@+id/textView15"
+        android:textColor="@color/white"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="@string/login_message"
+        android:id="@+id/textView16"
+        android:textColor="@color/white"
+        android:layout_marginTop="20dp"/>
+
     <EditText
         android:id="@+id/usernameInput"
         android:layout_width="match_parent"
         android:inputType="text"
         android:text=""
         android:hint="@string/username"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:textColor="@color/white"
+        android:textColorHint="@color/white"
+        android:clickable="true"
+        android:layout_marginTop="20dp"/>
     <EditText
         android:id="@+id/passwordInput"
         android:layout_width="match_parent"
         android:inputType="textPassword"
         android:text=""
         android:hint="@string/password"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:textColor="@color/white"
+        android:textColorHint="@color/white"/>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/button_pin"
+            android:id="@+id/popupManualLoginPinButton"/>
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/cancel"
+            android:id="@+id/popupManualLoginCancelButton"
+            android:layout_alignParentTop="true"
+            android:layout_toLeftOf="@+id/popupManualLoginOKButton"
+            android:layout_toStartOf="@+id/popupManualLoginOKButton"/>
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/ok"
+            android:id="@+id/popupManualLoginOKButton"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentEnd="true"/>
+    </RelativeLayout>
+
 </LinearLayout>

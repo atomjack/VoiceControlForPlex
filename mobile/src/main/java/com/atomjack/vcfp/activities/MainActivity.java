@@ -400,8 +400,10 @@ public class MainActivity extends AppCompatActivity
   private void init() {
     handler = new Handler();
 
-    if(BuildConfig.USE_BUGSENSE)
+    if(BuildConfig.USE_BUGSENSE) {
+      Mint.disableNetworkMonitoring();
       Mint.initAndStartSession(getApplicationContext(), BUGSENSE_APIKEY);
+    }
 
     // Set a Toolbar to replace the ActionBar.
     toolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -575,31 +577,31 @@ public class MainActivity extends AppCompatActivity
 
   private void showPin(final Pin pin) {
     AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(MainActivity.this);
-    alertDialogBuilder.setTitle(R.string.pin_title);
-    alertDialogBuilder.setMessage(String.format(getString(R.string.pin_message), pin.code));
-    alertDialogBuilder
-            .setCancelable(false)
-            .setNegativeButton("Cancel",
-                    new DialogInterface.OnClickListener() {
-                      public void onClick(DialogInterface dialog, int id) {
-                        dialog.cancel();
-                        fetchPinTask.getFuture().cancel(false);
-                      }
-                    }
-            )
-            .setNeutralButton("Manual", new DialogInterface.OnClickListener() {
-              @Override
-              public void onClick(final DialogInterface dialog, int id) {
-                dialog.dismiss();
-                fetchPinTask.getFuture().cancel(false);
-                showManualLogin();
-              }
-            });
-
-
+    View view = getLayoutInflater().inflate(R.layout.popup_plex_pin, null);
+    alertDialogBuilder.setView(view);
     // create and show an alert dialog
     final AlertDialog pinAlert = alertDialogBuilder.create();
     pinAlert.show();
+
+    TextView popupPlexPinMessage = (TextView)view.findViewById(R.id.popupPlexPinMessage);
+    popupPlexPinMessage.setText(String.format(getString(R.string.pin_message), pin.code));
+    Button popupPlexPinManualButton = (Button)view.findViewById(R.id.popupPlexPinManualButton);
+    popupPlexPinManualButton.setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View v) {
+        pinAlert.dismiss();
+        fetchPinTask.getFuture().cancel(false);
+        showManualLogin();
+      }
+    });
+    Button popupPlexPinCancelButton = (Button)view.findViewById(R.id.popupPlexPinCancelButton);
+    popupPlexPinCancelButton.setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View v) {
+        pinAlert.cancel();
+        fetchPinTask.getFuture().cancel(false);
+      }
+    });
 
     // Now set up a task to hit the below url (based on the "id" field returned in the above http POST)
     // every second. Once the user has entered the code on the plex website, the xml returned from the
@@ -618,7 +620,6 @@ public class MainActivity extends AppCompatActivity
               PlexHttpClient.signin(authToken, new PlexHttpUserHandler() {
                 @Override
                 public void onSuccess(PlexUser user) {
-                  Logger.d("Got user: %s", user.username);
                   prefs.put(Preferences.PLEX_USERNAME, user.username);
                   prefs.put(Preferences.PLEX_EMAIL, user.email);
                   if(doingFirstTimeSetup) {
@@ -628,7 +629,6 @@ public class MainActivity extends AppCompatActivity
                   } else {
                     setupNavigationDrawer();
                     refreshServers(null);
-                    refreshServers.run();
                   }
                 }
 
@@ -679,45 +679,33 @@ public class MainActivity extends AppCompatActivity
 
   private void showManualLogin() {
     LayoutInflater layoutInflater = LayoutInflater.from(MainActivity.this);
-    View promptView = layoutInflater.inflate(R.layout.login, null);
-    AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(MainActivity.this);
-    alertDialogBuilder.setView(promptView);
-    alertDialogBuilder.setTitle(R.string.login_title);
-    alertDialogBuilder.setMessage(R.string.login_message);
-    final EditText usernameInput = (EditText) promptView.findViewById(R.id.usernameInput);
-    final EditText passwordInput = (EditText) promptView.findViewById(R.id.passwordInput);
-    alertDialogBuilder
-            .setCancelable(true)
-            .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
-              @Override
-              public void onClick(final DialogInterface dialog, int id) {
-              }
-            })
-            .setNeutralButton(R.string.button_pin, new DialogInterface.OnClickListener() {
-              @Override
-              public void onClick(final DialogInterface dialog, int id) {
-                dialog.dismiss();
-                showLogin();
-              }
-            })
-            .setNegativeButton(R.string.cancel,
-                    new DialogInterface.OnClickListener() {
-                      public void onClick(DialogInterface dialog, int id) {
-                        dialog.cancel();
-                      }
-                    }
-            );
+    View view = layoutInflater.inflate(R.layout.login, null);
+    AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+    builder.setView(view);
+    final EditText usernameInput = (EditText) view.findViewById(R.id.usernameInput);
+    final EditText passwordInput = (EditText) view.findViewById(R.id.passwordInput);
 
+    final AlertDialog alertD = builder.create();
 
-    // create an alert dialog
-    final AlertDialog alertD = alertDialogBuilder.create();
-
-    alertD.show();
-
-    Button b = alertD.getButton(DialogInterface.BUTTON_POSITIVE);
-    b.setOnClickListener(new View.OnClickListener() {
+    Button popupManualLoginPinButton = (Button)view.findViewById(R.id.popupManualLoginPinButton);
+    popupManualLoginPinButton.setOnClickListener(new View.OnClickListener() {
       @Override
-      public void onClick(View view) {
+      public void onClick(View v) {
+        alertD.dismiss();
+        showLogin();
+      }
+    });
+    Button popupManualLoginCancelButton = (Button)view.findViewById(R.id.popupManualLoginCancelButton);
+    popupManualLoginCancelButton.setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View v) {
+        alertD.cancel();
+      }
+    });
+    Button popupManualLoginOKButton = (Button)view.findViewById(R.id.popupManualLoginOKButton);
+    popupManualLoginOKButton.setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View v) {
         PlexHttpClient.signin(usernameInput.getText().toString(), passwordInput.getText().toString(), new PlexHttpUserHandler() {
           @Override
           public void onSuccess(PlexUser user) {
@@ -730,6 +718,9 @@ public class MainActivity extends AppCompatActivity
               showFindingPlexClientsAndServers();
               refreshServers.run();
               refreshClients.run();
+            } else {
+              setupNavigationDrawer();
+              refreshServers(null);
             }
             alertD.cancel();
           }
@@ -747,6 +738,9 @@ public class MainActivity extends AppCompatActivity
         });
       }
     });
+    builder
+            .setCancelable(true);
+    alertD.show();
   }
 
   private void setServer(PlexServer s) {
@@ -973,7 +967,8 @@ public class MainActivity extends AppCompatActivity
   private void onFirstTimeScanFinished() {
     doingFirstTimeSetup = false;
     prefs.put(Preferences.FIRST_TIME_SETUP_COMPLETED, true);
-    alertDialog.dismiss();
+    if(alertDialog != null)
+      alertDialog.dismiss();
     init();
     drawerToggle.syncState();
     doAutomaticDeviceScan();

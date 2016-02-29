@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:orientation="vertical"
+              android:layout_width="wrap_content"
+              android:layout_height="match_parent"
+              android:background="@color/settings_popup_background"
+              android:padding="20dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="@string/create_shortcut"
+        android:id="@+id/textView10"
+        android:textColor="@color/white"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="@string/create_shortcut_blurb"
+        android:id="@+id/popupCreateShortcutMessage"
+        android:textColor="@color/white"
+        android:paddingTop="20dp"/>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingTop="30dp">
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/specify_now"
+            android:id="@+id/popupCreateShortcutSpecifyButton"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentEnd="true"/>
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/use_current"
+            android:id="@+id/popupCreateShortcutUseCurrentButton"
+            android:layout_alignTop="@+id/popupCreateShortcutSpecifyButton"
+            android:layout_toLeftOf="@+id/popupCreateShortcutSpecifyButton"
+            android:layout_toStartOf="@+id/popupCreateShortcutSpecifyButton"/>
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/cancel"
+            android:id="@+id/popupCreateShortcutCancelButton"
+            android:layout_alignTop="@+id/popupCreateShortcutUseCurrentButton"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true"/>
+    </RelativeLayout>
+
+</LinearLayout>
