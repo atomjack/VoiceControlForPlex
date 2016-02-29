@@ -149,6 +149,9 @@ public class PlexSearchService extends Service {
         // and then figure out which client to play to
         Logger.d("Got back from scanning for servers.");
         videoPlayed = false;
+//        plexmediaServers = VoiceControlForPlexApplication.servers;
+        HashMap<String, PlexServer> s = (HashMap<String, PlexServer>) intent.getSerializableExtra(com.atomjack.shared.Intent.EXTRA_SERVERS);
+        VoiceControlForPlexApplication.servers = new ConcurrentHashMap<>(s);
         plexmediaServers = VoiceControlForPlexApplication.servers;
         didServerScan = true;
         setClient();
@@ -328,7 +331,7 @@ public class PlexSearchService extends Service {
 
 		final PlexServer defaultServer = VoiceControlForPlexApplication.gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.SERVER, ""), PlexServer.class);
 		if(specifiedServer != null && client != null && !specifiedServer.name.equals(getResources().getString(R.string.scan_all))) {
-			// got a specified server and mClient from a shortcut
+			// got a specified server and client from a shortcut
 			Logger.d("Got hardcoded server and client from shortcut with %d music sections", specifiedServer.musicSections.size());
 			plexmediaServers = new ConcurrentHashMap<>();
 			plexmediaServers.put(specifiedServer.name, specifiedServer);
@@ -341,15 +344,19 @@ public class PlexSearchService extends Service {
 			setClient();
 		} else {
 			// Scan All was chosen
-			Logger.d("Scan all was chosen");
+			Logger.d("Scan all was chosen, seconds since last server scan: %d", VoiceControlForPlexApplication.getInstance().getSecondsSinceLastServerScan());
 
-			if(didServerScan) {
+			if(didServerScan || VoiceControlForPlexApplication.getInstance().getSecondsSinceLastServerScan() <= (MainActivity.SERVER_SCAN_INTERVAL/ 1000) || !BuildConfig.AUTO_REFRESH_DEVICES) {
+        // Set the media servers we will scan to the ones saved in the application. This will either just have been saved after a server scan, due to
+        // the last server scan being more than 5 minutes ago, or else it will be what was already stored since it's been less than 5 minutes since the last
+        // scan (or the app is the debug version which doesn't auto scan)
+        plexmediaServers = VoiceControlForPlexApplication.servers;
 				setClient();
 				return;
 			}
-			// First, see if what needs to be done actually needs to know about the server (i.e. pause/stop/resume playback of offset).
+			// First, see if what needs to be done actually needs to know about the server (i.e. pause/stop/resume playback or offset).
 			// If it doesn't, execute the action and return as we don't need to do anything else. However, also check to see if the user
-			// has specified a client (using " on <mClient name>") - if this is the case, we will need to find that mClient via server
+			// has specified a client (using " on <client name>") - if this is the case, we will need to find that client via server
 			// discovery
 			myRunnable actionToDo = handleVoiceSearch(true);
 			if(actionToDo == null) {
@@ -1109,7 +1116,7 @@ public class PlexSearchService extends Service {
 	}
 
 	private void onMovieSearchFinished(String queryTerm) {
-		Logger.d("Done searching! Have videos: %d", videos.size());
+		Logger.d("Done searching! Have movies: %d", videos.size());
 
 		if(videos.size() == 1) {
 			Logger.d("Chosen video: %s", videos.get(0).title);
@@ -1372,6 +1379,7 @@ public class PlexSearchService extends Service {
 		feedback.m(getString(R.string.searching_for), queryTerm);
 		serversSearched = 0;
 		for(final PlexServer server : plexmediaServers.values()) {
+      Logger.d("Searching (for next episode) %s for %s", server.name, queryTerm);
 			server.findServerConnection(new ActiveConnectionHandler() {
 				@Override
 				public void onSuccess(Connection connection) {

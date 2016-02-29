@@ -124,7 +124,7 @@
     <string name="tap_cast_icon_to_change_default_client">Tap the cast icon to change the default client.</string>
     <string name="wear_detected_can_purchase">I have detected an Android Wear device. Wear support is available for %s. Would you like to proceed?</string>
     <string name="wear_purchase_required">Wear support is available as an in-app purchase for %s. Would you like to proceed?</string>
-    <string name="wear_purchase_from_menu">Ok, I won\'t bother you again. If you change your mind, you can enable Wear support via the menu button.</string>
+    <string name="wear_purchase_from_menu">Ok, I won\'t bother you again. If you change your mind, you can enable Wear support via the navigation drawer->settings.</string>
     <string name="purchase_wear">Wear Support</string>
     <string name="menu_wear_options">Wear Options</string>
     <string name="wear_primary_function">Wear Notification Primary Function</string>

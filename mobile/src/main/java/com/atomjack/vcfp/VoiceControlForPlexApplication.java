@@ -9,6 +9,7 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.IntentFilter;
 import android.content.pm.PackageInfo;
 import android.graphics.Bitmap;
 import android.net.Uri;
@@ -20,6 +21,7 @@ import android.text.TextUtils;
 import android.view.View;
 import android.widget.RemoteViews;
 
+import com.android.vending.billing.IabBroadcastReceiver;
 import com.android.vending.billing.IabHelper;
 import com.android.vending.billing.IabResult;
 import com.android.vending.billing.Inventory;
@@ -64,6 +66,7 @@ import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -105,6 +108,8 @@ public class VoiceControlForPlexApplication extends Application
     initializing
   }
 
+  private IabBroadcastReceiver promoReceiver;
+
   public static HashMap<String, String[]> chromecastVideoOptions = new LinkedHashMap<String, String[]>();
 
   private NotificationManager mNotifyMgr;
@@ -127,6 +132,7 @@ public class VoiceControlForPlexApplication extends Application
 
   // In-app purchasing
   private IabHelper mIabHelper;
+  private boolean iabHelperSetupDone = false;
   // TODO: Obfuscate this somehow:
   String base64EncodedPublicKey = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAlgV+Gdi4nBVn2rRqi+oVLhenzbWcEVyUf1ulhvAElEf6c8iuX3OB4JZRYVhCE690mFaYUdEb8OG8p8wT7IrQmlZ0DRfP2X9csBJKd3qB+l9y11Ggujivythvoiz+uvDPhz54O6wGmUB8+oZXN+jk9MT5Eia3BZxJDvgFcmDe/KQTTKZoIk1Qs/4PSYFP8jaS/lc71yDyRmvAM+l1lv7Ld8h69hVvKFUr9BT/20lHQGohCIc91CJvKIP5DaptbE98DAlrTxjZRRpbi+wrLGKVbJpUOBgPC78qo3zPITn6M6N0tHkv1tHkGOeyLUbxOC0wFdXj33mUldV/rp3tHnld1wIDAQAB";
   private boolean inventoryQueried = false;
@@ -535,20 +541,32 @@ public class VoiceControlForPlexApplication extends Application
 //        Logger.d("Hash: %s", getEmailHash());
         if (!result.isSuccess()) {
           // Oh noes, there was a problem.
-          Logger.d("Problem setting up in-app billing: " + result);
+          Logger.d("Problem setting up in-app billing: %s", result);
           return;
         }
 
-
-
         // Have we been disposed of in the meantime? If so, quit.
         if (mIabHelper == null) return;
+
+        promoReceiver = new IabBroadcastReceiver(new IabBroadcastReceiver.IabBroadcastListener() {
+          @Override
+          public void receivedBroadcast() {
+            mIabHelper.queryInventoryAsync(mGotInventoryListener);
+          }
+        });
+        IntentFilter broadcastFilter = new IntentFilter(IabBroadcastReceiver.ACTION);
+        registerReceiver(promoReceiver, broadcastFilter);
 
         // IAB is fully set up. Now, let's get an inventory of stuff we own.
         Logger.d("Setup successful. Querying inventory.");
         mIabHelper.queryInventoryAsync(mGotInventoryListener);
       }
     });
+  }
+
+  public void refreshInAppInventory() {
+    if(mIabHelper != null && iabHelperSetupDone)
+      mIabHelper.queryInventoryAsync(mGotInventoryListener);
   }
 
   IabHelper.QueryInventoryFinishedListener mGotInventoryListener = new IabHelper.QueryInventoryFinishedListener() {
@@ -562,6 +580,8 @@ public class VoiceControlForPlexApplication extends Application
         Logger.d("Failed to query inventory: " + result);
         return;
       }
+
+      iabHelperSetupDone = true;
 
       Logger.d("Query inventory was successful.");
 
@@ -809,5 +829,25 @@ public class VoiceControlForPlexApplication extends Application
   public void handleUncaughtException (Thread thread, Throwable e) {
     e.printStackTrace();
     prefs.put(Preferences.CRASHED, true);
+  }
+
+  @Override
+  public void onTerminate() {
+    super.onTerminate();
+
+    if(promoReceiver != null)
+      unregisterReceiver(promoReceiver);
+
+    if(mIabHelper != null)
+      mIabHelper.dispose();
+    mIabHelper = null;
+  }
+
+  public int getSecondsSinceLastServerScan() {
+    Date now = new Date();
+    Date lastServerScan = new Date(prefs.get(Preferences.LAST_SERVER_SCAN, 0l));
+    Logger.d("now: %s", now);
+    Logger.d("lastServerScan: %s", lastServerScan);
+    return (int)((now.getTime() - lastServerScan.getTime())/1000);
   }
 }

@@ -8,6 +8,7 @@ import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
@@ -134,7 +135,7 @@ public class MainActivity extends AppCompatActivity
 
   public final static String ACTION_SHOW_NOW_PLAYING = "com.atomjack.vcfp.action_show_now_playing";
 
-  private final static int SERVER_SCAN_INTERVAL = 1000*60*5; // scan for servers every 5 minutes
+  public final static int SERVER_SCAN_INTERVAL = 1000*60*5; // scan for servers every 5 minutes
 
   private Handler handler;
 
@@ -295,7 +296,8 @@ public class MainActivity extends AppCompatActivity
     }
 
     init();
-    doAutomaticDeviceScan();
+    if(!doingFirstTimeSetup)
+      doAutomaticDeviceScan();
     if(plexSubscription.isSubscribed() || castPlayerManager.isSubscribed())
       setCastIconActive();
     else
@@ -441,7 +443,6 @@ public class MainActivity extends AppCompatActivity
         // Only show the what's new dialog if this is not the first time the app is run
         final WhatsNewDialog whatsNewDialog = new WhatsNewDialog(this);
         whatsNewDialog.show();
-
         switchToFragment(fragment);
       }
     } else {
@@ -481,6 +482,7 @@ public class MainActivity extends AppCompatActivity
   protected void onRestart() {
     super.onRestart();
     Logger.d("[MainActivity] onRestart");
+    VoiceControlForPlexApplication.getInstance().refreshInAppInventory();
   }
 
   private Runnable autoDisconnectPlayerTimer = new Runnable() {
@@ -499,6 +501,7 @@ public class MainActivity extends AppCompatActivity
     super.onResume();
     Logger.d("[MainActivity] onResume, interacting: %s", userIsInteracting);
     VoiceControlForPlexApplication.applicationResumed();
+
     plexSubscription.setListener(plexSubscriptionListener);
     castPlayerManager.setListener(plexSubscriptionListener);
     if(!doingFirstTimeSetup) {
@@ -513,7 +516,7 @@ public class MainActivity extends AppCompatActivity
       // Kick off a scan for servers, if it's been more than five minutes since the last one.
       // We'll do this every five, to keep the list up to date. Also, if the last server scan didn't
       // finish, kick off another one right now instead (another scan in 5 minutes will be queued up when that one finishes).
-      int s = getSecondsSinceLastServerScan();
+      int s =  VoiceControlForPlexApplication.getInstance().getSecondsSinceLastServerScan();
       Logger.d("It's been %d seconds since last scan, last scan finished: %s", s, prefs.get(Preferences.SERVER_SCAN_FINISHED, true));
       if (s >= (SERVER_SCAN_INTERVAL / 1000) || prefs.get(Preferences.SERVER_SCAN_FINISHED, true) == false) {
         Logger.d("It's been more than 5 minutes since last scan, so scanning now.");
@@ -869,14 +872,6 @@ public class MainActivity extends AppCompatActivity
         }
       });
     }
-  }
-
-  private int getSecondsSinceLastServerScan() {
-    Date now = new Date();
-    Date lastServerScan = new Date(prefs.get(Preferences.LAST_SERVER_SCAN, 0l));
-    Logger.d("now: %s", now);
-    Logger.d("lastServerScan: %s", lastServerScan);
-    return (int)((now.getTime() - lastServerScan.getTime())/1000);
   }
 
   @Override
@@ -1414,13 +1409,10 @@ public class MainActivity extends AppCompatActivity
           volumeSeekBar.setVisibility(View.VISIBLE);
           volumeSeekBar.setMax(100);
           volumeSeekBar.setProgress((int)(castPlayerManager.getVolume()*100));
-          Logger.d("Volume is %f, setting progress to %d", castPlayerManager.getVolume(), ((int)(castPlayerManager.getVolume()*100)));
           volumeSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-              Logger.d("Volume: %d", progress);
               double v = ((double)progress) / 100;
-              Logger.d("v: %s", v);
               castPlayerManager.setVolume(v);
             }
 
@@ -1732,22 +1724,29 @@ public class MainActivity extends AppCompatActivity
   protected void showChromecastPurchase(PlexClient client, Runnable onSuccess) {
     postChromecastPurchaseClient = client;
     postChromecastPurchaseAction = onSuccess;
-    new AlertDialog.Builder(this)
-            .setMessage(String.format(getString(R.string.must_purchase_chromecast), VoiceControlForPlexApplication.getChromecastPrice()))
-            .setCancelable(false)
-            .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
-              @Override
-              public void onClick(DialogInterface dialogInterface, int i) {
-                dialogInterface.cancel();
-                VoiceControlForPlexApplication.getInstance().getIabHelper().launchPurchaseFlow(MainActivity.this, VoiceControlForPlexApplication.SKU_CHROMECAST, 10001, mPurchaseFinishedListener, VoiceControlForPlexApplication.SKU_TEST_PURCHASED == VoiceControlForPlexApplication.SKU_CHROMECAST ? VoiceControlForPlexApplication.getInstance().getEmailHash() : "");
-              }
-            })
-            .setNeutralButton(R.string.no_thanks, new DialogInterface.OnClickListener() {
-              public void onClick(DialogInterface dialog, int id) {
-                dialog.cancel();
-                setCastIconInactive();
-              }
-            }).create().show();
+    AlertDialog.Builder builder = new AlertDialog.Builder(this);
+    View view = getLayoutInflater().inflate(R.layout.popup_chromecast_purchase, null);
+    builder.setView(view);
+    final AlertDialog dialog = builder.setCancelable(false).create();
+    TextView popupChromecastPurchaseMessage = (TextView)view.findViewById(R.id.popupChromecastPurchaseMessage);
+    popupChromecastPurchaseMessage.setText(String.format(getString(R.string.must_purchase_chromecast), VoiceControlForPlexApplication.getChromecastPrice()));
+    Button popupChromecastPurchaseOKButton = (Button)view.findViewById(R.id.popupChromecastPurchaseOKButton);
+    popupChromecastPurchaseOKButton.setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View v) {
+        dialog.cancel();
+        VoiceControlForPlexApplication.getInstance().getIabHelper().launchPurchaseFlow(MainActivity.this, VoiceControlForPlexApplication.SKU_CHROMECAST, 10001, mPurchaseFinishedListener, VoiceControlForPlexApplication.SKU_TEST_PURCHASED == VoiceControlForPlexApplication.SKU_CHROMECAST ? VoiceControlForPlexApplication.getInstance().getEmailHash() : "");
+      }
+    });
+    Button popupChromecastPurchaseNoButton = (Button)view.findViewById(R.id.popupChromecastPurchaseNoButton);
+    popupChromecastPurchaseNoButton.setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View v) {
+        dialog.cancel();
+        setCastIconInactive();
+      }
+    });
+    dialog.show();
   }
 
   protected void showWearPurchaseRequired() {
@@ -1772,15 +1771,18 @@ public class MainActivity extends AppCompatActivity
         dialog.cancel();
         prefs.put(Preferences.HAS_SHOWN_WEAR_PURCHASE_POPUP, true);
         if(showPurchaseFromMenu) {
-          new AlertDialog.Builder(MainActivity.this)
-                  .setMessage(R.string.wear_purchase_from_menu)
-                  .setCancelable(false)
-                  .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                      dialog.cancel();
-                    }
-                  }).create().show();
+          AlertDialog.Builder builder2 = new AlertDialog.Builder(MainActivity.this);
+          View view = getLayoutInflater().inflate(R.layout.popup_wear_purchase_menu, null);
+          builder2.setView(view).setCancelable(false);
+          final AlertDialog dialog = builder2.create();
+          Button popupWearPurchaseMenuOKButton = (Button)view.findViewById(R.id.popupWearPurchaseMenuOKButton);
+          popupWearPurchaseMenuOKButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+              dialog.cancel();
+            }
+          });
+          dialog.show();
         }
       }
     });
@@ -2235,4 +2237,6 @@ public class MainActivity extends AppCompatActivity
       }
     }
   }
+
+
 }

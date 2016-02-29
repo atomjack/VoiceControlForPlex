@@ -70,8 +70,6 @@ public class PlexSubscription {
   }
 
   public void setListener(PlexSubscriptionListener _listener) {
-    if(_listener != null)
-      Logger.d("Setting listener to %s", _listener.getClass().getSimpleName());
     listener = _listener;
     if(_listener != null) {
       notificationListener = _listener;
