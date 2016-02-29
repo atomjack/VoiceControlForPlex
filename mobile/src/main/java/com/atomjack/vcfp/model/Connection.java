@@ -3,8 +3,6 @@ package com.atomjack.vcfp.model;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import com.atomjack.shared.Logger;
-
 import org.simpleframework.xml.Attribute;
 import org.simpleframework.xml.Root;
 import org.simpleframework.xml.core.Commit;

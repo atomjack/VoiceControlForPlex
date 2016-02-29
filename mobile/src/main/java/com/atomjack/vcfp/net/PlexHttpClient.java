@@ -35,7 +35,6 @@ import retrofit.Response;
 import retrofit.Retrofit;
 import retrofit.SimpleXmlConverterFactory;
 import retrofit.http.GET;
-import retrofit.http.Header;
 import retrofit.http.Headers;
 import retrofit.http.POST;
 import retrofit.http.Path;

@@ -7,15 +7,13 @@ import android.os.Handler;
 import android.speech.RecognizerIntent;
 
 import com.atomjack.shared.Logger;
+import com.atomjack.shared.PlayerState;
 import com.atomjack.shared.SendToDataLayerThread;
 import com.atomjack.shared.WearConstants;
 import com.atomjack.vcfp.CastPlayerManager;
-import com.atomjack.shared.PlayerState;
 import com.atomjack.vcfp.PlexSubscription;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
-import com.atomjack.vcfp.activities.CastActivity;
 import com.atomjack.vcfp.activities.MainActivity;
-import com.atomjack.vcfp.activities.NowPlayingActivity;
 import com.atomjack.vcfp.interfaces.BitmapHandler;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexMedia;

@@ -8,7 +8,6 @@ import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
@@ -238,6 +237,10 @@ public class MainActivity extends AppCompatActivity
 
 //    B​aseCastManager.checkGooglePlayServices(this);
 
+    // This will enable the UI to be updated (Wear Support hidden/Wear Options shown)
+    // once inventory is queried via Google, if wear support has been purchased
+    VoiceControlForPlexApplication.getInstance().setOnHasWearActivity(this);
+
     if(savedInstanceState != null) {
       client = savedInstanceState.getParcelable(com.atomjack.shared.Intent.EXTRA_CLIENT);
       playerFragment = (PlayerFragment)getSupportFragmentManager().getFragment(savedInstanceState, com.atomjack.shared.Intent.EXTRA_PLAYER_FRAGMENT);
@@ -396,7 +399,7 @@ public class MainActivity extends AppCompatActivity
   };
 
   private void switchToFragment(Fragment fragment) {
-    getSupportFragmentManager().beginTransaction().replace(R.id.flContent, fragment).commit();
+    getSupportFragmentManager().beginTransaction().replace(R.id.flContent, fragment).commitAllowingStateLoss();
   }
 
   private void init() {
@@ -814,10 +817,6 @@ public class MainActivity extends AppCompatActivity
     getWindowManager().getDefaultDisplay().getMetrics(metrics);
     layoutParams.height = (int)value.getDimension(metrics)*navigationFooter.getMenu().size();
     navigationFooter.setLayoutParams(layoutParams);
-
-    View headerView = LayoutInflater.from(this).inflate(R.layout.nav_header_dummy, null);
-    navigationFooter.addHeaderView(headerView);
-    navigationFooter.getHeaderView(0).setVisibility(View.GONE);
 
     if(navigationViewMain.getHeaderView(0) != null)
       navigationViewMain.removeHeaderView(navigationViewMain.getHeaderView(0));

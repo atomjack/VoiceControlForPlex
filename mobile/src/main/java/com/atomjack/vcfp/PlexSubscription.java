@@ -13,6 +13,7 @@ import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexResponse;
 import com.atomjack.vcfp.model.PlexServer;
+import com.atomjack.vcfp.model.Stream;
 import com.atomjack.vcfp.net.PlexHttpClient;
 import com.atomjack.vcfp.net.PlexHttpMediaContainerHandler;
 import com.atomjack.vcfp.net.PlexHttpResponseHandler;
@@ -308,7 +309,6 @@ public class PlexSubscription {
               mHandler.post(new Runnable() {
                 @Override
                 public void run() {
-                  // TODO: this
                   listener.onSubscribeError(String.format(VoiceControlForPlexApplication.getInstance().getString(R.string.client_lost_connection), mClient.name));
                   VoiceControlForPlexApplication.getInstance().cancelNotification();
                 }
@@ -366,9 +366,6 @@ public class PlexSubscription {
   }
 
   public void unsubscribe(final boolean notify, final Runnable onFinish) {
-//    if(listener == null)
-//      return;
-
     PlexHttpClient.unsubscribe(mClient, commandId, VoiceControlForPlexApplication.getInstance().prefs.getUUID(), VoiceControlForPlexApplication.getInstance().getString(R.string.app_name), new PlexHttpResponseHandler() {
       @Override
       public void onSuccess(PlexResponse response) {
@@ -392,7 +389,6 @@ public class PlexSubscription {
 
       @Override
       public void onFailure(Throwable error) {
-        // TODO: Handle failure here?
         Logger.d("failure unsubscribing");
         subscribed = false;
         mHandler.removeCallbacks(subscriptionHeartbeat);
@@ -509,14 +505,6 @@ public class PlexSubscription {
     });
   }
 
-  // TODO: Get rid of this
-  public interface PlexListener {
-    void onSubscribed(PlexClient client);
-    void onUnsubscribed();
-    void onTimelineReceived(MediaContainer mc);
-    void onSubscribeError(String errorMessage);
-  };
-
   public PlexClient getClient() {
     return mClient;
   }
@@ -536,4 +524,20 @@ public class PlexSubscription {
   public PlexMedia getNowPlayingMedia() {
     return nowPlayingMedia;
   }
+
+  public void cycleStreams(int streamType) {
+    Stream newStream = nowPlayingMedia.getNextStream(streamType);
+    mClient.setStream(newStream);
+    nowPlayingMedia.setActiveStream(newStream);
+  }
+  public void subtitlesOn() {
+    mClient.setStream(nowPlayingMedia.getStreams(Stream.SUBTITLE).get(1));
+    nowPlayingMedia.setActiveStream(nowPlayingMedia.getStreams(Stream.SUBTITLE).get(1));
+  }
+
+  public void subtitlesOff() {
+    mClient.setStream(nowPlayingMedia.getStreams(Stream.SUBTITLE).get(0));
+    nowPlayingMedia.setActiveStream(nowPlayingMedia.getStreams(Stream.SUBTITLE).get(0));
+  }
+
 }

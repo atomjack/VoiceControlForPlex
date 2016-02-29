@@ -17,12 +17,12 @@ import android.widget.TextView;
 
 import com.atomjack.shared.Logger;
 import com.atomjack.shared.Preferences;
-import com.atomjack.vcfp.R;
-import com.atomjack.vcfp.adapters.PlexListAdapter;
-import com.atomjack.vcfp.interfaces.ScanHandler;
 import com.atomjack.shared.UriDeserializer;
 import com.atomjack.shared.UriSerializer;
+import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
+import com.atomjack.vcfp.adapters.PlexListAdapter;
+import com.atomjack.vcfp.interfaces.ScanHandler;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexDevice;
 import com.atomjack.vcfp.model.PlexServer;

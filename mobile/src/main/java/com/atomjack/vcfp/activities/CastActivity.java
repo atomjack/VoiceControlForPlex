@@ -8,16 +8,15 @@ import android.view.View;
 import android.widget.SeekBar;
 
 import com.atomjack.shared.Intent;
-import com.atomjack.shared.SendToDataLayerThread;
-import com.atomjack.shared.WearConstants;
-import com.atomjack.vcfp.interfaces.AfterTransientTokenRequest;
 import com.atomjack.shared.Logger;
 import com.atomjack.shared.PlayerState;
 import com.atomjack.shared.Preferences;
+import com.atomjack.shared.SendToDataLayerThread;
+import com.atomjack.shared.WearConstants;
 import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.VCFPCastConsumer;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
-import com.atomjack.vcfp.model.PlexClient;
+import com.atomjack.vcfp.interfaces.AfterTransientTokenRequest;
 import com.atomjack.vcfp.model.PlexMedia;
 import com.google.android.libraries.cast.companionlibrary.cast.VideoCastManager;
 
@@ -81,7 +80,6 @@ public class CastActivity extends PlayerActivity {
         castPlayerManager.subscribe(mClient, new Runnable() {
           @Override
           public void run() {
-            // TODO: this
             nowPlayingMedia = castPlayerManager.getNowPlayingMedia();
             nowPlayingAlbum = castPlayerManager.getNowPlayingAlbum();
           }
@@ -124,13 +122,6 @@ public class CastActivity extends PlayerActivity {
   public void showNowPlaying(boolean setView) {
     super.showNowPlaying(setView);
     setupUI();
-  }
-
-  @Override
-  public void onCastConnected(PlexClient _client) {
-    super.onCastConnected(_client);
-    hideInfoDialog();
-    init();
   }
 
   private void setupUI() {
@@ -183,7 +174,6 @@ public class CastActivity extends PlayerActivity {
     infoDialog.setContentView(R.layout.search_popup);
     infoDialog.setTitle(text);
 
-    // TODO: Re-enable this
 //    infoDialog.setCancelable(false);
 
     infoDialog.show();
@@ -321,54 +311,9 @@ public class CastActivity extends PlayerActivity {
     super.onCreateOptionsMenu(_menu);
     getMenuInflater().inflate(R.menu.menu_playing, _menu);
     menu = _menu;
-    if(castPlayerManager.isSubscribed())
-      onSubscribed(mClient);
+//    if(castPlayerManager.isSubscribed())
+//      onSubscribed(mClient);
 
     return true;
-  }
-
-  @Override
-  public void onCastPlayerStateChanged(PlayerState state) {
-    super.onCastPlayerStateChanged(state);
-    Logger.d("[CastActivity] onCastPlayerStateChanged: %s", state);
-
-    if(isSeeking) {
-      isSeeking = false;
-    }
-    if(state == PlayerState.STOPPED) {
-      Logger.d("[CastActivity] media player is idle, finishing");
-      VoiceControlForPlexApplication.getInstance().cancelNotification();
-      finish();
-    } else if(uiShowing) {
-      setState(state);
-    }
-    if(uiShowing)
-      hideInfoDialog();
-  }
-
-  @Override
-  public void onUnsubscribed() {
-    super.onUnsubscribed();
-    finish();
-  }
-
-  @Override
-  public void onCastPlayerTimeUpdate(int seconds) {
-    position = seconds * 1000;
-    if(!isSeeking)
-      seekBar.setProgress(seconds*1000);
-  }
-
-  @Override
-  public void onCastPlayerPlaylistAdvance(PlexMedia media) {
-    nowPlayingMedia = media;
-    setupUI();
-    showNowPlaying(false);
-  }
-
-  @Override
-  public void onCastSeek() {
-    if(!nowPlayingMedia.getType().equals("music"))
-      showInfoDialog(getString(R.string.please_wait));
   }
 }

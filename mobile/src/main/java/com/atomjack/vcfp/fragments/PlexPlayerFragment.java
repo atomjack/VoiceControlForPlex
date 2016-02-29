@@ -7,22 +7,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.SeekBar;
 
-import com.atomjack.shared.Logger;
 import com.atomjack.shared.PlayerState;
-import com.atomjack.shared.model.Timeline;
-import com.atomjack.vcfp.PlexSubscription;
 import com.atomjack.vcfp.R;
-import com.atomjack.vcfp.VoiceControlForPlexApplication;
-import com.atomjack.vcfp.interfaces.PlexSubscriptionListener;
-import com.atomjack.vcfp.model.MediaContainer;
-import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexResponse;
-import com.atomjack.vcfp.model.PlexServer;
-import com.atomjack.vcfp.net.PlexHttpClient;
-import com.atomjack.vcfp.net.PlexHttpMediaContainerHandler;
 import com.atomjack.vcfp.net.PlexHttpResponseHandler;
-
-import java.util.List;
 
 public class PlexPlayerFragment extends PlayerFragment {
   public PlexPlayerFragment() {
@@ -52,46 +40,15 @@ public class PlexPlayerFragment extends PlayerFragment {
   @Override
   protected void doPlayPause() {
     if(currentState == PlayerState.PLAYING) {
-      client.pause(new PlexHttpResponseHandler() {
-        @Override
-        public void onSuccess(PlexResponse response) {
-//          setState(PlayerState.PAUSED);
-        }
-
-        @Override
-        public void onFailure(Throwable error) {
-          // TODO: Handle this
-        }
-      });
+      client.pause(null);
     } else if(currentState == PlayerState.PAUSED) {
-      client.play(new PlexHttpResponseHandler() {
-        @Override
-        public void onSuccess(PlexResponse response) {
-//          setState(PlayerState.PLAYING);
-        }
-
-        @Override
-        public void onFailure(Throwable error) {
-          // TODO: Handle this
-        }
-      });
+      client.play(null);
     }
   }
 
   @Override
   protected void doStop() {
-    client.stop(new PlexHttpResponseHandler() {
-      @Override
-      public void onSuccess(PlexResponse response) {
-//        if(plexSubscriptionListener != null)
-//          plexSubscriptionListener.onStopped();
-      }
-
-      @Override
-      public void onFailure(Throwable error) {
-
-      }
-    });
+    client.stop(null);
   }
 
   @Override

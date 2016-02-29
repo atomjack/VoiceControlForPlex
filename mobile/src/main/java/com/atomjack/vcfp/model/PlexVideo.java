@@ -132,7 +132,7 @@ public class PlexVideo extends PlexMedia {
 	}
 
 	public int describeContents() {
-		return 0; // TODO: Customise this generated block
+		return 0;
 	}
 
 	public static final Parcelable.Creator<PlexVideo> CREATOR = new Parcelable.Creator<PlexVideo>() {
@@ -179,7 +179,7 @@ class Genre implements Parcelable {
 	}
 
 	public int describeContents() {
-		return 0; // TODO: Customise this generated block
+		return 0;
 	}
 
 	public static final Parcelable.Creator<Genre> CREATOR = new Parcelable.Creator<Genre>() {

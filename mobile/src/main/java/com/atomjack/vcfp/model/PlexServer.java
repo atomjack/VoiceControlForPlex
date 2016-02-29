@@ -4,14 +4,14 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 import com.atomjack.shared.Logger;
+import com.atomjack.shared.Preferences;
+import com.atomjack.vcfp.PlexHeaders;
+import com.atomjack.vcfp.QueryString;
 import com.atomjack.vcfp.R;
+import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.interfaces.ActiveConnectionHandler;
 import com.atomjack.vcfp.interfaces.AfterTransientTokenRequest;
-import com.atomjack.vcfp.PlexHeaders;
-import com.atomjack.shared.Preferences;
-import com.atomjack.vcfp.QueryString;
 import com.atomjack.vcfp.interfaces.ServerTestHandler;
-import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.net.PlexHttpClient;
 import com.atomjack.vcfp.net.PlexHttpMediaContainerHandler;
 import com.atomjack.vcfp.net.PlexHttpResponseHandler;

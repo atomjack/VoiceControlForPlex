@@ -27,27 +27,27 @@ import android.widget.ListView;
 import com.android.vending.billing.IabHelper;
 import com.android.vending.billing.IabResult;
 import com.android.vending.billing.Purchase;
+import com.atomjack.shared.Logger;
+import com.atomjack.shared.PlayerState;
+import com.atomjack.shared.Preferences;
 import com.atomjack.shared.SendToDataLayerThread;
+import com.atomjack.shared.UriDeserializer;
+import com.atomjack.shared.UriSerializer;
 import com.atomjack.shared.WearConstants;
+import com.atomjack.shared.model.Timeline;
 import com.atomjack.vcfp.BuildConfig;
 import com.atomjack.vcfp.CastPlayerManager;
 import com.atomjack.vcfp.Feedback;
-import com.atomjack.shared.Logger;
 import com.atomjack.vcfp.NetworkMonitor;
-import com.atomjack.shared.PlayerState;
 import com.atomjack.vcfp.PlexHeaders;
 import com.atomjack.vcfp.PlexSubscription;
-import com.atomjack.shared.Preferences;
 import com.atomjack.vcfp.R;
+import com.atomjack.vcfp.VoiceControlForPlexApplication;
+import com.atomjack.vcfp.adapters.PlexListAdapter;
 import com.atomjack.vcfp.interfaces.ActiveConnectionHandler;
 import com.atomjack.vcfp.interfaces.BitmapHandler;
 import com.atomjack.vcfp.interfaces.InputStreamHandler;
 import com.atomjack.vcfp.interfaces.ScanHandler;
-import com.atomjack.shared.UriDeserializer;
-import com.atomjack.shared.UriSerializer;
-import com.atomjack.vcfp.VoiceControlForPlexApplication;
-import com.atomjack.vcfp.adapters.PlexListAdapter;
-import com.atomjack.vcfp.model.Capabilities;
 import com.atomjack.vcfp.model.Connection;
 import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.PlexClient;
@@ -56,7 +56,6 @@ import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexServer;
 import com.atomjack.vcfp.model.PlexTrack;
 import com.atomjack.vcfp.model.PlexVideo;
-import com.atomjack.shared.model.Timeline;
 import com.atomjack.vcfp.net.PlexHttpClient;
 import com.atomjack.vcfp.net.PlexHttpMediaContainerHandler;
 import com.atomjack.vcfp.services.PlexScannerService;
@@ -65,20 +64,17 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.splunk.mint.Mint;
 
-
 import org.apache.commons.io.IOUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
-import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 import cz.fhucho.android.util.SimpleDiskCache;
 
-public abstract class VCFPActivity extends AppCompatActivity implements PlexSubscription.PlexListener,
-        CastPlayerManager.CastListener, VoiceControlForPlexApplication.NetworkChangeListener {
+public abstract class VCFPActivity extends AppCompatActivity implements VoiceControlForPlexApplication.NetworkChangeListener {
 	protected PlexMedia nowPlayingMedia;
 	protected boolean subscribing = false;
 	protected PlexClient mClient;
@@ -197,7 +193,6 @@ public abstract class VCFPActivity extends AppCompatActivity implements PlexSubs
 
   private void getPlayingMedia(final PlexServer server, final Timeline timeline) {
     Logger.d("[VCFPActivity] getPlayingMedia: %s", timeline.key);
-    // TODO: Find out why server can sometimes be null
     PlexHttpClient.get(server, timeline.key, new PlexHttpMediaContainerHandler() {
       @Override
       public void onSuccess(MediaContainer mediaContainer) {
@@ -206,7 +201,6 @@ public abstract class VCFPActivity extends AppCompatActivity implements PlexSubs
         else if(timeline.type.equals("music"))
           nowPlayingMedia = mediaContainer.tracks.get(0);
         else {
-          // TODO: Handle failure
           Logger.d("Failed to get media with type %s", timeline.type);
         }
 
@@ -223,7 +217,6 @@ public abstract class VCFPActivity extends AppCompatActivity implements PlexSubs
 
       @Override
       public void onFailure(Throwable error) {
-        // TODO: Handle failure
       }
     });
 	}
@@ -274,8 +267,8 @@ public abstract class VCFPActivity extends AppCompatActivity implements PlexSubs
                       }
                     });
             if (mClient.isCastClient) {
-              View subscribeVolume = LayoutInflater.from(this).inflate(R.layout.connected_popup, null);
-              subscribeDialog.setView(subscribeVolume);
+//              View subscribeVolume = LayoutInflater.from(this).inflate(R.layout.connected_popup, null);
+//              subscribeDialog.setView(subscribeVolume);
             }
             subscribeDialog.show();
           }
@@ -455,29 +448,6 @@ public abstract class VCFPActivity extends AppCompatActivity implements PlexSubs
     networkMonitor.register();
 	}
 
-  @Override
-  public void onSubscribed(PlexClient _client) {
-    Logger.d("VCFPActivity: onSubscribed: %s", _client);
-    mClient = _client;
-
-    VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.SUBSCRIBED_CLIENT, gsonWrite.toJson(_client));
-
-		subscribing = false;
-    try {
-      setCastIconActive();
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
-    feedback.m(String.format(getString(R.string.connected_to2), mClient.name));
-  }
-
-  @Override
-  public void onSubscribeError(String errorMessage) {
-    Logger.d("[Scott] onSubscribeError: %s", errorMessage);
-    feedback.e(String.format(getString(R.string.got_error), errorMessage));
-    setCastIconInactive();
-  }
-
   protected void setCastIconInactive() {
     Logger.d("[VCFPActivity] setCastIconInactive");
     try {
@@ -492,152 +462,6 @@ public abstract class VCFPActivity extends AppCompatActivity implements PlexSubs
       MenuItem castIcon = menu.findItem(R.id.action_cast);
       castIcon.setIcon(R.drawable.mr_ic_media_route_on_holo_dark);
     } catch (Exception e) {}
-  }
-
-  @Override
-  public void onCastConnected(PlexClient _client) {
-    Logger.d("[VCFPActivity] onCastConnected");
-    onSubscribed(_client);
-//    castPlayerManager.getPlaybackState();
-  }
-
-  @Override
-  public void onCastConnectionFailed() {
-    Logger.d("[VCFPActivity] onCastConnectionFailed");
-    setCastIconActive();
-    if(castPlayerManager.mClient != null)
-      feedback.e(getString(R.string.couldnt_connect_to), castPlayerManager.mClient.name);
-    subscribing = false;
-  }
-
-  @Override
-  public void onCastSeek() {
-    
-  }
-
-  @Override
-  public void onCastPlayerState(PlayerState state, PlexMedia media) {
-    mCurrentState = state;
-    Logger.d("[VCFPActivity] mCurrentState: %s, media: %s", mCurrentState, media);
-    if(!mCurrentState.equals(PlayerState.STOPPED) && media != null) {
-      nowPlayingMedia = media;
-      castPlayerManager.setNowPlayingMedia(nowPlayingMedia);
-      mClient = castPlayerManager.mClient;
-      VoiceControlForPlexApplication.getInstance().setNotification(mClient, mCurrentState, nowPlayingMedia);
-    }
-    sendWearPlaybackChange();
-  }
-
-  @Override
-  public void onGetDeviceCapabilities(Capabilities capabilities) {
-    if(mClient.isCastClient) {
-      mClient.isAudioOnly = !capabilities.displaySupported;
-      setClient(mClient);
-    }
-  }
-
-  @Override
-  public void onCastDisconnected() {
-    Logger.d("[VCFPActivity] onCastDisconnected");
-    onUnsubscribed();
-  }
-
-  @Override
-  public void onCastPlayerStateChanged(PlayerState state) {
-    PlayerState oldState = mCurrentState;
-    mCurrentState = state;
-    Logger.d("[VCFPActivity] onCastPlayerStateChanged: %s (old state: %s)", mCurrentState, oldState);
-    if(mCurrentState != oldState) {
-      if(mCurrentState == PlayerState.STOPPED) {
-        VoiceControlForPlexApplication.getInstance().cancelNotification();
-      } else {
-        // TODO: only set notification here if it's already on?
-        VoiceControlForPlexApplication.getInstance().setNotification(mClient, mCurrentState, nowPlayingMedia);
-      }
-      sendWearPlaybackChange();
-    }
-  }
-
-  @Override
-  public void onCastPlayerTimeUpdate(int seconds) {
-
-  }
-
-
-
-  @Override
-  public void onTimelineReceived(MediaContainer mc) {
-    List<Timeline> timelines = mc.timelines;
-    if(timelines != null) {
-      for (Timeline timeline : timelines) {
-        if (timeline.key != null) {
-          if(timeline.state == null)
-            timeline.state = "stopped";
-//          Logger.d("[VCFPActivity] onTimelineReceived: %s", timeline.state);
-//          Logger.d("nowPlayingMedia: %s", nowPlayingMedia);
-          // Get this media's info
-          PlexServer server = null;
-          for(PlexServer s : VoiceControlForPlexApplication.servers.values()) {
-            if(s.machineIdentifier.equals(timeline.machineIdentifier)) {
-              server = s;
-              break;
-            }
-          }
-          if((!timeline.state.equals("stopped") && nowPlayingMedia == null) || continuing) {
-            // TODO: Might need to refresh server?
-            if(server != null)
-              getPlayingMedia(server, timeline);
-          }
-
-          if(nowPlayingMedia != null) {
-//            Logger.d("timeline key: %s, now playing key: %s", timeline.key, nowPlayingMedia.key);
-            if(timeline.key != null && timeline.key.equals(nowPlayingMedia.key)) {
-              // Found an update for the currently playing media
-              PlayerState oldState = mCurrentState;
-              mCurrentState = PlayerState.getState(timeline.state);
-              nowPlayingMedia.viewOffset = Integer.toString(timeline.time);
-              if(oldState != mCurrentState) {
-                sendWearPlaybackChange();
-                if(mCurrentState == PlayerState.PLAYING) {
-                  Logger.d("mClient is now playing");
-                } else if(mCurrentState == PlayerState.PAUSED) {
-                  Logger.d("mClient is now paused");
-                } else if(mCurrentState == PlayerState.STOPPED) {
-                  Logger.d("mClient is now stopped");
-                  if(!continuing) {
-                    VoiceControlForPlexApplication.getInstance().cancelNotification();
-                    nowPlayingMedia = null;
-                  }
-                }
-                if(mCurrentState != PlayerState.STOPPED && oldState != mCurrentState && VoiceControlForPlexApplication.getInstance().getNotificationStatus() != VoiceControlForPlexApplication.NOTIFICATION_STATUS.initializing) {
-                  Logger.d("onTimelineReceived setting notification with %s", mCurrentState);
-                  VoiceControlForPlexApplication.getInstance().setNotification(mClient, mCurrentState, nowPlayingMedia);
-                }
-              }
-            } else if(timeline.key != null) {
-              // A different piece of media is playing
-              getPlayingMedia(server, timeline);
-            }
-            position = timeline.time;
-          }
-          if(plexSubscription.getListener() != null)
-            onSubscriptionMessage(timeline);
-        }
-      }
-    }
-
-
-  }
-
-  @Override
-  public void onUnsubscribed() {
-    Logger.d("[VCFPActivity] onUnsubscribed");
-    setCastIconInactive();
-    nowPlayingMedia = null;
-    VoiceControlForPlexApplication.getInstance().cancelNotification();
-    VoiceControlForPlexApplication.getInstance().prefs.remove(Preferences.SUBSCRIBED_CLIENT);
-    sendWearPlaybackChange();
-    feedback.m(R.string.disconnected);
   }
 
   private void getThumb(final String thumb, final PlexMedia media) {
@@ -840,11 +664,6 @@ public abstract class VCFPActivity extends AppCompatActivity implements PlexSubs
     // We have no network connection, so hide the cast button
     MenuItem item = menu.findItem(R.id.action_cast);
     item.setVisible(false);
-  }
-
-  @Override
-  public void onCastPlayerPlaylistAdvance(PlexMedia media) {
-
   }
 
   protected void setServer(PlexServer _server) {

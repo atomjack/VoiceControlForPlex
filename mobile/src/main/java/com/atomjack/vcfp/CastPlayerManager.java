@@ -144,7 +144,6 @@ public class CastPlayerManager {
       castManager.disconnect();
     }
     Logger.d("selecting device: %s", _client.castDevice);
-    // TODO: Figure out routeinfo here
     castManager.onDeviceSelected(_client.castDevice, null);
     Logger.d("device selected");
     castConsumer.setOnConnected(new Runnable() {
@@ -214,20 +213,6 @@ public class CastPlayerManager {
   public PlexSubscriptionListener getListener() {
     return listener;
   }
-
-  // TODO: Get rid of this
-  public interface CastListener {
-    void onCastConnected(PlexClient client);
-    void onCastDisconnected();
-    void onCastPlayerStateChanged(PlayerState state);
-    void onCastPlayerTimeUpdate(int seconds);
-    void onCastPlayerPlaylistAdvance(PlexMedia media);
-    void onCastPlayerState(PlayerState state, PlexMedia media);
-    void onCastConnectionFailed();
-    void onCastSeek();
-    void onGetDeviceCapabilities(Capabilities capabilities);
-    PlexMedia getNowPlayingMedia();
-  };
 
   public VideoCastManager getCastManager() {
     return castManager;

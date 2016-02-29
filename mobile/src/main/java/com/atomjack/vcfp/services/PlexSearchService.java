@@ -9,23 +9,23 @@ import android.speech.RecognizerIntent;
 import android.support.v7.media.MediaRouteSelector;
 import android.support.v7.media.MediaRouter;
 
+import com.atomjack.shared.Logger;
 import com.atomjack.shared.PlayerState;
+import com.atomjack.shared.Preferences;
 import com.atomjack.shared.SendToDataLayerThread;
 import com.atomjack.shared.WearConstants;
 import com.atomjack.shared.model.Timeline;
-import com.atomjack.vcfp.Utils;
-import com.atomjack.vcfp.activities.MainActivity;
-import com.atomjack.vcfp.interfaces.ActiveConnectionHandler;
-import com.atomjack.vcfp.interfaces.AfterTransientTokenRequest;
 import com.atomjack.vcfp.BuildConfig;
 import com.atomjack.vcfp.CastPlayerManager;
 import com.atomjack.vcfp.Feedback;
-import com.atomjack.shared.Logger;
 import com.atomjack.vcfp.PlexSubscription;
-import com.atomjack.shared.Preferences;
 import com.atomjack.vcfp.QueryString;
 import com.atomjack.vcfp.R;
+import com.atomjack.vcfp.Utils;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
+import com.atomjack.vcfp.activities.MainActivity;
+import com.atomjack.vcfp.interfaces.ActiveConnectionHandler;
+import com.atomjack.vcfp.interfaces.AfterTransientTokenRequest;
 import com.atomjack.vcfp.interfaces.PlexPlayQueueHandler;
 import com.atomjack.vcfp.model.Connection;
 import com.atomjack.vcfp.model.MediaContainer;
@@ -408,7 +408,6 @@ public class PlexSearchService extends Service {
 				Logger.d("Specified client: %s", specifiedClient);
 				for(PlexClient c : clients.values()) {
 					if (c.name.toLowerCase().equals(specifiedClient)) {
-            // TODO: Finish
             if(c.isCastClient && !VoiceControlForPlexApplication.getInstance().hasChromecast()) {
               return new StopRunnable() {
                 @Override
@@ -806,8 +805,8 @@ public class PlexSearchService extends Service {
           return new StopRunnable() {
             @Override
             public void run() {
-              queries.add(0, queryText);
-              sendClientScanIntent();
+            queries.add(0, queryText);
+            sendClientScanIntent();
             }
           };
         }
@@ -815,9 +814,11 @@ public class PlexSearchService extends Service {
         return new StopRunnable() {
           @Override
           public void run() {
-            Logger.d("PlexSearchService Subscribing to %s", theClient.name);
-            // TODO: Check this
-              VoiceControlForPlexApplication.getInstance().plexSubscription.subscribe(theClient);
+          Logger.d("PlexSearchService Subscribing to %s", theClient.name);
+          if(theClient.isCastClient)
+            VoiceControlForPlexApplication.getInstance().castPlayerManager.subscribe(theClient);
+          else
+            VoiceControlForPlexApplication.getInstance().plexSubscription.subscribe(theClient);
           }
         };
       }
@@ -829,8 +830,11 @@ public class PlexSearchService extends Service {
       return new StopRunnable() {
         @Override
         public void run() {
-          // TODO: Check this
-            VoiceControlForPlexApplication.getInstance().plexSubscription.unsubscribe();
+        if(client.isCastClient) {
+          VoiceControlForPlexApplication.getInstance().castPlayerManager.unsubscribe();
+        } else {
+          VoiceControlForPlexApplication.getInstance().plexSubscription.unsubscribe();
+        }
         }
       };
     }
@@ -847,10 +851,8 @@ public class PlexSearchService extends Service {
               VoiceControlForPlexApplication.getInstance().castPlayerManager.cycleStreams(Stream.SUBTITLE);
             }
           } else {
-            if (VoiceControlForPlexApplication.getInstance().plexSubscription.getListener() != null) {
-              // TODO: FIX
-//              NewMainActivity act = VoiceControlForPlexApplication.getInstance().plexSubscription.getListener();
-//              act.cycleStreams(Stream.SUBTITLE);
+            if (VoiceControlForPlexApplication.getInstance().plexSubscription != null) {
+              VoiceControlForPlexApplication.getInstance().plexSubscription.cycleStreams(Stream.SUBTITLE);
             }
           }
         }
@@ -866,10 +868,8 @@ public class PlexSearchService extends Service {
           if(client.isCastClient) {
             VoiceControlForPlexApplication.getInstance().castPlayerManager.cycleStreams(Stream.AUDIO);
           } else {
-            if (VoiceControlForPlexApplication.getInstance().plexSubscription.getListener() != null) {
-              // TODO: FIX
-//              NewMainActivity act = VoiceControlForPlexApplication.getInstance().plexSubscription.getListener();
-//              act.cycleStreams(Stream.AUDIO);
+            if (VoiceControlForPlexApplication.getInstance().plexSubscription != null) {
+              VoiceControlForPlexApplication.getInstance().plexSubscription.cycleStreams(Stream.AUDIO);
             }
           }
         }
@@ -885,10 +885,8 @@ public class PlexSearchService extends Service {
           if(client.isCastClient) {
             VoiceControlForPlexApplication.getInstance().castPlayerManager.subtitlesOff();
           } else {
-            if (VoiceControlForPlexApplication.getInstance().plexSubscription.getListener() != null) {
-              // TODO: FIX
-//              NewMainActivity act = VoiceControlForPlexApplication.getInstance().plexSubscription.getListener();
-//              act.subtitlesOff();
+            if (VoiceControlForPlexApplication.getInstance().plexSubscription != null) {
+              VoiceControlForPlexApplication.getInstance().plexSubscription.subtitlesOff();
             }
           }
         }
@@ -904,10 +902,8 @@ public class PlexSearchService extends Service {
           if(client.isCastClient) {
             VoiceControlForPlexApplication.getInstance().castPlayerManager.subtitlesOn();
           } else {
-            if (VoiceControlForPlexApplication.getInstance().plexSubscription.getListener() != null) {
-              // TODO: FIX
-//              NewMainActivity act = VoiceControlForPlexApplication.getInstance().plexSubscription.getListener();
-//              act.subtitlesOn();
+            if (VoiceControlForPlexApplication.getInstance().plexSubscription != null) {
+              VoiceControlForPlexApplication.getInstance().plexSubscription.subtitlesOn();
             }
           }
         }
@@ -2200,10 +2196,9 @@ public class PlexSearchService extends Service {
 		public void onConnected(Bundle connectionHint) {
 			if (mWaitingForReconnect) {
 				mWaitingForReconnect = false;
-				// TODO: uhhh
-				//reconnectChannels();
 			} else {
 				try {
+
 					Cast.CastApi.launchApplication(mApiClient, BuildConfig.CHROMECAST_APP_ID, false)
 									.setResultCallback(
 													new ResultCallback<Cast.ApplicationConnectionResult>() {
@@ -2217,9 +2212,9 @@ public class PlexSearchService extends Service {
 																String applicationStatus = result.getApplicationStatus();
 																boolean wasLaunched = result.getWasLaunched();
 //																...
-															} else {
-																//teardown();
-															}
+                            } else {
+                              //teardown();
+                            }
 														}
 													});
 
@@ -2239,8 +2234,6 @@ public class PlexSearchService extends Service {
 					GoogleApiClient.OnConnectionFailedListener {
 		@Override
 		public void onConnectionFailed(ConnectionResult result) {
-			// TODO: uhhh
-			//teardown();
 		}
 	}
 

@@ -5,8 +5,8 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 
-import com.atomjack.vcfp.GDMService;
 import com.atomjack.shared.Logger;
+import com.atomjack.vcfp.GDMService;
 import com.atomjack.vcfp.activities.MainActivity;
 import com.atomjack.vcfp.model.Connection;
 import com.atomjack.vcfp.model.PlexClient;

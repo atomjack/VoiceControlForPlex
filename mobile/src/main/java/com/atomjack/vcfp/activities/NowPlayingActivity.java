@@ -8,16 +8,15 @@ import android.view.Menu;
 import android.view.View;
 import android.widget.SeekBar;
 
+import com.atomjack.shared.Logger;
 import com.atomjack.shared.PlayerState;
 import com.atomjack.shared.SendToDataLayerThread;
 import com.atomjack.shared.WearConstants;
+import com.atomjack.shared.model.Timeline;
 import com.atomjack.vcfp.BuildConfig;
-import com.atomjack.shared.Logger;
 import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
-import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexResponse;
-import com.atomjack.shared.model.Timeline;
 import com.atomjack.vcfp.net.PlexHttpResponseHandler;
 import com.splunk.mint.Mint;
 
@@ -117,7 +116,6 @@ public class NowPlayingActivity extends PlayerActivity {
 
 				@Override
 				public void onFailure(Throwable error) {
-					// TODO: Handle this
 				}
 			});
 		} else if(state == PlayerState.PAUSED) {
@@ -129,7 +127,6 @@ public class NowPlayingActivity extends PlayerActivity {
 
 				@Override
 				public void onFailure(Throwable error) {
-					// TODO: Handle this
 				}
 			});
 		}
@@ -226,7 +223,6 @@ public class NowPlayingActivity extends PlayerActivity {
 		super.onDestroy();
 		try {
 			if(subscribed) {
-        // TODO: Unsubscribe
 			}
 		} catch(Exception ex) {
 			ex.printStackTrace();
@@ -345,18 +341,4 @@ public class NowPlayingActivity extends PlayerActivity {
       plexSubscription.subscribe(mClient);
     return true;
   }
-
-  @Override
-  public void onSubscribed(PlexClient _client) {
-    Logger.d("NowPlayingActivity onSubscribed: %s", _client);
-    super.onSubscribed(_client);
-  }
-
-  @Override
-  public void onUnsubscribed() {
-    super.onUnsubscribed();
-    finish();
-  }
-
-
 }

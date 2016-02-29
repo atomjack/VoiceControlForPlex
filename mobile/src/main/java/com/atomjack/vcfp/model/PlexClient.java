@@ -2,7 +2,6 @@ package com.atomjack.vcfp.model;
 
 import android.os.Parcel;
 import android.os.Parcelable;
-import android.support.v7.media.MediaRouter;
 
 import com.atomjack.shared.Logger;
 import com.atomjack.vcfp.Utils;
@@ -16,7 +15,6 @@ import org.simpleframework.xml.Root;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 
 import retrofit.Call;
 import retrofit.Callback;

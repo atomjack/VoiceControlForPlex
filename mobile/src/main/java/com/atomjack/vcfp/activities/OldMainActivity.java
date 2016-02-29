@@ -26,7 +26,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
@@ -34,16 +33,14 @@ import android.widget.ListAdapter;
 import android.widget.ListView;
 
 import com.atomjack.shared.Logger;
+import com.atomjack.shared.Preferences;
 import com.atomjack.shared.SendToDataLayerThread;
 import com.atomjack.shared.WearConstants;
 import com.atomjack.vcfp.BuildConfig;
 import com.atomjack.vcfp.FutureRunnable;
-import com.atomjack.shared.Preferences;
 import com.atomjack.vcfp.R;
-import com.atomjack.vcfp.interfaces.ScanHandler;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
-import com.atomjack.vcfp.adapters.MainListAdapter;
-import com.atomjack.vcfp.model.MainSetting;
+import com.atomjack.vcfp.interfaces.ScanHandler;
 import com.atomjack.vcfp.model.Pin;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexDevice;
@@ -114,7 +111,7 @@ public class OldMainActivity extends VCFPActivity implements TextToSpeech.OnInit
 
     // This will enable the UI to be updated (Wear Support hidden/Wear Options shown)
     // once inventory is queried via Google, if wear support has been purchased
-    VoiceControlForPlexApplication.getInstance().setOnHasWearActivity(this);
+//    VoiceControlForPlexApplication.getInstance().setOnHasWearActivity(this);
 
 		final WhatsNewDialog whatsNewDialog = new WhatsNewDialog(this);
 		whatsNewDialog.show();
@@ -128,7 +125,7 @@ public class OldMainActivity extends VCFPActivity implements TextToSpeech.OnInit
 
 		authToken = VoiceControlForPlexApplication.getInstance().prefs.getString(Preferences.AUTHENTICATION_TOKEN);
 
-		setContentView(R.layout.main);
+//		setContentView(R.layout.main);
 
     server = gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.SERVER, ""), PlexServer.class);
 		if(server == null)
@@ -392,6 +389,7 @@ public class OldMainActivity extends VCFPActivity implements TextToSpeech.OnInit
 	}
 
 	private void initMainWithServer() {
+    /*
     String clientName = client != null ? client.name : getString(R.string.not_set);
     if(currentNetworkState == NetworkState.MOBILE)
       clientName = getString(R.string.this_device);
@@ -402,9 +400,9 @@ public class OldMainActivity extends VCFPActivity implements TextToSpeech.OnInit
 			new MainSetting(MainListAdapter.SettingHolder.TAG_ERRORS, getResources().getString(R.string.errors), VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.ERRORS, FEEDBACK_TOAST) == FEEDBACK_VOICE ? getResources().getString(R.string.voice) : getResources().getString(R.string.toast))
 		};
 
-		MainListAdapter adapter = new MainListAdapter(this, R.layout.main_setting_item_row, setting_data);
+		MainListAdapter adapter = new MainListAdapter(this, R.layout.confirmation_activity_layout, setting_data);
 
-		ListView settingsList = (ListView)findViewById(R.id.settingsList);
+		ListView settingsList = (ListView)findViewById(R.id.popupConnectedToClientName);
 		settingsList.setFooterDividersEnabled(true);
 		settingsList.addFooterView(new View(settingsList.getContext()));
 		settingsList.setAdapter(adapter);
@@ -452,6 +450,7 @@ public class OldMainActivity extends VCFPActivity implements TextToSpeech.OnInit
 
 		CheckBox resumeCheckbox = (CheckBox)findViewById(R.id.resumeCheckbox);
 		resumeCheckbox.setChecked(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.RESUME, false));
+    */
 	}
 
 	public void settingRowHelpButtonClicked(View v) {
@@ -655,7 +654,6 @@ public class OldMainActivity extends VCFPActivity implements TextToSpeech.OnInit
 
                 @Override
                 public void onFailure(int statusCode) {
-                  // TODO: Handle failure
                 }
               });
               pinAlert.cancel();
@@ -1133,11 +1131,6 @@ public class OldMainActivity extends VCFPActivity implements TextToSpeech.OnInit
         Logger.d("Cast Client %s has gone missing. Removing.", route.getName());
         VoiceControlForPlexApplication.castClients.remove(route.getName());
         VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.SAVED_CAST_CLIENTS, gsonWrite.toJson(VoiceControlForPlexApplication.castClients));
-        // If the "select a plex client" dialog is showing, refresh the list of clients
-        // TODO: Refresh device dialog if needed
-//        if(localScan.isDeviceDialogShowing()) {
-//          localScan.deviceSelectDialogRefresh();
-//        }
       }
     }
 

@@ -35,7 +35,6 @@ import com.atomjack.shared.SendToDataLayerThread;
 import com.atomjack.shared.UriDeserializer;
 import com.atomjack.shared.UriSerializer;
 import com.atomjack.shared.WearConstants;
-import com.atomjack.vcfp.activities.OldMainActivity;
 import com.atomjack.vcfp.activities.MainActivity;
 import com.atomjack.vcfp.interfaces.BitmapHandler;
 import com.atomjack.vcfp.model.Connection;
@@ -133,7 +132,6 @@ public class VoiceControlForPlexApplication extends Application
   // In-app purchasing
   private IabHelper mIabHelper;
   private boolean iabHelperSetupDone = false;
-  // TODO: Obfuscate this somehow:
   String base64EncodedPublicKey = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAlgV+Gdi4nBVn2rRqi+oVLhenzbWcEVyUf1ulhvAElEf6c8iuX3OB4JZRYVhCE690mFaYUdEb8OG8p8wT7IrQmlZ0DRfP2X9csBJKd3qB+l9y11Ggujivythvoiz+uvDPhz54O6wGmUB8+oZXN+jk9MT5Eia3BZxJDvgFcmDe/KQTTKZoIk1Qs/4PSYFP8jaS/lc71yDyRmvAM+l1lv7Ld8h69hVvKFUr9BT/20lHQGohCIc91CJvKIP5DaptbE98DAlrTxjZRRpbi+wrLGKVbJpUOBgPC78qo3zPITn6M6N0tHkv1tHkGOeyLUbxOC0wFdXj33mUldV/rp3tHnld1wIDAQAB";
   private boolean inventoryQueried = false;
 
@@ -153,7 +151,7 @@ public class VoiceControlForPlexApplication extends Application
   GoogleApiClient googleApiClient;
 
   // This is needed so that we can let the main activity know that wear support is enabled, after querying the inventory from Google
-  private OldMainActivity mainActivity;
+  private MainActivity mainActivity;
 
   @Override
   public void onCreate() {
@@ -478,9 +476,6 @@ public class VoiceControlForPlexApplication extends Application
       mNotifyMgr.notify(nowPlayingNotificationId, n);
       notificationStatus = NOTIFICATION_STATUS.on;
       Logger.d("Notification set");
-
-      // TODO: Implement
-//      sendWearNotification(media);
     } catch (Exception ex) {
       ex.printStackTrace();
     }
@@ -640,8 +635,7 @@ public class VoiceControlForPlexApplication extends Application
     }
   }
 
-  // TODO: Change this to new mainactivity?
-  public void setOnHasWearActivity(OldMainActivity activity) {
+  public void setOnHasWearActivity(MainActivity activity) {
     mainActivity = activity;
   }
 
