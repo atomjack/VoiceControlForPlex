@@ -160,8 +160,6 @@ public class MainActivity extends AppCompatActivity
 
   protected static final int REQUEST_WRITE_STORAGE = 112;
 
-  public static String USER_THUMB_KEY = "user_thumb_key";
-
   // Whether or not we received device logs from a wear device. This will allow a timer to be run in case wear support has
   // been purchased, but no wear device is paired. When this happens, we'll go ahead and email just the mobile device's logs
   //
@@ -434,7 +432,7 @@ public class MainActivity extends AppCompatActivity
               .addControlCategory(CastMediaControlIntent.categoryForCast(BuildConfig.CHROMECAST_APP_ID))
               .build();
       mMediaRouterCallback = new MediaRouterCallback();
-      mMediaRouter.addCallback(mMediaRouteSelector, mMediaRouterCallback, MediaRouter.CALLBACK_FLAG_REQUEST_DISCOVERY);
+      mMediaRouter.addCallback(mMediaRouteSelector, mMediaRouterCallback, MediaRouter.CALLBACK_FLAG_PERFORM_ACTIVE_SCAN);
 
       server = gsonRead.fromJson(prefs.get(Preferences.SERVER, ""), PlexServer.class);
       if (server == null)
@@ -699,7 +697,6 @@ public class MainActivity extends AppCompatActivity
     View layout = inflater.inflate(R.layout.search_popup, null);
 
     alertDialog = new AlertDialog.Builder(this)
-            .setTitle(R.string.finding_plex_clients_and_servers)
             .setCancelable(false)
             .setView(layout)
             .create();
@@ -1188,7 +1185,7 @@ public class MainActivity extends AppCompatActivity
   }
 
   private void setUserThumb(boolean skipThumb) {
-    final Bitmap bitmap = VoiceControlForPlexApplication.getInstance().getCachedBitmap(USER_THUMB_KEY);
+    final Bitmap bitmap = VoiceControlForPlexApplication.getInstance().getCachedBitmap(VoiceControlForPlexApplication.getInstance().getUserThumbKey());
     if(bitmap == null && !skipThumb) {
       fetchUserThumb();
     } else {
@@ -1197,7 +1194,10 @@ public class MainActivity extends AppCompatActivity
         public void run() {
           View navHeader = navigationViewMain.getHeaderView(0);
           ImageView imageView = (ImageView) navHeader.findViewById(R.id.navHeaderUserIcon);
-          imageView.setImageBitmap(bitmap);
+          if(bitmap == null)
+            imageView.setImageResource(R.drawable.nav_default_user);
+          else
+            imageView.setImageBitmap(bitmap);
         }
       });
     }
@@ -1208,13 +1208,15 @@ public class MainActivity extends AppCompatActivity
       @Override
       protected Void doInBackground(Void... params) {
         try {
-          String url = String.format("http://www.gravatar.com/avatar/%s?s=60", Utils.md5(prefs.getString(Preferences.PLEX_EMAIL)));
+          String url = String.format("http://www.gravatar.com/avatar/%s?s=60&d=404", Utils.md5(prefs.getString(Preferences.PLEX_EMAIL)));
           Logger.d("url: %s", url);
           byte[] imageData = PlexHttpClient.getSyncBytes(url);
-          Logger.d("got %d bytes", imageData.length);
-          InputStream is = new ByteArrayInputStream(imageData);
-          is.reset();
-          VoiceControlForPlexApplication.getInstance().mSimpleDiskCache.put(USER_THUMB_KEY, is);
+          if(imageData != null) {
+            Logger.d("got %d bytes", imageData.length);
+            InputStream is = new ByteArrayInputStream(imageData);
+            is.reset();
+            VoiceControlForPlexApplication.getInstance().mSimpleDiskCache.put(VoiceControlForPlexApplication.getInstance().getUserThumbKey(), is);
+          }
           setUserThumb(true);
         }
         catch(SocketTimeoutException e) {
@@ -1486,6 +1488,13 @@ public class MainActivity extends AppCompatActivity
     prefs.put(Preferences.RESUME, prefs.get(Preferences.RESUME, false));
   }
 
+  public void deviceSelectDialogRefresh() {
+    ListView serverListView = (ListView) deviceSelectDialog.findViewById(R.id.serverListView);
+    PlexListAdapter adapter = (PlexListAdapter)serverListView.getAdapter();
+    adapter.setClients(VoiceControlForPlexApplication.getAllClients());
+    adapter.notifyDataSetChanged();
+  }
+
   private class MediaRouterCallback extends MediaRouter.Callback {
     @Override
     public void onRouteRemoved(MediaRouter router, MediaRouter.RouteInfo route) {
@@ -1493,12 +1502,9 @@ public class MainActivity extends AppCompatActivity
       Logger.d("Cast Client %s has gone missing. Removing.", route.getName());
       if(VoiceControlForPlexApplication.castClients.containsKey(route.getName())) {
         VoiceControlForPlexApplication.castClients.remove(route.getName());
-        prefs.put(Preferences.SAVED_CAST_CLIENTS, gsonWrite.toJson(VoiceControlForPlexApplication.castClients));
-        // If the "select a plex client" dialog is showing, refresh the list of clients
-        // TODO: Refresh device dialog if needed
-//        if(localScan.isDeviceDialogShowing()) {
-//          localScan.deviceSelectDialogRefresh();
-//        }
+        if(deviceSelectDialog != null && deviceSelectDialog.isShowing()) {
+          deviceSelectDialogRefresh();
+        }
       }
     }
 
@@ -1513,18 +1519,13 @@ public class MainActivity extends AppCompatActivity
       client.isCastClient = true;
       client.name = route.getName();
       client.product = route.getDescription();
-//      client.castRouteInfo = route;
       client.castDevice = CastDevice.getFromBundle(route.getExtras());
       client.machineIdentifier = client.castDevice.getDeviceId();
-//      VoiceControlForPlexApplication.castRoutes.put(client.machineIdentifier, route);
       VoiceControlForPlexApplication.castClients.put(client.name, client);
       Logger.d("Added cast client %s (%s)", client.name, client.machineIdentifier);
-      prefs.put(Preferences.SAVED_CAST_CLIENTS, gsonWrite.toJson(VoiceControlForPlexApplication.castClients));
-      // If the "select a plex client" dialog is showing, refresh the list of clients
-      // TODO: implement this?
-//      if(deviceSelectDialog != null && deviceSelectDialog.isShowing()) {
-//        deviceSelectDialogRefresh();
-//      }
+      if(deviceSelectDialog != null && deviceSelectDialog.isShowing()) {
+        deviceSelectDialogRefresh();
+      }
     }
 
     @Override

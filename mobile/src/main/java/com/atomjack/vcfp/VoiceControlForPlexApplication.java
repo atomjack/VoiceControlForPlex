@@ -210,7 +210,6 @@ public class VoiceControlForPlexApplication extends Application
 
     // Load saved clients and servers
     Type clientType = new TypeToken<HashMap<String, PlexClient>>(){}.getType();
-    VoiceControlForPlexApplication.castClients = gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.SAVED_CAST_CLIENTS, "{}"), clientType);
     VoiceControlForPlexApplication.clients = gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.SAVED_CLIENTS, "{}"), clientType);
     Type serverType = new TypeToken<ConcurrentHashMap<String, PlexServer>>(){}.getType();
     VoiceControlForPlexApplication.servers = gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.SAVED_SERVERS, "{}"), serverType);
@@ -843,5 +842,12 @@ public class VoiceControlForPlexApplication extends Application
     Logger.d("now: %s", now);
     Logger.d("lastServerScan: %s", lastServerScan);
     return (int)((now.getTime() - lastServerScan.getTime())/1000);
+  }
+
+  public String getUserThumbKey() {
+    String key = "user_thumb_key";
+    if(prefs.getString(Preferences.PLEX_USERNAME) != null)
+      key += prefs.getString(Preferences.PLEX_USERNAME);
+    return key;
   }
 }
