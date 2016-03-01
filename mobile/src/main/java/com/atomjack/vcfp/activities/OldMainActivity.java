@@ -550,10 +550,10 @@ public class OldMainActivity extends VCFPActivity implements TextToSpeech.OnInit
 		}
 
     VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.SAVED_SERVERS, gsonWrite.toJson(VoiceControlForPlexApplication.servers));
-		MenuItem loginItem = menu.findItem(R.id.menu_login);
-		loginItem.setVisible(true);
-		MenuItem logoutItem = menu.findItem(R.id.menu_logout);
-		logoutItem.setVisible(false);
+//		MenuItem loginItem = menu.findItem(R.id.menu_login);
+//		loginItem.setVisible(true);
+//		MenuItem logoutItem = menu.findItem(R.id.menu_logout);
+//		logoutItem.setVisible(false);
 
 		feedback.m(R.string.logged_out);
 	}
@@ -598,8 +598,8 @@ public class OldMainActivity extends VCFPActivity implements TextToSpeech.OnInit
 	}
 
 	private void switchLogin() {
-		menu.findItem(R.id.menu_login).setVisible(!menu.findItem(R.id.menu_login).isVisible());
-		menu.findItem(R.id.menu_logout).setVisible(!menu.findItem(R.id.menu_logout).isVisible());
+//		menu.findItem(R.id.menu_login).setVisible(!menu.findItem(R.id.menu_login).isVisible());
+//		menu.findItem(R.id.menu_logout).setVisible(!menu.findItem(R.id.menu_logout).isVisible());
 	}
 
 	private void showPin(final Pin pin) {
@@ -746,10 +746,10 @@ public class OldMainActivity extends VCFPActivity implements TextToSpeech.OnInit
             VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.PLEX_USERNAME, user.username);
             VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.PLEX_EMAIL, user.email);
             feedback.m(R.string.logged_in);
-            MenuItem loginItem = menu.findItem(R.id.menu_login);
-            loginItem.setVisible(false);
-            MenuItem logoutItem = menu.findItem(R.id.menu_logout);
-            logoutItem.setVisible(true);
+//            MenuItem loginItem = menu.findItem(R.id.menu_login);
+//            loginItem.setVisible(false);
+//            MenuItem logoutItem = menu.findItem(R.id.menu_logout);
+//            logoutItem.setVisible(true);
             alertD.cancel();
           }
 
@@ -1003,7 +1003,7 @@ public class OldMainActivity extends VCFPActivity implements TextToSpeech.OnInit
 	@Override
 	public boolean onCreateOptionsMenu(Menu _menu) {
     super.onCreateOptionsMenu(_menu);
-    getMenuInflater().inflate(R.menu.menu_main, _menu);
+//    getMenuInflater().inflate(R.menu.menu_main, _menu);
 		menu = _menu;
 
     if(plexSubscription.isSubscribed() || castPlayerManager.isSubscribed())
@@ -1018,8 +1018,8 @@ public class OldMainActivity extends VCFPActivity implements TextToSpeech.OnInit
 		}
 
 		if(authToken != null) {
-			_menu.findItem(R.id.menu_login).setVisible(false);
-			_menu.findItem(R.id.menu_logout).setVisible(true);
+//			_menu.findItem(R.id.menu_login).setVisible(false);
+//			_menu.findItem(R.id.menu_logout).setVisible(true);
 		}
 		if (!hasValidAutoVoice() && !hasValidUtter()) {
 			_menu.findItem(R.id.menu_tasker_import).setVisible(false);

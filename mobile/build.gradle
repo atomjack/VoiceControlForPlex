@@ -1,6 +1,7 @@
 apply plugin: 'com.android.application'
 
 repositories {
+    jcenter()
     maven {
         url "https://mint.splunk.com/gradle/"
     }
@@ -140,4 +141,5 @@ dependencies {
     compile project(':shared')
     compile files('libs/org.apache.http.legacy.jar')
     compile 'de.hdodenhof:circleimageview:2.0.0'
+    compile 'org.honorato.multistatetogglebutton:multistatetogglebutton:0.2.0'
 }

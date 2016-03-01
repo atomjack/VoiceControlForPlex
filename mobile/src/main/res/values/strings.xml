@@ -31,7 +31,7 @@
     <string name="errors">Errors</string>
     <string name="help_server">Select a Plex Media Server to stream from. If you have more than one media server, select \"Scan All\" to search all available servers for media. If you only have one, you should select it here as scanning all servers each time will take longer to trigger playback.</string>
     <string name="help_client">Select the default client to stream media to. You can easily stream to a different client by ending your search query with \"on &lt;client name&gt;\", where &lt;client name&gt; is the name of the Plex Client.</string>
-    <string name="help_feedback">Select which type of feedback I should give you.</string>
+    <string name="help_feedback">Select which type of feedback I should give you for informational messages and for errors.</string>
     <string name="help_errors">Select which type of feedback I should give you when I run into problems (can\'t find something to play, etc).</string>
     <string name="help_button_desc">Help Button</string>
     <string name="help_usage">Here are some examples to trigger playback:\n\nWatch V For Vendetta\nWatch Season 1 Episode 1 of Homeland\nWatch Breaking Bad Season 5 Episode 8\nWatch episode Once More With Feeling of Buffy The Vampire Slayer\nWatch the next episode of The Walking Dead\nWatch the latest episode of The Daily Show\nWatch Last Week Tonight (shorter, easier form of "Watch next episode of", if there are no matching movies found)\n\nFor Music:\n"Listen to Black Sands by Bonobo" (to play a single song)\nListen to the album Drink The Sea by The Glitch Mob\nListen to the album Music Has The Right To Children (Artist is optional. Specify if more than one match is found)\nListen to Pinback (play all songs by an artist, shuffled)\n\nFor playback:\nPause Playback\nResume Playback\nStop Playback\n\nSeeking:\nOffset 1 hour 15 minutes 30 seconds\nOffset 30 minutes 5 seconds\nForward 1 minute\nRewind 20 minutes\nBack 1 hour\n(For offset only, any combination of hours, minutes, and/or seconds, in that order)\n(You may also use \'timecode\' instead of \'offset\')\n(You may use \'Back\' instead of \'Rewind\')\n\nAudio and Subtitle Streams:\nCycle Subtitles\nCycle Audio\nsubtitle/subtitles off/on (anything with either "subtitle off/on" or "subtitles off/on" will work, e.g. "turn subtitles off", "subtitle on", etc)\n\n\nIf you don\'t have \"Resume if in progress\" checked, you can selectively resume by saying \"Resume watching\" instead of \"Watch\"\n\nYou can also specify a client by adding \"on &lt;client name&gt;\" to your spoken query.</string>
@@ -173,4 +173,8 @@
     <string name="ready_to_cast_from_to">Ready to cast from %1$s to %2$s.</string>
     <string name="ready_to_scan_servers_to">Ready to scan all servers to %s.</string>
     <string name="connect_to_a_client_to_begin">Connect to a Plex Client via the Cast button to begin.</string>
+    <string-array name="feedback_options">
+        <item>@string/feedback_voice</item>
+        <item>@string/feedback_toast</item>
+    </string-array>
 </resources>

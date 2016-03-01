@@ -22,6 +22,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
+import android.speech.tts.TextToSpeech;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
@@ -105,6 +106,9 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.splunk.mint.Mint;
 
+import org.honorato.multistatetogglebutton.MultiStateToggleButton;
+import org.honorato.multistatetogglebutton.ToggleButton;
+
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -115,6 +119,7 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -126,7 +131,8 @@ import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends AppCompatActivity
         implements VoiceControlForPlexApplication.NetworkChangeListener,
-        ActivityListener {
+        ActivityListener,
+        TextToSpeech.OnInitListener{
 
   public final static int RESULT_VOICE_FEEDBACK_SELECTED = 0;
   public final static int RESULT_TASKER_PROJECT_IMPORTED = 1;
@@ -139,6 +145,10 @@ public class MainActivity extends AppCompatActivity
   private Handler handler;
 
   public final static String BUGSENSE_APIKEY = "879458d0";
+
+  private ArrayList<String> availableVoices;
+  private boolean settingErrorFeedback = false;
+  private TextToSpeech tts;
 
   private DrawerLayout mDrawer;
   private Toolbar toolbar;
@@ -542,7 +552,20 @@ public class MainActivity extends AppCompatActivity
     Logger.d("onActivityResult: %d, %d", requestCode, resultCode);
     // Pass on the activity result to the helper for handling
     if (VoiceControlForPlexApplication.getInstance().getIabHelper() == null || !VoiceControlForPlexApplication.getInstance().getIabHelper().handleActivityResult(requestCode, resultCode, data)) {
-      if (requestCode == RESULT_SHORTCUT_CREATED) {
+      if (requestCode == RESULT_VOICE_FEEDBACK_SELECTED) {
+        if (resultCode == TextToSpeech.Engine.CHECK_VOICE_DATA_PASS) {
+          // success, create the TTS instance
+          availableVoices = data.getStringArrayListExtra(TextToSpeech.Engine.EXTRA_AVAILABLE_VOICES);
+          Collections.sort(availableVoices);
+          // Need this or else voice selection won't show up:
+          tts = new TextToSpeech(this, this);
+        } else {
+          // missing data, install it
+          Intent installIntent = new Intent();
+          installIntent.setAction(TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA);
+          startActivity(installIntent);
+        }
+      } else if (requestCode == RESULT_SHORTCUT_CREATED) {
         if (resultCode == RESULT_OK) {
           data.setAction("com.android.launcher.action.INSTALL_SHORTCUT");
           sendBroadcast(data);
@@ -890,7 +913,7 @@ public class MainActivity extends AppCompatActivity
           setServer(PlexServer.getScanAllServer());
         }
         prefs.put(Preferences.SAVED_SERVERS, gsonWrite.toJson(VoiceControlForPlexApplication.servers));
-        Logger.d("doing first time setup: %s", doingFirstTimeSetup);
+        Logger.d("doing first time setup: %s, client scan finished: %s", doingFirstTimeSetup, firstTimeSetupClientScanFinished);
         if(doingFirstTimeSetup) {
           firstTimeSetupServerScanFinished = true;
           if(firstTimeSetupClientScanFinished)
@@ -913,15 +936,16 @@ public class MainActivity extends AppCompatActivity
             }
           }
           prefs.put(Preferences.SAVED_CLIENTS, gsonWrite.toJson(VoiceControlForPlexApplication.clients));
-          if (doingFirstTimeSetup) {
-            firstTimeSetupClientScanFinished = true;
-            if(firstTimeSetupServerScanFinished)
-              onFirstTimeScanFinished();
-          }
+        }
+        if (doingFirstTimeSetup) {
+          firstTimeSetupClientScanFinished = true;
+          if(firstTimeSetupServerScanFinished)
+            onFirstTimeScanFinished();
         }
         if(onClientRefreshFinished != null) {
           onClientRefreshFinished.run();
         }
+
 
       } else if(intent.getAction().equals(ACTION_SHOW_NOW_PLAYING)) {
         handleShowNowPlayingIntent(intent);
@@ -959,6 +983,7 @@ public class MainActivity extends AppCompatActivity
 
   // This is called after first time setup client & server scan is done.
   private void onFirstTimeScanFinished() {
+    Logger.d("first time scan finished");
     doingFirstTimeSetup = false;
     prefs.put(Preferences.FIRST_TIME_SETUP_COMPLETED, true);
     if(alertDialog != null)
@@ -1538,6 +1563,54 @@ public class MainActivity extends AppCompatActivity
     Intent intent = new Intent(Intent.ACTION_VIEW,
             Uri.parse("https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=UJF9QY9QELERG"));
     startActivity(intent);
+  }
+
+  public void setFeedback(MenuItem item) {
+    AlertDialog.Builder builder = new AlertDialog.Builder(this);
+    View view = getLayoutInflater().inflate(R.layout.popup_feedback, null);
+    builder.setView(view);
+    final AlertDialog dialog = builder.create();
+    MultiStateToggleButton feedbackToggleButton = (MultiStateToggleButton)view.findViewById(R.id.feedbackToggleButton);
+    boolean[] v = new boolean[2];
+    v[prefs.get(Preferences.FEEDBACK, 1) == 0 ? 0 : 1] = true;
+    feedbackToggleButton.setStates(v);
+    feedbackToggleButton.setOnValueChangedListener(new ToggleButton.OnValueChangedListener() {
+      @Override
+      public void onValueChanged(int value) {
+        prefs.put(Preferences.FEEDBACK, value);
+        if(value == 0) {
+          onVoiceFeedbackSelected(false);
+        }
+      }
+    });
+    MultiStateToggleButton errorsToggleButton = (MultiStateToggleButton)view.findViewById(R.id.errorsToggleButton);
+    v = new boolean[2];
+    v[prefs.get(Preferences.ERRORS, 1) == 0 ? 0 : 1] = true;
+    errorsToggleButton.setStates(v);
+    errorsToggleButton.setOnValueChangedListener(new ToggleButton.OnValueChangedListener() {
+      @Override
+      public void onValueChanged(int value) {
+        prefs.put(Preferences.ERRORS, value);
+        if(value == 0) {
+          onVoiceFeedbackSelected(true);
+        }
+      }
+    });
+    dialog.show();
+  }
+
+  private void onVoiceFeedbackSelected(boolean errors) {
+    Intent checkIntent = new Intent();
+    checkIntent.setAction(TextToSpeech.Engine.ACTION_CHECK_TTS_DATA);
+    tts = new TextToSpeech(this, new TextToSpeech.OnInitListener() {
+      @Override
+      public void onInit(int i) {}
+    });
+    String engine = tts.getDefaultEngine();
+    if (engine != null)
+      checkIntent.setPackage(engine);
+    settingErrorFeedback = errors;
+    startActivityForResult(checkIntent, RESULT_VOICE_FEEDBACK_SELECTED);
   }
 
   public void installTasker(MenuItem item) {
@@ -2237,5 +2310,51 @@ public class MainActivity extends AppCompatActivity
     }
   }
 
+  @Override
+  public void onInit(int status) {
+    if (status == TextToSpeech.SUCCESS) {
+      final String pref = settingErrorFeedback ? Preferences.ERRORS_VOICE : Preferences.FEEDBACK_VOICE;
+      if (availableVoices != null) {
+        AlertDialog.Builder adb = new AlertDialog.Builder(this);
+        View view = getLayoutInflater().inflate(R.layout.popup_language_selector, null);
+        adb.setView(view);
+        final CharSequence items[] = availableVoices.toArray(new CharSequence[availableVoices.size()]);
+        int selectedVoice = -1;
+        String v = VoiceControlForPlexApplication.getInstance().prefs.get(pref, "Locale.US");
+        if (availableVoices.indexOf(v) > -1)
+          selectedVoice = availableVoices.indexOf(v);
 
+        final AlertDialog dialog = adb.create();
+        Button languageSelectorCancelButton = (Button)view.findViewById(R.id.languageSelectorCancelButton);
+        languageSelectorCancelButton.setOnClickListener(new View.OnClickListener() {
+          @Override
+          public void onClick(View v) {
+            dialog.cancel();
+          }
+        });
+
+        RadioGroup languageSelectorRadioGroup = (RadioGroup)view.findViewById(R.id.languageSelectorRadioGroup);
+        LinearLayout.LayoutParams layoutParams = new RadioGroup.LayoutParams(
+                RadioGroup.LayoutParams.WRAP_CONTENT,
+                RadioGroup.LayoutParams.WRAP_CONTENT);
+        for(int i=0;i<items.length;i++) {
+          RadioButton button = (RadioButton)getLayoutInflater().inflate(R.layout.popup_chromecast_video_options_button, null);
+          button.setText(items[i]);
+          button.setId(i);
+          languageSelectorRadioGroup.addView(button, layoutParams);
+        }
+        languageSelectorRadioGroup.check(selectedVoice);
+        languageSelectorRadioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+          @Override
+          public void onCheckedChanged(RadioGroup group, int checkedId) {
+            VoiceControlForPlexApplication.getInstance().prefs.put(pref, items[checkedId].toString());
+            dialog.dismiss();
+          }
+        });
+        dialog.show();
+      } else {
+        VoiceControlForPlexApplication.getInstance().prefs.put(pref, "Locale.US");
+      }
+    }
+  }
 }
