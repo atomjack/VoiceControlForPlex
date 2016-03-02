@@ -334,13 +334,21 @@ public class PlexSearchService extends Service {
 			// got a specified server and client from a shortcut
 			Logger.d("Got hardcoded server and client from shortcut with %d music sections", specifiedServer.musicSections.size());
 			plexmediaServers = new ConcurrentHashMap<>();
-			plexmediaServers.put(specifiedServer.name, specifiedServer);
+      // If the chosen server exists in the master list of servers, use that one as it will have the last time a connection scan was done
+      if(VoiceControlForPlexApplication.servers.containsKey(specifiedServer.name))
+        plexmediaServers.put(specifiedServer.name, VoiceControlForPlexApplication.servers.get(specifiedServer.name));
+      else
+  			plexmediaServers.put(specifiedServer.name, specifiedServer);
 			setClient();
 		} else if(specifiedServer == null && defaultServer != null && !defaultServer.name.equals(getResources().getString(R.string.scan_all))) {
 			// Use the server specified in the main settings
 			Logger.d("Using server and client specified in main settings");
 			plexmediaServers = new ConcurrentHashMap<>();
-			plexmediaServers.put(defaultServer.name, defaultServer);
+      // If the chosen server exists in the master list of servers, use that one as it will have the last time a connection scan was done
+      if(VoiceControlForPlexApplication.servers.containsKey(defaultServer.name))
+        plexmediaServers.put(defaultServer.name, VoiceControlForPlexApplication.servers.get(defaultServer.name));
+      else
+  			plexmediaServers.put(defaultServer.name, defaultServer);
 			setClient();
 		} else {
 			// Scan All was chosen
@@ -993,7 +1001,7 @@ public class PlexSearchService extends Service {
     if(client.isCastClient) {
       castPlayerManager.seekTo(offset / 1000);
     } else {
-      client.seekTo(offset, new PlexHttpResponseHandler() {
+      client.seekTo(offset, plexSubscription.getNowPlayingMedia().isMusic() ? "music" : "video", new PlexHttpResponseHandler() {
         @Override
         public void onSuccess(PlexResponse r) {
           Boolean passed = true;

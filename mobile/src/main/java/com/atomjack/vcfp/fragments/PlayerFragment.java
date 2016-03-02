@@ -529,7 +529,11 @@ public abstract class PlayerFragment extends Fragment
   }
 
   protected int getOrientation() {
-    return getResources().getConfiguration().orientation;
+
+    try {
+      return getResources().getConfiguration().orientation;
+    } catch (Exception e) {}
+    return Configuration.ORIENTATION_PORTRAIT;
   }
 
   // The follow methods are defined in the PlexPlayerFragment and CastPlayerFragment subclasses

@@ -80,8 +80,8 @@ public class PlexClient extends PlexDevice {
 		}
 	};
 
-	public void seekTo(int offset, PlexHttpResponseHandler responseHandler) {
-		PlexHttpClient.get(String.format("http://%s:%s", address, port), String.format("player/playback/seekTo?commandID=0&offset=%s", offset), responseHandler);
+	public void seekTo(int offset, String type, PlexHttpResponseHandler responseHandler) {
+		PlexHttpClient.get(String.format("http://%s:%s", address, port), String.format("player/playback/seekTo?commandID=0&type=%s&offset=%s", type, offset), responseHandler);
 	}
 
   public void pause(PlexHttpResponseHandler responseHandler) {

@@ -181,7 +181,7 @@ public class PlexServer extends PlexDevice {
     if(activeConnectionExpires != null && activeConnectionExpires.before(Calendar.getInstance())) {
       activeConnectionHandler.onSuccess(activeConnection);
     } else {
-      Logger.d("[PlexServer] finding server connection for %s, current active connection expires %s, number of connections: %d", name, activeConnectionExpires, connections.size());
+      Logger.d("[PlexServer] finding server connection for %s, current active connection expires: %s, number of connections: %d", name, activeConnectionExpires, connections.size());
       findServerConnection(0, activeConnectionHandler);
     }
   }
@@ -196,6 +196,8 @@ public class PlexServer extends PlexDevice {
           activeConnection = connections.get(connectionIndex);
           activeConnectionExpires = Calendar.getInstance();
           activeConnectionExpires.set(Calendar.HOUR, 1);
+          VoiceControlForPlexApplication.servers.put(name, PlexServer.this);
+          VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.SAVED_SERVERS, VoiceControlForPlexApplication.gsonWrite.toJson(VoiceControlForPlexApplication.servers));
           activeConnectionHandler.onSuccess(activeConnection);
         } else {
           int newConnectionIndex = connectionIndex + 1;

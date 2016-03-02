@@ -26,14 +26,14 @@ public class PlexPlayerFragment extends PlayerFragment {
   @Override
   protected void doRewind() {
     if(position > -1) {
-      client.seekTo((position * 1000) - 15000, null);
+      client.seekTo((position * 1000) - 15000, nowPlayingMedia.isMusic() ? "music" : "video", null);
     }
   }
 
   @Override
   protected void doForward() {
     if(position > -1) {
-      client.seekTo((position * 1000) + 30000, null);
+      client.seekTo((position * 1000) + 30000, nowPlayingMedia.isMusic() ? "music" : "video", null);
     }
   }
 
@@ -63,7 +63,7 @@ public class PlexPlayerFragment extends PlayerFragment {
 
   @Override
   public void onStopTrackingTouch(SeekBar _seekBar) {
-    client.seekTo(_seekBar.getProgress()*1000, new PlexHttpResponseHandler() {
+    client.seekTo(_seekBar.getProgress()*1000, nowPlayingMedia.isMusic() ? "music" : "video", new PlexHttpResponseHandler() {
       @Override
       public void onSuccess(PlexResponse response) {
         isSeeking = false;
