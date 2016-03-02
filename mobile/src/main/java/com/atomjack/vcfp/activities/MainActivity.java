@@ -471,7 +471,7 @@ public class MainActivity extends AppCompatActivity
             + ".date { font-size: 9pt; color: #606060;  display: block; }", String.format("#%06X", (0xFFFFFF & ContextCompat.getColor(this, R.color.settings_popup_background)))));
     View customView = LayoutInflater.from(this).inflate(R.layout.popup_whatsnew, null, false);
     whatsNewDialog.setCustomView(customView);
-    if(force || true)
+    if(force)
       whatsNewDialog.forceShow();
     else
       whatsNewDialog.show();
@@ -1381,10 +1381,13 @@ public class MainActivity extends AppCompatActivity
         }
       });
 
-      if(VoiceControlForPlexApplication.getAllClients().size() == 0)
+      if(VoiceControlForPlexApplication.getAllClients().size() == 0) {
         layout.findViewById(R.id.deviceSelectNoDevicesFound).setVisibility(View.VISIBLE);
-      else
+        layout.findViewById(R.id.deviceListResume).setVisibility(View.GONE);
+      } else {
         layout.findViewById(R.id.deviceSelectNoDevicesFound).setVisibility(View.GONE);
+        layout.findViewById(R.id.deviceListResume).setVisibility(View.VISIBLE);
+      }
       builder.setView(layout);
       deviceSelectDialog = builder.create();
 
