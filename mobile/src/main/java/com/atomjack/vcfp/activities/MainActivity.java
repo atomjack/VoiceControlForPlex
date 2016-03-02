@@ -169,6 +169,9 @@ public class MainActivity extends AppCompatActivity
   private PlexServer server;
   private PlexClient client;
 
+  private TextView deviceSelectNoDevicesFound;
+  private CheckBox deviceListResume;
+
   private FutureRunnable fetchPinTask;
 
   public Feedback feedback;
@@ -298,7 +301,7 @@ public class MainActivity extends AppCompatActivity
     // of the app were not saving the email, which is needed for the user icon.
     checkForMissingPlexEmail();
 
-    setContentView(R.layout.new_activity_main);
+    setContentView(R.layout.main);
 
     if(!plexSubscription.isSubscribed() && !castPlayerManager.isSubscribed()) {
       Logger.d("Not subscribed: %s", plexSubscription.mClient);
@@ -954,6 +957,13 @@ public class MainActivity extends AppCompatActivity
           if(firstTimeSetupServerScanFinished)
             onFirstTimeScanFinished();
         }
+        if(VoiceControlForPlexApplication.getAllClients().size() == 0) {
+          deviceSelectNoDevicesFound.setVisibility(View.VISIBLE);
+          deviceListResume.setVisibility(View.GONE);
+        } else {
+          deviceSelectNoDevicesFound.setVisibility(View.GONE);
+          deviceListResume.setVisibility(View.VISIBLE);
+        }
         if(onClientRefreshFinished != null) {
           onClientRefreshFinished.run();
         }
@@ -1090,7 +1100,6 @@ public class MainActivity extends AppCompatActivity
 
 
     for(PlexServer thisServer : VoiceControlForPlexApplication.servers.values()) {
-//      Logger.d("Adding %s to menu (%d)", thisServer.name, id);
       MenuItem item = menu.add(Menu.NONE, id, id, thisServer.owned ? thisServer.name : thisServer.sourceTitle);
       item.setIcon(R.drawable.menu_server);
       item.setCheckable(true);
@@ -1371,22 +1380,24 @@ public class MainActivity extends AppCompatActivity
         }
       });
 
-      CheckBox resumeCheckbox = (CheckBox) layout.findViewById(R.id.deviceListResume);
-      resumeCheckbox.setVisibility(View.VISIBLE);
-      resumeCheckbox.setChecked(prefs.get(Preferences.RESUME, false));
-      resumeCheckbox.setOnClickListener(new View.OnClickListener() {
+      deviceListResume = (CheckBox) layout.findViewById(R.id.deviceListResume);
+      deviceListResume.setVisibility(View.VISIBLE);
+      deviceListResume.setChecked(prefs.get(Preferences.RESUME, false));
+      deviceListResume.setOnClickListener(new View.OnClickListener() {
         @Override
         public void onClick(View v) {
           prefs.put(Preferences.RESUME, ((CheckBox) v).isChecked());
         }
       });
+      deviceSelectNoDevicesFound = (TextView)layout.findViewById(R.id.deviceSelectNoDevicesFound);
+
 
       if(VoiceControlForPlexApplication.getAllClients().size() == 0) {
-        layout.findViewById(R.id.deviceSelectNoDevicesFound).setVisibility(View.VISIBLE);
-        layout.findViewById(R.id.deviceListResume).setVisibility(View.GONE);
+        deviceSelectNoDevicesFound.setVisibility(View.VISIBLE);
+        deviceListResume.setVisibility(View.GONE);
       } else {
-        layout.findViewById(R.id.deviceSelectNoDevicesFound).setVisibility(View.GONE);
-        layout.findViewById(R.id.deviceListResume).setVisibility(View.VISIBLE);
+        deviceSelectNoDevicesFound.setVisibility(View.GONE);
+        deviceListResume.setVisibility(View.VISIBLE);
       }
       builder.setView(layout);
       deviceSelectDialog = builder.create();
@@ -1405,9 +1416,8 @@ public class MainActivity extends AppCompatActivity
           PlexClient s = (PlexClient) parentAdapter.getItemAtPosition(position);
           Logger.d("client clicked: %s", s.name);
           deviceSelectDialog.dismiss();
-          CheckBox resumeCheckbox = (CheckBox) deviceSelectDialog.findViewById(R.id.deviceListResume);
           if (onFinish != null)
-            onFinish.onDeviceSelected(s, resumeCheckbox.isChecked());
+            onFinish.onDeviceSelected(s, deviceListResume.isChecked());
         }
 
       });

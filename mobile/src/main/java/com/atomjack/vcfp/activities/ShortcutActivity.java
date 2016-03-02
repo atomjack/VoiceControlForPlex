@@ -1,12 +1,12 @@
 package com.atomjack.vcfp.activities;
 
-import android.app.Activity;
 import android.app.PendingIntent;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.speech.RecognizerIntent;
+import android.support.v7.app.AppCompatActivity;
 
 import com.atomjack.shared.UriDeserializer;
 import com.atomjack.shared.UriSerializer;
@@ -21,7 +21,7 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 
-public class ShortcutActivity extends Activity {
+public class ShortcutActivity extends AppCompatActivity {
   protected Gson gsonRead = new GsonBuilder()
           .registerTypeAdapter(Uri.class, new UriDeserializer())
           .create();
