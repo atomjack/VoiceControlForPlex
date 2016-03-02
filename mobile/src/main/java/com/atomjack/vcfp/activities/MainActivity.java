@@ -452,14 +452,29 @@ public class MainActivity extends AppCompatActivity
         fragment = playerFragment != null ? playerFragment : getMainFragment();
 
         // Only show the what's new dialog if this is not the first time the app is run
-        final WhatsNewDialog whatsNewDialog = new WhatsNewDialog(this);
-        whatsNewDialog.show();
+        showWhatsNewDialog(false);
         switchToFragment(fragment);
       }
     } else {
       fragment = new SetupFragment();
       switchToFragment(fragment);
     }
+  }
+
+  private void showWhatsNewDialog(boolean force) {
+    WhatsNewDialog whatsNewDialog = new WhatsNewDialog(this);
+    whatsNewDialog.setStyle(String.format("body { background-color: %s; color: #ffffff; }" +
+            "h1 { margin-left: 0px; font-size: 12pt; }"
+            + "li { margin-left: 0px; font-size: 9pt; }"
+            + "ul { padding-left: 30px; }"
+            + ".summary { font-size: 9pt; color: #606060; display: block; clear: left; }"
+            + ".date { font-size: 9pt; color: #606060;  display: block; }", String.format("#%06X", (0xFFFFFF & ContextCompat.getColor(this, R.color.settings_popup_background)))));
+    View customView = LayoutInflater.from(this).inflate(R.layout.popup_whatsnew, null, false);
+    whatsNewDialog.setCustomView(customView);
+    if(force || true)
+      whatsNewDialog.forceShow();
+    else
+      whatsNewDialog.show();
   }
 
   @Override
@@ -1619,8 +1634,7 @@ public class MainActivity extends AppCompatActivity
   }
 
   public void showChangelog(MenuItem item) {
-    final WhatsNewDialog whatsNewDialog = new WhatsNewDialog(this);
-    whatsNewDialog.forceShow();
+    showWhatsNewDialog(true);
   }
 
   public void installUtter(MenuItem item) {

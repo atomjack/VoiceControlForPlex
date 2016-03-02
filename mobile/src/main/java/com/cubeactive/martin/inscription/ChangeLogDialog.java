@@ -28,7 +28,9 @@ import android.content.res.Resources;
 import android.content.res.XmlResourceParser;
 import android.text.format.DateFormat;
 import android.util.Log;
+import android.view.View;
 import android.webkit.WebView;
+import android.widget.Button;
 
 import com.atomjack.vcfp.R;
 
@@ -54,6 +56,8 @@ public class ChangeLogDialog {
             + ".date { font-size: 9pt; color: #606060;  display: block; }";
 
     protected DialogInterface.OnDismissListener mOnDismissListener;
+
+    private View customView = null;
 
     public ChangeLogDialog(final Context context) {
         mContext = context;
@@ -184,7 +188,7 @@ public class ChangeLogDialog {
         //Create HTML change log
         return getHTMLChangelog(R.xml.changelog, resources, 0);
     }
-    
+
     //Call to show the change log dialog
     public void show() {
         show(0);
@@ -216,35 +220,58 @@ public class ChangeLogDialog {
             return;
         }
 
-        //Create web view and load html
-        final WebView webView = new WebView(mContext);
-        webView.loadDataWithBaseURL(null, htmlChangelog, "text/html", "utf-8", null);
-        final AlertDialog.Builder builder = new AlertDialog.Builder(mContext)
-                .setTitle(title)
-                .setView(webView)
-                .setPositiveButton(closeString, new Dialog.OnClickListener() {
+
+        final AlertDialog.Builder builder = new AlertDialog.Builder(mContext);
+        if(customView != null) {
+          builder.setView(customView);
+          final AlertDialog dialog = builder.create();
+//          customView.findViewWithTag()
+          WebView whatsNewWebView = (WebView)customView.findViewById(mContext.getResources().getIdentifier("whatsNewWebView", "id", mContext.getPackageName()));
+          whatsNewWebView.loadDataWithBaseURL(null, htmlChangelog, "text/html", "utf-8", null);
+          Button whatsNewCloseButton = (Button)customView.findViewById(mContext.getResources().getIdentifier("whatsNewCloseButton", "id", mContext.getPackageName()));
+          if(whatsNewCloseButton != null) {
+            whatsNewCloseButton.setOnClickListener(new View.OnClickListener() {
+              @Override
+              public void onClick(View v) {
+                dialog.dismiss();
+              }
+            });
+          }
+          dialog.show();
+        } else {
+          //Create web view and load html
+          final WebView webView = new WebView(mContext);
+          webView.loadDataWithBaseURL(null, htmlChangelog, "text/html", "utf-8", null);
+
+          builder.setTitle(title)
+                  .setView(webView)
+                  .setPositiveButton(closeString, new Dialog.OnClickListener() {
                     public void onClick(final DialogInterface dialogInterface, final int i) {
-                        dialogInterface.dismiss();
+                      dialogInterface.dismiss();
                     }
-                })
-                .setOnCancelListener( new OnCancelListener() {
-					
-					@Override
-					public void onCancel(DialogInterface dialog) {
-						dialog.dismiss();						
-					}
-				});        		
-        AlertDialog dialog = builder.create();
-        dialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
+                  })
+                  .setOnCancelListener(new OnCancelListener() {
+
+                    @Override
+                    public void onCancel(DialogInterface dialog) {
+                      dialog.dismiss();
+                    }
+                  });
+          AlertDialog dialog = builder.create();
+          dialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
             @Override
             public void onDismiss(final DialogInterface dialog) {
-                if (mOnDismissListener != null) {
-                    mOnDismissListener.onDismiss(dialog);
-                }
+              if (mOnDismissListener != null) {
+                mOnDismissListener.onDismiss(dialog);
+              }
             }
-        });
-        dialog.show();
+          });
+          dialog.show();
+        }
     }
 
+    public void setCustomView(View view) {
+      customView = view;
+    }
 }
 
