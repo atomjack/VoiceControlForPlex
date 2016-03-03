@@ -176,11 +176,12 @@ public class PlexClient extends PlexDevice {
       } else if (stream.streamType == Stream.SUBTITLE) {
         qs.put("subtitleStreamID", stream.id);
       }
-      Call<PlexResponse> call = service.setStreams(qs);
+      Call<PlexResponse> call = service.setStreams(qs, "0", VoiceControlForPlexApplication.getInstance().getUUID());
       call.enqueue(new Callback<PlexResponse>() {
         @Override
         public void onResponse(Response<PlexResponse> response) {
-          Logger.d("setStream response: %s", response.body().status);
+          if(response.body() != null)
+            Logger.d("setStream response: %s", response.body().status);
         }
 
         @Override

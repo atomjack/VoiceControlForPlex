@@ -18,6 +18,7 @@ import com.atomjack.vcfp.net.PlexHttpResponseHandler;
 
 import org.simpleframework.xml.Root;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
@@ -178,10 +179,14 @@ public class PlexServer extends PlexDevice {
 	};
 
   public void findServerConnection(final ActiveConnectionHandler activeConnectionHandler) {
-    if(activeConnectionExpires != null && activeConnectionExpires.before(Calendar.getInstance())) {
+    SimpleDateFormat simpleDateFormat = new SimpleDateFormat("EEEE, MMMM d, yyyy 'at' h:mm:ss a");
+     Logger.d("[PlexServer] finding server connection for %s, current active connection expires: %s, now: %s",
+             name,
+             simpleDateFormat.format(activeConnectionExpires.getTime()),
+             simpleDateFormat.format(Calendar.getInstance().getTime()));
+    if(activeConnectionExpires != null && !activeConnectionExpires.before(Calendar.getInstance())) {
       activeConnectionHandler.onSuccess(activeConnection);
     } else {
-      Logger.d("[PlexServer] finding server connection for %s, current active connection expires: %s, number of connections: %d", name, activeConnectionExpires, connections.size());
       findServerConnection(0, activeConnectionHandler);
     }
   }
@@ -194,8 +199,9 @@ public class PlexServer extends PlexDevice {
         if (available) {
           // This connection replied, so let's use it
           activeConnection = connections.get(connectionIndex);
+          Logger.d("Found connection for %s: %s", name, activeConnection);
           activeConnectionExpires = Calendar.getInstance();
-          activeConnectionExpires.set(Calendar.HOUR, 1);
+          activeConnectionExpires.add(Calendar.HOUR_OF_DAY, 1);
           VoiceControlForPlexApplication.servers.put(name, PlexServer.this);
           VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.SAVED_SERVERS, VoiceControlForPlexApplication.gsonWrite.toJson(VoiceControlForPlexApplication.servers));
           activeConnectionHandler.onSuccess(activeConnection);

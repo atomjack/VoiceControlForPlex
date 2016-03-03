@@ -98,7 +98,7 @@ public class PlexHttpClient
 
     @GET("/player/playback/seekTo")
     Call<PlexResponse> seekTo(@Query("offset") int offset,
-                              @Query("commandID") String commandId,
+                              @Query(PlexHeaders.commandID) String commandId,
                               @retrofit.http.Header(PlexHeaders.XPlexClientIdentifier) String clientId);
 
     @GET("/library/sections")
@@ -108,7 +108,9 @@ public class PlexHttpClient
     Call<MediaContainer> getResources(@Query(PlexHeaders.XPlexToken) String accessToken);
 
     @GET("/player/playback/setStreams")
-    Call<PlexResponse> setStreams(@QueryMap Map<String, String> options);
+    Call<PlexResponse> setStreams(@QueryMap Map<String, String> options,
+                                  @Query(PlexHeaders.commandID) String commandId,
+                                  @retrofit.http.Header(PlexHeaders.XPlexClientIdentifier) String clientId);
 
     @GET("/users/account.xml")
     Call<PlexUser> getPlexAccount(@retrofit.http.Header(PlexHeaders.XPlexToken) String authToken);
@@ -259,12 +261,20 @@ public class PlexHttpClient
     });
   }
 
-	public static void get(final PlexServer server, final String path, final PlexHttpMediaContainerHandler responseHandler) {
+  public static void getDebug(final PlexServer server, final String path, final PlexHttpMediaContainerHandler responseHandler) {
+    get(server, path, true, responseHandler);
+  }
+
+  public static void get(final PlexServer server, final String path, final PlexHttpMediaContainerHandler responseHandler) {
+    get(server, path, false, responseHandler);
+  }
+
+	public static void get(final PlexServer server, final String path, final boolean debug, final PlexHttpMediaContainerHandler responseHandler) {
     server.findServerConnection(new ActiveConnectionHandler() {
       @Override
       public void onSuccess(Connection connection) {
 
-        PlexHttpService service = getService(connection.uri);
+        PlexHttpService service = getService(connection.uri, debug);
 //        Logger.d("using path %s %s", connection.uri, path.substring(1));
         Call<MediaContainer> call = service.getMediaContainer(path.substring(1), server.accessToken);
         call.enqueue(new Callback<MediaContainer>() {
@@ -431,8 +441,16 @@ public class PlexHttpClient
     });
   }
 
+  public static void getDebug(String baseHostname, String path, final PlexHttpResponseHandler responseHandler) {
+    get(baseHostname, path, true, responseHandler);
+  }
+
   public static void get(String baseHostname, String path, final PlexHttpResponseHandler responseHandler) {
-    PlexHttpService service = getService(baseHostname);
+    get(baseHostname, path, false, responseHandler);
+  }
+
+  public static void get(String baseHostname, String path, boolean debug, final PlexHttpResponseHandler responseHandler) {
+    PlexHttpService service = getService(baseHostname, debug);
     Call<PlexResponse> call = service.getPlexResponse(VoiceControlForPlexApplication.getInstance().prefs.getUUID(),
             path.replaceFirst("^/", ""));
     call.enqueue(new Callback<PlexResponse>() {

@@ -1203,23 +1203,19 @@ public class PlexSearchService extends Service {
   }
 
   private void playMedia(final PlexMedia media, final PlexDirectory album) {
-		if(media.server.owned)
-			createPlayQueueAndPlayMedia(media, album, null);
-		else {
-			// TODO: switch this to the PlexServer method and verify
-			requestTransientAccessToken(media.server, new AfterTransientTokenRequest() {
-				@Override
-				public void success(String token) {
-					createPlayQueueAndPlayMedia(media, album, token);
-				}
+    // TODO: switch this to the PlexServer method and verify
+    requestTransientAccessToken(media.server, new AfterTransientTokenRequest() {
+      @Override
+      public void success(String token) {
+        createPlayQueueAndPlayMedia(media, album, token);
+      }
 
-				@Override
-				public void failure() {
-					// Just try to play without a transient token
-					createPlayQueueAndPlayMedia(media, album, null);
-				}
-			});
-		}
+      @Override
+      public void failure() {
+        // Just try to play without a transient token
+        createPlayQueueAndPlayMedia(media, album, null);
+      }
+    });
 	}
 
   private void playAllFromArtist(final PlexDirectory artist) {

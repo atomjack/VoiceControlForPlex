@@ -773,8 +773,6 @@ public class VoiceControlForPlexApplication extends Application
     qs.add("port", connection.port);
     qs.add("address", connection.address);
 
-    if (resumePlayback && media.viewOffset != null)
-      qs.add("viewOffset", media.viewOffset);
     if (transientToken != null)
       qs.add("token", transientToken);
     if (media.server.accessToken != null)
