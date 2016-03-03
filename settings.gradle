@@ -1,2 +1,2 @@
 include ':wear', ':shared'
-include ':mobile', ':CastCompanionLibrary-android'
+include ':mobile'
