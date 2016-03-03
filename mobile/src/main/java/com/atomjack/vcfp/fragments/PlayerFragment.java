@@ -219,11 +219,8 @@ public abstract class PlayerFragment extends Fragment
   }
 
   public void showNowPlaying() {
-    showNowPlaying(true);
-  }
-
-  // This will be called with setView=false when a new track starts playing. We don't need to set the view again (and it seems to mess up the display of the album cover)
-  public void showNowPlaying(boolean setView) {
+    if(mainView == null)
+      return;
     if (nowPlayingMedia instanceof PlexVideo) {
       PlexVideo video = (PlexVideo)nowPlayingMedia;
       if(video.isMovie() || video.isClip()) {
