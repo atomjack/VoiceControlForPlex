@@ -990,13 +990,16 @@ public class MainActivity extends AppCompatActivity
           if(firstTimeSetupServerScanFinished)
             onFirstTimeScanFinished();
         }
-        if(VoiceControlForPlexApplication.getAllClients().size() == 0) {
-          deviceSelectNoDevicesFound.setVisibility(View.VISIBLE);
-          deviceListResume.setVisibility(View.GONE);
-        } else {
-          deviceSelectNoDevicesFound.setVisibility(View.GONE);
-          deviceListResume.setVisibility(View.VISIBLE);
+        if(deviceSelectDialog != null && deviceSelectDialog.isShowing()) {
+          if (VoiceControlForPlexApplication.getAllClients().size() == 0) {
+            deviceSelectNoDevicesFound.setVisibility(View.VISIBLE);
+            deviceListResume.setVisibility(View.GONE);
+          } else {
+            deviceSelectNoDevicesFound.setVisibility(View.GONE);
+            deviceListResume.setVisibility(View.VISIBLE);
+          }
         }
+
         if(onClientRefreshFinished != null) {
           onClientRefreshFinished.run();
         }
