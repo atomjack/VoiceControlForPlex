@@ -24,39 +24,43 @@
                 />
 
         <TextView
-                android:id="@+id/nowPlayingTitle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:textSize="24sp"
-                android:textStyle="bold"
-                style="@style/showShadow"
-                android:text="Aliens"
-                android:textColor="@color/white"/>
+            android:id="@+id/nowPlayingTitle"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            style="@style/showShadow"
+            android:text="Aliens"
+            android:textColor="@color/white"
+            android:gravity="center_horizontal"/>
 
         <TextView
-                android:id="@+id/nowPlayingGenre"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                style="@style/showShadow"
-                android:text="Horror"
-                android:textColor="@color/white"/>
+            android:id="@+id/nowPlayingGenre"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            style="@style/showShadow"
+            android:text="Horror"
+            android:textColor="@color/white"
+            android:gravity="center_horizontal"/>
 
         <TextView
-                android:id="@+id/nowPlayingYear"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                style="@style/showShadow"
-                android:text="1986"
-                android:textColor="@color/white"/>
+            android:id="@+id/nowPlayingYear"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            style="@style/showShadow"
+            android:text="1986"
+            android:textColor="@color/white"
+            android:gravity="center_horizontal"/>
 
         <TextView
-                android:id="@+id/nowPlayingDuration"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                style="@style/showShadow"
-                android:text="2:30:00"
-                android:textColor="@color/white"/>
+            android:id="@+id/nowPlayingDuration"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            style="@style/showShadow"
+            android:text="2:30:00"
+            android:textColor="@color/white"
+            android:gravity="center_horizontal"/>
 
         <FrameLayout
             android:layout_width="match_parent"

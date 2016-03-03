@@ -159,11 +159,11 @@ public abstract class PlayerFragment extends Fragment
 
   public void mediaChanged(PlexMedia media) {
     nowPlayingMedia = media;
+    showNowPlaying();
     setCurrentTimeDisplay(getOffset(nowPlayingMedia));
     seekBar.setMax(nowPlayingMedia.duration / 1000);
     seekBar.setProgress(Integer.parseInt(nowPlayingMedia.viewOffset) / 1000);
     durationDisplay.setText(VoiceControlForPlexApplication.secondsToTimecode(nowPlayingMedia.duration / 1000));
-    showNowPlaying();
   }
 
   @Override

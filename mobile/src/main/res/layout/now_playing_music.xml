@@ -27,7 +27,7 @@
 
         <TextView
             android:id="@+id/nowPlayingArtist"
-            android:layout_width="wrap_content"
+            android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             style="@style/showShadow"
             android:textSize="24sp"
@@ -36,11 +36,12 @@
             android:layout_alignParentStart="true"
             android:text="Bonobo"
             android:textColor="@color/white"
-            android:layout_marginTop="16dp"/>
+            android:layout_marginTop="16dp"
+            android:gravity="center_horizontal"/>
 
         <TextView
             android:id="@+id/nowPlayingTitle"
-            android:layout_width="wrap_content"
+            android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             style="@style/showShadow"
             android:textSize="18sp"
@@ -48,11 +49,12 @@
             android:layout_alignParentLeft="true"
             android:layout_alignParentStart="true"
             android:text="Animals"
-            android:textColor="@color/white"/>
+            android:textColor="@color/white"
+            android:gravity="center_horizontal"/>
 
         <TextView
             android:id="@+id/nowPlayingAlbum"
-            android:layout_width="wrap_content"
+            android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             style="@style/showShadow"
             android:textSize="20sp"
@@ -60,7 +62,8 @@
             android:layout_alignParentLeft="true"
             android:layout_alignParentStart="true"
             android:text="Black Sands"
-            android:textColor="@color/white"/>
+            android:textColor="@color/white"
+            android:gravity="center_horizontal"/>
 
         <FrameLayout
             android:layout_width="match_parent"

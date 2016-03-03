@@ -26,6 +26,7 @@ import android.speech.tts.TextToSpeech;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
@@ -365,7 +366,7 @@ public class MainActivity extends AppCompatActivity
 
       if(layout != -1) {
         playerFragment.init(layout, client, media, false, plexSubscriptionListener);
-        switchToFragment(playerFragment);
+        switchToPlayerFragment();
       }
       sendWearPlaybackChange(state, media);
     }
@@ -376,7 +377,7 @@ public class MainActivity extends AppCompatActivity
       if(playerFragment != null && playerFragment.isVisible()) {
         if(state == PlayerState.STOPPED) {
           Logger.d("[MainActivity] onStopped");
-          switchToFragment(getMainFragment());
+          switchToMainFragment();
         } else {
           playerFragment.setState(state);
         }
@@ -399,7 +400,7 @@ public class MainActivity extends AppCompatActivity
       Logger.d("[MainActivity] unsubscribed");
       setCastIconInactive();
       prefs.remove(Preferences.SUBSCRIBED_CLIENT);
-      switchToFragment(getMainFragment());
+      switchToMainFragment();
       if(VoiceControlForPlexApplication.getInstance().hasWear()) {
         new SendToDataLayerThread(WearConstants.DISCONNECTED, MainActivity.this).start();
       }
@@ -443,7 +444,7 @@ public class MainActivity extends AppCompatActivity
 
       setupNavigationDrawer();
 
-      Logger.d("Intent action: %s", getIntent().getAction());
+      Logger.d("[MainActivity] Intent action: %s", getIntent().getAction());
       if(getIntent().getAction() != null && getIntent().getAction().equals(ACTION_SHOW_NOW_PLAYING)) {
         handleShowNowPlayingIntent(getIntent());
       } else {
@@ -518,7 +519,7 @@ public class MainActivity extends AppCompatActivity
       Logger.d("Auto disconnecting player");
       if(playerFragment.isVisible()) {
         VoiceControlForPlexApplication.getInstance().cancelNotification();
-        switchToFragment(mainFragment);
+        switchToMainFragment();
       }
     }
   };
@@ -1066,11 +1067,25 @@ public class MainActivity extends AppCompatActivity
       if(playerFragment.isVisible())
         playerFragment.mediaChanged(media);
       else
-        switchToFragment(playerFragment);
+        switchToPlayerFragment();
       int seconds = intent.getBooleanExtra(com.atomjack.shared.Intent.EXTRA_STARTING_PLAYBACK, false) ? 10 : 3;
       Logger.d("Setting auto disconnect for %d seconds", seconds);
       handler.postDelayed(autoDisconnectPlayerTimer, seconds*1000);
     }
+  }
+
+  private void switchToPlayerFragment() {
+    FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+    transaction.setCustomAnimations(R.anim.slide_in_up, R.anim.slide_out_up);
+    transaction.replace(R.id.flContent, playerFragment);
+    transaction.commit();
+  }
+
+  private void switchToMainFragment() {
+    FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+    transaction.setCustomAnimations(R.anim.slide_in_down, R.anim.slide_out_down);
+    transaction.replace(R.id.flContent, getMainFragment());
+    transaction.commit();
   }
 
   private Runnable refreshServers = new Runnable() {
@@ -1345,8 +1360,8 @@ public class MainActivity extends AppCompatActivity
     Logger.d("[MainActivity] setClient");
     client = _client;
     prefs.put(Preferences.CLIENT, gsonWrite.toJson(_client));
-    if(mainFragment.isVisible())
-      mainFragment.setClient(_client);
+    if(getMainFragment().isVisible())
+      getMainFragment().setClient(_client);
   }
 
   private boolean isSubscribed() {
@@ -2243,7 +2258,7 @@ public class MainActivity extends AppCompatActivity
   @Override
   public void onLayoutNotFound() {
     // This is passed by PlayerFragment in the case where it is not able to tell which layout (tv/movie/music) to use. We should switch back to the main fragment
-    switchToFragment(getMainFragment());
+    switchToMainFragment();
   }
 
   private MainFragment getMainFragment() {
