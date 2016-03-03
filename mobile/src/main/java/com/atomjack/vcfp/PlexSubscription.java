@@ -257,7 +257,6 @@ public class PlexSubscription {
       return;
     mClient = client;
 
-
     PlexHttpClient.subscribe(client, subscriptionPort, commandId, VoiceControlForPlexApplication.getInstance().getUUID(), VoiceControlForPlexApplication.getInstance().getString(R.string.app_name), new PlexHttpResponseHandler() {
       @Override
       public void onSuccess(PlexResponse response) {
@@ -274,8 +273,6 @@ public class PlexSubscription {
             serverSocket.close();
             serverSocket = null;
           } catch (Exception e) {}
-
-
         } else {
           timeLastHeardFromClient = new Date();
 

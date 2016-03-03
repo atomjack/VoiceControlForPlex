@@ -12,7 +12,7 @@
 
     <!-- This LinearLayout represents the contents of the screen  -->
     <LinearLayout
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:orientation="vertical">
 
@@ -56,6 +56,69 @@
                 app:itemBackground="@drawable/nav_drawer_server_item"
                 app:itemIconTint="@color/white"
                 android:layout_weight="1"/>
+            <LinearLayout
+                android:id="@+id/navigationViewFooter"
+                android:layout_width="match_parent"
+                android:layout_height="100dp"
+                android:orientation="vertical"
+                android:background="@color/navigation_drawer_background">
+
+
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="match_parent"
+                    android:id="@+id/navigationFooterHelpButton"
+                    android:layout_height="50dp"
+                    android:layout_gravity="center_vertical"
+                    android:paddingTop="10dp">
+
+                    <ImageView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="12dp"
+                        android:id="@+id/imageView4"
+                        android:src="@drawable/menu_help"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="?android:attr/textAppearanceMedium"
+                        android:text="@string/help_usage_button"
+                        android:textSize="14sp"
+                        android:layout_marginLeft="27dp"
+                        android:layout_marginTop="5dp"
+                        android:textColor="@color/white"
+                        android:id="@+id/textView24"/>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="match_parent"
+                    android:id="@+id/navigationFooterSettingsButton"
+                    android:layout_height="50dp"
+                    android:layout_gravity="center_vertical"
+                    android:paddingTop="10dp">
+
+                    <ImageView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="12dp"
+                        android:id="@+id/imageView5"
+                        android:src="@drawable/menu_settings"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="?android:attr/textAppearanceMedium"
+                        android:text="@string/action_settings"
+                        android:textSize="14sp"
+                        android:layout_marginLeft="27dp"
+                        android:layout_marginTop="5dp"
+                        android:textColor="@color/white"
+                        android:id="@+id/textView25"/>
+                </LinearLayout>
+            </LinearLayout>
+            <!--
             <android.support.design.widget.NavigationView
                 android:id="@+id/navigationViewFooter"
                 android:layout_width="wrap_content"
@@ -66,6 +129,7 @@
                 app:itemIconTint="@color/white"
                 app:menu="@menu/nav_footer"
                 />
+                -->
 
         </LinearLayout>
     </android.support.design.widget.NavigationView>

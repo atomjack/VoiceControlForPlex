@@ -34,8 +34,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.media.MediaRouteSelector;
 import android.support.v7.media.MediaRouter;
 import android.support.v7.widget.Toolbar;
-import android.util.DisplayMetrics;
-import android.util.TypedValue;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -239,7 +237,7 @@ public class MainActivity extends AppCompatActivity
   protected NetworkState currentNetworkState;
   protected NetworkMonitor networkMonitor;
 
-  NavigationView navigationFooter;
+  LinearLayout navigationFooter;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -847,14 +845,48 @@ public class MainActivity extends AppCompatActivity
       navigationViewMain = (NavigationView) findViewById(R.id.navigationViewMain);
 
     // Footer view
-    navigationFooter = (NavigationView) findViewById(R.id.navigationViewFooter);
-    ViewGroup.LayoutParams layoutParams = navigationFooter.getLayoutParams();
-    TypedValue value = new TypedValue();
-    getTheme().resolveAttribute(android.R.attr.listPreferredItemHeight, value, true);
-    DisplayMetrics metrics = new DisplayMetrics();
-    getWindowManager().getDefaultDisplay().getMetrics(metrics);
-    layoutParams.height = (int)value.getDimension(metrics)*navigationFooter.getMenu().size();
-    navigationFooter.setLayoutParams(layoutParams);
+    navigationFooter = (LinearLayout) findViewById(R.id.navigationViewFooter);
+
+    final LinearLayout navigationFooterHelpButton = (LinearLayout)navigationFooter.findViewById(R.id.navigationFooterHelpButton);
+    navigationFooterHelpButton.setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View v) {
+        navigationFooterHelpButton.setBackgroundColor(ContextCompat.getColor(MainActivity.this, R.color.primary_600));
+        handler.postDelayed(new Runnable() {
+          @Override
+          public void run() {
+            navigationFooterHelpButton.setBackgroundColor(ContextCompat.getColor(MainActivity.this, R.color.navigation_drawer_background));
+          }
+        }, 200);
+        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+        View view = getLayoutInflater().inflate(R.layout.help_dialog, null);
+        builder.setView(view);
+        final AlertDialog usageDialog = builder.create();
+        Button button = (Button)view.findViewById(R.id.helpCloseButton);
+        button.setOnClickListener(new View.OnClickListener() {
+          @Override
+          public void onClick(View v) {
+            usageDialog.dismiss();
+          }
+        });
+        usageDialog.show();
+      }
+    });
+
+    final LinearLayout navigationFooterSettingsButton = (LinearLayout)navigationFooter.findViewById(R.id.navigationFooterSettingsButton);
+    navigationFooterSettingsButton.setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View v) {
+        navigationFooterSettingsButton.setBackgroundColor(ContextCompat.getColor(MainActivity.this, R.color.primary_600));
+        handler.postDelayed(new Runnable() {
+          @Override
+          public void run() {
+            navigationFooterSettingsButton.setBackgroundColor(ContextCompat.getColor(MainActivity.this, R.color.navigation_drawer_background));
+            setNavGroup(R.menu.nav_items_settings);
+          }
+        }, 200);
+      }
+    });
 
     if(navigationViewMain.getHeaderView(0) != null)
       navigationViewMain.removeHeaderView(navigationViewMain.getHeaderView(0));
@@ -1123,25 +1155,6 @@ public class MainActivity extends AppCompatActivity
 
   public void navMenuSettingsBack(MenuItem item) {
     setNavGroup(R.menu.nav_items_main);
-  }
-
-  public void navMenuSettings(MenuItem item) {
-    setNavGroup(R.menu.nav_items_settings);
-  }
-
-  public void navMenuHelp(MenuItem item) {
-    AlertDialog.Builder builder = new AlertDialog.Builder(this);
-    View view = getLayoutInflater().inflate(R.layout.help_dialog, null);
-    builder.setView(view);
-    final AlertDialog usageDialog = builder.create();
-    Button button = (Button)view.findViewById(R.id.helpCloseButton);
-    button.setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(View v) {
-        usageDialog.dismiss();
-      }
-    });
-    usageDialog.show();
   }
 
   private void setNavGroup(int group) {
