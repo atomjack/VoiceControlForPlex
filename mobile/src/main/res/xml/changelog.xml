@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog>
-    <release version="2.1.0" versioncode="60">
+    <release version="2.1.0b1" versioncode="60">
         <change>Material Design UI Overhaul</change>
         <change>Added volume control for Chromecast clients</change>
     </release>
