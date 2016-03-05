@@ -191,6 +191,10 @@ public class MainActivity extends AppCompatActivity
 
   private boolean userIsInteracting;
 
+  // This will be set to true if wear support is purchased immediately upon launch before
+  // initial setup has been done, to delay the wear purchase popup until after that has finished
+  private boolean showWearPurchase = false;
+
   // First time setup
   private boolean doingFirstTimeSetup = false;
   // The next two booleans will be set to true when their respective scans are finished. This will ensure
@@ -444,6 +448,11 @@ public class MainActivity extends AppCompatActivity
 
       setupNavigationDrawer();
 
+      //
+      if(showWearPurchase) {
+        showWearPurchase = false;
+        showWearPurchase();
+      }
       Logger.d("[MainActivity] Intent action: %s", getIntent().getAction());
       if(getIntent().getAction() != null && getIntent().getAction().equals(ACTION_SHOW_NOW_PLAYING)) {
         handleShowNowPlayingIntent(getIntent());
@@ -840,7 +849,7 @@ public class MainActivity extends AppCompatActivity
 
 
     };
-    mDrawer.setDrawerListener(drawerToggle);
+    mDrawer.addDrawerListener(drawerToggle);
     // Find our drawer view
     if(navigationViewMain == null)
       navigationViewMain = (NavigationView) findViewById(R.id.navigationViewMain);
@@ -1013,8 +1022,16 @@ public class MainActivity extends AppCompatActivity
         if(VoiceControlForPlexApplication.getInstance().hasWear()) {
           hidePurchaseWearMenuItem();
         } else {
-          if (prefs.get(Preferences.HAS_SHOWN_WEAR_PURCHASE_POPUP, false) == false)
-            showWearPurchase();
+          if (prefs.get(Preferences.HAS_SHOWN_WEAR_PURCHASE_POPUP, false) == false) {
+            // If wear support has been purchased before initial setup has been done, the navigation drawer
+            // won't have been setup yet, so let's delay showing the popup until after that is done
+            // (since it's bad UI to show that popup so soon, and because upon successful purchase, the
+            // wear options navigation item isn't even showing yet
+            if(navigationViewMain == null)
+              showWearPurchase = true;
+            else
+              showWearPurchase();
+          }
         }
       } else if(intent.getAction() != null && intent.getAction().equals(com.atomjack.shared.Intent.SHOW_WEAR_PURCHASE_REQUIRED)) {
         showWearPurchaseRequired();
@@ -1079,7 +1096,9 @@ public class MainActivity extends AppCompatActivity
 
   private void switchToPlayerFragment() {
     FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-    transaction.setCustomAnimations(R.anim.slide_in_up, R.anim.slide_out_up);
+    if(getMainFragment().isVisible()) {
+      transaction.setCustomAnimations(R.anim.slide_in_up, R.anim.slide_out_up);
+    }
     transaction.replace(R.id.flContent, playerFragment);
     transaction.commit();
   }
@@ -2129,11 +2148,14 @@ public class MainActivity extends AppCompatActivity
   }
 
   public void hidePurchaseWearMenuItem() {
-    MenuItem wearItem = navigationViewMain.getMenu().findItem(R.id.menu_purchase_wear);
-    wearItem.setVisible(false);
-    MenuItem wearOptionsItem = navigationViewMain.getMenu().findItem(R.id.menu_wear_options);
-    wearOptionsItem.setVisible(true);
-
+    if(navigationViewMain != null) {
+      MenuItem wearItem = navigationViewMain.getMenu().findItem(R.id.menu_purchase_wear);
+      if (wearItem != null)
+        wearItem.setVisible(false);
+      MenuItem wearOptionsItem = navigationViewMain.getMenu().findItem(R.id.menu_wear_options);
+      if (wearOptionsItem != null)
+        wearOptionsItem.setVisible(true);
+    }
   }
 
   private boolean hasValidAutoVoice() {
