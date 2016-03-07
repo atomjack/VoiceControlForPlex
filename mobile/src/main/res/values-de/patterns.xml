@@ -25,8 +25,13 @@ Wenn du eine Übersetzung hinzufügst bitte modifiziere nicht die Muster (.*), $
     <item name="pattern_connect_to" type="string">^verbinde mit (.+)</item>
     <item name="pattern_disconnect" type="string">^trenne$</item>
     <item name="pattern_watch2" type="string">(schaue|spiele) (.+)</item>
-    <item name="pattern_forward" type="string">forward ([0-9]+|two|to) (hours?|minutes?|seconds?)</item>
-    <item name="pattern_rewind" type="string">(rewind|back) ([0-9]+|two|to) (hours?|minutes?|seconds?)</item>
+    <item name="pattern_forward" type="string">([0-9]+) (stunden?|minuten?|sekunden?) forwärts</item>
+    <item name="pattern_rewind" type="string">([0-9]+) (stunden?|minuten?|sekunden?) zurück</item>
+
+    <item name="pattern_cycle_subtitles" type="string">ändere untertitel</item>
+    <item name="pattern_cycle_audio" type="string">ändere audiospur</item>
+    <item name="pattern_subtitles_off" type="string">.*untertitel.*aus</item>
+    <item name="pattern_subtitles_on" type="string">.*untertitel.*ein</item>
 
     <!--
     Die folgenden Muster erlauben Sprachbefehle wie "höre album <name> von <künstler>" oder 
@@ -35,6 +40,7 @@ Wenn du eine Übersetzung hinzufügst bitte modifiziere nicht die Muster (.*), $
     <item name="pattern_listen_to_album_by_artist" type="string">höre( das)? album (.+) von (.+)</item>
     <item name="pattern_listen_to_album" type="string">höre( das)? album (.+)</item>
     <item name="pattern_listen_to_song_by_artist" type="string">höre( den titel)? (.+) von (.+)</item>
+    <item name="pattern_listen_to_artist" type="string">höre künstler (.+)</item>
 
     <!--
     Die folgenden drei Muster erlauben die Befehle pausieren, fortsetzen, anhalten
