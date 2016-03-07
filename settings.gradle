@@ -1,2 +1,5 @@
 include ':wear', ':shared'
 include ':mobile'
+include ':multistatetogglebutton'
+project(':multistatetogglebutton').projectDir = new File('multistatetogglebutton/multistatetogglebutton')
+

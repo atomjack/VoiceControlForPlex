@@ -511,8 +511,7 @@ public class MainActivity extends AppCompatActivity
     handler.removeCallbacks(refreshServers);
     handler.removeCallbacks(refreshClients);
     plexSubscription.removeListener(plexSubscriptionListener);
-
-    // TODO: Remove castplayermanager listener
+    mMediaRouter.removeCallback(mMediaRouterCallback);
   }
 
   @Override
@@ -1673,6 +1672,13 @@ public class MainActivity extends AppCompatActivity
         if(value == 0) {
           onVoiceFeedbackSelected(true);
         }
+      }
+    });
+    Button popupFeedbackOKButton = (Button)view.findViewById(R.id.popupFeedbackOKButton);
+    popupFeedbackOKButton.setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View v) {
+        dialog.dismiss();
       }
     });
     dialog.show();

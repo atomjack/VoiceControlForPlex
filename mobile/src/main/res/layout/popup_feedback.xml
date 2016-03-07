@@ -13,28 +13,7 @@
         android:text="@string/help_feedback"
         android:id="@+id/textView18"
         android:textColor="@color/white"/>
-<!--
-    <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="Large Text"
-            android:id="@+id/textView21"/>
-
-        <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="New Button"
-            android:id="@+id/button2"
-            android:layout_alignParentTop="true"
-            android:layout_alignParentRight="true"
-            android:layout_alignParentEnd="true"/>
-    </RelativeLayout>
--->
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -56,6 +35,10 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             mstb:values="@array/feedback_options"
+            mstb:mstbColorPressedBackgroundResource="@drawable/feedback_button_pressed"
+            mstb:mstbColorPressedForeground="@color/white"
+            mstb:mstbColorNotPressedBackgroundResource="@drawable/feedback_button_not_pressed"
+            mstb:mstbColorNotPressedForeground="@color/white"
             android:id="@+id/feedbackToggleButton"
             android:layout_alignParentTop="true"
             android:layout_alignParentRight="true"
@@ -83,10 +66,31 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             mstb:values="@array/feedback_options"
+            mstb:mstbColorPressedBackgroundResource="@drawable/feedback_button_pressed"
+            mstb:mstbColorPressedForeground="@color/white"
+            mstb:mstbColorNotPressedBackgroundResource="@drawable/feedback_button_not_pressed"
+            mstb:mstbColorNotPressedForeground="@color/white"
             android:id="@+id/errorsToggleButton"
             android:layout_alignParentTop="true"
             android:layout_alignParentRight="true"
             android:layout_alignParentEnd="true"/>
 
     </RelativeLayout>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="20dp">
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/ok"
+            android:id="@+id/popupFeedbackOKButton"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentEnd="true"
+            android:textColor="@color/white"/>
+    </RelativeLayout>
+
 </LinearLayout>

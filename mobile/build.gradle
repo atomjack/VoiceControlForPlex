@@ -138,9 +138,10 @@ dependencies {
     compile 'com.jakewharton:disklrucache:2.0.2'
     compile files('libs/commons-io-2.4.jar')
     compile project(':shared')
+    compile project(':multistatetogglebutton')
     compile files('libs/org.apache.http.legacy.jar')
     compile 'de.hdodenhof:circleimageview:2.0.0'
-    compile 'org.honorato.multistatetogglebutton:multistatetogglebutton:0.2.0'
+//    compile 'org.honorato.multistatetogglebutton:multistatetogglebutton:0.2.0'
     compile 'com.jakewharton:butterknife:7.0.1'
     compile 'com.google.android.libraries.cast.companionlibrary:ccl:2.8.2'
 }
