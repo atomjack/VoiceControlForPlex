@@ -1070,17 +1070,21 @@ public class MainActivity extends AppCompatActivity
   private void handleShowNowPlayingIntent(Intent intent) {
     client = intent.getParcelableExtra(com.atomjack.shared.Intent.EXTRA_CLIENT);
     PlexMedia media = intent.getParcelableExtra(com.atomjack.shared.Intent.EXTRA_MEDIA);
-    Logger.d("[MainActivity] show now playing: %s", media.getTitle());
     boolean fromWear = intent.getBooleanExtra(WearConstants.FROM_WEAR, false);
     PlayerState state;
+    // Need to overwrite what media is playing from the subscription manager, if it exists.
     if(client.isCastClient) {
       state = castPlayerManager.getCurrentState();
+      if(castPlayerManager.isSubscribed() && castPlayerManager.getNowPlayingMedia() != null)
+        media = castPlayerManager.getNowPlayingMedia();
     } else {
       state = plexSubscription.getCurrentState();
+      if(plexSubscription.isSubscribed() && plexSubscription.getNowPlayingMedia() != null)
+        media = plexSubscription.getNowPlayingMedia();
       plexSubscription.subscribe(client);
     }
+    Logger.d("[MainActivity] show now playing: %s", media.getTitle());
     int layout = getLayoutForMedia(media, state);
-    Logger.d("Layout: %d", layout);
     if(layout != -1) {
       playerFragment.init(layout, client, media, fromWear, plexSubscriptionListener);
       if(playerFragment.isVisible())
@@ -2306,7 +2310,7 @@ public class MainActivity extends AppCompatActivity
     else if(!client.isCastClient && playerFragment instanceof CastPlayerFragment)
       playerFragment = new PlexPlayerFragment();
 
-    playerFragment.setRetainInstance(true);
+    playerFragment.setRetainInstance(false);
     playerFragment.setState(state);
     playerFragment.setPosition(Integer.parseInt(media.viewOffset)/1000); // View offset from PMS is in ms
 
