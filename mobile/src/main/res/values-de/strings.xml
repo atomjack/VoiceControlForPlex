@@ -4,7 +4,7 @@
     <string name="app_name">Voice Control for Plex</string>
     <string name="action_settings">Einstellungen</string>
     <string name="ok">OK</string>
-    <string name="got_it">Habe Verstanden!</string>
+    <string name="got_it">Verstanden</string>
     <string name="stream_video_from_server">Streame Video von Server</string>
     <string name="to_the_client">zu Empfänger</string>
     <string name="resume_if_in_progress">Forsetzen wenn in Bearbeitung</string>
@@ -135,4 +135,46 @@
     <string name="cinema_trailers_title">Anzahl von Kino Trailern die vor einem Film gespielt werden</string>
     <string name="none">Keine</string>
     <string name="couldnt_connect_to">Konnte nicht zu %s verbinden.</string>
+    <string name="menu_email_device_logs">Email Logs</string>
+    <string name="remote_scan_unauthorized">Zugriff verweigert</string>
+    <string name="remote_scan_unauthorized_message">Rückmeldung von Plex: Unbefugter zugriff. Eventuell ist ihr zugriffstoken nicht valide. Noch mal versuchen?</string>
+    <string name="searching_for_artist">Suche nach %s.</string>
+    <string name="couldnt_find_artist">Konnte keine Stücke von %s finden.</string>
+    <string name="now_listening_to">Spielt gerade: %1$s von %2$s.</string>
+    <string name="please_wait">Bitte warten</string>
+    <string name="menu_chromecast_video">Chromecast Video Optionen</string>
+    <string name="chromecast_video_options_header">Chromecast Video Qualität</string>
+    <string name="chromecast_video_local">Locales Netzwerk</string>
+    <string name="chromecast_video_remote">Entferntes Netzwerk/</string>
+    <string name="chromecast_video_local_full">Chromecast Video Qualität für locales Netzwerk</string>
+    <string name="chromecast_video_remote_full">Chromecast Video Qualität für entferntes Netzwerk</string>
+    <string name="original">Direktes Abspielen</string>
+    <string name="login_incorrect">Nutzername oder passwort ist falsch.</string>
+    <string name="email_device_logs_write_storage_denied">Zugiff auf externe Speicherkarte ist notwendig um Logs zu versenden.</string>
+    <string name="video_attempted_on_audio_only_device">Videowiedergabe wird auf %s nicht unterstützt.</string>
+    <string name="select_plex_server">Wähle einen Plex Server</string>
+    <string name="couldnt_play_to_client">Fehler beim verbinden mit %s. Wenn das Problem weiter besteht lege den Homescreen Shortcut neu an nachdem du nach devices gescannt hast.</string>
+    <string name="unauthorized_local_server_found_logged_out">Mehrere lokale Server gefunden aber Zugiff wird verweigert. Logge dich mit dem Menübutton ein um Zugriff zu erhalten.</string>
+    <string name="unauthorized_local_server_found_logged_in">Mehrere lokale Server gefunden aber Zugiff wird verweigert. Da sie schon eingeloggt sind bitte loggen sie sich noch mal aus und ein oder verifizieren sie ihren Login.</string>
+    <string name="stream_selection">Stream Auswahl</string>
+    <string name="unknown">Unbekannt</string>
+    <string name="subtitle_active">%s Untertitel sind nun aktiv.</string>
+    <string name="subtitles_off">Untertitel sind deaktiviert.</string>
+    <string name="audio_track_active">%s Audiospur ist nun aktiv.</string>
+    <string name="drawer_open">Öffne Navigation</string>
+    <string name="drawer_close">Schließe Navigation</string>
+    <string name="menu_server">Server:</string>
+    <string name="back">Zurück</string>
+    <string name="to_get_the_most_out_of_vcfp">Es ist empfohlen sich mit dem Plex account anzumelden für die beste Benutzererfahrung.</string>
+    <string name="login_to_plex">Einloggen bei Plex</string>
+    <string name="finding_plex_clients_and_servers">Suche Plex Clienten &amp; Server</string>
+    <string name="plex_servers">Plex Server</string>
+    <string name="cast_connect_error">Es gab einen Fehler beim Verbindungsversuch zu %s.</string>
+    <string name="ready_to_cast_from_to">Bereit um von %1$s nach %2$s zu casten.</string>
+    <string name="ready_to_scan_servers_to">Bereit alle Server zu scannen %s.</string>
+    <string name="connect_to_a_client_to_begin">Verbinde zu einem Plex Clienten mit dem Cast button um loslegen zu können.</string>
+    <string-array name="feedback_options">
+        <item>@string/feedback_voice</item>
+        <item>@string/feedback_toast</item>
+    </string-array>
 </resources>
