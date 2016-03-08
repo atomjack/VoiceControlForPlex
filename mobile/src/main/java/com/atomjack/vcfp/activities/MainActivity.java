@@ -117,7 +117,9 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.net.SocketTimeoutException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -540,6 +542,17 @@ public class MainActivity extends AppCompatActivity
 
     plexSubscription.setListener(plexSubscriptionListener);
     castPlayerManager.setListener(plexSubscriptionListener);
+
+    if(plexSubscription.isSubscribed() && plexSubscription.getLastHeartbeatResponded() != null) {
+      Calendar cal = Calendar.getInstance();
+      SimpleDateFormat format = new SimpleDateFormat("EEEE, MMMM d, yyyy 'at' h:mm:ss a");
+      cal.add(Calendar.SECOND, -60);
+      if(plexSubscription.getLastHeartbeatResponded().before(cal)) {
+        Logger.d("It's been more than 60 seconds since last heartbeat responded. now: %s, last heartbeat responded: %s", format.format(Calendar.getInstance().getTime()), format.format(plexSubscription.getLastHeartbeatResponded().getTime()));
+        plexSubscription.resubscribe();
+      }
+    }
+
     if(!doingFirstTimeSetup) {
       mDrawer.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);
     } else

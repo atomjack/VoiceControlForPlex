@@ -29,6 +29,7 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -58,6 +59,8 @@ public class PlexSubscription {
 
   private int failedHeartbeats = 0;
   private final int failedHeartbeatMax = 5;
+
+  private Calendar lastHeartbeatResponded;
 
   private Handler mHandler;
 
@@ -244,6 +247,11 @@ public class PlexSubscription {
     serverThread.start();
   }
 
+  public void resubscribe() {
+    if(mClient != null)
+      subscribe(mClient);
+  }
+
   public void subscribe(final PlexClient client) {
     Logger.d("PlexSubscription subscribe: %s, handler is null: %s", client, updateConversationHandler == null);
     if(updateConversationHandler == null)
@@ -284,6 +292,8 @@ public class PlexSubscription {
             mHandler.removeCallbacks(subscriptionHeartbeat);
             mHandler.postDelayed(subscriptionHeartbeat, SUBSCRIBE_INTERVAL);
             onSubscribed();
+          } else {
+            lastHeartbeatResponded = Calendar.getInstance();
           }
         }
       }
@@ -537,4 +547,7 @@ public class PlexSubscription {
     nowPlayingMedia.setActiveStream(nowPlayingMedia.getStreams(Stream.SUBTITLE).get(0));
   }
 
+  public Calendar getLastHeartbeatResponded() {
+    return lastHeartbeatResponded;
+  }
 }
