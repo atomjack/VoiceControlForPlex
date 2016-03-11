@@ -494,6 +494,7 @@ public class MainActivity extends AppCompatActivity
   protected void onPause() {
     super.onPause();
     Logger.d("[MainActivity] onPause");
+    handler.removeCallbacks(autoDisconnectPlayerTimer);
     VoiceControlForPlexApplication.applicationPaused();
     if (isFinishing()) {
       mMediaRouter.removeCallback(mMediaRouterCallback);
