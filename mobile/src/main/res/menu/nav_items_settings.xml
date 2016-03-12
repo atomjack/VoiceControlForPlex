@@ -44,9 +44,12 @@
               android:onClick="showWearOptions"
               android:icon="@drawable/menu_wear"
               android:visible="false"/>
+        <item android:id="@+id/menu_local_video"
+              android:title="@string/menu_local_video"
+              android:onClick="showLocalVideoOptions"/>
         <item android:id="@+id/menu_chromecast_video"
               android:title="@string/menu_chromecast_video"
-              android:onClick="showChromecastVideoOptions"
+              android:onClick="showVideoOptions"
               android:icon="@drawable/menu_chromecast"
               android:visible="false"/>
         <item android:id="@+id/menu_tasker_import"

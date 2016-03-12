@@ -13,5 +13,13 @@ public class PlexHeaders {
 	public static final String XPlexVersion = "X-Plex-Version";
 	public static final String XPlexUsername = "X-Plex-Username";
   public static final String commandID = "commandID";
+  public static final String XPlexClientProfileExtra = "X-Plex-Client-Profile-Extra";
+  public static final String session = "session";
+  public static final String key = "key";
+  public static final String ratingKey = "ratingKey";
+  public static final String time = "time";
+  public static final String duration = "duration";
+  public static final String state = "state";
+
 
 }

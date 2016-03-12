@@ -21,6 +21,16 @@ public enum PlayerState {
 		return STOPPED;
 	}
 
+  public String toStateString() {
+    if(this == PLAYING)
+      return "playing";
+    else if(this == PAUSED)
+      return "paused";
+    else if(this == BUFFERING)
+      return "buffering";
+    return "stopped";
+  }
+
   public String getWearConstant() {
     String con = WearConstants.MEDIA_STOPPED;
     if(this == PAUSED)

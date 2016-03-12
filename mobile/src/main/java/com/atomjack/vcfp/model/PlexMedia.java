@@ -6,6 +6,7 @@ import android.os.Parcelable;
 
 import com.atomjack.shared.Logger;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
+import com.atomjack.vcfp.interfaces.InputStreamHandler;
 import com.atomjack.vcfp.net.PlexHttpClient;
 
 import org.simpleframework.xml.Attribute;
@@ -26,7 +27,8 @@ public abstract class PlexMedia implements Parcelable {
     NOTIFICATION_THUMB,
     NOTIFICATION_THUMB_BIG,
     NOTIFICATION_THUMB_MUSIC,
-    WEAR_BACKGROUND
+    WEAR_BACKGROUND,
+    LOCAL_VIDEO_BACKGROUND
   }
 
   public final static Map<IMAGE_KEY, int[]> IMAGE_SIZES = new HashMap<IMAGE_KEY, int[]>() {
@@ -136,6 +138,10 @@ public abstract class PlexMedia implements Parcelable {
     }
     Logger.d("whichThumb: %s", whichThumb);
     return getThumb(width, height, whichThumb);
+  }
+
+  public void getThumb(int width, int height, String whichThumb, InputStreamHandler responseHandler) {
+    
   }
 
   public InputStream getThumb(int width, int height) {

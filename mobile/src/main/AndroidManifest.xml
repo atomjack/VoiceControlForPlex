@@ -42,6 +42,10 @@
                 <action android:name="com.twofortyfouram.locale.intent.action.EDIT_SETTING" />
             </intent-filter>
         </activity>
+        <activity android:name=".activities.VideoPlayerActivity"
+                  android:screenOrientation="landscape"
+                  android:theme="@style/Theme.AppCompat.Light.NoActionBar.FullScreen">
+        </activity>
         <service android:name=".services.PlexSearchService"
                   android:label="Plex Search">
         </service>

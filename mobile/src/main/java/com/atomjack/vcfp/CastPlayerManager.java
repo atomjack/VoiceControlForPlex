@@ -520,18 +520,19 @@ public class CastPlayerManager {
     qs.add("Accept-Language", "en");
     qs.add("X-Plex-Client-Profile-Extra", "");
     qs.add("X-Plex-Chunked", "1");
+    // TODO: CHANGE THIS!!!
     qs.add("X-Plex-Username", "atomjack");
 
     qs.add("protocol", "http");
     qs.add("offset", Integer.toString(offset));
     qs.add("fastSeek", "1");
-//    String[] videoQuality = VoiceControlForPlexApplication.chromecastVideoOptions.get(VoiceControlForPlexApplication.getInstance().prefs.getString(connection.local ? Preferences.CHROMECAST_VIDEO_QUALITY_LOCAL : Preferences.CHROMECAST_VIDEO_QUALITY_REMOTE));
+//    String[] videoQuality = VoiceControlForPlexApplication.videoQualityOptions.get(VoiceControlForPlexApplication.getInstance().prefs.getString(connection.local ? Preferences.CHROMECAST_VIDEO_QUALITY_LOCAL : Preferences.CHROMECAST_VIDEO_QUALITY_REMOTE));
 //    qs.add("directPlay", videoQuality.length == 3 && videoQuality[2] == "1" ? "1" : "0");
     qs.add("directPlay", "0");
     qs.add("directStream", "1");
     qs.add("videoQuality", "60");
-    qs.add("maxVideoBitrate", VoiceControlForPlexApplication.chromecastVideoOptions.get(VoiceControlForPlexApplication.getInstance().prefs.getString(connection.local ? Preferences.CHROMECAST_VIDEO_QUALITY_LOCAL : Preferences.CHROMECAST_VIDEO_QUALITY_REMOTE))[0]);
-    qs.add("videoResolution", VoiceControlForPlexApplication.chromecastVideoOptions.get(VoiceControlForPlexApplication.getInstance().prefs.getString(connection.local ? Preferences.CHROMECAST_VIDEO_QUALITY_LOCAL : Preferences.CHROMECAST_VIDEO_QUALITY_REMOTE))[1]);
+    qs.add("maxVideoBitrate", VoiceControlForPlexApplication.videoQualityOptions.get(VoiceControlForPlexApplication.getInstance().prefs.getString(connection.local ? Preferences.CHROMECAST_VIDEO_QUALITY_LOCAL : Preferences.CHROMECAST_VIDEO_QUALITY_REMOTE))[0]);
+    qs.add("videoResolution", VoiceControlForPlexApplication.videoQualityOptions.get(VoiceControlForPlexApplication.getInstance().prefs.getString(connection.local ? Preferences.CHROMECAST_VIDEO_QUALITY_LOCAL : Preferences.CHROMECAST_VIDEO_QUALITY_REMOTE))[1]);
     qs.add("audioBoost", "100");
     qs.add("session", plexSessionId);
     qs.add(PlexHeaders.XPlexClientIdentifier, VoiceControlForPlexApplication.getInstance().prefs.getUUID());

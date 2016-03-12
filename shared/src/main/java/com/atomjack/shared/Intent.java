@@ -27,6 +27,7 @@ public class Intent {
   public final static String EXTRA_MEDIA = "com.atomjack.vcfp.intent.EXTRA_MEDIA";
   public final static String EXTRA_ALBUM = "com.atomjack.vcfp.intent.EXTRA_ALBUM";
   public final static String EXTRA_CLASS = "com.atomjack.vcfp.intent.EXTRA_CLASS";
+  public final static String EXTRA_TRANSIENT_TOKEN = "com.atomjack.vcfp.intent.EXTRA_TRANSIENT_TOKEN";
   public final static String EXTRA_CONNECT_TO_CLIENT = "com.atomjack.vcfp.intent.EXTRA_CONNECT_TO_CLIENT";
   public final static String SUBSCRIBED = "com.atomjack.vcfp.intent.SUBSCRIBED";
   public final static String EXTRA_LAYOUT = "com.atomjack.vcfp.intent.EXTRA_LAYOUT";

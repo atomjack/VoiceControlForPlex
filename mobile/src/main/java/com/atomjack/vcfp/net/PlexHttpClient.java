@@ -3,8 +3,10 @@ package com.atomjack.vcfp.net;
 import android.util.Base64;
 
 import com.atomjack.shared.Logger;
+import com.atomjack.shared.PlayerState;
 import com.atomjack.shared.Preferences;
 import com.atomjack.vcfp.PlexHeaders;
+import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.interfaces.ActiveConnectionHandler;
 import com.atomjack.vcfp.interfaces.InputStreamHandler;
@@ -133,6 +135,24 @@ public class PlexHttpClient
     Call<MediaContainer> getRandomEpisode(@Path(value="ratingKey", encoded=true) String ratingKey,
                                           @Query(PlexHeaders.XPlexToken) String accessToken);
 
+    @GET("/{type}/:/transcode/universal/stop")
+    Call<PlexResponse> stopTranscoder(@Path(value="type", encoded = true) String type,
+                                      @Query(PlexHeaders.XPlexToken) String token,
+                                      @Query(PlexHeaders.session) String session,
+                                      @retrofit.http.Header(PlexHeaders.XPlexClientIdentifier) String clientId);
+
+
+    @GET("/:/timeline/")
+    Call<PlexResponse> reportProgressToServer(@Query(PlexHeaders.XPlexToken) String token,
+                                              @Query(PlexHeaders.key) String key,
+                                              @Query(PlexHeaders.ratingKey) String ratingKey,
+                                              @Query(PlexHeaders.time) String time,
+                                              @Query(PlexHeaders.duration) String duration,
+                                              @Query(PlexHeaders.state) String state,
+                                              @retrofit.http.Header(PlexHeaders.XPlexClientIdentifier) String clientId,
+                                              @retrofit.http.Header(PlexHeaders.XPlexDeviceName) String deviceName,
+                                              @retrofit.http.Header(PlexHeaders.XPlexPlatform) String platform,
+                                              @retrofit.http.Header(PlexHeaders.XPlexProduct) String product);
   }
 
   public static void getThumb(String url, final InputStreamHandler inputStreamHandler) {
@@ -849,6 +869,71 @@ public class PlexHttpClient
           onFinish.onFinish(null);
       }
     });
+  }
+
+  public static void stopTranscoder(final PlexServer server, final String session, final String type) {
+    server.findServerConnection(new ActiveConnectionHandler() {
+      @Override
+      public void onSuccess(Connection connection) {
+        PlexHttpService service = getService(connection.uri);
+        Call<PlexResponse> call = service.stopTranscoder(type, server.accessToken, session, VoiceControlForPlexApplication.getInstance().prefs.getUUID());
+        call.enqueue(new Callback<PlexResponse>() {
+          @Override
+          public void onResponse(Response<PlexResponse> response) {
+            Logger.d("Stopped transcoder");
+          }
+
+          @Override
+          public void onFailure(Throwable t) {
+
+          }
+        });
+      }
+
+      @Override
+      public void onFailure(int statusCode) {
+
+      }
+    });
+
+  }
+
+  public static void reportProgressToServer(final PlexMedia media, final int time, final PlayerState state) {
+    media.server.findServerConnection(new ActiveConnectionHandler() {
+      @Override
+      public void onSuccess(Connection connection) {
+        PlexHttpService service = getService(connection.uri);
+        Call<PlexResponse> call = service.reportProgressToServer(
+                media.server.accessToken,
+                media.key,
+                media.ratingKey,
+                Integer.toString(time),
+                Integer.toString(media.duration),
+                state.toStateString(),
+                VoiceControlForPlexApplication.getInstance().prefs.getUUID(),
+                VoiceControlForPlexApplication.getInstance().getString(R.string.app_name),
+                "Android",
+                VoiceControlForPlexApplication.getInstance().getString(R.string.app_name)
+        );
+        call.enqueue(new Callback<PlexResponse>() {
+          @Override
+          public void onResponse(Response<PlexResponse> response) {
+//            Logger.d("Done reporting");
+          }
+
+          @Override
+          public void onFailure(Throwable t) {
+            // TODO: Handle
+          }
+        });
+      }
+
+      @Override
+      public void onFailure(int statusCode) {
+        // TODO: Handle
+      }
+    });
+
   }
 }
 

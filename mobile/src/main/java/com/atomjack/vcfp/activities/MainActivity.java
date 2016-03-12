@@ -287,7 +287,10 @@ public class MainActivity extends AppCompatActivity
         prefs.remove(Preferences.SUBSCRIBED_CLIENT);
       } else {
         client = gsonRead.fromJson(prefs.get(Preferences.SUBSCRIBED_CLIENT, ""), PlexClient.class);
-        if (client.isCastClient) {
+        if(client.isLocalClient) {
+          subscribed = true;
+          setCastIconActive();
+        } else if (client.isCastClient) {
           if (!castPlayerManager.isSubscribed()) {
             castPlayerManager.subscribe(client);
           }
@@ -463,6 +466,7 @@ public class MainActivity extends AppCompatActivity
         showWearPurchase();
       }
       Logger.d("[MainActivity] Intent action: %s", getIntent().getAction());
+      Intent intent = getIntent();
       if(getIntent().getAction() != null && getIntent().getAction().equals(ACTION_SHOW_NOW_PLAYING)) {
         handleShowNowPlayingIntent(getIntent());
       } else {
@@ -1392,6 +1396,15 @@ public class MainActivity extends AppCompatActivity
         PlexClient clientSelected = (PlexClient)device;
         setClient(clientSelected);
 
+        if(client.isLocalClient) {
+          setCastIconActive();
+          subscribing = false;
+          subscribed = true;
+
+          prefs.put(Preferences.SUBSCRIBED_CLIENT, gsonWrite.toJson(clientSelected));
+          client = clientSelected;
+          return;
+        }
         // Start animating the action bar icon
         animateCastIcon();
 
@@ -2128,59 +2141,103 @@ public class MainActivity extends AppCompatActivity
     chooserDialog.show();
   }
 
-  public void showChromecastVideoOptions(MenuItem item) {
+  public void showVideoOptions(MenuItem item) {
     AlertDialog.Builder builder = new AlertDialog.Builder(this);
 
-    View layout = getLayoutInflater().inflate(R.layout.popup_chromecast_video_options, null);
+    View layout = getLayoutInflater().inflate(R.layout.popup_video_options, null);
+
     builder.setView(layout);
     final AlertDialog chooserDialog = builder.create();
 
-    Button popupChromecastOptionsRemoteButton = (Button)layout.findViewById(R.id.popupChromecastOptionsRemoteButton);
+    Button popupChromecastOptionsRemoteButton = (Button)layout.findViewById(R.id.popupVideoOptionsRemoteButton);
     popupChromecastOptionsRemoteButton.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View v) {
         chooserDialog.dismiss();
-        showChromecastVideoOptions(false);
+        showVideoOptions(true, false);
       }
     });
-    Button popupChromecastOptionsLocalButton = (Button)layout.findViewById(R.id.popupChromecastOptionsLocalButton);
+    Button popupChromecastOptionsLocalButton = (Button)layout.findViewById(R.id.popupVideoOptionsLocalButton);
     popupChromecastOptionsLocalButton.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View v) {
         chooserDialog.dismiss();
-        showChromecastVideoOptions(true);
+        showVideoOptions(true, true);
       }
     });
     chooserDialog.show();
   }
 
-  private void showChromecastVideoOptions(final boolean local) {
+  public void showLocalVideoOptions(MenuItem item) {
     AlertDialog.Builder builder = new AlertDialog.Builder(this);
-    View view = getLayoutInflater().inflate(R.layout.popup_chromecast_video_options_detail, null);
+
+    View layout = getLayoutInflater().inflate(R.layout.popup_video_options, null);
+    TextView videoOptionsTitle = (TextView)layout.findViewById(R.id.videoOptionsTitle);
+    videoOptionsTitle.setText(R.string.local_video_options_header);
+
+    builder.setView(layout);
+    final AlertDialog chooserDialog = builder.create();
+
+    Button popupVideoOptionsRemoteButton = (Button)layout.findViewById(R.id.popupVideoOptionsRemoteButton);
+    popupVideoOptionsRemoteButton.setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View v) {
+        chooserDialog.dismiss();
+        showVideoOptions(false, false);
+      }
+    });
+    Button popupVideoOptionsLocalButton = (Button)layout.findViewById(R.id.popupVideoOptionsLocalButton);
+    popupVideoOptionsLocalButton.setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View v) {
+        chooserDialog.dismiss();
+        showVideoOptions(false, true);
+      }
+    });
+    chooserDialog.show();
+  }
+
+  private void showVideoOptions(final boolean chromecast, final boolean local) {
+    AlertDialog.Builder builder = new AlertDialog.Builder(this);
+    View view = getLayoutInflater().inflate(R.layout.popup_video_options_detail, null);
     builder.setView(view);
     final AlertDialog dialog = builder.create();
-    TextView chromecastVideoOptionsTitle = (TextView)view.findViewById(R.id.chromecastVideoOptionsTitle);
-    chromecastVideoOptionsTitle.setText(local ? R.string.chromecast_video_local_full : R.string.chromecast_video_remote_full);
-    RadioGroup chromecastVideoOptionsRadioGroup = (RadioGroup)view.findViewById(R.id.chromecastVideoOptionsRadioGroup);
-    final CharSequence[] items = VoiceControlForPlexApplication.chromecastVideoOptions.keySet().toArray(new CharSequence[VoiceControlForPlexApplication.chromecastVideoOptions.size()]);
-    int videoQuality = new ArrayList<>(VoiceControlForPlexApplication.chromecastVideoOptions.keySet()).indexOf(prefs.getString(local ? Preferences.CHROMECAST_VIDEO_QUALITY_LOCAL : Preferences.CHROMECAST_VIDEO_QUALITY_REMOTE));
+    TextView videoOptionsTitle = (TextView)view.findViewById(R.id.videoOptionsTitle);
+    int title;
+    if(chromecast) {
+      title = local ? R.string.chromecast_video_local_full : R.string.chromecast_video_remote_full;
+    } else {
+      title = local ? R.string.local_video_local_full : R.string.local_video_remote_full;
+    }
+    videoOptionsTitle.setText(title);
+
+    final String prefKey;
+    if(chromecast) {
+      prefKey = local ? Preferences.CHROMECAST_VIDEO_QUALITY_LOCAL : Preferences.CHROMECAST_VIDEO_QUALITY_REMOTE;
+    } else {
+      prefKey = local ? Preferences.LOCAL_VIDEO_QUALITY_LOCAL : Preferences.LOCAL_VIDEO_QUALITY_REMOTE;
+    }
+
+    RadioGroup videoOptionsRadioGroup = (RadioGroup)view.findViewById(R.id.videoOptionsRadioGroup);
+    final CharSequence[] items = VoiceControlForPlexApplication.videoQualityOptions.keySet().toArray(new CharSequence[VoiceControlForPlexApplication.videoQualityOptions.size()]);
+    int videoQuality = new ArrayList<>(VoiceControlForPlexApplication.videoQualityOptions.keySet()).indexOf(prefs.getString(prefKey));
     if(videoQuality == -1)
-      videoQuality = new ArrayList<>(VoiceControlForPlexApplication.chromecastVideoOptions.keySet()).indexOf("8mbps 720p");
+      videoQuality = new ArrayList<>(VoiceControlForPlexApplication.videoQualityOptions.keySet()).indexOf("8mbps 720p");
     LinearLayout.LayoutParams layoutParams = new RadioGroup.LayoutParams(
             RadioGroup.LayoutParams.WRAP_CONTENT,
             RadioGroup.LayoutParams.WRAP_CONTENT);
     for(int i=0;i<items.length;i++) {
-      RadioButton button = (RadioButton)getLayoutInflater().inflate(R.layout.popup_chromecast_video_options_button, null);
+      RadioButton button = (RadioButton)getLayoutInflater().inflate(R.layout.popup_video_options_button, null);
       button.setText(items[i]);
       button.setId(i);
-      chromecastVideoOptionsRadioGroup.addView(button, layoutParams);
+      videoOptionsRadioGroup.addView(button, layoutParams);
     }
-    chromecastVideoOptionsRadioGroup.check(videoQuality);
-    chromecastVideoOptionsRadioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+    videoOptionsRadioGroup.check(videoQuality);
+    videoOptionsRadioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
       @Override
       public void onCheckedChanged(RadioGroup group, int checkedId) {
         Logger.d("Checked %s", items[checkedId]);
-        prefs.put(local ? Preferences.CHROMECAST_VIDEO_QUALITY_LOCAL : Preferences.CHROMECAST_VIDEO_QUALITY_REMOTE, (String)items[checkedId]);
+        prefs.put(prefKey, (String)items[checkedId]);
         dialog.dismiss();
       }
     });
@@ -2502,7 +2559,7 @@ public class MainActivity extends AppCompatActivity
                 RadioGroup.LayoutParams.WRAP_CONTENT,
                 RadioGroup.LayoutParams.WRAP_CONTENT);
         for(int i=0;i<items.length;i++) {
-          RadioButton button = (RadioButton)getLayoutInflater().inflate(R.layout.popup_chromecast_video_options_button, null);
+          RadioButton button = (RadioButton)getLayoutInflater().inflate(R.layout.popup_video_options_button, null);
           button.setText(items[i]);
           button.setId(i);
           languageSelectorRadioGroup.addView(button, layoutParams);

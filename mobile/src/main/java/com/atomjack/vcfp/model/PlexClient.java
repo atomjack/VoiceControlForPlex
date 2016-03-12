@@ -4,6 +4,7 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 import com.atomjack.shared.Logger;
+import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.Utils;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.net.PlexHttpClient;
@@ -26,6 +27,7 @@ public class PlexClient extends PlexDevice {
 //  public List<MediaRouter.RouteInfo> castRoutes;
   public CastDevice castDevice;
 	public boolean isAudioOnly = false;
+  public boolean isLocalClient = false;
 
 	public PlexClient() {
     super();
@@ -39,6 +41,13 @@ public class PlexClient extends PlexDevice {
 		client.version = device.productVersion;
 		return client;
 	}
+
+  public static PlexClient getLocalPlaybackClient() {
+    PlexClient client = new PlexClient();
+    client.isLocalClient = true;
+    client.name = VoiceControlForPlexApplication.getInstance().getString(R.string.this_device);
+    return client;
+  }
 
 	@Override
 	public int describeContents() {

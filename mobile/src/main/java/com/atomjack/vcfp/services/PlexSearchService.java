@@ -24,6 +24,7 @@ import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.Utils;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.activities.MainActivity;
+import com.atomjack.vcfp.activities.VideoPlayerActivity;
 import com.atomjack.vcfp.interfaces.ActiveConnectionHandler;
 import com.atomjack.vcfp.interfaces.AfterTransientTokenRequest;
 import com.atomjack.vcfp.interfaces.PlexPlayQueueHandler;
@@ -1257,8 +1258,17 @@ public class PlexSearchService extends Service {
 
   private void playMedia(final PlexMedia media, Connection connection, PlexDirectory album, String transientToken, final MediaContainer mediaContainer) {
 
-
-    if(client.isCastClient) {
+    if(client.isLocalClient) {
+      Intent nowPlayingIntent = new Intent(this, VideoPlayerActivity.class);
+      nowPlayingIntent.setAction(VideoPlayerActivity.ACTION_PLAY_LOCAL);
+      nowPlayingIntent.putExtra(WearConstants.FROM_WEAR, fromWear);
+      nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_STARTING_PLAYBACK, true);
+      nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_MEDIA, media);
+      nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_TRANSIENT_TOKEN, transientToken);
+      nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_RESUME, resumePlayback);
+      nowPlayingIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+      startActivity(nowPlayingIntent);
+    } else if(client.isCastClient) {
       Logger.d("playQueueID: %s", mediaContainer.playQueueID);
       Logger.d("num videos/tracks: %d", media instanceof PlexTrack ? mediaContainer.tracks.size() : mediaContainer.videos.size());
       Runnable sendCast = new Runnable() {

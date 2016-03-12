@@ -11,7 +11,7 @@
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceLarge"
         android:text="@string/chromecast_video_options_header"
-        android:id="@+id/textView11"
+        android:id="@+id/videoOptionsTitle"
         android:textColor="@color/white"/>
 
     <RelativeLayout
@@ -23,15 +23,15 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/chromecast_video_remote"
-            android:id="@+id/popupChromecastOptionsRemoteButton"
+            android:id="@+id/popupVideoOptionsRemoteButton"
             android:layout_marginRight="10dp"/>
 
         <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/chromecast_video_local"
-            android:id="@+id/popupChromecastOptionsLocalButton"
-            android:layout_alignBottom="@+id/popupChromecastOptionsRemoteButton"
+            android:id="@+id/popupVideoOptionsLocalButton"
+            android:layout_alignBottom="@+id/popupVideoOptionsRemoteButton"
             android:layout_alignParentRight="true"
             android:layout_alignParentEnd="true"/>
     </RelativeLayout>

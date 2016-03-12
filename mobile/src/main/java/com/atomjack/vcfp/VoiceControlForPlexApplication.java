@@ -12,6 +12,8 @@ import android.content.DialogInterface;
 import android.content.IntentFilter;
 import android.content.pm.PackageInfo;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -19,6 +21,7 @@ import android.support.v4.app.NotificationCompat;
 import android.support.v7.media.MediaRouter;
 import android.text.TextUtils;
 import android.view.View;
+import android.widget.LinearLayout;
 import android.widget.RemoteViews;
 
 import com.android.vending.billing.IabBroadcastReceiver;
@@ -109,7 +112,7 @@ public class VoiceControlForPlexApplication extends Application
 
   private IabBroadcastReceiver promoReceiver;
 
-  public static HashMap<String, String[]> chromecastVideoOptions = new LinkedHashMap<String, String[]>();
+  public static HashMap<String, String[]> videoQualityOptions = new LinkedHashMap<String, String[]>();
 
   private NotificationManager mNotifyMgr;
   private Bitmap notificationBitmap = null;
@@ -177,20 +180,24 @@ public class VoiceControlForPlexApplication extends Application
 //      }
 //    });
 
-//    chromecastVideoOptions.put(getString(R.string.original), new String[]{"12000", "1920x1080", "1"}); // Disabled for now. Don't know how to get PMS to direct play to chromecast
-    chromecastVideoOptions.put("20mbps 720p", new String[]{"20000", "1280x720"});
-    chromecastVideoOptions.put("12mbps 720p", new String[]{"12000", "1280x720"});
-    chromecastVideoOptions.put("10mbps 720p", new String[]{"10000", "1280x720"});
-    chromecastVideoOptions.put("8mbps 720p", new String[]{"8000", "1280x720"});
-    chromecastVideoOptions.put("4mbps 720p", new String[]{"4000", "1280x720"});
-    chromecastVideoOptions.put("3mbps 720p", new String[]{"3000", "1280x720"});
-    chromecastVideoOptions.put("2mbps 720p", new String[]{"2000", "1280x720"});
-    chromecastVideoOptions.put("1.5mbps 720p", new String[]{"1500", "1280x720"});
+//    videoQualityOptions.put(getString(R.string.original), new String[]{"12000", "1920x1080", "1"}); // Disabled for now. Don't know how to get PMS to direct play to chromecast
+    videoQualityOptions.put("20mbps 720p", new String[]{"20000", "1280x720"});
+    videoQualityOptions.put("12mbps 720p", new String[]{"12000", "1280x720"});
+    videoQualityOptions.put("10mbps 720p", new String[]{"10000", "1280x720"});
+    videoQualityOptions.put("8mbps 720p", new String[]{"8000", "1280x720"});
+    videoQualityOptions.put("4mbps 720p", new String[]{"4000", "1280x720"});
+    videoQualityOptions.put("3mbps 720p", new String[]{"3000", "1280x720"});
+    videoQualityOptions.put("2mbps 720p", new String[]{"2000", "1280x720"});
+    videoQualityOptions.put("1.5mbps 720p", new String[]{"1500", "1280x720"});
 
     if(VoiceControlForPlexApplication.getInstance().prefs.getString(Preferences.CHROMECAST_VIDEO_QUALITY_LOCAL) == null)
       VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.CHROMECAST_VIDEO_QUALITY_LOCAL, "8mbps 720p");
     if(VoiceControlForPlexApplication.getInstance().prefs.getString(Preferences.CHROMECAST_VIDEO_QUALITY_REMOTE) == null)
       VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.CHROMECAST_VIDEO_QUALITY_REMOTE, "8mbps 720p");
+    if(VoiceControlForPlexApplication.getInstance().prefs.getString(Preferences.LOCAL_VIDEO_QUALITY_LOCAL) == null)
+      VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.LOCAL_VIDEO_QUALITY_LOCAL, "4mbps 720p");
+    if(VoiceControlForPlexApplication.getInstance().prefs.getString(Preferences.LOCAL_VIDEO_QUALITY_REMOTE) == null)
+      VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.LOCAL_VIDEO_QUALITY_REMOTE, "2mbps 720p");
 
 
     // Check for donate version, and if found, allow chromecast & wear
@@ -330,6 +337,35 @@ public class VoiceControlForPlexApplication extends Application
     return bitmap;
 
 
+  }
+
+  public void fetchMediaThumb(final PlexMedia media, final int width, final int height, final String whichThumb, final BitmapHandler bitmapHandler) {
+    Logger.d("Fetching media thumb for %s at %dx%d with key %s", media.getTitle(), width, height, media.getImageKey(PlexMedia.IMAGE_KEY.LOCAL_VIDEO_BACKGROUND));
+    Bitmap bitmap = getCachedBitmap(media.getImageKey(PlexMedia.IMAGE_KEY.LOCAL_VIDEO_BACKGROUND));
+    if(bitmap == null) {
+      new AsyncTask<Void, Void, Void>() {
+        @Override
+        protected Void doInBackground(Void... params) {
+          Logger.d("No cached bitmap found, fetching");
+          InputStream is = media.getThumb(width, height, whichThumb);
+//          Bitmap bitmap = BitmapFactory.decodeStream(is);
+          try {
+            Logger.d("Saving cached bitmap with key %s", media.getImageKey(PlexMedia.IMAGE_KEY.LOCAL_VIDEO_BACKGROUND));
+            mSimpleDiskCache.put(media.getImageKey(PlexMedia.IMAGE_KEY.LOCAL_VIDEO_BACKGROUND), is);
+            fetchMediaThumb(media, width, height, whichThumb, bitmapHandler);
+          } catch (IOException e) {
+            e.printStackTrace();
+          }
+//          if(bitmapHandler != null)
+//            bitmapHandler.onSuccess(bitmap);
+          return null;
+        }
+      }.execute();
+    } else {
+      Logger.d("Found cached bitmap");
+      if(bitmapHandler != null)
+        bitmapHandler.onSuccess(bitmap);
+    }
   }
 
   // Fetch the notification bitmap for the given key. Once it's been downloaded, we'll save the bitmap to the image cache, then set the
@@ -692,6 +728,8 @@ public class VoiceControlForPlexApplication extends Application
 
   public static Map<String, PlexClient> getAllClients() {
     Map<String, PlexClient> allClients = new HashMap<String, PlexClient>();
+    PlexClient localDevice = PlexClient.getLocalPlaybackClient();
+    allClients.put(localDevice.name, localDevice);
     allClients.putAll(clients);
     allClients.putAll(castClients);
     return allClients;

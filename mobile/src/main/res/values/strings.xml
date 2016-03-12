@@ -188,5 +188,8 @@
         <item>@string/yes</item>
         <item>@string/no</item>
     </string-array>
-
+    <string name="menu_local_video">Local Video Options</string>
+    <string name="local_video_options_header">Local Video Quality</string>
+    <string name="local_video_local_full">Chromecast Video Quality over Local Network</string>
+    <string name="local_video_remote_full">Chromecast Video Quality over Remote Network</string>
 </resources>
