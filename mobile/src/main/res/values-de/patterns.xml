@@ -9,7 +9,7 @@ Wenn du eine Übersetzung hinzufügst bitte modifiziere nicht die Muster (.*), $
     complexen regulären Ausdruck. Der Dienst https://www.debuggex.com/ kann zur Visualisierung des Musters verwendet werden.
     -->
 
-    <item name="pattern_recognition" type="string">^(((schaue|spiele|weiterschauen|höre|schaue film|spiele film) (.+)( auf (.+))?( mit zufallswiedergabe)?)|((springe) (.+)( auf (.+))?)|((forward|rewind|back) (.+)( on (.+))?)|(( wiedergabe)?(pausieren|anhalten|fortsetzen)( auf (.+))?))|(verbinde mit (.+)|trenne)|(cycle (subtitles|audio))|(.*subtitle.*(off|on))$</item>
+    <item name="pattern_recognition" type="string">^(((schaue|spiele|weiterschauen|höre|schaue film|spiele film) (.+)( auf (.+))?( mit zufallswiedergabe)?)|((springe) (.+)( auf (.+))?)|((forwärts|rückwärts|zurück) (.+)( auf (.+))?)|(( wiedergabe)?(pausieren|anhalten|fortsetzen)( auf (.+))?))|(verbinde mit (.+)|trenne)|(wechsle (untertitel|tonspur))|(.*untertitel.*(aus|ein))$</item>
 
     <item name="pattern_on_client" type="string">(.+) auf (.+)$</item>
     <item name="pattern_resume_watching" type="string">^(schaue|weiterschauen) (.+)</item>
