@@ -216,10 +216,6 @@ public abstract class PlayerFragment extends Fragment
     }
   }
 
-  protected void onMediaChange() {
-
-  }
-
   public void showNowPlaying() {
     if(mainView == null)
       return;

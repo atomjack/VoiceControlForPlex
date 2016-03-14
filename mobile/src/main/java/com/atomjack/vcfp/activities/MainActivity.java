@@ -361,6 +361,7 @@ public class MainActivity extends AppCompatActivity
     @Override
     public void onMediaChanged(PlexMedia media, PlayerState state) {
       Logger.d("[MainActivity] onMediaChanged: %s %s", media.getTitle(), state);
+      handler.removeCallbacks(autoDisconnectPlayerTimer);
       playerFragment.mediaChanged(media);
       sendWearPlaybackChange(state, media);
     }
@@ -368,6 +369,7 @@ public class MainActivity extends AppCompatActivity
     @Override
     public void onPlayStarted(PlexMedia media, PlayerState state) {
       Logger.d("[MainActivity] onPlayStarted: %s", media.getTitle());
+      handler.removeCallbacks(autoDisconnectPlayerTimer);
       int layout = getLayoutForMedia(media, state);
 
       if(layout != -1) {
@@ -380,6 +382,7 @@ public class MainActivity extends AppCompatActivity
     @Override
     public void onStateChanged(PlexMedia media, PlayerState state) {
       Logger.d("[MainActivity] onStateChanged: %s", state);
+      handler.removeCallbacks(autoDisconnectPlayerTimer);
       if(playerFragment != null && playerFragment.isVisible()) {
         if(state == PlayerState.STOPPED) {
           Logger.d("[MainActivity] onStopped");
@@ -496,7 +499,7 @@ public class MainActivity extends AppCompatActivity
     Logger.d("[MainActivity] onPause");
     handler.removeCallbacks(autoDisconnectPlayerTimer);
     VoiceControlForPlexApplication.applicationPaused();
-    if (isFinishing()) {
+    if (isFinishing() && mMediaRouter != null) {
       mMediaRouter.removeCallback(mMediaRouterCallback);
     }
   }
@@ -514,7 +517,8 @@ public class MainActivity extends AppCompatActivity
     handler.removeCallbacks(refreshServers);
     handler.removeCallbacks(refreshClients);
     plexSubscription.removeListener(plexSubscriptionListener);
-    mMediaRouter.removeCallback(mMediaRouterCallback);
+    if(mMediaRouter != null)
+      mMediaRouter.removeCallback(mMediaRouterCallback);
   }
 
   @Override
