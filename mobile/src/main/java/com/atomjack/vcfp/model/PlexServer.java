@@ -15,13 +15,16 @@ import com.atomjack.vcfp.interfaces.ServerTestHandler;
 import com.atomjack.vcfp.net.PlexHttpClient;
 import com.atomjack.vcfp.net.PlexHttpMediaContainerHandler;
 import com.atomjack.vcfp.net.PlexHttpResponseHandler;
+import com.google.gson.reflect.TypeToken;
 
 import org.simpleframework.xml.Root;
 
+import java.lang.reflect.Type;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 import retrofit.Call;
 import retrofit.Callback;
@@ -203,7 +206,8 @@ public class PlexServer extends PlexDevice {
           activeConnectionExpires = Calendar.getInstance();
           activeConnectionExpires.add(Calendar.HOUR_OF_DAY, 1);
           VoiceControlForPlexApplication.servers.put(name, PlexServer.this);
-          VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.SAVED_SERVERS, VoiceControlForPlexApplication.gsonWrite.toJson(VoiceControlForPlexApplication.servers));
+          Type serverType = new TypeToken<ConcurrentHashMap<String, PlexServer>>(){}.getType();
+          VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.SAVED_SERVERS, VoiceControlForPlexApplication.gsonWrite.toJson(VoiceControlForPlexApplication.servers, serverType));
           activeConnectionHandler.onSuccess(activeConnection);
         } else {
           int newConnectionIndex = connectionIndex + 1;

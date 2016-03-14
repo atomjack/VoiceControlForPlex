@@ -103,6 +103,7 @@ import com.google.android.gms.cast.CastMediaControlIntent;
 import com.google.android.gms.wearable.DataMap;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 import com.splunk.mint.Mint;
 
 import org.honorato.multistatetogglebutton.MultiStateToggleButton;
@@ -116,6 +117,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.lang.reflect.Type;
 import java.net.SocketTimeoutException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -840,7 +842,8 @@ public class MainActivity extends AppCompatActivity
 
     refreshNavServers();
 
-    prefs.put(Preferences.SAVED_SERVERS, gsonWrite.toJson(VoiceControlForPlexApplication.servers));
+    Type serverType = new TypeToken<ConcurrentHashMap<String, PlexServer>>(){}.getType();
+    prefs.put(Preferences.SAVED_SERVERS, gsonWrite.toJson(VoiceControlForPlexApplication.servers, serverType));
     saveSettings();
 
     // Refresh the navigation drawer
@@ -986,7 +989,8 @@ public class MainActivity extends AppCompatActivity
         if(server == null || !VoiceControlForPlexApplication.servers.containsKey(server.name)) {
           setServer(PlexServer.getScanAllServer());
         }
-        prefs.put(Preferences.SAVED_SERVERS, gsonWrite.toJson(VoiceControlForPlexApplication.servers));
+        Type serverType = new TypeToken<ConcurrentHashMap<String, PlexServer>>(){}.getType();
+        prefs.put(Preferences.SAVED_SERVERS, gsonWrite.toJson(VoiceControlForPlexApplication.servers, serverType));
         Logger.d("doing first time setup: %s, client scan finished: %s", doingFirstTimeSetup, firstTimeSetupClientScanFinished);
         if(doingFirstTimeSetup) {
           firstTimeSetupServerScanFinished = true;

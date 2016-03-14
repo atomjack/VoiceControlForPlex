@@ -19,9 +19,11 @@ import com.atomjack.vcfp.model.Stream;
 import com.google.android.gms.cast.ApplicationMetadata;
 import com.google.android.libraries.cast.companionlibrary.cast.CastConfiguration;
 import com.google.android.libraries.cast.companionlibrary.cast.VideoCastManager;
+import com.google.gson.reflect.TypeToken;
 
 import org.json.JSONObject;
 
+import java.lang.reflect.Type;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -159,13 +161,14 @@ public class CastPlayerManager {
         try {
           obj.put(PARAMS.ACTION, PARAMS.RECEIVE_SERVERS);
 
+          Type serverType = new TypeToken<ConcurrentHashMap<String, PlexServer>>(){}.getType();
           PlexServer server = VoiceControlForPlexApplication.gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.SERVER, ""), PlexServer.class);
           if(server.name.equals(mContext.getString(R.string.scan_all)))
-            obj.put(PARAMS.SERVERS, VoiceControlForPlexApplication.gsonWrite.toJson(VoiceControlForPlexApplication.getInstance().servers));
+            obj.put(PARAMS.SERVERS, VoiceControlForPlexApplication.gsonWrite.toJson(VoiceControlForPlexApplication.getInstance().servers, serverType));
           else {
             ConcurrentHashMap<String, PlexServer> map = new ConcurrentHashMap<String, PlexServer>();
             map.put(server.name, server);
-            obj.put(PARAMS.SERVERS, VoiceControlForPlexApplication.gsonWrite.toJson(map));
+            obj.put(PARAMS.SERVERS, VoiceControlForPlexApplication.gsonWrite.toJson(map, serverType));
           }
           sendMessage(obj);
         } catch (Exception ex) {}
