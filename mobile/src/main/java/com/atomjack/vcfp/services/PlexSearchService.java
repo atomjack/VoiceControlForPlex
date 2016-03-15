@@ -113,6 +113,7 @@ public class PlexSearchService extends Service {
 	private interface StopRunnable extends myRunnable {}
 
 	@Override
+  @SuppressWarnings("unchecked")
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		Logger.d("PlexSearch: onStartCommand");
 

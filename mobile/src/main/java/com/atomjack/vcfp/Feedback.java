@@ -153,6 +153,7 @@ public class Feedback implements TextToSpeech.OnInitListener {
     return text;
   }
 
+  @SuppressWarnings("deprecation")
   private UtteranceProgressListener utteranceProgressListener = new UtteranceProgressListener() {
     @Override
     public void onStart(String s) {

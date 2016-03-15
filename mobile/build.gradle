@@ -7,6 +7,11 @@ repositories {
     }
 }
 
+configurations {
+    compile.exclude group: 'stax'
+    compile.exclude group: 'xpp3'
+}
+
 android {
     useLibrary  'org.apache.http.legacy'
     compileSdkVersion 23
@@ -126,6 +131,7 @@ dependencies {
     compile 'com.splunk.mint:mint:4.4.0'
     compile('org.simpleframework:simple-xml:2.7.1') {
         exclude group: 'stax', module: 'stax-api'
+        exclude group: 'stax', module: 'stax'
         exclude group: 'xpp3', module: 'xpp3'
     }
     compile 'com.android.support:support-v4:23.0+'
@@ -139,7 +145,6 @@ dependencies {
     compile files('libs/commons-io-2.4.jar')
     compile project(':shared')
     compile project(':multistatetogglebutton')
-    compile files('libs/org.apache.http.legacy.jar')
     compile 'de.hdodenhof:circleimageview:2.0.0'
 //    compile 'org.honorato.multistatetogglebutton:multistatetogglebutton:0.2.0'
     compile 'com.jakewharton:butterknife:7.0.1'

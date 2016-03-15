@@ -976,6 +976,7 @@ public class MainActivity extends AppCompatActivity
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   protected void onNewIntent(Intent intent) {
     super.onNewIntent(intent);
     Logger.d("[MainActivity] onNewIntent: %s", intent.getAction());
@@ -1889,7 +1890,7 @@ public class MainActivity extends AppCompatActivity
     list.add("3");
     list.add("4");
     list.add("5");
-    ArrayAdapter arrayAdapter = new ArrayAdapter(getApplicationContext(), android.R.layout.simple_list_item_single_choice, list);
+    ArrayAdapter<String> arrayAdapter = new ArrayAdapter<>(getApplicationContext(), android.R.layout.simple_list_item_single_choice, list);
 
     listView.setAdapter(arrayAdapter);
     int numTrailers = prefs.get(Preferences.NUM_CINEMA_TRAILERS, 0);

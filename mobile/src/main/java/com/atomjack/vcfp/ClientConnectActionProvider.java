@@ -5,6 +5,7 @@ import android.view.ActionProvider;
 import android.view.LayoutInflater;
 import android.view.View;
 
+@SuppressWarnings("deprecation")
 public class ClientConnectActionProvider extends ActionProvider {
 	Context mContext;
 
