@@ -36,7 +36,6 @@ public class MainFragment extends Fragment {
   @Bind(R.id.mainViewUsageHint) TextView mainViewUsageHint;
   PlexServer server;
   PlexClient client;
-  private Handler handler;
   private VCFPHint vcfpHint;
 
   public MainFragment() {
@@ -70,8 +69,6 @@ public class MainFragment extends Fragment {
 
     ButterKnife.bind(this, view);
     vcfpHint = new VCFPHint(mainViewUsageHint);
-
-    handler = new Handler();
 
     client = VoiceControlForPlexApplication.gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.CLIENT, ""), PlexClient.class);
     server = VoiceControlForPlexApplication.gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.SERVER, ""), PlexServer.class);
@@ -125,7 +122,8 @@ public class MainFragment extends Fragment {
   @Override
   public void onResume() {
     super.onResume();
-    vcfpHint.start();
+    if(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.SHOW_USAGE_HINTS, false))
+      vcfpHint.start();
   }
 
   public void setUsageHintsActive(boolean active) {

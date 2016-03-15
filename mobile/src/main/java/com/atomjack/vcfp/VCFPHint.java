@@ -57,6 +57,9 @@ public class VCFPHint {
 
   public void start() {
     active = true;
+    handler.removeCallbacks(job);
+    handler.removeCallbacks(onFinishSuccess);
+    handler.removeCallbacks(onFinishFailure);
     int delay = Utils.getRandomInt(10, 20);
     Logger.d("Delaying %d seconds for hint", delay);
     job = new Runnable() {
