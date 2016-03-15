@@ -46,6 +46,7 @@ public class PlexClient extends PlexDevice {
     PlexClient client = new PlexClient();
     client.isLocalClient = true;
     client.name = VoiceControlForPlexApplication.getInstance().getString(R.string.this_device);
+    client.product = VoiceControlForPlexApplication.getInstance().getString(R.string.app_name);
     return client;
   }
 

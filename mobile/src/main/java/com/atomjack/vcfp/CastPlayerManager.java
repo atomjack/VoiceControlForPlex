@@ -520,8 +520,7 @@ public class CastPlayerManager {
     qs.add("Accept-Language", "en");
     qs.add("X-Plex-Client-Profile-Extra", "");
     qs.add("X-Plex-Chunked", "1");
-    // TODO: CHANGE THIS!!!
-    qs.add("X-Plex-Username", "atomjack");
+    qs.add("X-Plex-Username", VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.PLEX_USERNAME, ""));
 
     qs.add("protocol", "http");
     qs.add("offset", Integer.toString(offset));

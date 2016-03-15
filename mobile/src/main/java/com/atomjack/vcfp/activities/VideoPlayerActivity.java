@@ -375,17 +375,15 @@ public class VideoPlayerActivity extends AppCompatActivity
   private Runnable playerProgressRunnable = new Runnable() {
     @Override
     public void run() {
-      if(isPlaying()) {
-        PlexHttpClient.reportProgressToServer(media, getCurrentPosition(), currentState);
-        handler.postDelayed(playerProgressRunnable, 1000);
-      } else {
-        currentState = PlayerState.STOPPED;
-      }
+      Logger.d("Reporting state %s", currentState);
+      PlexHttpClient.reportProgressToServer(media, getCurrentPosition(), currentState);
+      handler.postDelayed(playerProgressRunnable, 1000);
     }
   };
 
   @Override
   public void onBackPressed() {
+    handler.removeCallbacks(playerProgressRunnable);
     PlexHttpClient.reportProgressToServer(media, getCurrentPosition(), PlayerState.STOPPED);
     player.stop();
     super.onBackPressed();
