@@ -8,6 +8,8 @@ import com.atomjack.vcfp.PlexHeaders;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.interfaces.ActiveConnectionHandler;
 import com.atomjack.vcfp.interfaces.InputStreamHandler;
+import com.atomjack.vcfp.interfaces.PlexDirectoryHandler;
+import com.atomjack.vcfp.interfaces.PlexMediaHandler;
 import com.atomjack.vcfp.interfaces.PlexPlayQueueHandler;
 import com.atomjack.vcfp.model.Connection;
 import com.atomjack.vcfp.model.MediaContainer;
@@ -27,6 +29,7 @@ import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 import retrofit.Call;
@@ -114,6 +117,22 @@ public class PlexHttpClient
 
     @GET("/users/account.xml")
     Call<PlexUser> getPlexAccount(@retrofit.http.Header(PlexHeaders.XPlexToken) String authToken);
+
+    @GET("/library/sections/{section}/all")
+    Call<MediaContainer> getRandomMovie(@Path(value="section", encoded=true) String section,
+                                        @Query(PlexHeaders.XPlexToken) String accessToken);
+
+    @GET("/library/onDeck/all")
+    Call<MediaContainer> getRandomOnDeck(@Query(PlexHeaders.XPlexToken) String accessToken);
+
+    @GET("/library/sections/{section}/all")
+    Call<MediaContainer> getRandomDirectory(@Path(value="section", encoded=true) String section,
+                                            @Query(PlexHeaders.XPlexToken) String accessToken);
+
+    @GET("/library/metadata/{ratingKey}/allLeaves")
+    Call<MediaContainer> getRandomEpisode(@Path(value="ratingKey", encoded=true) String ratingKey,
+                                          @Query(PlexHeaders.XPlexToken) String accessToken);
+
   }
 
   public static void getThumb(String url, final InputStreamHandler inputStreamHandler) {
@@ -576,6 +595,258 @@ public class PlexHttpClient
       @Override
       public void onFailure(Throwable t) {
 
+      }
+    });
+  }
+
+  public static void getRandomMovie(final PlexServer server, final PlexMediaHandler onFinish) {
+    server.findServerConnection(new ActiveConnectionHandler() {
+      @Override
+      public void onSuccess(Connection connection) {
+        String section = server.movieSections.get(new Random().nextInt(server.movieSections.size()));
+        PlexHttpService service = getService(connection);
+        Call<MediaContainer> call = service.getRandomMovie(section, server.accessToken);
+        call.enqueue(new Callback<MediaContainer>() {
+          @Override
+          public void onResponse(Response<MediaContainer> response) {
+            MediaContainer mc = response.body();
+            if(onFinish != null)
+              onFinish.onFinish(mc.videos.get(new Random().nextInt(mc.videos.size())));
+          }
+
+          @Override
+          public void onFailure(Throwable t) {
+            t.printStackTrace();
+            if(onFinish != null)
+              onFinish.onFinish(null);
+          }
+        });
+      }
+
+      @Override
+      public void onFailure(int statusCode) {
+        if(onFinish != null)
+          onFinish.onFinish(null);
+      }
+    });
+  }
+
+  public static void getRandomOnDeck(final PlexServer server, final PlexMediaHandler onFinish) {
+    server.findServerConnection(new ActiveConnectionHandler() {
+      @Override
+      public void onSuccess(Connection connection) {
+        PlexHttpService service = getService(connection);
+        Call<MediaContainer> call = service.getRandomOnDeck(server.accessToken);
+        call.enqueue(new Callback<MediaContainer>() {
+          @Override
+          public void onResponse(Response<MediaContainer> response) {
+            MediaContainer mc = response.body();
+            if(onFinish != null)
+              onFinish.onFinish(mc.videos.get(new Random().nextInt(mc.videos.size())));
+          }
+
+          @Override
+          public void onFailure(Throwable t) {
+            if(onFinish != null)
+              onFinish.onFinish(null);
+          }
+        });
+      }
+
+      @Override
+      public void onFailure(int statusCode) {
+        if(onFinish != null)
+          onFinish.onFinish(null);
+      }
+    });
+  }
+
+  public static void getRandomEpisode(final PlexServer server, final PlexMediaHandler onFinish) {
+    server.findServerConnection(new ActiveConnectionHandler() {
+      @Override
+      public void onSuccess(final Connection connection) {
+        final PlexHttpService service = getService(connection);
+        String section = server.tvSections.get(new Random().nextInt(server.tvSections.size()));
+        Call<MediaContainer> call = service.getRandomDirectory(section, server.accessToken);
+        call.enqueue(new Callback<MediaContainer>() {
+          @Override
+          public void onResponse(Response<MediaContainer> response) {
+            MediaContainer mc = response.body();
+            PlexDirectory directory = mc.directories.get(new Random().nextInt(mc.directories.size()));
+            // Got show, now get season
+            Call<MediaContainer> call2 = service.getRandomEpisode(directory.ratingKey, server.accessToken);
+            call2.enqueue(new Callback<MediaContainer>() {
+              @Override
+              public void onResponse(Response<MediaContainer> response) {
+                MediaContainer mc = response.body();
+                if(onFinish != null)
+                  onFinish.onFinish(mc.videos.get(new Random().nextInt(mc.videos.size())));
+              }
+
+              @Override
+              public void onFailure(Throwable t) {
+                if(onFinish != null)
+                  onFinish.onFinish(null);
+              }
+            });
+          }
+
+          @Override
+          public void onFailure(Throwable t) {
+            if(onFinish != null)
+              onFinish.onFinish(null);
+          }
+        });
+      }
+
+      @Override
+      public void onFailure(int statusCode) {
+        if(onFinish != null)
+          onFinish.onFinish(null);
+      }
+    });
+  }
+
+  public static void getRandomSong(final PlexServer server, final PlexMediaHandler onFinish) {
+    server.findServerConnection(new ActiveConnectionHandler() {
+      @Override
+      public void onSuccess(Connection connection) {
+        final PlexHttpService service = getService(connection);
+        String section = server.musicSections.get(new Random().nextInt(server.musicSections.size()));
+        Call<MediaContainer> call = service.getRandomDirectory(section, server.accessToken);
+        call.enqueue(new Callback<MediaContainer>() {
+          @Override
+          public void onResponse(Response<MediaContainer> response) {
+            MediaContainer artists = response.body();
+            PlexDirectory artist = artists.directories.get(new Random().nextInt(artists.directories.size()));
+            Call<MediaContainer> call2 = service.getMediaContainer(artist.key.replaceFirst("^/", ""), server.accessToken);
+            call2.enqueue(new Callback<MediaContainer>() {
+              @Override
+              public void onResponse(Response<MediaContainer> response) {
+                MediaContainer albums = response.body();
+                PlexDirectory album = albums.directories.get(new Random().nextInt(albums.directories.size()));
+                Call<MediaContainer> call3 = service.getMediaContainer(album.key.replaceFirst("^/", ""), server.accessToken);
+                call3.enqueue(new Callback<MediaContainer>() {
+                  @Override
+                  public void onResponse(Response<MediaContainer> response) {
+                    MediaContainer tracks = response.body();
+                    if(onFinish != null)
+                      onFinish.onFinish(tracks.tracks.get(new Random().nextInt(tracks.tracks.size())));
+                  }
+
+                  @Override
+                  public void onFailure(Throwable t) {
+                    t.printStackTrace();
+                    if(onFinish != null)
+                      onFinish.onFinish(null);
+                  }
+                });
+              }
+
+              @Override
+              public void onFailure(Throwable t) {
+                t.printStackTrace();
+                if(onFinish != null)
+                  onFinish.onFinish(null);
+              }
+            });
+          }
+
+          @Override
+          public void onFailure(Throwable t) {
+            t.printStackTrace();
+            if(onFinish != null)
+              onFinish.onFinish(null);
+          }
+        });
+      }
+
+      @Override
+      public void onFailure(int statusCode) {
+        if(onFinish != null)
+          onFinish.onFinish(null);
+      }
+    });
+  }
+
+  public static void getRandomAlbum(final PlexServer server, final PlexDirectoryHandler onFinish) {
+    server.findServerConnection(new ActiveConnectionHandler() {
+      @Override
+      public void onSuccess(Connection connection) {
+        final PlexHttpService service = getService(connection);
+        String section = server.musicSections.get(new Random().nextInt(server.musicSections.size()));
+        Call<MediaContainer> call = service.getRandomDirectory(section, server.accessToken);
+        call.enqueue(new Callback<MediaContainer>() {
+          @Override
+          public void onResponse(Response<MediaContainer> response) {
+            MediaContainer artists = response.body();
+            PlexDirectory artist = artists.directories.get(new Random().nextInt(artists.directories.size()));
+            Call<MediaContainer> call2 = service.getMediaContainer(artist.key.replaceFirst("^/", ""), server.accessToken);
+            call2.enqueue(new Callback<MediaContainer>() {
+              @Override
+              public void onResponse(Response<MediaContainer> response) {
+                MediaContainer albums = response.body();
+                PlexDirectory album = albums.directories.get(new Random().nextInt(albums.directories.size()));
+                if(onFinish != null)
+                  onFinish.onFinish(album);
+              }
+
+              @Override
+              public void onFailure(Throwable t) {
+                t.printStackTrace();
+                if(onFinish != null)
+                  onFinish.onFinish(null);
+              }
+            });
+          }
+
+          @Override
+          public void onFailure(Throwable t) {
+            t.printStackTrace();
+            if(onFinish != null)
+              onFinish.onFinish(null);
+          }
+        });
+      }
+
+      @Override
+      public void onFailure(int statusCode) {
+        if(onFinish != null)
+          onFinish.onFinish(null);
+      }
+    });
+  }
+
+  public static void getRandomArtist(final PlexServer server, final PlexDirectoryHandler onFinish) {
+    server.findServerConnection(new ActiveConnectionHandler() {
+      @Override
+      public void onSuccess(Connection connection) {
+        final PlexHttpService service = getService(connection);
+        String section = server.musicSections.get(new Random().nextInt(server.musicSections.size()));
+        Call<MediaContainer> call = service.getRandomDirectory(section, server.accessToken);
+        call.enqueue(new Callback<MediaContainer>() {
+          @Override
+          public void onResponse(Response<MediaContainer> response) {
+            MediaContainer artists = response.body();
+            PlexDirectory artist = artists.directories.get(new Random().nextInt(artists.directories.size()));
+            if(onFinish != null)
+              onFinish.onFinish(artist);
+
+          }
+
+          @Override
+          public void onFailure(Throwable t) {
+            t.printStackTrace();
+            if(onFinish != null)
+              onFinish.onFinish(null);
+          }
+        });
+      }
+
+      @Override
+      public void onFailure(int statusCode) {
+        if(onFinish != null)
+          onFinish.onFinish(null);
       }
     });
   }

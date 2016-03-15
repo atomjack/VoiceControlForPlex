@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.speech.RecognizerIntent;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
@@ -13,8 +14,11 @@ import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
+import com.atomjack.shared.Logger;
 import com.atomjack.shared.Preferences;
 import com.atomjack.vcfp.R;
+import com.atomjack.vcfp.Utils;
+import com.atomjack.vcfp.VCFPHint;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexServer;
@@ -22,11 +26,18 @@ import com.atomjack.vcfp.services.PlexSearchService;
 
 import java.math.BigInteger;
 import java.security.SecureRandom;
+import java.util.Random;
+
+import butterknife.Bind;
+import butterknife.ButterKnife;
 
 public class MainFragment extends Fragment {
   TextView mainStreamingFromTo;
+  @Bind(R.id.mainViewUsageHint) TextView mainViewUsageHint;
   PlexServer server;
   PlexClient client;
+  private Handler handler;
+  private VCFPHint vcfpHint;
 
   public MainFragment() {
   }
@@ -56,6 +67,11 @@ public class MainFragment extends Fragment {
   public View onCreateView(LayoutInflater inflater, ViewGroup container,
                            Bundle savedInstanceState) {
     final View view = inflater.inflate(R.layout.fragment_main, container, false);
+
+    ButterKnife.bind(this, view);
+    vcfpHint = new VCFPHint(mainViewUsageHint);
+
+    handler = new Handler();
 
     client = VoiceControlForPlexApplication.gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.CLIENT, ""), PlexClient.class);
     server = VoiceControlForPlexApplication.gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.SERVER, ""), PlexServer.class);
@@ -98,5 +114,24 @@ public class MainFragment extends Fragment {
   @Override
   public void onAttach(Context context) {
     super.onAttach(context);
+  }
+
+  @Override
+  public void onPause() {
+    super.onPause();
+    vcfpHint.stop();
+  }
+
+  @Override
+  public void onResume() {
+    super.onResume();
+    vcfpHint.start();
+  }
+
+  public void setUsageHintsActive(boolean active) {
+    if(active)
+      vcfpHint.start();
+    else
+      vcfpHint.stop();
   }
 }

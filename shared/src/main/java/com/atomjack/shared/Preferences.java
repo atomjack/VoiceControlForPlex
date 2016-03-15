@@ -33,6 +33,7 @@ public class Preferences {
   public final static String FIRST_TIME_SETUP_COMPLETED = "pref.first_time_setup_completed";
   public final static String IMAGE_CACHE_VERSION = "pref.image_cache_version";
   public final static String CRASHED = "pref.crashed";
+  public final static String SHOW_USAGE_HINTS = "pref.show_usage_hints";
 
   public Preferences(Context context) {
     mPrefs = context.getSharedPreferences(PREFS, context.MODE_PRIVATE);

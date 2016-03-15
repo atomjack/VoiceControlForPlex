@@ -17,6 +17,7 @@ import java.security.SecureRandom;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Random;
 
 public class Utils {
 
@@ -201,5 +202,10 @@ public class Utils {
     double scalex = (double) targetWidth / sourceWidth;
     double scaley = (double) targetHeight / sourceHeight;
     return Math.min(scalex, scaley);
+  }
+
+  public static int getRandomInt(int low, int high) {
+    Random r = new Random();
+    return r.nextInt(high - low) + low;
   }
 }

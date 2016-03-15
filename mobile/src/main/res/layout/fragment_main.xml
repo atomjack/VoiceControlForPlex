@@ -29,4 +29,14 @@
         android:background="@android:color/transparent"
         android:adjustViewBounds="false"
         android:scaleType="fitCenter"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:id="@+id/mainViewUsageHint"
+        android:layout_gravity="center_horizontal"
+        android:textColor="@color/white"
+        android:singleLine="false"
+        android:gravity="center_horizontal"/>
 </LinearLayout>

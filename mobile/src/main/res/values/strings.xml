@@ -177,4 +177,7 @@
         <item>@string/feedback_voice</item>
         <item>@string/feedback_toast</item>
     </string-array>
+    <!-- hints -->
+    <string name="try_string">Try</string>
+    <string name="usage_hints">Usage Hints</string>
 </resources>

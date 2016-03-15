@@ -82,4 +82,15 @@ Also, you don't need to translate these comments.
     same for minutes and seconds (the | means "or").
     -->
     <item name="pattern_offset" type="string">^(offset|timecode) ([0-9]+|two|to) (hours?|minutes?|seconds?)(?: ([0-9]+|two|to) (minutes?|seconds?))?(?: ([0-9]+|two|to) (seconds?))?</item>
+
+    <!-- hints -->
+    <item name="hint_watch_movie" type="string">Watch %s</item>
+    <item name="hint_watch_season_episode" type="string">Watch Season %1$s Episode %2$s of %3$s</item>
+    <item name="hint_watch_season_episode2" type="string">Watch %1$s Season %2$s Episode %3$s</item>
+    <item name="hint_watch_episode" type="string">Watch episode %1$s of %2$s</item>
+    <item name="hint_listen_to_song" type="string">Listen to %1$s by %2$s</item>
+    <item name="hint_listen_to_album_by_artist" type="string">Listen to the album %1$s by %2$s</item>
+    <item name="hint_listen_to_album" type="string">Listen to the album %1$s</item>
+    <item name="hint_listen_to_artist" type="string">Listen to %1$s</item>
+
 </resources>

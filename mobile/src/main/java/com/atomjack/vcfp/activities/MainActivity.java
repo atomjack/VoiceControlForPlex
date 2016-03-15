@@ -34,6 +34,7 @@ import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.media.MediaRouteSelector;
 import android.support.v7.media.MediaRouter;
+import android.support.v7.widget.SwitchCompat;
 import android.support.v7.widget.Toolbar;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -46,6 +47,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CheckedTextView;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -1246,6 +1248,18 @@ public class MainActivity extends AppCompatActivity
           MenuItem chromecastOptionsItem = menu.findItem(R.id.menu_chromecast_video);
           chromecastOptionsItem.setVisible(true);
         }
+
+        SwitchCompat usageExamplesSwitch = (SwitchCompat)menu.findItem(R.id.menu_usage_hints_switch).getActionView();
+        usageExamplesSwitch.setChecked(prefs.get(Preferences.SHOW_USAGE_HINTS, true));
+        usageExamplesSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+          @Override
+          public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+            prefs.put(Preferences.SHOW_USAGE_HINTS, isChecked);
+            if(getMainFragment().isVisible()) {
+              getMainFragment().setUsageHintsActive(isChecked);
+            }
+          }
+        });
 
         if (!hasValidAutoVoice() && !hasValidUtter()) {
           menu.findItem(R.id.menu_tasker_import).setVisible(false);
