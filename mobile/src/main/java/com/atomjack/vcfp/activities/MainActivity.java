@@ -1879,6 +1879,41 @@ public class MainActivity extends AppCompatActivity
     }
   }
 
+  public void googleNowOptions(MenuItem item) {
+    AlertDialog.Builder builder = new AlertDialog.Builder(this);
+    LayoutInflater inflater = getLayoutInflater();
+    View layout = inflater.inflate(R.layout.popup_google_now_options, null);
+
+    builder.setView(layout);
+    final AlertDialog dialog = builder.create();
+
+    MultiStateToggleButton feedbackToggleButton = (MultiStateToggleButton)layout.findViewById(R.id.googleNowOptionsToggleButton);
+    boolean[] v = new boolean[2];
+    // yes = v[0], no = v[1], since yes is listed before no in the UI
+    try {
+      v[prefs.get(Preferences.GOOGLE_NOW_LAUNCH_NOW_PLAYING, true) ? 0 : 1] = true;
+    } catch (Exception e) {
+      e.printStackTrace();
+      v[0] = true;
+      prefs.put(Preferences.GOOGLE_NOW_LAUNCH_NOW_PLAYING, true);
+    }
+    feedbackToggleButton.setStates(v);
+    feedbackToggleButton.setOnValueChangedListener(new ToggleButton.OnValueChangedListener() {
+      @Override
+      public void onValueChanged(int value) {
+        prefs.put(Preferences.GOOGLE_NOW_LAUNCH_NOW_PLAYING, value == 0);
+      }
+    });
+    Button okButton = (Button)layout.findViewById(R.id.googleNowOptionsOKButton);
+    okButton.setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View v) {
+        dialog.dismiss();
+      }
+    });
+    dialog.show();
+  }
+
   public void cinemaTrailers(MenuItem item) {
     AlertDialog.Builder builder = new AlertDialog.Builder(this);
     LayoutInflater inflater = getLayoutInflater();

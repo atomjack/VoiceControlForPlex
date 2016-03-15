@@ -10,6 +10,7 @@ public class Intent {
   public final static String EXTRA_SILENT = "com.atomjack.vcfp.intent.extra_silent";
   public final static String EXTRA_FROM_MIC = "com.atomjack.vcfp.intent.extra_from_mic";
   public final static String EXTRA_PLAYER_FRAGMENT = "com.atomjack.vcfp.intent.extra_player_fragment";
+  public final static String EXTRA_FROM_GOOGLE_NOW = "com.atomjack.vcfp.intent.extra_from_google_now";
 
 
 

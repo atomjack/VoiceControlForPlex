@@ -34,6 +34,7 @@ public class Preferences {
   public final static String IMAGE_CACHE_VERSION = "pref.image_cache_version";
   public final static String CRASHED = "pref.crashed";
   public final static String SHOW_USAGE_HINTS = "pref.show_usage_hints";
+  public final static String GOOGLE_NOW_LAUNCH_NOW_PLAYING = "pref.google_now_launch_now_playing";
 
   public Preferences(Context context) {
     mPrefs = context.getSharedPreferences(PREFS, context.MODE_PRIVATE);

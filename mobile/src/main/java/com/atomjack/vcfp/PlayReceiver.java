@@ -25,6 +25,7 @@ public class PlayReceiver extends BroadcastReceiver
       Intent sendIntent = new Intent(context, PlexSearchService.class);
       sendIntent.putExtra(com.atomjack.shared.Intent.EXTRA_QUERYTEXT, queryText);
       sendIntent.putExtra(com.atomjack.shared.Intent.EXTRA_RESUME, VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.RESUME, false));
+      sendIntent.putExtra(com.atomjack.shared.Intent.EXTRA_FROM_GOOGLE_NOW, true);
       sendIntent.addFlags(Intent.FLAG_FROM_BACKGROUND);
       sendIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
       sendIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);

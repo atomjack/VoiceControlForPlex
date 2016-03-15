@@ -93,6 +93,7 @@ public class PlexSearchService extends Service {
   private MainActivity.NetworkState currentNetworkState;
 
   private boolean fromWear = false;
+  private boolean fromGoogleNow = false;
 
 	// Chromecast
 	MediaRouter mMediaRouter;
@@ -139,6 +140,7 @@ public class PlexSearchService extends Service {
     if(intent.getBooleanExtra(WearConstants.FROM_WEAR, false) == true && VoiceControlForPlexApplication.getInstance().hasWear()) {
       fromWear = true;
     }
+    fromGoogleNow = intent.getBooleanExtra(com.atomjack.shared.Intent.EXTRA_FROM_GOOGLE_NOW, false);
 
     currentNetworkState = MainActivity.NetworkState.getCurrentNetworkState(this);
 
@@ -1265,7 +1267,8 @@ public class PlexSearchService extends Service {
           castPlayerManager.loadMedia(media instanceof PlexTrack ? mediaContainer.tracks.get(0) : mediaContainer.videos.get(0),
                   media instanceof PlexTrack ? mediaContainer.tracks : mediaContainer.videos,
                   getOffset(media instanceof PlexTrack ? mediaContainer.tracks.get(0) : mediaContainer.videos.get(0)));
-          showPlayingMedia(media);
+          if(fromGoogleNow && VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.GOOGLE_NOW_LAUNCH_NOW_PLAYING, true))
+            showPlayingMedia(media);
           /*
           if(!fromMic) {
             Intent sendIntent = new Intent(PlexSearchService.this, CastActivity.class);
@@ -1310,7 +1313,8 @@ public class PlexSearchService extends Service {
           Logger.d("Playback response: %s", r.code);
           if (passed) {
             videoPlayed = true;
-            showPlayingMedia(media);
+            if(fromGoogleNow && VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.GOOGLE_NOW_LAUNCH_NOW_PLAYING, true))
+              showPlayingMedia(media);
           } else {
             feedback.e(getResources().getString(R.string.http_status_code_error), r.code);
           }

@@ -27,6 +27,10 @@
               android:title="@string/feedback"
               android:onClick="setFeedback"
               android:icon="@drawable/menu_feedback"/>
+        <item android:id="@+id/menu_google_now"
+              android:title="@string/menu_google_now"
+              android:icon="@drawable/menu_google_now"
+              android:onClick="googleNowOptions"/>
         <item android:id="@+id/menu_cinema_trailers"
               android:title="@string/cinema_trailers"
               android:icon="@drawable/menu_trailers"
