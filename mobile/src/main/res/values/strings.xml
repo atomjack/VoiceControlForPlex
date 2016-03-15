@@ -181,7 +181,7 @@
     <string name="try_string">Try</string>
     <string name="usage_hints">Usage Hints</string>
     <string name="menu_google_now">Google Now Options</string>
-    <string name="google_now_options_desc">Should the now playing screen launch when voice input is done through Google Now?</string>
+    <string name="google_now_options_desc">Should the now playing screen launch when voice input is received through Google Now?</string>
     <string name="yes">Yes</string>
     <string name="no">No</string>
     <string-array name="google_now_options">
