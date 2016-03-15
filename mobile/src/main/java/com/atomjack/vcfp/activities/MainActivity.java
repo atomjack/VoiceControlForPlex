@@ -1228,7 +1228,8 @@ public class MainActivity extends AppCompatActivity
     Menu menu = navigationViewMain.getMenu();
     LinearLayout navHeaderPlexServersTitle = (LinearLayout)navigationViewMain.findViewById(R.id.navHeaderPlexServersTitle);
     if(group == R.menu.nav_items_main) {
-      navHeaderPlexServersTitle.setVisibility(View.VISIBLE);
+      if(navHeaderPlexServersTitle != null)
+        navHeaderPlexServersTitle.setVisibility(View.VISIBLE);
       navigationViewMain.setItemBackground(ContextCompat.getDrawable(this, R.drawable.nav_drawer_server_item));
       navigationFooter.setVisibility(View.VISIBLE);
       handler.postDelayed(new Runnable() {
