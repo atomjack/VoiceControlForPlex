@@ -9,7 +9,7 @@ Wenn du eine Übersetzung hinzufügst bitte modifiziere nicht die Muster (.*), $
     complexen regulären Ausdruck. Der Dienst https://www.debuggex.com/ kann zur Visualisierung des Musters verwendet werden.
     -->
 
-    <item name="pattern_recognition" type="string">^(((schaue|spiele|weiterschauen|höre|schaue film|spiele film) (.+)( auf (.+))?( mit zufallswiedergabe)?)|((springe) (.+)( auf (.+))?)|((forwärts|rückwärts|zurück) (.+)( auf (.+))?)|(( wiedergabe)?(pausieren|anhalten|fortsetzen)( auf (.+))?))|(verbinde mit (.+)|trenne)|(wechsle (untertitel|tonspur))|(.*untertitel.*(aus|ein))$</item>
+    <item name="pattern_recognition" type="string">^(((schaue|spiele|weiterschauen|höre|schaue film|spiele film) (.+)( auf (.+))?( mit zufallswiedergabe)?)|((springe) (.+)( auf (.+))?)|((vorwärts|rückwärts|zurück) (.+)( auf (.+))?)|(( wiedergabe)?(pausieren|anhalten|fortsetzen)( auf (.+))?))|(verbinde mit (.+)|trenne)|(wechsle (untertitel|tonspur))|(.*untertitel.*(aus|ein))$</item>
 
     <item name="pattern_on_client" type="string">(.+) auf (.+)$</item>
     <item name="pattern_resume_watching" type="string">^(schaue|weiterschauen) (.+)</item>
@@ -25,7 +25,7 @@ Wenn du eine Übersetzung hinzufügst bitte modifiziere nicht die Muster (.*), $
     <item name="pattern_connect_to" type="string">^verbinde mit (.+)</item>
     <item name="pattern_disconnect" type="string">^trenne$</item>
     <item name="pattern_watch2" type="string">(schaue|spiele) (.+)</item>
-    <item name="pattern_forward" type="string">([0-9]+) (stunden?|minuten?|sekunden?) forwärts</item>
+    <item name="pattern_forward" type="string">([0-9]+) (stunden?|minuten?|sekunden?) vorwärts</item>
     <item name="pattern_rewind" type="string">([0-9]+) (stunden?|minuten?|sekunden?) zurück</item>
 
     <item name="pattern_cycle_subtitles" type="string">ändere untertitel</item>
