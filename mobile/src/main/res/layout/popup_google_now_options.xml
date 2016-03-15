@@ -15,35 +15,30 @@
         android:textColor="@color/white"
         android:layout_marginBottom="20dp"/>
 
-    <LinearLayout
-        android:orientation="horizontal"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="@string/google_now_options_desc"
+        android:id="@+id/textView26"
+        android:textColor="@color/white"
+        android:layout_marginBottom="20dp"
+        />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textAppearance="?android:attr/textAppearanceMedium"
-            android:text="@string/google_now_options_desc"
-            android:id="@+id/textView26"
-            android:textColor="@color/white"
-            android:layout_marginBottom="20dp"
-            android:layout_weight="1"/>
-
-        <org.honorato.multistatetogglebutton.MultiStateToggleButton
-            xmlns:mstb="http://schemas.android.com/apk/res-auto"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            mstb:values="@array/google_now_options"
-            mstb:mstbColorPressedBackgroundResource="@drawable/feedback_button_pressed"
-            mstb:mstbColorPressedText="@color/white"
-            mstb:mstbColorNotPressedBackgroundResource="@drawable/feedback_button_not_pressed"
-            mstb:mstbColorNotPressedText="@color/white"
-            android:id="@+id/googleNowOptionsToggleButton"
-            android:layout_alignParentTop="true"
-            android:layout_alignParentRight="true"
-            android:layout_alignParentEnd="true"/>
-    </LinearLayout>
+    <org.honorato.multistatetogglebutton.MultiStateToggleButton
+        xmlns:mstb="http://schemas.android.com/apk/res-auto"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        mstb:values="@array/google_now_options"
+        mstb:mstbColorPressedBackgroundResource="@drawable/feedback_button_pressed"
+        mstb:mstbColorPressedText="@color/white"
+        mstb:mstbColorNotPressedBackgroundResource="@drawable/feedback_button_not_pressed"
+        mstb:mstbColorNotPressedText="@color/white"
+        android:id="@+id/googleNowOptionsToggleButton"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginBottom="20dp"/>
 
     <RelativeLayout
         android:layout_width="match_parent"
@@ -58,26 +53,4 @@
             android:layout_alignParentRight="true"
             android:layout_alignParentEnd="true"/>
     </RelativeLayout>
-
-    <!--
-    <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent">
-
-        <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/yes"
-            android:id="@+id/googleNowOptionsYesButton"/>
-
-        <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/no"
-            android:id="@+id/googleNowOptionsNoButton"
-            android:layout_alignParentTop="true"
-            android:layout_alignParentRight="true"
-            android:layout_alignParentEnd="true"/>
-    </RelativeLayout>
--->
 </LinearLayout>
