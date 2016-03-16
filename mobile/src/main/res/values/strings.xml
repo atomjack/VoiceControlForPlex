@@ -192,4 +192,6 @@
     <string name="local_video_options_header">Local Video Quality</string>
     <string name="local_video_local_full">Chromecast Video Quality over Local Network</string>
     <string name="local_video_remote_full">Chromecast Video Quality over Remote Network</string>
+    <string name="unknown_error_occurred">Sorry, an unknown error occurred.</string>
+    <string name="error_server_died">Sorry, the connection to the server was lost.</string>
 </resources>

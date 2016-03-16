@@ -23,6 +23,7 @@ import android.widget.FrameLayout;
 import com.atomjack.shared.Logger;
 import com.atomjack.shared.PlayerState;
 import com.atomjack.shared.Preferences;
+import com.atomjack.vcfp.Feedback;
 import com.atomjack.vcfp.MediaOptionsDialog;
 import com.atomjack.vcfp.PlexHeaders;
 import com.atomjack.vcfp.QueryString;
@@ -50,6 +51,7 @@ public class VideoPlayerActivity extends AppCompatActivity
         implements MediaPlayer.OnCompletionListener,
         MediaPlayer.OnInfoListener,
         MediaPlayer.OnPreparedListener,
+        MediaPlayer.OnErrorListener,
         SurfaceHolder.Callback,
         VideoControllerView.MediaPlayerControl {
 
@@ -61,6 +63,8 @@ public class VideoPlayerActivity extends AppCompatActivity
 
   private PlayerState currentState = PlayerState.STOPPED;
 
+  private Feedback feedback;
+
   SurfaceView videoSurface;
   MediaPlayer player;
   VideoControllerView controller;
@@ -69,15 +73,18 @@ public class VideoPlayerActivity extends AppCompatActivity
 
   private Handler handler;
 
+  private View decorView;
+
   @Override
   protected void onCreate(@Nullable Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     Logger.d("[VideoPlayerActivity] onCreate");
     session = VoiceControlForPlexApplication.generateRandomString();
 
-    final View decorView = getWindow().getDecorView();
-    decorView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+    feedback = new Feedback(this);
 
+    decorView = getWindow().getDecorView();
+    decorView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
 
     final DisplayMetrics metrics = new DisplayMetrics();
     Display display = getWindowManager().getDefaultDisplay();
@@ -111,11 +118,6 @@ public class VideoPlayerActivity extends AppCompatActivity
       e3.printStackTrace();
     }
 
-
-//    DisplayMetrics displaymetrics = new DisplayMetrics();
-//    getWindowManager().getDefaultDisplay().getRealMetrics(displaymetrics);
-//    screenWidth = displaymetrics.widthPixels;
-//    screenHeight = displaymetrics.heightPixels;
 
     handler = new Handler();
 
@@ -177,6 +179,8 @@ public class VideoPlayerActivity extends AppCompatActivity
         videoHolder.addCallback(VideoPlayerActivity.this);
 
         player = new MediaPlayer();
+        player.setOnErrorListener(VideoPlayerActivity.this);
+        player.setOnCompletionListener(VideoPlayerActivity.this);
         controller = new VideoControllerView(VideoPlayerActivity.this);
 
         setControllerPoster();
@@ -329,6 +333,23 @@ public class VideoPlayerActivity extends AppCompatActivity
     videoIsPlayingCheck.run();
   }
   // End MediaPlayer.OnPreparedListener
+
+  // Implement MediaPlayer.OnErrorListener
+
+  @Override
+  public boolean onError(MediaPlayer mp, int what, int extra) {
+    Logger.d("Media Player Error: %d", what);
+    if(what == MediaPlayer.MEDIA_ERROR_UNKNOWN) {
+      feedback.e(R.string.unknown_error_occurred);
+    } else if (what == MediaPlayer.MEDIA_ERROR_SERVER_DIED) {
+      feedback.e(R.string.error_server_died);
+    }
+    return false;
+  }
+
+  // End MediaPlayer.OnErrorListener
+
+
 
   @Override
   protected void onStop() {
@@ -546,5 +567,19 @@ public class VideoPlayerActivity extends AppCompatActivity
     if(player != null)
       player.stop();
     super.onBackPressed();
+  }
+
+  @Override
+  public void onWindowFocusChanged(boolean hasFocus) {
+    super.onWindowFocusChanged(hasFocus);
+    if (hasFocus) {
+      decorView.setSystemUiVisibility(
+              View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                      | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                      | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                      | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                      | View.SYSTEM_UI_FLAG_FULLSCREEN
+                      | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+    }
   }
 }
