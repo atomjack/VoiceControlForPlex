@@ -1,7 +1,5 @@
 package com.atomjack.vcfp.fragments;
 
-import android.app.AlertDialog;
-import android.app.Dialog;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.res.Configuration;
@@ -20,13 +18,11 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
-import android.widget.AdapterView;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.SeekBar;
-import android.widget.Spinner;
 import android.widget.TextView;
 
 import com.atomjack.shared.Intent;
@@ -35,10 +31,10 @@ import com.atomjack.shared.PlayerState;
 import com.atomjack.shared.Preferences;
 import com.atomjack.shared.WearConstants;
 import com.atomjack.vcfp.Feedback;
+import com.atomjack.vcfp.MediaOptionsDialog;
 import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.activities.MainActivity;
-import com.atomjack.vcfp.adapters.StreamAdapter;
 import com.atomjack.vcfp.interfaces.ActiveConnectionHandler;
 import com.atomjack.vcfp.interfaces.ActivityListener;
 import com.atomjack.vcfp.interfaces.InputStreamHandler;
@@ -59,7 +55,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
 import java.security.SecureRandom;
-import java.util.List;
 
 import cz.fhucho.android.util.SimpleDiskCache;
 
@@ -91,7 +86,7 @@ public abstract class PlayerFragment extends Fragment
 
   protected GestureDetectorCompat mDetector;
 
-  protected Dialog mediaOptionsDialog;
+  protected MediaOptionsDialog mediaOptionsDialog;
 
   private int layout = -1;
 
@@ -574,64 +569,7 @@ public abstract class PlayerFragment extends Fragment
     if(nowPlayingMedia == null) {
       return;
     }
-
-    final List<Stream> audioStreams = nowPlayingMedia.getStreams(Stream.AUDIO);
-    final List<Stream> subtitleStreams = nowPlayingMedia.getStreams(Stream.SUBTITLE);
-
-    AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-    View layout = inflater.inflate(R.layout.media_options_dialog, null);
-
-    if(subtitleStreams.size() > 0) {
-      Spinner subtitlesSpinner = (Spinner) layout.findViewById(R.id.subtitlesSpinner);
-      StreamAdapter subtitlesStreamAdapter = new StreamAdapter(getActivity(), android.R.layout.simple_spinner_dropdown_item, subtitleStreams);
-      subtitlesSpinner.setAdapter(subtitlesStreamAdapter);
-      subtitlesSpinner.setSelection(subtitleStreams.indexOf(nowPlayingMedia.getActiveStream(Stream.SUBTITLE)), false);
-
-      subtitlesSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-        @Override
-        public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-          Stream stream = subtitleStreams.get(position);
-          if (!stream.isActive()) {
-            setStream(stream);
-            nowPlayingMedia.setActiveStream(stream);
-          }
-        }
-
-        @Override
-        public void onNothingSelected(AdapterView<?> parent) {
-        }
-      });
-    } else {
-      layout.findViewById(R.id.subtitlesRow).setVisibility(View.GONE);
-    }
-
-    if(audioStreams.size() > 0) {
-      Spinner audioSpinner = (Spinner) layout.findViewById(R.id.audioSpinner);
-      StreamAdapter audioStreamAdapter = new StreamAdapter(getActivity(), android.R.layout.simple_spinner_dropdown_item, audioStreams);
-      audioSpinner.setAdapter(audioStreamAdapter);
-      audioSpinner.setSelection(audioStreams.indexOf(nowPlayingMedia.getActiveStream(Stream.AUDIO)), false);
-
-      audioSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-        @Override
-        public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-          Stream stream = audioStreams.get(position);
-          if (!stream.isActive()) {
-            setStream(stream);
-            nowPlayingMedia.setActiveStream(stream);
-          }
-        }
-
-        @Override
-        public void onNothingSelected(AdapterView<?> parent) {
-        }
-      });
-    } else {
-      // For some reason, no audio streams found, so hide the row
-      layout.findViewById(R.id.audioRow).setVisibility(View.GONE);
-    }
-
-    builder.setView(layout);
-    mediaOptionsDialog = builder.create();
+    mediaOptionsDialog = new MediaOptionsDialog(getActivity(), nowPlayingMedia, client);
     mediaOptionsDialog.show();
   }
 

@@ -12,8 +12,6 @@ import android.content.DialogInterface;
 import android.content.IntentFilter;
 import android.content.pm.PackageInfo;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -21,7 +19,6 @@ import android.support.v4.app.NotificationCompat;
 import android.support.v7.media.MediaRouter;
 import android.text.TextUtils;
 import android.view.View;
-import android.widget.LinearLayout;
 import android.widget.RemoteViews;
 
 import com.android.vending.billing.IabBroadcastReceiver;
@@ -340,9 +337,10 @@ public class VoiceControlForPlexApplication extends Application
 
   }
 
-  public void fetchMediaThumb(final PlexMedia media, final int width, final int height, final String whichThumb, final BitmapHandler bitmapHandler) {
-    Logger.d("Fetching media thumb for %s at %dx%d with key %s", media.getTitle(), width, height, media.getImageKey(PlexMedia.IMAGE_KEY.LOCAL_VIDEO_BACKGROUND));
-    Bitmap bitmap = getCachedBitmap(media.getImageKey(PlexMedia.IMAGE_KEY.LOCAL_VIDEO_BACKGROUND));
+
+  public void fetchMediaThumb(final PlexMedia media, final int width, final int height, final String whichThumb, final String key, final BitmapHandler bitmapHandler) {
+    Logger.d("Fetching media thumb for %s at %dx%d with key %s", media.getTitle(), width, height, key);
+    Bitmap bitmap = getCachedBitmap(key);
     if(bitmap == null) {
       media.server.findServerConnection(new ActiveConnectionHandler() {
         @Override
@@ -353,9 +351,9 @@ public class VoiceControlForPlexApplication extends Application
               Logger.d("No cached bitmap found, fetching");
               InputStream is = media.getThumb(width, height, whichThumb);
               try {
-                Logger.d("Saving cached bitmap with key %s", media.getImageKey(PlexMedia.IMAGE_KEY.LOCAL_VIDEO_BACKGROUND));
-                mSimpleDiskCache.put(media.getImageKey(PlexMedia.IMAGE_KEY.LOCAL_VIDEO_BACKGROUND), is);
-                fetchMediaThumb(media, width, height, whichThumb, bitmapHandler);
+                Logger.d("Saving cached bitmap with key %s", key);
+                mSimpleDiskCache.put(key, is);
+                fetchMediaThumb(media, width, height, whichThumb, key, bitmapHandler);
               } catch (IOException e) {
                 e.printStackTrace();
               }

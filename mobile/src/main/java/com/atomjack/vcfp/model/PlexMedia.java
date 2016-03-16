@@ -28,7 +28,8 @@ public abstract class PlexMedia implements Parcelable {
     NOTIFICATION_THUMB_BIG,
     NOTIFICATION_THUMB_MUSIC,
     WEAR_BACKGROUND,
-    LOCAL_VIDEO_BACKGROUND
+    LOCAL_VIDEO_BACKGROUND,
+    LOCAL_VIDEO_THUMB
   }
 
   public final static Map<IMAGE_KEY, int[]> IMAGE_SIZES = new HashMap<IMAGE_KEY, int[]>() {

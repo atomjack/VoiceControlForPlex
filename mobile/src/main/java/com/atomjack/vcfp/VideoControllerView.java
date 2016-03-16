@@ -17,6 +17,7 @@
 package com.atomjack.vcfp;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.os.Handler;
 import android.os.Message;
 import android.util.AttributeSet;
@@ -95,8 +96,11 @@ public class VideoControllerView extends FrameLayout {
   private ImageButton         mNextButton;
   private ImageButton         mPrevButton;
   private ImageButton         mFullscreenButton;
+  private ImageButton         mMicButton;
+  private ImageButton         mMediaOptionsButton;
   private Handler             mHandler = new MessageHandler(this);
   private ImageView           mPoster;
+  private Bitmap              mPosterBitmap;
 
   public VideoControllerView(Context context, AttributeSet attrs) {
     super(context, attrs);
@@ -181,6 +185,16 @@ public class VideoControllerView extends FrameLayout {
       mFullscreenButton.setOnClickListener(mFullscreenListener);
     }
 
+    mMediaOptionsButton = (ImageButton) v.findViewById(R.id.mediaOptions);
+    if(mMediaOptionsButton != null) {
+      mMediaOptionsButton.setOnClickListener(mMediaOptionsListener);
+    }
+
+    mMicButton = (ImageButton) v.findViewById(R.id.mic);
+    if(mMicButton != null) {
+      mMicButton.setOnClickListener(mMicListener);
+    }
+
     mFfwdButton = (ImageButton) v.findViewById(R.id.ffwd);
     if (mFfwdButton != null) {
       mFfwdButton.setOnClickListener(mFfwdListener);
@@ -206,6 +220,10 @@ public class VideoControllerView extends FrameLayout {
     if (mPrevButton != null && !mFromXml && !mListenersSet) {
       mPrevButton.setVisibility(View.GONE);
     }
+
+    mPoster = (ImageView) v.findViewById(R.id.poster);
+    if(mPosterBitmap != null)
+      mPoster.setImageBitmap(mPosterBitmap);
 
     mProgress = (SeekBar) v.findViewById(R.id.mediacontroller_progress);
     if (mProgress != null) {
@@ -435,15 +453,31 @@ public class VideoControllerView extends FrameLayout {
     }
   };
 
+  private View.OnClickListener mMediaOptionsListener = new View.OnClickListener() {
+    @Override
+    public void onClick(View v) {
+      if(mPlayer != null)
+        mPlayer.doMediaOptions();
+    }
+  };
+
+  private View.OnClickListener mMicListener = new View.OnClickListener() {
+    @Override
+    public void onClick(View v) {
+      if(mPlayer != null)
+        mPlayer.doMic();
+    }
+  };
+
   public void updatePausePlay() {
     if (mRoot == null || mPauseButton == null || mPlayer == null) {
       return;
     }
 
     if (mPlayer.isPlaying()) {
-      mPauseButton.setImageResource(R.drawable.ic_media_pause);
+      mPauseButton.setImageResource(R.drawable.button_pause);
     } else {
-      mPauseButton.setImageResource(R.drawable.ic_media_play);
+      mPauseButton.setImageResource(R.drawable.button_play);
     }
   }
 
@@ -645,6 +679,8 @@ public class VideoControllerView extends FrameLayout {
     boolean canSeekForward();
     boolean isFullScreen();
     void    toggleFullScreen();
+    void    doMic();
+    void    doMediaOptions();
   }
 
   private static class MessageHandler extends Handler {
@@ -674,5 +710,11 @@ public class VideoControllerView extends FrameLayout {
           break;
       }
     }
+  }
+
+  public void setPoster(Bitmap bitmap) {
+    mPosterBitmap = bitmap;
+    if(mPoster != null)
+      mPoster.setImageBitmap(bitmap);
   }
 }

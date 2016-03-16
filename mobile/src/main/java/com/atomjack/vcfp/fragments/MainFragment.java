@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
 import android.speech.RecognizerIntent;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
@@ -14,10 +13,8 @@ import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
-import com.atomjack.shared.Logger;
 import com.atomjack.shared.Preferences;
 import com.atomjack.vcfp.R;
-import com.atomjack.vcfp.Utils;
 import com.atomjack.vcfp.VCFPHint;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.model.PlexClient;
@@ -26,7 +23,6 @@ import com.atomjack.vcfp.services.PlexSearchService;
 
 import java.math.BigInteger;
 import java.security.SecureRandom;
-import java.util.Random;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;

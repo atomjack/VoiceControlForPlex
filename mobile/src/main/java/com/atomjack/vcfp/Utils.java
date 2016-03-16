@@ -1,7 +1,10 @@
 package com.atomjack.vcfp;
 
+import android.content.Context;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.util.DisplayMetrics;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
@@ -207,5 +210,12 @@ public class Utils {
   public static int getRandomInt(int low, int high) {
     Random r = new Random();
     return r.nextInt(high - low) + low;
+  }
+
+  public static float convertDpToPixel(float dp, Context context){
+    Resources resources = context.getResources();
+    DisplayMetrics metrics = resources.getDisplayMetrics();
+    float px = dp * ((float)metrics.densityDpi / DisplayMetrics.DENSITY_DEFAULT);
+    return px;
   }
 }

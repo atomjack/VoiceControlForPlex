@@ -1,5 +1,6 @@
 package com.atomjack.vcfp.activities;
 
+import android.app.PendingIntent;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
@@ -8,8 +9,8 @@ import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
+import android.speech.RecognizerIntent;
 import android.support.annotation.Nullable;
-import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.DisplayMetrics;
 import android.view.MotionEvent;
@@ -17,12 +18,11 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.widget.FrameLayout;
-import android.widget.LinearLayout;
-import android.widget.RelativeLayout;
 
 import com.atomjack.shared.Logger;
 import com.atomjack.shared.PlayerState;
 import com.atomjack.shared.Preferences;
+import com.atomjack.vcfp.MediaOptionsDialog;
 import com.atomjack.vcfp.PlexHeaders;
 import com.atomjack.vcfp.QueryString;
 import com.atomjack.vcfp.R;
@@ -31,9 +31,16 @@ import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.interfaces.ActiveConnectionHandler;
 import com.atomjack.vcfp.interfaces.BitmapHandler;
 import com.atomjack.vcfp.model.Connection;
+import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexVideo;
+import com.atomjack.vcfp.model.Stream;
 import com.atomjack.vcfp.net.PlexHttpClient;
+import com.atomjack.vcfp.services.PlexSearchService;
+import com.google.android.libraries.cast.companionlibrary.utils.Utils;
+
+import java.math.BigInteger;
+import java.security.SecureRandom;
 
 public class VideoPlayerActivity extends AppCompatActivity
         implements MediaPlayer.OnCompletionListener,
@@ -77,7 +84,7 @@ public class VideoPlayerActivity extends AppCompatActivity
       resume = getIntent().getBooleanExtra(com.atomjack.shared.Intent.EXTRA_RESUME, false);
 
       setContentView(R.layout.video_player_loading);
-      VoiceControlForPlexApplication.getInstance().fetchMediaThumb(media, screenWidth, screenHeight, media.art, new BitmapHandler() {
+      VoiceControlForPlexApplication.getInstance().fetchMediaThumb(media, screenWidth, screenHeight, media.art, media.getImageKey(PlexMedia.IMAGE_KEY.LOCAL_VIDEO_BACKGROUND), new BitmapHandler() {
         @Override
         public void onSuccess(Bitmap bitmap) {
           final BitmapDrawable bitmapDrawable = new BitmapDrawable(getResources(), bitmap);
@@ -111,6 +118,8 @@ public class VideoPlayerActivity extends AppCompatActivity
           player = new MediaPlayer();
           controller = new VideoControllerView(VideoPlayerActivity.this);
 
+          setControllerPoster();
+
           try {
             player.setAudioStreamType(AudioManager.STREAM_MUSIC);
             player.setDataSource(VideoPlayerActivity.this, Uri.parse(url));
@@ -133,7 +142,19 @@ public class VideoPlayerActivity extends AppCompatActivity
 
   }
 
-
+  private void setControllerPoster() {
+    VoiceControlForPlexApplication.getInstance().fetchMediaThumb(media,
+            Utils.convertDpToPixel(this, getResources().getDimension(R.dimen.video_player_poster_width)),
+            Utils.convertDpToPixel(this, getResources().getDimension(R.dimen.video_player_poster_height)),
+            media.thumb,
+            media.getImageKey(PlexMedia.IMAGE_KEY.LOCAL_VIDEO_THUMB),
+            new BitmapHandler() {
+      @Override
+      public void onSuccess(Bitmap bitmap) {
+        controller.setPoster(bitmap);
+      }
+    });
+  }
 
   @Override
   public boolean onTouchEvent(MotionEvent event) {
@@ -352,6 +373,46 @@ public class VideoPlayerActivity extends AppCompatActivity
   public void toggleFullScreen() {
 
   }
+
+  @Override
+  public void doMic() {
+    if(media.server != null) {
+      pause();
+
+      android.content.Intent serviceIntent = new android.content.Intent(this, PlexSearchService.class);
+
+      serviceIntent.putExtra(com.atomjack.shared.Intent.EXTRA_SERVER, VoiceControlForPlexApplication.gsonWrite.toJson(media.server));
+      serviceIntent.putExtra(com.atomjack.shared.Intent.EXTRA_CLIENT, VoiceControlForPlexApplication.gsonWrite.toJson(PlexClient.getLocalPlaybackClient()));
+      serviceIntent.putExtra(com.atomjack.shared.Intent.EXTRA_RESUME, resume);
+      serviceIntent.putExtra(com.atomjack.shared.Intent.EXTRA_FROM_MIC, true);
+
+      SecureRandom random = new SecureRandom();
+      serviceIntent.setData(Uri.parse(new BigInteger(130, random).toString(32)));
+      PendingIntent resultsPendingIntent = PendingIntent.getService(this, 0, serviceIntent, PendingIntent.FLAG_ONE_SHOT);
+
+      android.content.Intent listenerIntent = new android.content.Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+      listenerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+      listenerIntent.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, "voice.recognition.test");
+      listenerIntent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 5);
+      listenerIntent.putExtra(RecognizerIntent.EXTRA_RESULTS_PENDINGINTENT, resultsPendingIntent);
+      listenerIntent.putExtra(RecognizerIntent.EXTRA_PROMPT, getResources().getString(R.string.voice_prompt));
+
+      startActivity(listenerIntent);
+    }
+  }
+
+  @Override
+  public void doMediaOptions() {
+    MediaOptionsDialog mediaOptionsDialog = new MediaOptionsDialog(this, media, PlexClient.getLocalPlaybackClient());
+    mediaOptionsDialog.setLocalStreamChangeListener(new MediaOptionsDialog.LocalStreamChangeListener() {
+      @Override
+      public void setStream(Stream stream) {
+        Logger.d("Setting stream %s", stream.getTitle());
+      }
+    });
+    mediaOptionsDialog.show();
+  }
+
   // End VideoMediaController.MediaPlayerControl
 
   private Runnable videoIsPlayingCheck = new Runnable() {
@@ -361,17 +422,6 @@ public class VideoPlayerActivity extends AppCompatActivity
         Logger.d("Video is playing");
         currentState = PlayerState.PLAYING;
         handler.postDelayed(playerProgressRunnable, 1000);
-        /*
-//        FrameLayout videoSurfaceContainer = (FrameLayout) findViewById(R.id.videoSurfaceContainer);
-//        videoSurfaceContainer.setVisibility(View.VISIBLE);
-        LinearLayout linearLayout = (LinearLayout)findViewById(R.id.video_container);
-        if(android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.JELLY_BEAN) {
-          linearLayout.setBackgroundDrawable(null);
-        } else {
-          linearLayout.setBackground(null);
-        }
-//        linearLayout.setBackgroundColor(ContextCompat.getColor(VideoPlayerActivity.this, R.color.black));
-*/
       } else {
         handler.postDelayed(videoIsPlayingCheck, 100);
       }

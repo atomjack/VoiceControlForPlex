@@ -12,5 +12,7 @@
     <dimen name="notification_large_icon_height_music">128dp</dimen>
     <dimen name="notification_large_icon_height">128dp</dimen>
     <dimen name="fab_margin">16dp</dimen>
+    <dimen name="video_player_poster_width">120dp</dimen>
+    <dimen name="video_player_poster_height">80dp</dimen>
 
 </resources>
