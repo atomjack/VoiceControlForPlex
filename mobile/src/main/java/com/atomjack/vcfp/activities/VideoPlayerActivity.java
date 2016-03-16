@@ -77,8 +77,7 @@ public class VideoPlayerActivity extends AppCompatActivity
       media.server.findServerConnection(new ActiveConnectionHandler() {
         @Override
         public void onSuccess(Connection connection) {
-          // TODO: Use offset correctly. Set resume in plexsearchservice and pass through intent
-          String url = getTranscodeUrl(media, connection, transientToken, 0); //media.viewOffset != null && resume ? Integer.parseInt(media.viewOffset) / 1000 : 0);
+          String url = getTranscodeUrl(media, connection, transientToken, 0);
           Logger.d("Using url %s", url);
 
           setContentView(R.layout.video_player);
@@ -233,10 +232,10 @@ public class VideoPlayerActivity extends AppCompatActivity
     }
     videoSurface.setLayoutParams(lp);
 
-//    if(resume && media.viewOffset != null) {
-//      Logger.d("Seeking to %d before playing", Integer.parseInt(media.viewOffset) / 1000);
-//      player.seekTo(Integer.parseInt(media.viewOffset) / 1000);
-//    }
+    if(resume && media.viewOffset != null) {
+      Logger.d("Seeking to %d before playing", Integer.parseInt(media.viewOffset) / 1000);
+      player.seekTo(Integer.parseInt(media.viewOffset));
+    }
     player.start();
     player.setOnCompletionListener(this);
     player.setOnInfoListener(this);
