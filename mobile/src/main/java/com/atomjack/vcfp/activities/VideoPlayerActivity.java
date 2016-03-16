@@ -121,6 +121,9 @@ public class VideoPlayerActivity extends AppCompatActivity
 
     if(getIntent().getAction() != null && getIntent().getAction().equals(ACTION_PLAY_LOCAL)) {
       media = getIntent().getParcelableExtra(com.atomjack.shared.Intent.EXTRA_MEDIA);
+      // Overwrite the media's server if it exists (so it gets the current activeConnection)
+      if(VoiceControlForPlexApplication.servers.containsKey(media.server.name))
+        media.server = VoiceControlForPlexApplication.servers.get(media.server.name);
       transientToken = getIntent().getStringExtra(com.atomjack.shared.Intent.EXTRA_TRANSIENT_TOKEN);
       resume = getIntent().getBooleanExtra(com.atomjack.shared.Intent.EXTRA_RESUME, false);
 
@@ -134,7 +137,6 @@ public class VideoPlayerActivity extends AppCompatActivity
           handler.post(new Runnable() {
             @Override
             public void run() {
-              // TODO: Force the loading image to attempt to load before starting playback?
               if(loadingLayout != null) {
                 if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.JELLY_BEAN) {
                   loadingLayout.setBackgroundDrawable(bitmapDrawable);
@@ -142,49 +144,59 @@ public class VideoPlayerActivity extends AppCompatActivity
                   loadingLayout.setBackground(bitmapDrawable);
                 }
               }
+              loadVideo();
             }
           });
         }
-      });
-
-
-      media.server.findServerConnection(new ActiveConnectionHandler() {
-        @Override
-        public void onSuccess(Connection connection) {
-          String url = getTranscodeUrl(media, connection, transientToken, 0);
-          Logger.d("Using url %s", url);
-
-          setContentView(R.layout.video_player);
-
-          videoSurface = (SurfaceView) findViewById(R.id.videoSurface);
-          SurfaceHolder videoHolder = videoSurface.getHolder();
-          videoHolder.addCallback(VideoPlayerActivity.this);
-
-          player = new MediaPlayer();
-          controller = new VideoControllerView(VideoPlayerActivity.this);
-
-          setControllerPoster();
-
-          try {
-            player.setAudioStreamType(AudioManager.STREAM_MUSIC);
-            player.setDataSource(VideoPlayerActivity.this, Uri.parse(url));
-            player.setOnPreparedListener(VideoPlayerActivity.this);
-
-          } catch (Exception e) {
-            e.printStackTrace();
-            // TODO: Handle
-          }
-        }
 
         @Override
-        public void onFailure(int statusCode) {
-          // TODO: Handle failure. Feedback?
+        public void onFailure() {
+          loadVideo();
         }
       });
+
+
+
     } else {
       finish();
     }
 
+  }
+
+  private void loadVideo() {
+    media.server.findServerConnection(new ActiveConnectionHandler() {
+      @Override
+      public void onSuccess(Connection connection) {
+        String url = getTranscodeUrl(media, connection, transientToken, 0);
+        Logger.d("Using url %s", url);
+
+        setContentView(R.layout.video_player);
+
+        videoSurface = (SurfaceView) findViewById(R.id.videoSurface);
+        SurfaceHolder videoHolder = videoSurface.getHolder();
+        videoHolder.addCallback(VideoPlayerActivity.this);
+
+        player = new MediaPlayer();
+        controller = new VideoControllerView(VideoPlayerActivity.this);
+
+        setControllerPoster();
+
+        try {
+          player.setAudioStreamType(AudioManager.STREAM_MUSIC);
+          player.setDataSource(VideoPlayerActivity.this, Uri.parse(url));
+          player.setOnPreparedListener(VideoPlayerActivity.this);
+
+        } catch (Exception e) {
+          e.printStackTrace();
+          // TODO: Handle
+        }
+      }
+
+      @Override
+      public void onFailure(int statusCode) {
+        // TODO: Handle failure. Feedback?
+      }
+    });
   }
 
   private void setControllerPoster() {
@@ -531,7 +543,8 @@ public class VideoPlayerActivity extends AppCompatActivity
   public void onBackPressed() {
     handler.removeCallbacks(playerProgressRunnable);
     PlexHttpClient.reportProgressToServer(media, getCurrentPosition(), PlayerState.STOPPED);
-    player.stop();
+    if(player != null)
+      player.stop();
     super.onBackPressed();
   }
 }

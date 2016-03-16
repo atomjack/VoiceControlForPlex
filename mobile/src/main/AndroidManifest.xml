@@ -43,7 +43,7 @@
             </intent-filter>
         </activity>
         <activity android:name=".activities.VideoPlayerActivity"
-                  android:screenOrientation="landscape"
+                  android:screenOrientation="sensorLandscape"
                   android:theme="@style/Theme.AppCompat.Light.NoActionBar.FullScreen">
         </activity>
         <service android:name=".services.PlexSearchService"
