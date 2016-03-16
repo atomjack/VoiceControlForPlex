@@ -182,14 +182,14 @@ public class PlexServer extends PlexDevice {
 	};
 
   public void findServerConnection(final ActiveConnectionHandler activeConnectionHandler) {
-    SimpleDateFormat simpleDateFormat = new SimpleDateFormat("EEEE, MMMM d, yyyy 'at' h:mm:ss a");
-     Logger.d("[PlexServer] finding server connection for %s, current active connection expires: %s, now: %s",
-             name,
-             activeConnectionExpires != null ? simpleDateFormat.format(activeConnectionExpires.getTime()) : null,
-             simpleDateFormat.format(Calendar.getInstance().getTime()));
     if(activeConnectionExpires != null && !activeConnectionExpires.before(Calendar.getInstance())) {
       activeConnectionHandler.onSuccess(activeConnection);
     } else {
+      SimpleDateFormat simpleDateFormat = new SimpleDateFormat("EEEE, MMMM d, yyyy 'at' h:mm:ss a");
+      Logger.d("[PlexServer] finding server connection for %s, current active connection expires: %s, now: %s",
+              name,
+              activeConnectionExpires != null ? simpleDateFormat.format(activeConnectionExpires.getTime()) : null,
+              simpleDateFormat.format(Calendar.getInstance().getTime()));
       findServerConnection(0, activeConnectionHandler);
     }
   }

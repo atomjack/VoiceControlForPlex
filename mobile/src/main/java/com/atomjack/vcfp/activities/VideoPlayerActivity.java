@@ -18,6 +18,7 @@ import android.view.SurfaceView;
 import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 
 import com.atomjack.shared.Logger;
 import com.atomjack.shared.PlayerState;
@@ -74,6 +75,27 @@ public class VideoPlayerActivity extends AppCompatActivity
       media = getIntent().getParcelableExtra(com.atomjack.shared.Intent.EXTRA_MEDIA);
       transientToken = getIntent().getStringExtra(com.atomjack.shared.Intent.EXTRA_TRANSIENT_TOKEN);
       resume = getIntent().getBooleanExtra(com.atomjack.shared.Intent.EXTRA_RESUME, false);
+
+      setContentView(R.layout.video_player_loading);
+      VoiceControlForPlexApplication.getInstance().fetchMediaThumb(media, screenWidth, screenHeight, media.art, new BitmapHandler() {
+        @Override
+        public void onSuccess(Bitmap bitmap) {
+          final BitmapDrawable bitmapDrawable = new BitmapDrawable(getResources(), bitmap);
+          final View loadingLayout = findViewById(R.id.videoPlayerLoadingBackground);
+          handler.post(new Runnable() {
+            @Override
+            public void run() {
+              if(android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.JELLY_BEAN) {
+                loadingLayout.setBackgroundDrawable(bitmapDrawable);
+              } else {
+                loadingLayout.setBackground(bitmapDrawable);
+              }
+            }
+          });
+        }
+      });
+
+
       media.server.findServerConnection(new ActiveConnectionHandler() {
         @Override
         public void onSuccess(Connection connection) {
@@ -81,26 +103,6 @@ public class VideoPlayerActivity extends AppCompatActivity
           Logger.d("Using url %s", url);
 
           setContentView(R.layout.video_player);
-/*
-          VoiceControlForPlexApplication.getInstance().fetchMediaThumb(media, screenWidth, screenHeight, media.art, new BitmapHandler() {
-            @Override
-            public void onSuccess(Bitmap bitmap) {
-              final BitmapDrawable bitmapDrawable = new BitmapDrawable(getResources(), bitmap);
-              final LinearLayout linearLayout = (LinearLayout)findViewById(R.id.video_container);
-              handler.post(new Runnable() {
-                @Override
-                public void run() {
-                  if(android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.JELLY_BEAN) {
-                    linearLayout.setBackgroundDrawable(bitmapDrawable);
-                  } else {
-                    linearLayout.setBackground(bitmapDrawable);
-                  }
-                }
-              });
-            }
-          });
-*/
-
 
           videoSurface = (SurfaceView) findViewById(R.id.videoSurface);
           SurfaceHolder videoHolder = videoSurface.getHolder();
@@ -131,9 +133,16 @@ public class VideoPlayerActivity extends AppCompatActivity
 
   }
 
+
+
   @Override
   public boolean onTouchEvent(MotionEvent event) {
-    controller.show();
+    if(controller != null && event.getAction() == MotionEvent.ACTION_UP) {
+      if(controller.isShowing())
+        controller.hide();
+      else
+        controller.show();
+    }
     return false;
   }
 
@@ -161,8 +170,6 @@ public class VideoPlayerActivity extends AppCompatActivity
     qs.add("Accept-Language", "en");
     qs.add("X-Plex-Client-Profile-Extra", "");
     qs.add("X-Plex-Chunked", "1");
-    // TODO: CHANGE THIS!!!
-    qs.add("X-Plex-Username", "atomjack");
 
     qs.add("protocol", "http");
     qs.add("offset", Integer.toString(offset));
@@ -298,7 +305,7 @@ public class VideoPlayerActivity extends AppCompatActivity
   @Override
   public int getCurrentPosition() {
     try {
-      return player.isPlaying() ? player.getCurrentPosition() : 0;
+      return player.getCurrentPosition();
     } catch (Exception e) {}
     return 0;
   }
@@ -374,7 +381,6 @@ public class VideoPlayerActivity extends AppCompatActivity
   private Runnable playerProgressRunnable = new Runnable() {
     @Override
     public void run() {
-      Logger.d("Reporting state %s", currentState);
       PlexHttpClient.reportProgressToServer(media, getCurrentPosition(), currentState);
       handler.postDelayed(playerProgressRunnable, 1000);
     }

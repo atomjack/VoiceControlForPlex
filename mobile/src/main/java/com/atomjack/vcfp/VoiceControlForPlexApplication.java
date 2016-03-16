@@ -39,6 +39,7 @@ import com.atomjack.shared.UriDeserializer;
 import com.atomjack.shared.UriSerializer;
 import com.atomjack.shared.WearConstants;
 import com.atomjack.vcfp.activities.MainActivity;
+import com.atomjack.vcfp.interfaces.ActiveConnectionHandler;
 import com.atomjack.vcfp.interfaces.BitmapHandler;
 import com.atomjack.vcfp.model.Connection;
 import com.atomjack.vcfp.model.MediaContainer;
@@ -343,24 +344,34 @@ public class VoiceControlForPlexApplication extends Application
     Logger.d("Fetching media thumb for %s at %dx%d with key %s", media.getTitle(), width, height, media.getImageKey(PlexMedia.IMAGE_KEY.LOCAL_VIDEO_BACKGROUND));
     Bitmap bitmap = getCachedBitmap(media.getImageKey(PlexMedia.IMAGE_KEY.LOCAL_VIDEO_BACKGROUND));
     if(bitmap == null) {
-      new AsyncTask<Void, Void, Void>() {
+      media.server.findServerConnection(new ActiveConnectionHandler() {
         @Override
-        protected Void doInBackground(Void... params) {
-          Logger.d("No cached bitmap found, fetching");
-          InputStream is = media.getThumb(width, height, whichThumb);
-//          Bitmap bitmap = BitmapFactory.decodeStream(is);
-          try {
-            Logger.d("Saving cached bitmap with key %s", media.getImageKey(PlexMedia.IMAGE_KEY.LOCAL_VIDEO_BACKGROUND));
-            mSimpleDiskCache.put(media.getImageKey(PlexMedia.IMAGE_KEY.LOCAL_VIDEO_BACKGROUND), is);
-            fetchMediaThumb(media, width, height, whichThumb, bitmapHandler);
-          } catch (IOException e) {
-            e.printStackTrace();
-          }
-//          if(bitmapHandler != null)
-//            bitmapHandler.onSuccess(bitmap);
-          return null;
+        public void onSuccess(Connection connection) {
+          new AsyncTask<Void, Void, Void>() {
+            @Override
+            protected Void doInBackground(Void... params) {
+              Logger.d("No cached bitmap found, fetching");
+              InputStream is = media.getThumb(width, height, whichThumb);
+              try {
+                Logger.d("Saving cached bitmap with key %s", media.getImageKey(PlexMedia.IMAGE_KEY.LOCAL_VIDEO_BACKGROUND));
+                mSimpleDiskCache.put(media.getImageKey(PlexMedia.IMAGE_KEY.LOCAL_VIDEO_BACKGROUND), is);
+                fetchMediaThumb(media, width, height, whichThumb, bitmapHandler);
+              } catch (IOException e) {
+                e.printStackTrace();
+              }
+              return null;
+            }
+          }.execute();
         }
-      }.execute();
+
+        @Override
+        public void onFailure(int statusCode) {
+
+        }
+      });
+
+
+
     } else {
       Logger.d("Found cached bitmap");
       if(bitmapHandler != null)
