@@ -187,10 +187,12 @@ public abstract class PlexMedia implements Parcelable {
 
       List<Stream> ss = new ArrayList<>();
       Stream none = Stream.getNoneSubtitleStream();
+      none.partId = p.id;
       for (int i = 0; i < p.streams.size(); i++) {
         if (p.streams.get(i).streamType == Stream.SUBTITLE && !ss.contains(none)) {
           ss.add(none);
         }
+        p.streams.get(i).partId = p.id;
         ss.add(p.streams.get(i));
       }
       boolean subsActive = false;

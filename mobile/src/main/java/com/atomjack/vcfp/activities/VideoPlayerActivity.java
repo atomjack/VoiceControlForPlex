@@ -13,6 +13,7 @@ import android.speech.RecognizerIntent;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.util.DisplayMetrics;
+import android.view.Display;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -39,6 +40,8 @@ import com.atomjack.vcfp.net.PlexHttpClient;
 import com.atomjack.vcfp.services.PlexSearchService;
 import com.google.android.libraries.cast.companionlibrary.utils.Utils;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
@@ -71,10 +74,47 @@ public class VideoPlayerActivity extends AppCompatActivity
     Logger.d("[VideoPlayerActivity] onCreate");
     session = VoiceControlForPlexApplication.generateRandomString();
 
-    DisplayMetrics displaymetrics = new DisplayMetrics();
-    getWindowManager().getDefaultDisplay().getMetrics(displaymetrics);
-    screenWidth = displaymetrics.widthPixels;
-    screenHeight = displaymetrics.heightPixels;
+    final View decorView = getWindow().getDecorView();
+    decorView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+
+
+    final DisplayMetrics metrics = new DisplayMetrics();
+    Display display = getWindowManager().getDefaultDisplay();
+    Method mGetRawH = null, mGetRawW = null;
+    try {
+      // For JellyBean 4.2 (API 17) and onward
+      if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR1) {
+        display.getRealMetrics(metrics);
+
+        screenWidth = metrics.widthPixels;
+        screenHeight = metrics.heightPixels;
+      } else {
+        mGetRawH = Display.class.getMethod("getRawHeight");
+        mGetRawW = Display.class.getMethod("getRawWidth");
+
+        try {
+          screenWidth = (Integer) mGetRawW.invoke(display);
+          screenHeight = (Integer) mGetRawH.invoke(display);
+        } catch (IllegalArgumentException e) {
+          // TODO Auto-generated catch block
+          e.printStackTrace();
+        } catch (IllegalAccessException e) {
+          // TODO Auto-generated catch block
+          e.printStackTrace();
+        } catch (InvocationTargetException e) {
+          // TODO Auto-generated catch block
+          e.printStackTrace();
+        }
+      }
+    } catch (NoSuchMethodException e3) {
+      e3.printStackTrace();
+    }
+
+
+//    DisplayMetrics displaymetrics = new DisplayMetrics();
+//    getWindowManager().getDefaultDisplay().getRealMetrics(displaymetrics);
+//    screenWidth = displaymetrics.widthPixels;
+//    screenHeight = displaymetrics.heightPixels;
 
     handler = new Handler();
 
@@ -84,6 +124,7 @@ public class VideoPlayerActivity extends AppCompatActivity
       resume = getIntent().getBooleanExtra(com.atomjack.shared.Intent.EXTRA_RESUME, false);
 
       setContentView(R.layout.video_player_loading);
+
       VoiceControlForPlexApplication.getInstance().fetchMediaThumb(media, screenWidth, screenHeight, media.art, media.getImageKey(PlexMedia.IMAGE_KEY.LOCAL_VIDEO_BACKGROUND), new BitmapHandler() {
         @Override
         public void onSuccess(Bitmap bitmap) {
@@ -258,6 +299,8 @@ public class VideoPlayerActivity extends AppCompatActivity
       lp.width = (int) (videoProportion * (float) screenHeight);
       lp.height = screenHeight;
     }
+    Logger.d("Setting width/height to %d/%d", lp.width, lp.height);
+    Logger.d("Setting screen width/height to %d/%d", screenWidth, screenHeight);
     videoSurface.setLayoutParams(lp);
 
     if(resume && media.viewOffset != null) {
@@ -406,8 +449,34 @@ public class VideoPlayerActivity extends AppCompatActivity
     MediaOptionsDialog mediaOptionsDialog = new MediaOptionsDialog(this, media, PlexClient.getLocalPlaybackClient());
     mediaOptionsDialog.setLocalStreamChangeListener(new MediaOptionsDialog.LocalStreamChangeListener() {
       @Override
-      public void setStream(Stream stream) {
+      public void setStream(final Stream stream) {
         Logger.d("Setting stream %s", stream.getTitle());
+        PlexHttpClient.setStreamActive(media, stream, new Runnable() {
+          @Override
+          public void run() {
+            media.server.findServerConnection(new ActiveConnectionHandler() {
+              @Override
+              public void onSuccess(Connection connection) {
+                media.setActiveStream(stream);
+                player.stop();
+                String url = getTranscodeUrl(media, connection, transientToken, 0);
+                try {
+                  player.reset();
+                  player.setDataSource(VideoPlayerActivity.this, Uri.parse(url));
+                  player.setOnPreparedListener(VideoPlayerActivity.this);
+                  player.prepareAsync();
+                } catch (Exception e) {
+                  e.printStackTrace();
+                }
+              }
+
+              @Override
+              public void onFailure(int statusCode) {
+
+              }
+            });
+          }
+        });
       }
     });
     mediaOptionsDialog.show();

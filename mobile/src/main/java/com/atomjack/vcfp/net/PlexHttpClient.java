@@ -22,6 +22,7 @@ import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexResponse;
 import com.atomjack.vcfp.model.PlexServer;
 import com.atomjack.vcfp.model.PlexUser;
+import com.atomjack.vcfp.model.Stream;
 import com.squareup.okhttp.Interceptor;
 import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
@@ -42,6 +43,7 @@ import retrofit.SimpleXmlConverterFactory;
 import retrofit.http.GET;
 import retrofit.http.Headers;
 import retrofit.http.POST;
+import retrofit.http.PUT;
 import retrofit.http.Path;
 import retrofit.http.Query;
 import retrofit.http.QueryMap;
@@ -153,6 +155,18 @@ public class PlexHttpClient
                                               @retrofit.http.Header(PlexHeaders.XPlexDeviceName) String deviceName,
                                               @retrofit.http.Header(PlexHeaders.XPlexPlatform) String platform,
                                               @retrofit.http.Header(PlexHeaders.XPlexProduct) String product);
+
+    @PUT("/library/parts/{part_id}")
+    Call<PlexResponse> setSubtitleStreamActive(@Path(value="part_id", encoded = true) String partId,
+                                               @Query("subtitleStreamID") String streamId,
+                                               @Query(PlexHeaders.XPlexToken) String token);
+
+    @PUT("/library/parts/{part_id}")
+    Call<PlexResponse> setAudioStreamActive(@Path(value="part_id", encoded = true) String partId,
+                                            @Query("audioStreamID") String streamId,
+                                            @Query(PlexHeaders.XPlexToken) String token);
+
+
   }
 
   public static void getThumb(String url, final InputStreamHandler inputStreamHandler) {
@@ -933,7 +947,42 @@ public class PlexHttpClient
         // TODO: Handle
       }
     });
+  }
 
+  public static void setStreamActive(final PlexMedia media, final Stream stream, final Runnable onFinish) {
+    media.server.findServerConnection(new ActiveConnectionHandler() {
+      @Override
+      public void onSuccess(Connection connection) {
+        PlexHttpService service = getService(connection, true);
+        Call<PlexResponse> call = null;
+        if(stream.streamType == Stream.SUBTITLE) {
+          call = service.setSubtitleStreamActive(stream.partId, stream.id, media.server.accessToken);
+        } else if(stream.streamType == Stream.AUDIO) {
+          call = service.setAudioStreamActive(stream.partId, stream.id, media.server.accessToken);
+        }
+        if(call != null) {
+          call.enqueue(new Callback<PlexResponse>() {
+            @Override
+            public void onResponse(Response<PlexResponse> response) {
+              Logger.d("set stream done");
+              if(onFinish != null && response.body().code == 200)
+                onFinish.run();
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+
+            }
+          });
+        }
+
+      }
+
+      @Override
+      public void onFailure(int statusCode) {
+
+      }
+    });
   }
 }
 

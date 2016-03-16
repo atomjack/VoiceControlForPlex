@@ -25,6 +25,7 @@ public class Stream implements Parcelable {
   private int def;
   @Attribute(required=false)
   private int selected;
+  public String partId;
 
   public boolean isActive() {
     return selected == 1;
