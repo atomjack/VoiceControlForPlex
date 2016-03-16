@@ -34,6 +34,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
+import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
@@ -101,6 +102,7 @@ public class VideoControllerView extends FrameLayout {
   private Handler             mHandler = new MessageHandler(this);
   private ImageView           mPoster;
   private Bitmap              mPosterBitmap;
+  private RelativeLayout      mMediaControllerPosterContainer;
 
   public VideoControllerView(Context context, AttributeSet attrs) {
     super(context, attrs);
@@ -194,6 +196,15 @@ public class VideoControllerView extends FrameLayout {
     if(mMicButton != null) {
       mMicButton.setOnClickListener(mMicListener);
     }
+
+    mMediaControllerPosterContainer = (RelativeLayout) v.findViewById(R.id.mediaControllerPosterContainer);
+    mMediaControllerPosterContainer.setOnTouchListener(new OnTouchListener() {
+      @Override
+      public boolean onTouch(View v, MotionEvent event) {
+        mPlayer.onPosterContainerTouch(v, event);
+        return true;
+      }
+    });
 
     mFfwdButton = (ImageButton) v.findViewById(R.id.ffwd);
     if (mFfwdButton != null) {
@@ -681,6 +692,7 @@ public class VideoControllerView extends FrameLayout {
     void    toggleFullScreen();
     void    doMic();
     void    doMediaOptions();
+    void    onPosterContainerTouch(View v, MotionEvent event);
   }
 
   private static class MessageHandler extends Handler {

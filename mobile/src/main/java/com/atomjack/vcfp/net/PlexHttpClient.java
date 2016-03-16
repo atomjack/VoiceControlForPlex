@@ -9,6 +9,7 @@ import com.atomjack.vcfp.PlexHeaders;
 import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.interfaces.ActiveConnectionHandler;
+import com.atomjack.vcfp.interfaces.GenericHandler;
 import com.atomjack.vcfp.interfaces.InputStreamHandler;
 import com.atomjack.vcfp.interfaces.PlexDirectoryHandler;
 import com.atomjack.vcfp.interfaces.PlexMediaHandler;
@@ -156,7 +157,7 @@ public class PlexHttpClient
                                               @retrofit.http.Header(PlexHeaders.XPlexPlatform) String platform,
                                               @retrofit.http.Header(PlexHeaders.XPlexProduct) String product);
 
-    @PUT("/library/parts/{part_id}")
+    @PUT("/library/parts/{part_id}?allParts=1")
     Call<PlexResponse> setSubtitleStreamActive(@Path(value="part_id", encoded = true) String partId,
                                                @Query("subtitleStreamID") String streamId,
                                                @Query(PlexHeaders.XPlexToken) String token);
@@ -886,6 +887,10 @@ public class PlexHttpClient
   }
 
   public static void stopTranscoder(final PlexServer server, final String session, final String type) {
+    stopTranscoder(server, session, type, null);
+  }
+
+  public static void stopTranscoder(final PlexServer server, final String session, final String type, final GenericHandler handler) {
     server.findServerConnection(new ActiveConnectionHandler() {
       @Override
       public void onSuccess(Connection connection) {
@@ -895,18 +900,22 @@ public class PlexHttpClient
           @Override
           public void onResponse(Response<PlexResponse> response) {
             Logger.d("Stopped transcoder");
+            if(handler != null)
+              handler.onSuccess();
           }
 
           @Override
           public void onFailure(Throwable t) {
-
+            if(handler != null)
+              handler.onFailure();
           }
         });
       }
 
       @Override
       public void onFailure(int statusCode) {
-
+        if(handler != null)
+          handler.onFailure();
       }
     });
 

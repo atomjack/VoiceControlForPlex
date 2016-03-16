@@ -31,6 +31,7 @@ import com.atomjack.vcfp.VideoControllerView;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.interfaces.ActiveConnectionHandler;
 import com.atomjack.vcfp.interfaces.BitmapHandler;
+import com.atomjack.vcfp.interfaces.GenericHandler;
 import com.atomjack.vcfp.model.Connection;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexMedia;
@@ -133,10 +134,13 @@ public class VideoPlayerActivity extends AppCompatActivity
           handler.post(new Runnable() {
             @Override
             public void run() {
-              if(android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.JELLY_BEAN) {
-                loadingLayout.setBackgroundDrawable(bitmapDrawable);
-              } else {
-                loadingLayout.setBackground(bitmapDrawable);
+              // TODO: Force the loading image to attempt to load before starting playback?
+              if(loadingLayout != null) {
+                if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.JELLY_BEAN) {
+                  loadingLayout.setBackgroundDrawable(bitmapDrawable);
+                } else {
+                  loadingLayout.setBackground(bitmapDrawable);
+                }
               }
             }
           });
@@ -353,7 +357,6 @@ public class VideoPlayerActivity extends AppCompatActivity
 
   @Override
   public void pause() {
-    Logger.d("Pause!!!!");
     currentState = PlayerState.PAUSED;
     player.pause();
   }
@@ -456,18 +459,29 @@ public class VideoPlayerActivity extends AppCompatActivity
           public void run() {
             media.server.findServerConnection(new ActiveConnectionHandler() {
               @Override
-              public void onSuccess(Connection connection) {
+              public void onSuccess(final Connection connection) {
                 media.setActiveStream(stream);
+                handler.removeCallbacks(playerProgressRunnable);
                 player.stop();
-                String url = getTranscodeUrl(media, connection, transientToken, 0);
-                try {
-                  player.reset();
-                  player.setDataSource(VideoPlayerActivity.this, Uri.parse(url));
-                  player.setOnPreparedListener(VideoPlayerActivity.this);
-                  player.prepareAsync();
-                } catch (Exception e) {
-                  e.printStackTrace();
-                }
+                PlexHttpClient.stopTranscoder(media.server, session, "video", new GenericHandler() {
+                  @Override
+                  public void onSuccess() {
+                    String url = getTranscodeUrl(media, connection, transientToken, 0);
+                    try {
+                      player.reset();
+                      player.setDataSource(VideoPlayerActivity.this, Uri.parse(url));
+                      player.setOnPreparedListener(VideoPlayerActivity.this);
+                      player.prepareAsync();
+                    } catch (Exception e) {
+                      e.printStackTrace();
+                    }
+                  }
+
+                  @Override
+                  public void onFailure() {
+
+                  }
+                });
               }
 
               @Override
@@ -482,6 +496,10 @@ public class VideoPlayerActivity extends AppCompatActivity
     mediaOptionsDialog.show();
   }
 
+  @Override
+  public void onPosterContainerTouch(View v, MotionEvent event) {
+    onTouchEvent(event);
+  }
   // End VideoMediaController.MediaPlayerControl
 
   private Runnable videoIsPlayingCheck = new Runnable() {
@@ -501,6 +519,10 @@ public class VideoPlayerActivity extends AppCompatActivity
     @Override
     public void run() {
       PlexHttpClient.reportProgressToServer(media, getCurrentPosition(), currentState);
+      if(getCurrentPosition() == 0) {
+        Logger.d("[VideoPlayerActivity] setting viewoffset to 0!");
+      }
+      media.viewOffset = Integer.toString(getCurrentPosition());
       handler.postDelayed(playerProgressRunnable, 1000);
     }
   };
