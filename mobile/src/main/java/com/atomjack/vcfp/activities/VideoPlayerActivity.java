@@ -47,7 +47,7 @@ import java.lang.reflect.Method;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
-public class VideoPlayerActivity extends AppCompatActivity
+public class VideoPlayerActivity extends PlayerActivity
         implements MediaPlayer.OnCompletionListener,
         MediaPlayer.OnInfoListener,
         MediaPlayer.OnPreparedListener,
@@ -464,6 +464,8 @@ public class VideoPlayerActivity extends AppCompatActivity
       serviceIntent.putExtra(com.atomjack.shared.Intent.EXTRA_CLIENT, VoiceControlForPlexApplication.gsonWrite.toJson(PlexClient.getLocalPlaybackClient()));
       serviceIntent.putExtra(com.atomjack.shared.Intent.EXTRA_RESUME, resume);
       serviceIntent.putExtra(com.atomjack.shared.Intent.EXTRA_FROM_MIC, true);
+      serviceIntent.putExtra(com.atomjack.shared.Intent.EXTRA_FROM_LOCAL_PLAYER, true);
+      serviceIntent.putExtra(PlayerActivity.PLAYER, PlayerActivity.PLAYER_VIDEO);
 
       SecureRandom random = new SecureRandom();
       serviceIntent.setData(Uri.parse(new BigInteger(130, random).toString(32)));

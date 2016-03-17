@@ -23,7 +23,9 @@ import com.atomjack.vcfp.QueryString;
 import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.Utils;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
+import com.atomjack.vcfp.activities.AudioPlayerActivity;
 import com.atomjack.vcfp.activities.MainActivity;
+import com.atomjack.vcfp.activities.PlayerActivity;
 import com.atomjack.vcfp.activities.VideoPlayerActivity;
 import com.atomjack.vcfp.interfaces.ActiveConnectionHandler;
 import com.atomjack.vcfp.interfaces.AfterTransientTokenRequest;
@@ -83,6 +85,9 @@ public class PlexSearchService extends Service {
 
   private boolean fromMic;
 
+  private boolean fromLocalPlayer = false; // Whether or not this event is coming from the local player. If it is, we'll want to send a response back to the activity
+  private int whichLocalPlayer = -1; // Which local player (audio/video) this is coming from
+
   private boolean shuffle = false;
 
 	private ArrayList<String> queries;
@@ -124,6 +129,9 @@ public class PlexSearchService extends Service {
 
 		videoPlayed = false;
     shuffle = false;
+
+    fromLocalPlayer = intent.getBooleanExtra(com.atomjack.shared.Intent.EXTRA_FROM_LOCAL_PLAYER, false);
+    whichLocalPlayer = intent.getIntExtra(PlayerActivity.PLAYER, -1);
 
     if(plexSubscription == null) {
       plexSubscription = VoiceControlForPlexApplication.getInstance().plexSubscription;
@@ -934,12 +942,26 @@ public class PlexSearchService extends Service {
 		}
 	}
 
+  private void sendResponseToLocalPlayer() {
+    Intent nowPlayingIntent = new Intent(this, whichLocalPlayer == PlayerActivity.PLAYER_AUDIO ? AudioPlayerActivity.class : VideoPlayerActivity.class);
+    nowPlayingIntent.setAction(PlayerActivity.ACTION_MIC_RESPONSE);
+//    nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_STARTING_PLAYBACK, true);
+//    nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_MEDIA, media);
+//    nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_CLIENT, client);
+    nowPlayingIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    startActivity(nowPlayingIntent);
+  }
+
 	private void adjustPlayback(String which, final String onFinish) {
 		ArrayList<String> validModes = new ArrayList<String>(Arrays.asList("pause", "play", "stop"));
 		if(validModes.indexOf(which) == -1)
 			return;
 
-    if(client.isCastClient) {
+    if(client.isLocalClient) {
+      //whichLocalPlayer
+      sendResponseToLocalPlayer();
+      return;
+    } else if(client.isCastClient) {
       if(which.equals("pause"))
         castPlayerManager.pause();
       else if(which.equals("play"))
