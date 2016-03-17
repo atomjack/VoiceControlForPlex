@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog>
-    <release version="2.1.2" versioncode="66">
+    <release version="2.1.3" versioncode="67">
         <change>Added usage hints to main screen. Use Navigation Drawer->Settings->Usage Hints to disable.</change>
         <change>Added option to not show Now Playing screen when receiving voice input from Google Now.</change>
         <change>Bug fixes.</change>

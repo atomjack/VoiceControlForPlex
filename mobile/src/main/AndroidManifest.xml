@@ -2,8 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
           xmlns:tools="http://schemas.android.com/tools"
     package="com.atomjack.vcfp"
-    android:versionCode="66"
-    android:versionName="2.1.2" >
+    android:versionCode="67"
+    android:versionName="2.1.3" >
 
     <uses-permission android:name="com.mohammadag.googlesearchapi.permission.ACCESS_GGOGLE_SEARCH_API" />
     <uses-permission android:name="android.permission.INTERNET" />
