@@ -11,7 +11,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.speech.RecognizerIntent;
 import android.support.annotation.Nullable;
-import android.support.v7.app.AppCompatActivity;
 import android.util.DisplayMetrics;
 import android.view.Display;
 import android.view.MotionEvent;
@@ -129,36 +128,9 @@ public class VideoPlayerActivity extends PlayerActivity
       transientToken = getIntent().getStringExtra(com.atomjack.shared.Intent.EXTRA_TRANSIENT_TOKEN);
       resume = getIntent().getBooleanExtra(com.atomjack.shared.Intent.EXTRA_RESUME, false);
 
-      setContentView(R.layout.video_player_loading);
+//      setContentView(R.layout.video_player_loading);
 
-      VoiceControlForPlexApplication.getInstance().fetchMediaThumb(media, screenWidth, screenHeight, media.art, media.getImageKey(PlexMedia.IMAGE_KEY.LOCAL_VIDEO_BACKGROUND), new BitmapHandler() {
-        @Override
-        public void onSuccess(Bitmap bitmap) {
-          final BitmapDrawable bitmapDrawable = new BitmapDrawable(getResources(), bitmap);
-          final View loadingLayout = findViewById(R.id.videoPlayerLoadingBackground);
-          handler.post(new Runnable() {
-            @Override
-            public void run() {
-              if(loadingLayout != null) {
-                if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.JELLY_BEAN) {
-                  loadingLayout.setBackgroundDrawable(bitmapDrawable);
-                } else {
-                  loadingLayout.setBackground(bitmapDrawable);
-                }
-              }
-              loadVideo();
-            }
-          });
-        }
-
-        @Override
-        public void onFailure() {
-          loadVideo();
-        }
-      });
-
-
-
+      loadVideo();
     } else {
       finish();
     }
@@ -169,12 +141,40 @@ public class VideoPlayerActivity extends PlayerActivity
     media.server.findServerConnection(new ActiveConnectionHandler() {
       @Override
       public void onSuccess(Connection connection) {
-        String url = getTranscodeUrl(media, connection, transientToken, 0);
+        String url = getTranscodeUrl(media, connection, transientToken);
         Logger.d("Using url %s", url);
 
         setContentView(R.layout.video_player);
 
         videoSurface = (SurfaceView) findViewById(R.id.videoSurface);
+
+
+        VoiceControlForPlexApplication.getInstance().fetchMediaThumb(media, screenWidth, screenHeight, media.art, media.getImageKey(PlexMedia.IMAGE_KEY.LOCAL_VIDEO_BACKGROUND), new BitmapHandler() {
+          @Override
+          public void onSuccess(Bitmap bitmap) {
+            final BitmapDrawable bitmapDrawable = new BitmapDrawable(getResources(), bitmap);
+            handler.post(new Runnable() {
+              @Override
+              public void run() {
+                final View videoPlayerLoadingBackground = findViewById(R.id.videoPlayerLoadingBackground);
+                videoPlayerLoadingBackground.setVisibility(View.VISIBLE);
+                if(videoPlayerLoadingBackground != null) {
+                  if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.JELLY_BEAN) {
+                    videoPlayerLoadingBackground.setBackgroundDrawable(bitmapDrawable);
+                  } else {
+                    videoPlayerLoadingBackground.setBackground(bitmapDrawable);
+                  }
+                }
+              }
+            });
+          }
+
+
+          @Override
+          public void onFailure() {
+          }
+        });
+
         SurfaceHolder videoHolder = videoSurface.getHolder();
         videoHolder.addCallback(VideoPlayerActivity.this);
 
@@ -189,7 +189,6 @@ public class VideoPlayerActivity extends PlayerActivity
           player.setAudioStreamType(AudioManager.STREAM_MUSIC);
           player.setDataSource(VideoPlayerActivity.this, Uri.parse(url));
           player.setOnPreparedListener(VideoPlayerActivity.this);
-
         } catch (Exception e) {
           e.printStackTrace();
           // TODO: Handle
@@ -234,12 +233,11 @@ public class VideoPlayerActivity extends PlayerActivity
     Logger.d("[VideoPlayerActivity] onNewIntent: %s", intent.getAction());
   }
 
-  private String getTranscodeUrl(PlexMedia media, Connection connection, String transientToken, int offset) {
-    return getTranscodeUrl(media, connection, transientToken, offset, false);
+  private String getTranscodeUrl(PlexMedia media, Connection connection, String transientToken) {
+    return getTranscodeUrl(media, connection, transientToken, false);
   }
 
-  private String getTranscodeUrl(PlexMedia media, Connection connection, String transientToken, int offset, boolean subtitles) {
-    Logger.d("getTranscodeUrl, offset: %d", offset);
+  private String getTranscodeUrl(PlexMedia media, Connection connection, String transientToken, boolean subtitles) {
     String url = connection.uri;
     url += String.format("/%s/:/transcode/universal/%s?", (media instanceof PlexVideo ? "video" : "audio"), (subtitles ? "subtitles" : "start.m3u8"));
     QueryString qs = new QueryString("path", String.format("http://127.0.0.1:32400%s", media.key));
@@ -254,7 +252,7 @@ public class VideoPlayerActivity extends PlayerActivity
     qs.add("X-Plex-Chunked", "1");
 
     qs.add("protocol", "http");
-    qs.add("offset", Integer.toString(offset));
+    qs.add("offset", "0");
     qs.add("fastSeek", "1");
     qs.add("directPlay", "0");
     qs.add("directStream", "1");
@@ -327,6 +325,11 @@ public class VideoPlayerActivity extends PlayerActivity
       Logger.d("Seeking to %d before playing", Integer.parseInt(media.viewOffset) / 1000);
       player.seekTo(Integer.parseInt(media.viewOffset));
     }
+
+    // Video is ready to start playing, so hide the loading background
+    final View videoPlayerLoadingBackground = findViewById(R.id.videoPlayerLoadingBackground);
+    videoPlayerLoadingBackground.setVisibility(View.INVISIBLE);
+
     player.start();
     player.setOnCompletionListener(this);
     player.setOnInfoListener(this);
@@ -501,7 +504,7 @@ public class VideoPlayerActivity extends PlayerActivity
                 PlexHttpClient.stopTranscoder(media.server, session, "video", new GenericHandler() {
                   @Override
                   public void onSuccess() {
-                    String url = getTranscodeUrl(media, connection, transientToken, 0);
+                    String url = getTranscodeUrl(media, connection, transientToken);
                     try {
                       player.reset();
                       player.setDataSource(VideoPlayerActivity.this, Uri.parse(url));
