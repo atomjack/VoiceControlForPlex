@@ -95,7 +95,7 @@
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true">
 
-        <include layout="@layout/playback_controls"
+        <include layout="@layout/playback_controls_music"
                  android:layout_height="110dp"
                  android:layout_width="fill_parent"/>
     </RelativeLayout>

@@ -10,10 +10,13 @@ public class Intent {
   public final static String EXTRA_SILENT = "com.atomjack.vcfp.intent.extra_silent";
   public final static String EXTRA_FROM_MIC = "com.atomjack.vcfp.intent.extra_from_mic";
   public final static String EXTRA_PLAYER_FRAGMENT = "com.atomjack.vcfp.intent.extra_player_fragment";
+  public final static String EXTRA_MUSIC_PLAYER_FRAGMENT = "com.atomjack.vcfp.intent.extra_music_player_fragment";
   public final static String EXTRA_FROM_GOOGLE_NOW = "com.atomjack.vcfp.intent.extra_from_google_now";
   public final static String EXTRA_FROM_LOCAL_PLAYER = "com.atomjack.vcfp.intent.extra_from_local_player";
 
 
+  public final static String ACTION_PLAY_LOCAL = "com.atomjack.vcfp.intent.action_play_local";
+  public static final String ACTION_MIC_RESPONSE = "com.vcfp.atomjack.intent.mic_response";
 
   public final static String SCAN_TYPE = "com.atomjack.vcfp.intent.scan_type";
   public final static String SCAN_TYPE_CLIENT = "com.atomjack.vcfp.intent.scan_type_client";
@@ -27,6 +30,8 @@ public class Intent {
   public final static String CAST_MEDIA = "com.atomjack.vcfp.intent.CAST_MEDIA";
   public final static String EXTRA_MEDIA = "com.atomjack.vcfp.intent.EXTRA_MEDIA";
   public final static String EXTRA_ALBUM = "com.atomjack.vcfp.intent.EXTRA_ALBUM";
+  public final static String EXTRA_PLAYQUEUE = "com.atomjack.vcfp.intent.EXTRA_PLAYQUEUE";
+  public final static String EXTRA_PLAYINTENT = "com.atomjack.vcfp.intent.EXTRA_PLAYINTENT";
   public final static String EXTRA_CLASS = "com.atomjack.vcfp.intent.EXTRA_CLASS";
   public final static String EXTRA_TRANSIENT_TOKEN = "com.atomjack.vcfp.intent.EXTRA_TRANSIENT_TOKEN";
   public final static String EXTRA_CONNECT_TO_CLIENT = "com.atomjack.vcfp.intent.EXTRA_CONNECT_TO_CLIENT";
@@ -45,6 +50,10 @@ public class Intent {
   public final static String ACTION_PAUSE = "com.atomjack.vcfp.intent.ACTION_PAUSE";
   public final static String ACTION_PLAY = "com.atomjack.vcfp.intent.ACTION_PLAY";
   public final static String ACTION_STOP = "com.atomjack.vcfp.intent.ACTION_STOP";
+
+  public static final String PLAYER = "com.atomjack.vcfp.intent.player";
+  public static final int PLAYER_VIDEO = 0;
+  public static final int PLAYER_AUDIO = 0;
 
 
 }

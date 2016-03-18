@@ -1,5 +1,8 @@
 package com.atomjack.vcfp.model;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+
 import com.atomjack.shared.model.Timeline;
 
 import org.simpleframework.xml.Attribute;
@@ -10,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Root(strict=false)
-public class MediaContainer {
+public class MediaContainer implements Parcelable {
 	@Attribute(required=false)
 	public String machineIdentifier;
 	
@@ -22,7 +25,7 @@ public class MediaContainer {
 	
 	@Attribute(required=false)
 	public String grandparentTitle;
-	
+
 	@ElementList(required=false, inline=true, name="Server")
 	public List<PlexClient> clients = new ArrayList<PlexClient>();
 	
@@ -56,6 +59,10 @@ public class MediaContainer {
   @Attribute(required=false)
   public String playQueueID;
 
+  public MediaContainer() {
+
+  }
+
 	public Timeline getTimeline(String type) {
 		if(timelines != null) {
 			for (Timeline t : timelines) {
@@ -73,4 +80,53 @@ public class MediaContainer {
     }
     return null;
   }
+
+  @Override
+  public void writeToParcel(Parcel parcel, int i) {
+    parcel.writeString(machineIdentifier);
+    parcel.writeString(friendlyName);
+    parcel.writeString(title1);
+    parcel.writeString(grandparentTitle);
+    parcel.writeString(token);
+    parcel.writeString(location);
+    parcel.writeString(commandID);
+    parcel.writeString(art);
+    parcel.writeString(playQueueID);
+    parcel.writeTypedList(clients);
+    parcel.writeTypedList(directories);
+    parcel.writeTypedList(videos);
+    parcel.writeTypedList(tracks);
+    parcel.writeTypedList(devices);
+  }
+
+  public MediaContainer(Parcel in) {
+    machineIdentifier = in.readString();
+    friendlyName = in.readString();
+    title1 = in.readString();
+    grandparentTitle = in.readString();
+    token = in.readString();
+    location = in.readString();
+    commandID = in.readString();
+    art = in.readString();
+    playQueueID = in.readString();
+    in.readTypedList(clients, PlexClient.CREATOR);
+    in.readTypedList(directories, PlexDirectory.CREATOR);
+    in.readTypedList(videos, PlexVideo.CREATOR);
+    in.readTypedList(tracks, PlexTrack.CREATOR);
+    in.readTypedList(devices, Device.CREATOR);
+  }
+
+  @Override
+  public int describeContents() {
+    return 0;
+  }
+
+  public static final Parcelable.Creator<MediaContainer> CREATOR = new Parcelable.Creator<MediaContainer>() {
+    public MediaContainer createFromParcel(Parcel in) {
+      return new MediaContainer(in);
+    }
+    public MediaContainer[] newArray(int size) {
+      return new MediaContainer[size];
+    }
+  };
 }

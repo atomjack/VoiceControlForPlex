@@ -81,6 +81,7 @@ import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.adapters.PlexListAdapter;
 import com.atomjack.vcfp.fragments.CastPlayerFragment;
 import com.atomjack.vcfp.fragments.MainFragment;
+import com.atomjack.vcfp.fragments.MusicPlayerFragment;
 import com.atomjack.vcfp.fragments.PlayerFragment;
 import com.atomjack.vcfp.fragments.PlexPlayerFragment;
 import com.atomjack.vcfp.fragments.SetupFragment;
@@ -137,7 +138,8 @@ import java.util.concurrent.TimeUnit;
 public class MainActivity extends AppCompatActivity
         implements VoiceControlForPlexApplication.NetworkChangeListener,
         ActivityListener,
-        TextToSpeech.OnInitListener{
+        TextToSpeech.OnInitListener,
+        MusicPlayerFragment.MusicPlayerListener {
 
   public final static int RESULT_VOICE_FEEDBACK_SELECTED = 0;
   public final static int RESULT_TASKER_PROJECT_IMPORTED = 1;
@@ -224,6 +226,7 @@ public class MainActivity extends AppCompatActivity
 
   private PlayerFragment playerFragment;
   private MainFragment mainFragment;
+  private MusicPlayerFragment musicPlayerFragment;
 
   public enum NetworkState {
     DISCONNECTED,
@@ -264,7 +267,8 @@ public class MainActivity extends AppCompatActivity
     if(savedInstanceState != null) {
       client = savedInstanceState.getParcelable(com.atomjack.shared.Intent.EXTRA_CLIENT);
       playerFragment = (PlayerFragment)getSupportFragmentManager().getFragment(savedInstanceState, com.atomjack.shared.Intent.EXTRA_PLAYER_FRAGMENT);
-      Logger.d("playerFragment: %s", playerFragment);
+      musicPlayerFragment = (MusicPlayerFragment) getSupportFragmentManager().getFragment(savedInstanceState, com.atomjack.shared.Intent.EXTRA_MUSIC_PLAYER_FRAGMENT);
+      Logger.d("musicPlayerFragment: %s", musicPlayerFragment);
     } else {
       Logger.d("savedInstanceState is null");
     }
@@ -289,6 +293,7 @@ public class MainActivity extends AppCompatActivity
         client = gsonRead.fromJson(prefs.get(Preferences.SUBSCRIBED_CLIENT, ""), PlexClient.class);
         if(client.isLocalClient) {
           subscribed = true;
+          VoiceControlForPlexApplication.getInstance().subscribedToLocalClient = true;
           setCastIconActive();
         } else if (client.isCastClient) {
           if (!castPlayerManager.isSubscribed()) {
@@ -315,7 +320,7 @@ public class MainActivity extends AppCompatActivity
 
     setContentView(R.layout.main);
 
-    if(!plexSubscription.isSubscribed() && !castPlayerManager.isSubscribed()) {
+    if(!isSubscribed()) {
       Logger.d("Not subscribed: %s", plexSubscription.mClient);
       // In case the notification is still up due to a crash
       VoiceControlForPlexApplication.getInstance().cancelNotification();
@@ -324,7 +329,7 @@ public class MainActivity extends AppCompatActivity
     init();
     if(!doingFirstTimeSetup)
       doAutomaticDeviceScan();
-    if(plexSubscription.isSubscribed() || castPlayerManager.isSubscribed())
+    if(isSubscribed())
       setCastIconActive();
     else
       Logger.d("Not subscribed");
@@ -415,6 +420,7 @@ public class MainActivity extends AppCompatActivity
     public void onUnsubscribed() {
       Logger.d("[MainActivity] unsubscribed");
       setCastIconInactive();
+      VoiceControlForPlexApplication.getInstance().subscribedToLocalClient = false;
       prefs.remove(Preferences.SUBSCRIBED_CLIENT);
       switchToMainFragment();
       if(VoiceControlForPlexApplication.getInstance().hasWear()) {
@@ -467,13 +473,18 @@ public class MainActivity extends AppCompatActivity
       }
       Logger.d("[MainActivity] Intent action: %s", getIntent().getAction());
       Intent intent = getIntent();
-      if(getIntent().getAction() != null && getIntent().getAction().equals(ACTION_SHOW_NOW_PLAYING)) {
+      if(intent.getAction() != null && getIntent().getAction().equals(ACTION_SHOW_NOW_PLAYING)) {
         handleShowNowPlayingIntent(getIntent());
       } else {
 
         Logger.d("Loading main fragment");
 
-        fragment = playerFragment != null ? playerFragment : getMainFragment();
+        if(playerFragment != null)
+          fragment = playerFragment;
+        else if(musicPlayerFragment != null)
+          fragment = musicPlayerFragment;
+        else
+          fragment = getMainFragment();
 
         // Only show the what's new dialog if this is not the first time the app is run
         showWhatsNewDialog(false);
@@ -1044,6 +1055,21 @@ public class MainActivity extends AppCompatActivity
 
       } else if(intent.getAction().equals(ACTION_SHOW_NOW_PLAYING)) {
         handleShowNowPlayingIntent(intent);
+      } else if(intent.getAction().equals(com.atomjack.shared.Intent.ACTION_PLAY_LOCAL)) {
+        setCastIconActive();
+        if(musicPlayerFragment == null)
+          musicPlayerFragment = new MusicPlayerFragment();
+//        musicPlayerFragment.setRetainInstance(false);
+
+        musicPlayerFragment.init(intent, new Runnable() {
+          @Override
+          public void run() {
+            Logger.d("Switching to music");
+            switchToFragment(musicPlayerFragment);
+          }
+        });
+
+
       } else if(intent.getAction() != null && intent.getAction().equals(com.atomjack.shared.Intent.SHOW_WEAR_PURCHASE)) {
         // An Android Wear device was successfully pinged, so show popup alerting the
         // user that they can purchase wear support, but only if we've never shown the popup before.
@@ -1400,7 +1426,7 @@ public class MainActivity extends AppCompatActivity
           setCastIconActive();
           subscribing = false;
           subscribed = true;
-
+          VoiceControlForPlexApplication.getInstance().subscribedToLocalClient = true;
           prefs.put(Preferences.SUBSCRIBED_CLIENT, gsonWrite.toJson(clientSelected));
           client = clientSelected;
           return;
@@ -1441,7 +1467,7 @@ public class MainActivity extends AppCompatActivity
   }
 
   private boolean isSubscribed() {
-    return plexSubscription.isSubscribed() || castPlayerManager.isSubscribed();
+    return plexSubscription.isSubscribed() || castPlayerManager.isSubscribed() || VoiceControlForPlexApplication.getInstance().subscribedToLocalClient;
   }
 
   private Runnable onClientRefreshFinished = null;
@@ -1555,7 +1581,10 @@ public class MainActivity extends AppCompatActivity
         cancelButton.setOnClickListener(new View.OnClickListener() {
           @Override
           public void onClick(View v) {
-            if (client.isCastClient)
+            if(client.isLocalClient) {
+              VoiceControlForPlexApplication.getInstance().subscribedToLocalClient = false;
+              setCastIconInactive();
+            } else if (client.isCastClient)
               castPlayerManager.unsubscribe();
             else
               plexSubscription.unsubscribe();
@@ -2374,6 +2403,9 @@ public class MainActivity extends AppCompatActivity
     if(playerFragment != null && playerFragment.isVisible()) {
       getSupportFragmentManager().putFragment(outState, com.atomjack.shared.Intent.EXTRA_PLAYER_FRAGMENT, playerFragment);
     }
+    if(musicPlayerFragment != null && musicPlayerFragment.isVisible()) {
+      getSupportFragmentManager().putFragment(outState, com.atomjack.shared.Intent.EXTRA_MUSIC_PLAYER_FRAGMENT, musicPlayerFragment);
+    }
   }
 
 
@@ -2577,5 +2609,12 @@ public class MainActivity extends AppCompatActivity
         VoiceControlForPlexApplication.getInstance().prefs.put(pref, "Locale.US");
       }
     }
+  }
+
+  // Called when the (local) music player is done
+  @Override
+  public void finished() {
+    switchToMainFragment();
+    musicPlayerFragment = null;
   }
 }

@@ -108,6 +108,8 @@ public class VoiceControlForPlexApplication extends Application
     initializing
   }
 
+  public boolean subscribedToLocalClient = false;
+
   private IabBroadcastReceiver promoReceiver;
 
   public static HashMap<String, String[]> videoQualityOptions = new LinkedHashMap<String, String[]>();
@@ -339,6 +341,8 @@ public class VoiceControlForPlexApplication extends Application
 
 
   public void fetchMediaThumb(final PlexMedia media, final int width, final int height, final String whichThumb, final String key, final BitmapHandler bitmapHandler) {
+    if(whichThumb == null)
+      return;
     Logger.d("Fetching media thumb for %s at %dx%d with key %s", media.getTitle(), width, height, key);
     Bitmap bitmap = getCachedBitmap(key);
     if(bitmap == null) {
@@ -355,6 +359,8 @@ public class VoiceControlForPlexApplication extends Application
                 mSimpleDiskCache.put(key, is);
                 fetchMediaThumb(media, width, height, whichThumb, key, bitmapHandler);
               } catch (IOException e) {
+                e.printStackTrace();
+              } catch (Exception e) {
                 e.printStackTrace();
               }
               return null;

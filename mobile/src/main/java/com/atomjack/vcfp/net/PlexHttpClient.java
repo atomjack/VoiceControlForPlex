@@ -22,6 +22,7 @@ import com.atomjack.vcfp.model.PlexDirectory;
 import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexResponse;
 import com.atomjack.vcfp.model.PlexServer;
+import com.atomjack.vcfp.model.PlexTrack;
 import com.atomjack.vcfp.model.PlexUser;
 import com.atomjack.vcfp.model.Stream;
 import com.squareup.okhttp.Interceptor;
@@ -167,7 +168,9 @@ public class PlexHttpClient
                                             @Query("audioStreamID") String streamId,
                                             @Query(PlexHeaders.XPlexToken) String token);
 
-
+    @GET("/library/metadata/{key}/children")
+    Call<MediaContainer> getChildren(@Path(value="key", encoded = true) String key,
+                                     @Query(PlexHeaders.XPlexToken) String token);
   }
 
   public static void getThumb(String url, final InputStreamHandler inputStreamHandler) {
@@ -990,6 +993,36 @@ public class PlexHttpClient
       @Override
       public void onFailure(int statusCode) {
 
+      }
+    });
+  }
+
+  public static void getChildren(final PlexDirectory directory, final PlexServer server, final PlexHttpMediaContainerHandler handler) {
+    server.findServerConnection(new ActiveConnectionHandler() {
+      @Override
+      public void onSuccess(Connection connection) {
+        PlexHttpService service = getService(connection);
+        Call<MediaContainer> call = service.getChildren(directory.ratingKey, server.accessToken);
+        call.enqueue(new Callback<MediaContainer>() {
+          @Override
+          public void onResponse(Response<MediaContainer> response) {
+            MediaContainer mc = response.body();
+            if(handler != null)
+              handler.onSuccess(mc);
+          }
+
+          @Override
+          public void onFailure(Throwable t) {
+            if(handler != null)
+              handler.onFailure(t);
+          }
+        });
+      }
+
+      @Override
+      public void onFailure(int statusCode) {
+        if(handler != null)
+          handler.onFailure(new Throwable());
       }
     });
   }

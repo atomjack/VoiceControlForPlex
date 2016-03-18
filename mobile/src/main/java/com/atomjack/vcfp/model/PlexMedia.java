@@ -29,7 +29,8 @@ public abstract class PlexMedia implements Parcelable {
     NOTIFICATION_THUMB_MUSIC,
     WEAR_BACKGROUND,
     LOCAL_VIDEO_BACKGROUND,
-    LOCAL_VIDEO_THUMB
+    LOCAL_VIDEO_THUMB,
+    LOCAL_MUSIC_THUMB
   }
 
   public final static Map<IMAGE_KEY, int[]> IMAGE_SIZES = new HashMap<IMAGE_KEY, int[]>() {
@@ -304,83 +305,3 @@ public abstract class PlexMedia implements Parcelable {
 
 }
 
-@Root(strict=false)
-class Media implements Parcelable {
-  @ElementList(required=false, inline=true, entry="Part")
-  public List<Part> parts = new ArrayList<Part>();
-
-  public Media() {
-
-  }
-
-  public Media(Parcel in) {
-    parts = new ArrayList<Part>();
-    in.readTypedList(parts, Part.CREATOR);
-  }
-  @Override
-  public int describeContents() {
-    return 0;
-  }
-
-  @Override
-  public void writeToParcel(Parcel out, int flags) {
-    out.writeTypedList(parts);
-  }
-
-  public static final Parcelable.Creator<Media> CREATOR = new Parcelable.Creator<Media>() {
-    public Media createFromParcel(Parcel in) {
-      return new Media(in);
-    }
-
-    public Media[] newArray(int size) {
-      return new Media[size];
-    }
-  };
-}
-
-@Root(strict=false)
-class Part implements Parcelable {
-  @Attribute(required=false)
-  public String id;
-  @ElementList(required=false, inline=true, entry="Stream")
-  public List<Stream> streams = new ArrayList<>();
-  @Attribute(required=false)
-  public String key;
-  @Attribute(required=false)
-  public int duration;
-
-  public Part() {
-
-  }
-
-  public Part(Parcel in) {
-    id = in.readString();
-    streams = new ArrayList<>();
-    in.readTypedList(streams, Stream.CREATOR);
-    key = in.readString();
-    duration = in.readInt();
-  }
-
-  @Override
-  public int describeContents() {
-    return 0;
-  }
-
-  @Override
-  public void writeToParcel(Parcel out, int flags) {
-    out.writeString(id);
-    out.writeTypedList(streams);
-    out.writeString(key);
-    out.writeInt(duration);
-  }
-
-  public static final Parcelable.Creator<Part> CREATOR = new Parcelable.Creator<Part>() {
-    public Part createFromParcel(Parcel in) {
-      return new Part(in);
-    }
-
-    public Part[] newArray(int size) {
-      return new Part[size];
-    }
-  };
-}

@@ -11,6 +11,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.speech.RecognizerIntent;
 import android.support.annotation.Nullable;
+import android.support.v7.app.AppCompatActivity;
 import android.util.DisplayMetrics;
 import android.view.Display;
 import android.view.MotionEvent;
@@ -46,7 +47,7 @@ import java.lang.reflect.Method;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
-public class VideoPlayerActivity extends PlayerActivity
+public class VideoPlayerActivity extends AppCompatActivity
         implements MediaPlayer.OnCompletionListener,
         MediaPlayer.OnInfoListener,
         MediaPlayer.OnPreparedListener,
@@ -54,23 +55,24 @@ public class VideoPlayerActivity extends PlayerActivity
         SurfaceHolder.Callback,
         VideoControllerView.MediaPlayerControl {
 
-  public final static String ACTION_PLAY_LOCAL = "com.atomjack.vcfp.action_play_local";
-  private PlexMedia media;
-  private boolean resume = false;
+  protected PlexMedia media;
+  protected boolean resume = false;
+
+  protected Handler handler;
+
+  protected Feedback feedback;
+
+  protected MediaPlayer player;
+
+  protected PlayerState currentState = PlayerState.STOPPED;
+
   private String transientToken;
   private String session;
 
-  private PlayerState currentState = PlayerState.STOPPED;
-
-  private Feedback feedback;
-
   SurfaceView videoSurface;
-  MediaPlayer player;
   VideoControllerView controller;
 
   int screenWidth, screenHeight;
-
-  private Handler handler;
 
   private View decorView;
 
@@ -81,6 +83,8 @@ public class VideoPlayerActivity extends PlayerActivity
     session = VoiceControlForPlexApplication.generateRandomString();
 
     feedback = new Feedback(this);
+    player = new MediaPlayer();
+    handler = new Handler();
 
     decorView = getWindow().getDecorView();
     decorView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
@@ -118,88 +122,76 @@ public class VideoPlayerActivity extends PlayerActivity
     }
 
 
-    handler = new Handler();
+    if(getIntent().getAction() != null && getIntent().getAction().equals(com.atomjack.shared.Intent.ACTION_PLAY_LOCAL)) {
+      transientToken = getIntent().getStringExtra(com.atomjack.shared.Intent.EXTRA_TRANSIENT_TOKEN);
 
-    if(getIntent().getAction() != null && getIntent().getAction().equals(ACTION_PLAY_LOCAL)) {
       media = getIntent().getParcelableExtra(com.atomjack.shared.Intent.EXTRA_MEDIA);
       // Overwrite the media's server if it exists (so it gets the current activeConnection)
       if(VoiceControlForPlexApplication.servers.containsKey(media.server.name))
         media.server = VoiceControlForPlexApplication.servers.get(media.server.name);
-      transientToken = getIntent().getStringExtra(com.atomjack.shared.Intent.EXTRA_TRANSIENT_TOKEN);
+
       resume = getIntent().getBooleanExtra(com.atomjack.shared.Intent.EXTRA_RESUME, false);
 
-//      setContentView(R.layout.video_player_loading);
+      media.server.findServerConnection(new ActiveConnectionHandler() {
+        @Override
+        public void onSuccess(Connection connection) {
+          String url = getTranscodeUrl(media, connection, transientToken);
+          Logger.d("Using url %s", url);
 
-      loadVideo();
+          setContentView(R.layout.video_player);
+
+          videoSurface = (SurfaceView) findViewById(R.id.videoSurface);
+
+          VoiceControlForPlexApplication.getInstance().fetchMediaThumb(media, screenWidth, screenHeight, media.art, media.getImageKey(PlexMedia.IMAGE_KEY.LOCAL_VIDEO_BACKGROUND), new BitmapHandler() {
+            @Override
+            public void onSuccess(Bitmap bitmap) {
+              final BitmapDrawable bitmapDrawable = new BitmapDrawable(getResources(), bitmap);
+              handler.post(new Runnable() {
+                @Override
+                public void run() {
+                  final View videoPlayerLoadingBackground = findViewById(R.id.videoPlayerLoadingBackground);
+                  videoPlayerLoadingBackground.setVisibility(View.VISIBLE);
+                  if(videoPlayerLoadingBackground != null) {
+                    if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.JELLY_BEAN) {
+                      videoPlayerLoadingBackground.setBackgroundDrawable(bitmapDrawable);
+                    } else {
+                      videoPlayerLoadingBackground.setBackground(bitmapDrawable);
+                    }
+                  }
+                }
+              });
+            }
+
+
+            @Override
+            public void onFailure() {
+              // TODO: Handle not finding any active connection here
+            }
+          });
+
+          SurfaceHolder videoHolder = videoSurface.getHolder();
+          videoHolder.addCallback(VideoPlayerActivity.this);
+
+          player.setOnErrorListener(VideoPlayerActivity.this);
+          player.setOnCompletionListener(VideoPlayerActivity.this);
+          controller = new VideoControllerView(VideoPlayerActivity.this);
+
+          setControllerPoster();
+
+          try {
+            player.setAudioStreamType(AudioManager.STREAM_MUSIC);
+            player.setDataSource(VideoPlayerActivity.this, Uri.parse(url));
+            player.setOnPreparedListener(VideoPlayerActivity.this);
+          } catch (Exception e) {
+            e.printStackTrace();
+            // TODO: Handle
+          }
+        }
+
     } else {
       finish();
     }
 
-  }
-
-  private void loadVideo() {
-    media.server.findServerConnection(new ActiveConnectionHandler() {
-      @Override
-      public void onSuccess(Connection connection) {
-        String url = getTranscodeUrl(media, connection, transientToken);
-        Logger.d("Using url %s", url);
-
-        setContentView(R.layout.video_player);
-
-        videoSurface = (SurfaceView) findViewById(R.id.videoSurface);
-
-
-        VoiceControlForPlexApplication.getInstance().fetchMediaThumb(media, screenWidth, screenHeight, media.art, media.getImageKey(PlexMedia.IMAGE_KEY.LOCAL_VIDEO_BACKGROUND), new BitmapHandler() {
-          @Override
-          public void onSuccess(Bitmap bitmap) {
-            final BitmapDrawable bitmapDrawable = new BitmapDrawable(getResources(), bitmap);
-            handler.post(new Runnable() {
-              @Override
-              public void run() {
-                final View videoPlayerLoadingBackground = findViewById(R.id.videoPlayerLoadingBackground);
-                videoPlayerLoadingBackground.setVisibility(View.VISIBLE);
-                if(videoPlayerLoadingBackground != null) {
-                  if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.JELLY_BEAN) {
-                    videoPlayerLoadingBackground.setBackgroundDrawable(bitmapDrawable);
-                  } else {
-                    videoPlayerLoadingBackground.setBackground(bitmapDrawable);
-                  }
-                }
-              }
-            });
-          }
-
-
-          @Override
-          public void onFailure() {
-          }
-        });
-
-        SurfaceHolder videoHolder = videoSurface.getHolder();
-        videoHolder.addCallback(VideoPlayerActivity.this);
-
-        player = new MediaPlayer();
-        player.setOnErrorListener(VideoPlayerActivity.this);
-        player.setOnCompletionListener(VideoPlayerActivity.this);
-        controller = new VideoControllerView(VideoPlayerActivity.this);
-
-        setControllerPoster();
-
-        try {
-          player.setAudioStreamType(AudioManager.STREAM_MUSIC);
-          player.setDataSource(VideoPlayerActivity.this, Uri.parse(url));
-          player.setOnPreparedListener(VideoPlayerActivity.this);
-        } catch (Exception e) {
-          e.printStackTrace();
-          // TODO: Handle
-        }
-      }
-
-      @Override
-      public void onFailure(int statusCode) {
-        // TODO: Handle failure. Feedback?
-      }
-    });
   }
 
   private void setControllerPoster() {
@@ -468,7 +460,7 @@ public class VideoPlayerActivity extends PlayerActivity
       serviceIntent.putExtra(com.atomjack.shared.Intent.EXTRA_RESUME, resume);
       serviceIntent.putExtra(com.atomjack.shared.Intent.EXTRA_FROM_MIC, true);
       serviceIntent.putExtra(com.atomjack.shared.Intent.EXTRA_FROM_LOCAL_PLAYER, true);
-      serviceIntent.putExtra(PlayerActivity.PLAYER, PlayerActivity.PLAYER_VIDEO);
+      serviceIntent.putExtra(com.atomjack.shared.Intent.PLAYER, com.atomjack.shared.Intent.PLAYER_VIDEO);
 
       SecureRandom random = new SecureRandom();
       serviceIntent.setData(Uri.parse(new BigInteger(130, random).toString(32)));

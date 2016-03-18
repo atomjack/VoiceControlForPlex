@@ -13,8 +13,13 @@ public class PlexTrack extends PlexMedia {
 	@Attribute(required=false)
 	public String parentTitle;
 
-	public String artist;
-	public String album;
+  public String getArtist() {
+    return grandparentTitle;
+  }
+
+  public String getAlbum() {
+    return parentTitle;
+  }
 
 	@Override
 	public int describeContents() {
@@ -30,16 +35,12 @@ public class PlexTrack extends PlexMedia {
     super.writeToParcel(out, i);
 		out.writeString(parentThumb);
 		out.writeString(parentTitle);
-		out.writeString(artist);
-		out.writeString(album);
 	}
 
 	public PlexTrack(Parcel in) {
     super(in);
 		parentThumb = in.readString();
 		parentTitle = in.readString();
-		artist = in.readString();
-		album = in.readString();
 	}
 
 	public static final Parcelable.Creator<PlexTrack> CREATOR = new Parcelable.Creator<PlexTrack>() {
@@ -52,6 +53,9 @@ public class PlexTrack extends PlexMedia {
 		}
 	};
 
+  public Part getPart() {
+    return media.get(0).parts.get(0);
+  }
 
 }
 

@@ -23,9 +23,7 @@ import com.atomjack.vcfp.QueryString;
 import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.Utils;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
-import com.atomjack.vcfp.activities.AudioPlayerActivity;
 import com.atomjack.vcfp.activities.MainActivity;
-import com.atomjack.vcfp.activities.PlayerActivity;
 import com.atomjack.vcfp.activities.VideoPlayerActivity;
 import com.atomjack.vcfp.interfaces.ActiveConnectionHandler;
 import com.atomjack.vcfp.interfaces.AfterTransientTokenRequest;
@@ -131,7 +129,7 @@ public class PlexSearchService extends Service {
     shuffle = false;
 
     fromLocalPlayer = intent.getBooleanExtra(com.atomjack.shared.Intent.EXTRA_FROM_LOCAL_PLAYER, false);
-    whichLocalPlayer = intent.getIntExtra(PlayerActivity.PLAYER, -1);
+    whichLocalPlayer = intent.getIntExtra(com.atomjack.shared.Intent.PLAYER, -1);
 
     if(plexSubscription == null) {
       plexSubscription = VoiceControlForPlexApplication.getInstance().plexSubscription;
@@ -943,8 +941,8 @@ public class PlexSearchService extends Service {
 	}
 
   private void sendResponseToLocalPlayer() {
-    Intent nowPlayingIntent = new Intent(this, whichLocalPlayer == PlayerActivity.PLAYER_AUDIO ? AudioPlayerActivity.class : VideoPlayerActivity.class);
-    nowPlayingIntent.setAction(PlayerActivity.ACTION_MIC_RESPONSE);
+    Intent nowPlayingIntent = new Intent(this, whichLocalPlayer == com.atomjack.shared.Intent.PLAYER_AUDIO ? MainActivity.class : VideoPlayerActivity.class);
+    nowPlayingIntent.setAction(com.atomjack.shared.Intent.ACTION_MIC_RESPONSE);
 //    nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_STARTING_PLAYBACK, true);
 //    nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_MEDIA, media);
 //    nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_CLIENT, client);
@@ -990,7 +988,6 @@ public class PlexSearchService extends Service {
 
 			@Override
 			public void onFailure(Throwable error) {
-				Logger.d("[Scott] adjustPlayback onFailure: %s", error.getMessage());
 				feedback.e(getResources().getString(R.string.got_error), error.getMessage());
 			}
 		};
@@ -1042,7 +1039,6 @@ public class PlexSearchService extends Service {
 
         @Override
         public void onFailure(Throwable error) {
-          Logger.d("[Scott] seekTo onFailure: %s", error.getMessage());
           feedback.e(getResources().getString(R.string.got_error), error.getMessage());
         }
       });
@@ -1106,7 +1102,6 @@ public class PlexSearchService extends Service {
               @Override
               public void onFailure(Throwable error) {
                 error.printStackTrace();
-								Logger.d("[Scott] doMovieSearch onFailure: %s", error.getMessage());
                 feedback.e(getResources().getString(R.string.got_error), error.getMessage());
               }
             });
@@ -1279,13 +1274,17 @@ public class PlexSearchService extends Service {
   }
 
   private void playMedia(final PlexMedia media, Connection connection, PlexDirectory album, String transientToken, final MediaContainer mediaContainer) {
-
     if(client.isLocalClient) {
-      Intent nowPlayingIntent = new Intent(this, VideoPlayerActivity.class);
-      nowPlayingIntent.setAction(VideoPlayerActivity.ACTION_PLAY_LOCAL);
+      VoiceControlForPlexApplication.getInstance().subscribedToLocalClient = true;
+      Intent nowPlayingIntent = new Intent(this, media instanceof PlexVideo ? VideoPlayerActivity.class : MainActivity.class);
+      nowPlayingIntent.setAction(com.atomjack.shared.Intent.ACTION_PLAY_LOCAL);
       nowPlayingIntent.putExtra(WearConstants.FROM_WEAR, fromWear);
       nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_STARTING_PLAYBACK, true);
       nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_MEDIA, media);
+      if(album != null)
+        nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_ALBUM, album);
+      if(mediaContainer != null)
+        nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_PLAYQUEUE, String.format("/playQueues/%s", mediaContainer.playQueueID));
       nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_TRANSIENT_TOKEN, transientToken);
       nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_RESUME, resumePlayback);
       nowPlayingIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -1335,7 +1334,7 @@ public class PlexSearchService extends Service {
           if (Utils.getIPAddress(true).equals(client.address) || r == null)
             return;
           if (media instanceof PlexTrack)
-            feedback.m(getResources().getString(R.string.now_listening_to), media.title, ((PlexTrack) media).artist, client.name);
+            feedback.m(getResources().getString(R.string.now_listening_to), media.title, ((PlexTrack) media).getArtist(), client.name);
           else
             feedback.m(getResources().getString(R.string.now_watching_video), media.isMovie() ? media.title : media.grandparentTitle, client.name);
           boolean passed = true;
@@ -1367,9 +1366,9 @@ public class PlexSearchService extends Service {
 		Logger.d("Client: %s", client);
 
     Logger.d("currentNetworkState: %s", currentNetworkState);
-    if(currentNetworkState == MainActivity.NetworkState.MOBILE) {
+    if(currentNetworkState == MainActivity.NetworkState.MOBILE && !client.isLocalClient) {
       media.server.localPlay(media, resumePlayback, transientToken);
-    } else if(currentNetworkState == MainActivity.NetworkState.WIFI) {
+    } else if(currentNetworkState == MainActivity.NetworkState.WIFI || client.isLocalClient) {
 
       media.server.findServerConnection(new ActiveConnectionHandler() {
         @Override
@@ -2017,10 +2016,8 @@ public class PlexSearchService extends Service {
 								server.musicSectionsSearched++;
 								for(int j=0;j<mc.tracks.size();j++) {
 									PlexTrack thisTrack = mc.tracks.get(j);
-									thisTrack.artist = thisTrack.grandparentTitle;
-									thisTrack.album = thisTrack.parentTitle;
-									Logger.d("Track: %s by %s.", thisTrack.title, thisTrack.artist);
-									if(compareTitle(thisTrack.artist, artist)) {
+									Logger.d("Track: %s by %s.", thisTrack.title, thisTrack.getArtist());
+									if(compareTitle(thisTrack.getArtist(), artist)) {
 										thisTrack.server = server;
 										tracks.add(thisTrack);
 									}
@@ -2035,7 +2032,7 @@ public class PlexSearchService extends Service {
 										} else {
 											boolean exactMatch = false;
 											for(int k=0;k<tracks.size();k++) {
-												if(tracks.get(k).artist.toLowerCase().equals(artist.toLowerCase())) {
+												if(tracks.get(k).getArtist().toLowerCase().equals(artist.toLowerCase())) {
 													exactMatch = true;
                           fetchAndPlayMedia(tracks.get(k));
 												}

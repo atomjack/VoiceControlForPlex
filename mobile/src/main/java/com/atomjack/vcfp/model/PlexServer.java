@@ -205,7 +205,6 @@ public class PlexServer extends PlexDevice {
           Logger.d("Found connection for %s: %s", name, activeConnection);
           activeConnectionExpires = Calendar.getInstance();
           activeConnectionExpires.add(Calendar.HOUR_OF_DAY, 1);
-          SimpleDateFormat simpleDateFormat = new SimpleDateFormat("EEEE, MMMM d, yyyy 'at' h:mm:ss a");
           VoiceControlForPlexApplication.servers.put(name, PlexServer.this);
           Type serverType = new TypeToken<ConcurrentHashMap<String, PlexServer>>(){}.getType();
           VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.SAVED_SERVERS, VoiceControlForPlexApplication.gsonWrite.toJson(VoiceControlForPlexApplication.servers, serverType));
