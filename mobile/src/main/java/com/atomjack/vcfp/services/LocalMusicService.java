@@ -19,6 +19,7 @@ import com.atomjack.vcfp.interfaces.ActiveConnectionHandler;
 import com.atomjack.vcfp.model.Connection;
 import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.PlexTrack;
+import com.atomjack.vcfp.net.PlexHttpClient;
 
 public class LocalMusicService extends Service implements
         MediaPlayer.OnPreparedListener, MediaPlayer.OnErrorListener,
@@ -192,8 +193,8 @@ public class LocalMusicService extends Service implements
   private Runnable playerProgressUpdater = new Runnable() {
     @Override
     public void run() {
-      int position = player.getCurrentPosition();
-      musicServiceListener.onTimeUpdate(currentState, position);
+      PlexHttpClient.reportProgressToServer(track, player.getCurrentPosition(), currentState);
+      musicServiceListener.onTimeUpdate(currentState, player.getCurrentPosition());
       handler.postDelayed(this, 1000);
     }
   };
