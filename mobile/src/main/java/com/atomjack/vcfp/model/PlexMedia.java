@@ -137,6 +137,8 @@ public abstract class PlexMedia implements Parcelable {
         whichThumb = parentArt;
       else
         whichThumb = grandparentThumb;
+    } else if(isMusic()) {
+
     }
     Logger.d("whichThumb: %s", whichThumb);
     return getThumb(width, height, whichThumb);
@@ -152,7 +154,7 @@ public abstract class PlexMedia implements Parcelable {
 
   public InputStream getThumb(int width, int height, String whichThumb) {
     if(whichThumb == null)
-      whichThumb = thumb;
+      whichThumb = thumb != null ? thumb :  grandparentThumb;
     String path = String.format("/photo/:/transcode?width=%d&height=%d&url=%s", width, height, Uri.encode(String.format("http://127.0.0.1:32400%s", whichThumb)));
     String url = server.buildURL(path);
     Logger.d("thumb url: %s", url);

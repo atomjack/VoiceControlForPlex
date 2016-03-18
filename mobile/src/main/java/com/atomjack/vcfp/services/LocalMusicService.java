@@ -14,10 +14,12 @@ import android.support.annotation.Nullable;
 import com.atomjack.shared.Logger;
 import com.atomjack.shared.PlayerState;
 import com.atomjack.vcfp.PlexHeaders;
+import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.fragments.MusicPlayerFragment;
 import com.atomjack.vcfp.interfaces.ActiveConnectionHandler;
 import com.atomjack.vcfp.model.Connection;
 import com.atomjack.vcfp.model.MediaContainer;
+import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexTrack;
 import com.atomjack.vcfp.net.PlexHttpClient;
 
@@ -78,8 +80,8 @@ public class LocalMusicService extends Service implements
     player.reset();
     if(mediaContainer != null)
       track = mediaContainer.tracks.get(currentSongIdx);
-    musicServiceListener.onTrackChange(track);
     if(track != null) {
+      VoiceControlForPlexApplication.getInstance().setNotification(PlexClient.getLocalPlaybackClient(), currentState, track);
       track.server.findServerConnection(new ActiveConnectionHandler() {
         @Override
         public void onSuccess(Connection connection) {
@@ -124,6 +126,7 @@ public class LocalMusicService extends Service implements
   public void doStop() {
     player.stop();
     handler.removeCallbacks(playerProgressUpdater);
+    VoiceControlForPlexApplication.getInstance().cancelNotification();
   }
 
   public void seek(int time) {
@@ -138,6 +141,7 @@ public class LocalMusicService extends Service implements
       player.start();
       currentState = PlayerState.PLAYING;
     }
+    VoiceControlForPlexApplication.getInstance().setNotification(PlexClient.getLocalPlaybackClient(), currentState, track);
   }
 
   public void setSong(int idx) {
@@ -205,6 +209,8 @@ public class LocalMusicService extends Service implements
       if(player.getDuration() > 0) {
         Logger.d("Audio is playing");
         currentState = PlayerState.PLAYING;
+        musicServiceListener.onTrackChange(track);
+        VoiceControlForPlexApplication.getInstance().setNotification(PlexClient.getLocalPlaybackClient(), currentState, track);
         handler.postDelayed(playerProgressUpdater, 1000);
       } else {
         handler.postDelayed(videoIsPlayingCheck, 100);

@@ -294,7 +294,6 @@ public class MainActivity extends AppCompatActivity
         if(client.isLocalClient) {
           subscribed = true;
           VoiceControlForPlexApplication.getInstance().subscribedToLocalClient = true;
-          setCastIconActive();
         } else if (client.isCastClient) {
           if (!castPlayerManager.isSubscribed()) {
             castPlayerManager.subscribe(client);

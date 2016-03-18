@@ -391,7 +391,7 @@ public class VoiceControlForPlexApplication extends Application
         @Override
         protected Void doInBackground(Void... voids) {
           if (client != null && media != null) {
-            InputStream inputStream = media.getNotificationThumb(media instanceof PlexTrack ? PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB_MUSIC : key);
+            InputStream inputStream = media.getNotificationThumb(key);
             if(inputStream != null) {
               try {
                 inputStream.reset();
@@ -439,6 +439,7 @@ public class VoiceControlForPlexApplication extends Application
   }
 
   public void setNotification(final PlexClient client, final PlayerState currentState, final PlexMedia media) {
+    notificationStatus = NOTIFICATION_STATUS.off;
     setNotification(client, currentState, media, false);
   }
 
@@ -456,12 +457,15 @@ public class VoiceControlForPlexApplication extends Application
       notificationBitmapBig = null;
     }
 
-    notificationBitmap = getCachedBitmap(media.getImageKey(PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB));
+
+    PlexMedia.IMAGE_KEY key = media instanceof PlexTrack ? PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB_MUSIC : PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB;
+
+    notificationBitmap = getCachedBitmap(media.getImageKey(key));
     if(notificationBitmap == null && notificationStatus == NOTIFICATION_STATUS.initializing && !skipThumb)
-      fetchNotificationBitmap(PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB, client, media, currentState);
-    notificationBitmapBig = getCachedBitmap(media.getImageKey(PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB_BIG));
+      fetchNotificationBitmap(key, client, media, currentState);
+    notificationBitmapBig = getCachedBitmap(media.getImageKey(key));
     if(notificationBitmapBig == null && notificationStatus == NOTIFICATION_STATUS.initializing && !skipThumb)
-      fetchNotificationBitmap(PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB_BIG, client, media, currentState);
+      fetchNotificationBitmap(key, client, media, currentState);
 
     android.content.Intent rewindIntent = new android.content.Intent(VoiceControlForPlexApplication.this, PlexControlService.class);
     rewindIntent.setAction(PlexControlService.ACTION_REWIND);

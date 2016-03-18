@@ -30,6 +30,8 @@ public class PlexControlService extends IntentService {
   private CastPlayerManager castPlayerManager;
   private PlexSubscription plexSubscription;
 
+  private LocalMusicService localMusicService;
+
   public PlexControlService() {
     super("Plex Control Service");
   }

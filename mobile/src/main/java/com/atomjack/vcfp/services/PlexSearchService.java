@@ -321,6 +321,9 @@ public class PlexSearchService extends Service {
 
 	private void startup() {
 		queryText = queries.remove(0);
+    if(queryText.contains("-")) {
+      queries.add(queryText.replaceAll("-", ""));
+    }
 
 		if(!didClientScan) {
 			if(queryText.matches(getString(R.string.pattern_on_client))) {
@@ -2121,8 +2124,15 @@ public class PlexSearchService extends Service {
 								}
                 if(theFoundArtist != null)
                   foundArtist(theFoundArtist);
-                else
-                  feedback.e(String.format(getResources().getString(R.string.couldnt_find_artist), artist));
+                else {
+                  serversSearched++;
+                  if(serversSearched == plexmediaServers.size()) {
+                    if (queries.size() > 0)
+                      startup();
+                    else
+                      feedback.e(String.format(getResources().getString(R.string.couldnt_find_artist), artist));
+                  }
+                }
 							}
 
               public void foundArtist(PlexDirectory thisArtist) {

@@ -51,6 +51,9 @@ public class MusicPlayerFragment extends Fragment {
 
   private Handler handler;
 
+  // These will be set on first load, then used subsequently to resize the cover art image
+  int posterWidth = -1, posterHeight = -1;
+
   @Bind(R.id.nowPlayingOnClient)
   TextView nowPlayingOnClient;
   @Bind(R.id.nowPlayingArtist)
@@ -244,31 +247,41 @@ public class MusicPlayerFragment extends Fragment {
     nowPlayingArtist.setText(track.getArtist());
     nowPlayingAlbum.setText(track.getAlbum());
     nowPlayingTitle.setText(track.title);
+
     if(nowPlayingPosterContainer != null) {
-      ViewTreeObserver vto = nowPlayingPosterContainer.getViewTreeObserver();
-      vto.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-        @Override
-        public void onGlobalLayout() {
-          if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
-            nowPlayingPosterContainer.getViewTreeObserver().removeOnGlobalLayoutListener(this);
-          int height = nowPlayingPosterContainer.getMeasuredHeight();
-          int width = nowPlayingPosterContainer.getMeasuredWidth();
+      if(posterHeight == -1 || posterWidth == -1) {
+        ViewTreeObserver vto = nowPlayingPosterContainer.getViewTreeObserver();
+        vto.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+          @Override
+          public void onGlobalLayout() {
+            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
+              nowPlayingPosterContainer.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+            posterWidth = nowPlayingPosterContainer.getMeasuredWidth();
+            posterHeight = nowPlayingPosterContainer.getMeasuredHeight();
+            setMainImage();
+          }
+        });
+      } else {
+        setMainImage();
+      }
 
-          VoiceControlForPlexApplication.getInstance().fetchMediaThumb(track, width, height, track.thumb != null ? track.thumb : track.grandparentThumb, track.getImageKey(PlexMedia.IMAGE_KEY.LOCAL_MUSIC_THUMB), new BitmapHandler() {
-            @Override
-            public void onSuccess(final Bitmap bitmap) {
-              handler.post(new Runnable() {
-                @Override
-                public void run() {
-                  nowPlayingPoster.setImageBitmap(bitmap);
-                }
-              });
-
-            }
-          });
-        }
-      });
     }
+  }
+
+  private void setMainImage() {
+    Logger.d("[MusicPlayerFragment] Fetching main image");
+
+    VoiceControlForPlexApplication.getInstance().fetchMediaThumb(track, posterWidth, posterHeight, track.thumb != null ? track.thumb : track.grandparentThumb, track.getImageKey(PlexMedia.IMAGE_KEY.LOCAL_MUSIC_THUMB), new BitmapHandler() {
+      @Override
+      public void onSuccess(final Bitmap bitmap) {
+        handler.post(new Runnable() {
+          @Override
+          public void run() {
+            nowPlayingPoster.setImageBitmap(bitmap);
+          }
+        });
+      }
+    });
   }
 
   @Override
@@ -307,6 +320,7 @@ public class MusicPlayerFragment extends Fragment {
 
         @Override
         public void onTrackChange(PlexTrack t) {
+          Logger.d("[MusicPlayerFragment] onTrackChange: %s", t.getTitle());
           track = t;
           showNowPlaying();
         }
