@@ -22,7 +22,6 @@ import com.atomjack.vcfp.model.PlexDirectory;
 import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexResponse;
 import com.atomjack.vcfp.model.PlexServer;
-import com.atomjack.vcfp.model.PlexTrack;
 import com.atomjack.vcfp.model.PlexUser;
 import com.atomjack.vcfp.model.Stream;
 import com.squareup.okhttp.Interceptor;

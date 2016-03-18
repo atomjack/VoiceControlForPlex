@@ -329,10 +329,6 @@ public class MainActivity extends AppCompatActivity
     init();
     if(!doingFirstTimeSetup)
       doAutomaticDeviceScan();
-    if(isSubscribed())
-      setCastIconActive();
-    else
-      Logger.d("Not subscribed");
   }
 
   @Override
@@ -1059,7 +1055,6 @@ public class MainActivity extends AppCompatActivity
         setCastIconActive();
         if(musicPlayerFragment == null)
           musicPlayerFragment = new MusicPlayerFragment();
-//        musicPlayerFragment.setRetainInstance(false);
 
         musicPlayerFragment.init(intent, new Runnable() {
           @Override
@@ -1382,7 +1377,7 @@ public class MainActivity extends AppCompatActivity
     if(!doingFirstTimeSetup) {
       getMenuInflater().inflate(R.menu.toolbar_cast, menu);
       castIconMenuItem = menu.findItem(R.id.action_cast);
-      if (plexSubscription.isSubscribed() || castPlayerManager.isSubscribed()) {
+      if (isSubscribed()) {
         setCastIconActive();
       }
     }
@@ -2381,7 +2376,9 @@ public class MainActivity extends AppCompatActivity
     Logger.d("[MainActivity] setCastIconActive");
     try {
       castIconMenuItem.setIcon(R.drawable.mr_ic_media_route_on_holo_dark);
-    } catch (Exception e) {}
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
   }
 
   @Override

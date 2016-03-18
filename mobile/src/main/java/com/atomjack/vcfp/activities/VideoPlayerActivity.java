@@ -188,6 +188,11 @@ public class VideoPlayerActivity extends AppCompatActivity
           }
         }
 
+        @Override
+        public void onFailure(int statusCode) {
+          // TODO: Handle failure. Feedback?
+        }
+      });
     } else {
       finish();
     }

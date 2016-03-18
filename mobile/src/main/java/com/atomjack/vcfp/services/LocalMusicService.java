@@ -93,7 +93,7 @@ public class LocalMusicService extends Service implements
         }
 
         @Override
-        public void onFailure(int statusCode, boolean shouldRepeat) {
+        public void onFailure(int statusCode) {
 
         }
       });

@@ -159,7 +159,6 @@ public class PlexSearchService extends Service {
         // and then figure out which client to play to
         Logger.d("Got back from scanning for servers.");
         videoPlayed = false;
-//        plexmediaServers = VoiceControlForPlexApplication.servers;
         HashMap<String, PlexServer> s = (HashMap<String, PlexServer>) intent.getSerializableExtra(com.atomjack.shared.Intent.EXTRA_SERVERS);
         VoiceControlForPlexApplication.servers = new ConcurrentHashMap<>(s);
         plexmediaServers = VoiceControlForPlexApplication.servers;
@@ -170,7 +169,7 @@ public class PlexSearchService extends Service {
         didClientScan = true;
         ArrayList<PlexClient> cs = intent.getParcelableArrayListExtra(com.atomjack.shared.Intent.EXTRA_CLIENTS);
         if (cs != null) {
-          VoiceControlForPlexApplication.clients = new HashMap<String, PlexClient>();
+          VoiceControlForPlexApplication.clients = new HashMap<>();
           for (PlexClient c : cs) {
             VoiceControlForPlexApplication.clients.put(c.name, c);
           }
@@ -951,7 +950,7 @@ public class PlexSearchService extends Service {
   }
 
 	private void adjustPlayback(String which, final String onFinish) {
-		ArrayList<String> validModes = new ArrayList<String>(Arrays.asList("pause", "play", "stop"));
+		ArrayList<String> validModes = new ArrayList<>(Arrays.asList("pause", "play", "stop"));
 		if(validModes.indexOf(which) == -1)
 			return;
 
@@ -1064,7 +1063,6 @@ public class PlexSearchService extends Service {
 				public void onSuccess(Connection connection) {
 					server.movieSectionsSearched = 0;
 					Logger.d("Searching server (for movies): %s, %d sections", server.name, server.movieSections.size());
-//          Logger.d("Server active connection: %s", server.activeConnection);
 
 					if(server.movieSections.size() == 0) {
 						serversSearched++;
@@ -2265,13 +2263,6 @@ public class PlexSearchService extends Service {
 		@Override
 		public void onConnectionSuspended(int cause) {
 			mWaitingForReconnect = true;
-		}
-	}
-
-	private class ConnectionFailedListener implements
-					GoogleApiClient.OnConnectionFailedListener {
-		@Override
-		public void onConnectionFailed(ConnectionResult result) {
 		}
 	}
 

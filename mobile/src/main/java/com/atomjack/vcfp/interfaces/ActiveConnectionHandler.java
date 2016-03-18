@@ -3,6 +3,6 @@ package com.atomjack.vcfp.interfaces;
 import com.atomjack.vcfp.model.Connection;
 
 public interface ActiveConnectionHandler {
-  public void onSuccess(Connection connection);
-  public void onFailure(int statusCode);
+  void onSuccess(Connection connection);
+  void onFailure(int statusCode);
 }
