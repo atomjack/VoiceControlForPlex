@@ -1091,51 +1091,6 @@ public class MainActivity extends AppCompatActivity
             musicPlayerFragment.init(localMusicService.getTrack(), localMusicService.getMediaContainer());
             Logger.d("Switching to music");
             switchToFragment(musicPlayerFragment);
-
-            /*
-            if(intent.getParcelableExtra(com.atomjack.shared.Intent.EXTRA_ALBUM) != null) {
-              PlexDirectory directory = intent.getParcelableExtra(com.atomjack.shared.Intent.EXTRA_ALBUM);
-              Logger.d("Directory: %s", directory.key);
-              PlexHttpClient.getChildren(directory, track.server, new PlexHttpMediaContainerHandler() {
-                @Override
-                public void onSuccess(MediaContainer mediaContainer) {
-                  // Add the server to each track
-                  for(PlexTrack t : mediaContainer.tracks)
-                    t.server = track.server;
-
-
-
-
-                }
-
-                @Override
-                public void onFailure(Throwable error) {
-
-                }
-              });
-            } else if(intent.getStringExtra(com.atomjack.shared.Intent.EXTRA_PLAYQUEUE) != null) {
-              Logger.d("Play queue id: %s", intent.getStringExtra(com.atomjack.shared.Intent.EXTRA_PLAYQUEUE));
-              PlexHttpClient.get(track.server, intent.getStringExtra(com.atomjack.shared.Intent.EXTRA_PLAYQUEUE), new PlexHttpMediaContainerHandler() {
-                @Override
-                public void onSuccess(MediaContainer mediaContainer) {
-                  // Add the server to each track
-                  for(PlexTrack t : mediaContainer.tracks)
-                    t.server = track.server;
-
-                  // TODO: same as above
-                }
-
-                @Override
-                public void onFailure(Throwable error) {
-                  // TODO: Handle
-                }
-              });
-            } else {
-              // Only playing a single track
-            }
-
-
-            */
           }
         });
 
@@ -2773,8 +2728,13 @@ public class MainActivity extends AppCompatActivity
   }
 
   @Override
-  public void doPlayPause() {
-    localMusicService.doPlayPause();
+  public void doPlay() {
+    localMusicService.doPlay();
+  }
+
+  @Override
+  public void doPause() {
+    localMusicService.doPause();
   }
 
   @Override

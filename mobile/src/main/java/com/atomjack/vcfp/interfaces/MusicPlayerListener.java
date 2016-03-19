@@ -8,7 +8,8 @@ import com.atomjack.vcfp.model.PlexTrack;
  */
 public interface MusicPlayerListener {
   void doNext();
-  void doPlayPause();
+  void doPlay();
+  void doPause();
   void doPrevious();
   void doStop();
   PlexTrack getTrack();

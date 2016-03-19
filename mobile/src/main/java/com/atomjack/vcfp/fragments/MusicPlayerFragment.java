@@ -1,7 +1,6 @@
 package com.atomjack.vcfp.fragments;
 
 import android.content.Context;
-import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.os.Build;
 import android.os.Bundle;
@@ -15,6 +14,7 @@ import android.view.ViewTreeObserver;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
@@ -64,8 +64,12 @@ public class MusicPlayerFragment extends Fragment implements MusicServiceListene
   SeekBar seekBar;
   @Bind(R.id.durationView)
   TextView durationView;
-  @Bind(R.id.playPauseButton)
-  ImageButton playPauseButton;
+  @Bind(R.id.playButton)
+  ImageButton playButton;
+  @Bind(R.id.pauseButton)
+  ImageButton pauseButton;
+  @Bind(R.id.playPauseSpinner)
+  ProgressBar playPauseSpinner;
   @Bind(R.id.stopButton)
   ImageButton stopButton;
   @Bind(R.id.nextButton)
@@ -145,10 +149,14 @@ public class MusicPlayerFragment extends Fragment implements MusicServiceListene
   }
 
 
-  @OnClick(R.id.playPauseButton)
-  public void doPlayPause(View v) {
-    Logger.d("[MusicPlayerFragment] doPlayPause");
-    listener.doPlayPause();
+  @OnClick(R.id.playButton)
+  public void doPlay(View v) {
+    listener.doPlay();
+  }
+
+  @OnClick(R.id.pauseButton)
+  public void doPause(View v) {
+    listener.doPause();
   }
 
   @OnClick(R.id.stopButton)
@@ -169,6 +177,8 @@ public class MusicPlayerFragment extends Fragment implements MusicServiceListene
     seekBar.setMax(track.duration / 1000);
     seekBar.setProgress(0);
     seekBar.setOnSeekBarChangeListener(seekBarChangeListener);
+
+    setPlayPauseButtonState(PlayerState.BUFFERING);
 
     nowPlayingOnClient.setVisibility(View.GONE);
     Logger.d("Setting artist/album to %s/%s", track.getArtist(), track.getAlbum());
@@ -227,10 +237,23 @@ public class MusicPlayerFragment extends Fragment implements MusicServiceListene
 //          Logger.d("[MusicPlayerFragment] got time update, state: %s, time: %d", state, time);
     currentTimeView.setText(VoiceControlForPlexApplication.secondsToTimecode(time / 1000));
     seekBar.setProgress(time / 1000);
-    if(state == PlayerState.PAUSED)
-      playPauseButton.setImageResource(R.drawable.button_play);
-    else if(state == PlayerState.PLAYING)
-      playPauseButton.setImageResource(R.drawable.button_pause);
+    setPlayPauseButtonState(state);
+  }
+
+  private void setPlayPauseButtonState(PlayerState state) {
+    if(state == PlayerState.PAUSED) {
+      playButton.setVisibility(View.VISIBLE);
+      pauseButton.setVisibility(View.INVISIBLE);
+      playPauseSpinner.setVisibility(View.INVISIBLE);
+    } else if(state == PlayerState.PLAYING) {
+      pauseButton.setVisibility(View.VISIBLE);
+      playButton.setVisibility(View.INVISIBLE);
+      playPauseSpinner.setVisibility(View.INVISIBLE);
+    } else if(state == PlayerState.BUFFERING) {
+      playButton.setVisibility(View.INVISIBLE);
+      pauseButton.setVisibility(View.INVISIBLE);
+      playPauseSpinner.setVisibility(View.VISIBLE);
+    }
   }
 
   @Override

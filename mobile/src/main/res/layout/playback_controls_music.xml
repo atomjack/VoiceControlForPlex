@@ -58,14 +58,39 @@
             android:id="@+id/previousButton" android:src="@drawable/button_previous"
             android:layout_weight="1"
             android:layout_marginTop="10dp"/>
-        <ImageButton
+
+        <FrameLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:background="@android:color/transparent"
-            android:onClick="doPlayPause"
-            android:id="@+id/playPauseButton" android:src="@drawable/button_play"
             android:layout_weight="1"
-            android:layout_marginTop="10dp"/>
+            android:layout_marginTop="3dp">
+
+            <ProgressBar
+                android:id="@+id/playPauseSpinner"
+                style="?android:attr/progressBarStyle"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@android:color/transparent"
+                android:visibility="invisible"/>
+
+            <ImageButton
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:id="@+id/pauseButton"
+                android:src="@drawable/button_pause"
+                android:background="@android:color/transparent"
+                android:visibility="invisible"/>
+
+            <ImageButton
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@android:color/transparent"
+                android:id="@+id/playButton" android:src="@drawable/button_play"
+                android:layout_weight="1"
+                />
+
+        </FrameLayout>
+
         <ImageButton
             android:layout_width="0dp"
             android:layout_height="wrap_content"

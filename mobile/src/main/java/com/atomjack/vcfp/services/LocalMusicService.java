@@ -123,6 +123,8 @@ public class LocalMusicService extends Service implements
             e.printStackTrace();
           }
           player.prepareAsync();
+          musicServiceListener.onTrackChange(track);
+          VoiceControlForPlexApplication.getInstance().setNotification(PlexClient.getLocalPlaybackClient(), currentState, track);
         }
 
         @Override
@@ -165,6 +167,17 @@ public class LocalMusicService extends Service implements
 
   public void seek(int time) {
     player.seekTo(time);
+  }
+
+  public void doPlay() {
+    Logger.d("[LocalMusicService] doPlay");
+    player.start();
+    currentState = PlayerState.PLAYING;
+  }
+
+  public void doPause() {
+    player.pause();
+    currentState = PlayerState.PAUSED;
   }
 
   public void doPlayPause() {
@@ -226,7 +239,7 @@ public class LocalMusicService extends Service implements
     Logger.d("[LocalMusicService] onPrepared");
     currentState = PlayerState.BUFFERING;
     player.start();
-    videoIsPlayingCheck.run();
+    musicIsPlayingCheck.run();
   }
 
   private Runnable playerProgressUpdater = new Runnable() {
@@ -238,17 +251,15 @@ public class LocalMusicService extends Service implements
     }
   };
 
-  private Runnable videoIsPlayingCheck = new Runnable() {
+  private Runnable musicIsPlayingCheck = new Runnable() {
     @Override
     public void run() {
       if(player.getDuration() > 0) {
         Logger.d("Audio is playing");
         currentState = PlayerState.PLAYING;
-        musicServiceListener.onTrackChange(track);
-        VoiceControlForPlexApplication.getInstance().setNotification(PlexClient.getLocalPlaybackClient(), currentState, track);
         handler.postDelayed(playerProgressUpdater, 1000);
       } else {
-        handler.postDelayed(videoIsPlayingCheck, 100);
+        handler.postDelayed(musicIsPlayingCheck, 100);
       }
     }
   };
