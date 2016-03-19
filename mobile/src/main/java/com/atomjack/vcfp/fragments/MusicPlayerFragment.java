@@ -1,10 +1,13 @@
 package com.atomjack.vcfp.fragments;
 
+import android.app.PendingIntent;
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.speech.RecognizerIntent;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
@@ -18,6 +21,7 @@ import android.widget.ProgressBar;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
+import com.atomjack.shared.Intent;
 import com.atomjack.shared.Logger;
 import com.atomjack.shared.PlayerState;
 import com.atomjack.vcfp.R;
@@ -26,8 +30,13 @@ import com.atomjack.vcfp.interfaces.BitmapHandler;
 import com.atomjack.vcfp.interfaces.MusicPlayerListener;
 import com.atomjack.vcfp.interfaces.MusicServiceListener;
 import com.atomjack.vcfp.model.MediaContainer;
+import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexTrack;
+import com.atomjack.vcfp.services.PlexSearchService;
+
+import java.math.BigInteger;
+import java.security.SecureRandom;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
@@ -43,6 +52,8 @@ public class MusicPlayerFragment extends Fragment implements MusicServiceListene
 
   // These will be set on first load, then used subsequently to resize the cover art image
   int posterWidth = -1, posterHeight = -1;
+
+  private boolean doingMic = false;
 
   @Bind(R.id.nowPlayingOnClient)
   TextView nowPlayingOnClient;
@@ -167,9 +178,39 @@ public class MusicPlayerFragment extends Fragment implements MusicServiceListene
 
   @OnClick(R.id.micButton)
   public void doMic(View v) {
+    if(listener.isPlaying())
+      doingMic = true;
+    listener.doPause();
+    android.content.Intent serviceIntent = new android.content.Intent(getActivity(), PlexSearchService.class);
 
+    serviceIntent.putExtra(com.atomjack.shared.Intent.EXTRA_SERVER, VoiceControlForPlexApplication.gsonWrite.toJson(track.server));
+    serviceIntent.putExtra(com.atomjack.shared.Intent.EXTRA_CLIENT, VoiceControlForPlexApplication.gsonWrite.toJson(PlexClient.getLocalPlaybackClient()));
+    serviceIntent.putExtra(com.atomjack.shared.Intent.EXTRA_FROM_MIC, true);
+    serviceIntent.putExtra(com.atomjack.shared.Intent.EXTRA_FROM_LOCAL_PLAYER, true);
+    serviceIntent.putExtra(com.atomjack.shared.Intent.PLAYER, Intent.PLAYER_AUDIO);
+
+    SecureRandom random = new SecureRandom();
+    serviceIntent.setData(Uri.parse(new BigInteger(130, random).toString(32)));
+    PendingIntent resultsPendingIntent = PendingIntent.getService(getActivity(), 0, serviceIntent, PendingIntent.FLAG_ONE_SHOT);
+
+    android.content.Intent listenerIntent = new android.content.Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+    listenerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+    listenerIntent.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, "voice.recognition.test");
+    listenerIntent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 5);
+    listenerIntent.putExtra(RecognizerIntent.EXTRA_RESULTS_PENDINGINTENT, resultsPendingIntent);
+    listenerIntent.putExtra(RecognizerIntent.EXTRA_PROMPT, getResources().getString(R.string.voice_prompt));
+
+    startActivity(listenerIntent);
   }
 
+  @Override
+  public void onResume() {
+    super.onResume();
+    Logger.d("[MusicPlayerFragment] onResume");
+    if(doingMic)
+      listener.doPlay();
+    doingMic = false;
+  }
 
   private void showNowPlaying() {
     currentTimeView.setText(track.duration / 1000 < 60*60 ? "00:00" : "00:00:00");

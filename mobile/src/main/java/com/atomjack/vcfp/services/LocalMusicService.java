@@ -187,6 +187,10 @@ public class LocalMusicService extends Service implements
     VoiceControlForPlexApplication.getInstance().setNotification(PlexClient.getLocalPlaybackClient(), currentState, track);
   }
 
+  public boolean isPlaying() {
+    return player.isPlaying();
+  }
+
   public void setSong(int idx) {
     currentSongIdx = idx;
   }

@@ -1069,30 +1069,36 @@ public class MainActivity extends AppCompatActivity
 
       } else if(intent.getAction().equals(ACTION_SHOW_NOW_PLAYING)) {
         handleShowNowPlayingIntent(intent);
-      } else if(intent.getAction().equals(com.atomjack.shared.Intent.ACTION_PLAY_LOCAL)) {
+        } else if(intent.getAction().equals(com.atomjack.shared.Intent.ACTION_PLAY_LOCAL)) {
         Logger.d("[MainActivity] Binding to LocalMusicService");
         bindMusicPlayerService();
-        musicConnection.setOnConnected(new Runnable() {
-          @Override
-          public void run() {
-            PlexTrack track = intent.getParcelableExtra(com.atomjack.shared.Intent.EXTRA_MEDIA);
-            MediaContainer mediaContainer = intent.getParcelableExtra(com.atomjack.shared.Intent.EXTRA_ALBUM);
-            Logger.d("Got track %s and media container with %d tracks", (track != null ? track.title : null), mediaContainer.tracks.size());
+        final PlexTrack track = intent.getParcelableExtra(com.atomjack.shared.Intent.EXTRA_MEDIA);
+        final MediaContainer mediaContainer = intent.getParcelableExtra(com.atomjack.shared.Intent.EXTRA_ALBUM);
+        Logger.d("Got track %s and media container with %d tracks", (track != null ? track.title : null), mediaContainer.tracks.size());
+        if(musicPlayerFragment != null && musicPlayerFragment.isVisible()) {
+          localMusicService.setTrack(track);
+          localMusicService.setMediaContainer(mediaContainer);
+          localMusicService.reset();
+          localMusicService.playSong();
+        } else {
+          musicConnection.setOnConnected(new Runnable() {
+            @Override
+            public void run() {
+              localMusicService.setTrack(track);
+              localMusicService.setMediaContainer(mediaContainer);
+              localMusicService.reset();
+              localMusicService.playSong();
 
-            localMusicService.setTrack(track);
-            localMusicService.setMediaContainer(mediaContainer);
-            localMusicService.reset();
-            localMusicService.playSong();
+              setCastIconActive();
+              if (musicPlayerFragment == null)
+                musicPlayerFragment = new MusicPlayerFragment();
 
-            setCastIconActive();
-            if(musicPlayerFragment == null)
-              musicPlayerFragment = new MusicPlayerFragment();
-
-            musicPlayerFragment.init(localMusicService.getTrack(), localMusicService.getMediaContainer());
-            Logger.d("Switching to music");
-            switchToFragment(musicPlayerFragment);
-          }
-        });
+              musicPlayerFragment.init(localMusicService.getTrack(), localMusicService.getMediaContainer());
+              Logger.d("Switching to music");
+              switchToFragment(musicPlayerFragment);
+            }
+          });
+        }
 
       } else if(intent.getAction() != null && intent.getAction().equals(com.atomjack.shared.Intent.SHOW_WEAR_PURCHASE)) {
         // An Android Wear device was successfully pinged, so show popup alerting the
@@ -2756,5 +2762,11 @@ public class MainActivity extends AppCompatActivity
   public void seek(int time) {
     localMusicService.seek(time);
   }
+
+  @Override
+  public boolean isPlaying() {
+    return localMusicService.isPlaying();
+  }
+
   // End implement MusicPlayerListener
 }

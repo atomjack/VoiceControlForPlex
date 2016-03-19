@@ -14,4 +14,5 @@ public interface MusicPlayerListener {
   void doStop();
   PlexTrack getTrack();
   void seek(int time);
+  boolean isPlaying();
 }
