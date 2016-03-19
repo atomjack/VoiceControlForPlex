@@ -7,8 +7,8 @@
 
     <ImageView
         android:id="@+id/thumb"
-        android:layout_width="128dp"
-        android:layout_height="128dp"
+        android:layout_width="@dimen/notification_large_icon_width_music"
+        android:layout_height="@dimen/notification_large_icon_height_music"
         android:src="@drawable/ic_launcher" />
 
     <LinearLayout

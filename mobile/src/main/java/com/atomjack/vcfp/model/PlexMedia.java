@@ -6,7 +6,6 @@ import android.os.Parcelable;
 
 import com.atomjack.shared.Logger;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
-import com.atomjack.vcfp.interfaces.InputStreamHandler;
 import com.atomjack.vcfp.net.PlexHttpClient;
 
 import org.simpleframework.xml.Attribute;
@@ -27,6 +26,7 @@ public abstract class PlexMedia implements Parcelable {
     NOTIFICATION_THUMB,
     NOTIFICATION_THUMB_BIG,
     NOTIFICATION_THUMB_MUSIC,
+    NOTIFICATION_THUMB_MUSIC_BIG,
     WEAR_BACKGROUND,
     LOCAL_VIDEO_BACKGROUND,
     LOCAL_VIDEO_THUMB,
@@ -37,7 +37,8 @@ public abstract class PlexMedia implements Parcelable {
     {
       put(IMAGE_KEY.NOTIFICATION_THUMB, new int[] {114, 64});
       put(IMAGE_KEY.NOTIFICATION_THUMB_BIG, new int[] {87, 128});
-      put(IMAGE_KEY.NOTIFICATION_THUMB_MUSIC, new int[] {64, 64});
+      put(IMAGE_KEY.NOTIFICATION_THUMB_MUSIC, new int[] {128, 128});
+      put(IMAGE_KEY.NOTIFICATION_THUMB_MUSIC_BIG, new int[] {256, 256});
       put(IMAGE_KEY.WEAR_BACKGROUND, new int[] {320, 320});
     }
   };
@@ -138,14 +139,10 @@ public abstract class PlexMedia implements Parcelable {
       else
         whichThumb = grandparentThumb;
     } else if(isMusic()) {
-
+      whichThumb = thumb;
     }
-    Logger.d("whichThumb: %s", whichThumb);
+    Logger.d("whichThumb: %s, width: %d, height: %d, key: %s", whichThumb, width, height, key);
     return getThumb(width, height, whichThumb);
-  }
-
-  public void getThumb(int width, int height, String whichThumb, InputStreamHandler responseHandler) {
-    
   }
 
   public InputStream getThumb(int width, int height) {

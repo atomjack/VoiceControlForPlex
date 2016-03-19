@@ -94,18 +94,9 @@ public class MusicPlayerFragment extends Fragment implements MusicServiceListene
 
     handler = new Handler();
 
-//    setRetainInstance(true);
-
     showNowPlaying();
 
     return view;
-  }
-
-  @Override
-  public void onConfigurationChanged(Configuration newConfig) {
-    super.onConfigurationChanged(newConfig);
-    Logger.d("[MusicPlayerFragment] onConfigurationChanged");
-    showNowPlaying();
   }
 
   @Override

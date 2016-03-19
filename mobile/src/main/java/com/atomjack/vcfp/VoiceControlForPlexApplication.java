@@ -460,13 +460,14 @@ public class VoiceControlForPlexApplication extends Application
 
 
     PlexMedia.IMAGE_KEY key = media instanceof PlexTrack ? PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB_MUSIC : PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB;
+    PlexMedia.IMAGE_KEY keyBig = media instanceof PlexTrack ? PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB_MUSIC_BIG : PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB_BIG;
 
     notificationBitmap = getCachedBitmap(media.getImageKey(key));
     if(notificationBitmap == null && notificationStatus == NOTIFICATION_STATUS.initializing && !skipThumb)
       fetchNotificationBitmap(key, client, media, currentState);
-    notificationBitmapBig = getCachedBitmap(media.getImageKey(key));
+    notificationBitmapBig = getCachedBitmap(media.getImageKey(keyBig));
     if(notificationBitmapBig == null && notificationStatus == NOTIFICATION_STATUS.initializing && !skipThumb)
-      fetchNotificationBitmap(key, client, media, currentState);
+      fetchNotificationBitmap(keyBig, client, media, currentState);
 
     android.content.Intent playIntent = new android.content.Intent(VoiceControlForPlexApplication.this, client.isLocalClient ? LocalMusicService.class : PlexControlService.class);
     playIntent.setAction(Intent.ACTION_PLAY);
