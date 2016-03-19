@@ -66,6 +66,7 @@ public class PlexClient extends PlexDevice {
 		parcel.writeInt(isCastClient ? 1 : 0);
 		parcel.writeInt(isAudioOnly ? 1 : 0);
 		parcel.writeParcelable(castDevice, i);
+    parcel.writeInt(isLocalClient ? 1 : 0);
 	}
 
 	public PlexClient(Parcel in) {
@@ -78,6 +79,7 @@ public class PlexClient extends PlexDevice {
 		isCastClient = in.readInt() == 1;
 		isAudioOnly = in.readInt() == 1;
 		castDevice = in.readParcelable(CastDevice.class.getClassLoader());
+    isLocalClient = in.readInt() == 1;
 	}
 
 	public static final Parcelable.Creator<PlexClient> CREATOR = new Parcelable.Creator<PlexClient>() {

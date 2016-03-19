@@ -44,7 +44,6 @@ import com.atomjack.vcfp.net.PlexHttpResponseHandler;
 import com.google.android.gms.cast.ApplicationMetadata;
 import com.google.android.gms.cast.Cast;
 import com.google.android.gms.cast.CastMediaControlIntent;
-import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
@@ -1251,8 +1250,10 @@ public class PlexSearchService extends Service {
             Logger.d("got play queue: %s", mediaContainer.playQueueID);
             tracks = mediaContainer.tracks;
             if (tracks.size() > 0) {
+              for(PlexTrack track : mediaContainer.tracks) {
+                track.server = artist.server;
+              }
               PlexTrack media = tracks.get(0);
-              media.server = artist.server;
               playMedia(media, connection, null, null, mediaContainer);
             }
           }
@@ -1277,19 +1278,39 @@ public class PlexSearchService extends Service {
   private void playMedia(final PlexMedia media, Connection connection, PlexDirectory album, String transientToken, final MediaContainer mediaContainer) {
     if(client.isLocalClient) {
       VoiceControlForPlexApplication.getInstance().subscribedToLocalClient = true;
-      Intent nowPlayingIntent = new Intent(this, media instanceof PlexVideo ? VideoPlayerActivity.class : MainActivity.class);
+      final Intent nowPlayingIntent = new Intent(this, media instanceof PlexVideo ? VideoPlayerActivity.class : MainActivity.class);
       nowPlayingIntent.setAction(com.atomjack.shared.Intent.ACTION_PLAY_LOCAL);
       nowPlayingIntent.putExtra(WearConstants.FROM_WEAR, fromWear);
       nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_STARTING_PLAYBACK, true);
       nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_MEDIA, media);
-      if(album != null)
-        nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_ALBUM, album);
       if(mediaContainer != null)
-        nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_PLAYQUEUE, String.format("/playQueues/%s", mediaContainer.playQueueID));
+        nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_ALBUM, mediaContainer);
       nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_TRANSIENT_TOKEN, transientToken);
       nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_RESUME, resumePlayback);
       nowPlayingIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-      startActivity(nowPlayingIntent);
+
+      if(album != null) {
+        PlexHttpClient.getChildren(album, media.server, new PlexHttpMediaContainerHandler() {
+          @Override
+          public void onSuccess(MediaContainer mediaContainer) {
+            // Add the server to each track
+            for(PlexTrack t : mediaContainer.tracks)
+              t.server = media.server;
+
+            nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_ALBUM, mediaContainer);
+            startActivity(nowPlayingIntent);
+          }
+
+          @Override
+          public void onFailure(Throwable error) {
+
+          }
+        });
+      } else {
+        startActivity(nowPlayingIntent);
+      }
+
+
     } else if(client.isCastClient) {
       Logger.d("playQueueID: %s", mediaContainer.playQueueID);
       Logger.d("num videos/tracks: %d", media instanceof PlexTrack ? mediaContainer.tracks.size() : mediaContainer.videos.size());

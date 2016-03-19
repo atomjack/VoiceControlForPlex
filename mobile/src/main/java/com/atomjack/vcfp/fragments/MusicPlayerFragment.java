@@ -1,15 +1,11 @@
 package com.atomjack.vcfp.fragments;
 
-import android.content.ComponentName;
 import android.content.Context;
-import android.content.Intent;
-import android.content.ServiceConnection;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.IBinder;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
@@ -27,26 +23,20 @@ import com.atomjack.shared.PlayerState;
 import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.interfaces.BitmapHandler;
+import com.atomjack.vcfp.interfaces.MusicPlayerListener;
+import com.atomjack.vcfp.interfaces.MusicServiceListener;
 import com.atomjack.vcfp.model.MediaContainer;
-import com.atomjack.vcfp.model.PlexDirectory;
 import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexTrack;
-import com.atomjack.vcfp.net.PlexHttpClient;
-import com.atomjack.vcfp.net.PlexHttpMediaContainerHandler;
-import com.atomjack.vcfp.services.LocalMusicService;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 
-public class MusicPlayerFragment extends Fragment {
+public class MusicPlayerFragment extends Fragment implements MusicServiceListener {
   private PlexTrack track; // the current track
 
-  MusicPlayerListener musicPlayerListener;
-
-  private LocalMusicService musicService;
-  private Intent playIntent;
-  private boolean musicBound = false;
+  private MusicPlayerListener listener;
   private MediaContainer mediaContainer;
 
   private Handler handler;
@@ -104,13 +94,7 @@ public class MusicPlayerFragment extends Fragment {
 
     handler = new Handler();
 
-    setRetainInstance(true);
-
-    if(playIntent == null) {
-      playIntent = new Intent(getActivity().getApplicationContext(), LocalMusicService.class);
-      getActivity().getApplicationContext().bindService(playIntent, musicConnection, Context.BIND_AUTO_CREATE);
-      getActivity().getApplicationContext().startService(playIntent);
-    }
+//    setRetainInstance(true);
 
     showNowPlaying();
 
@@ -127,67 +111,24 @@ public class MusicPlayerFragment extends Fragment {
   @Override
   public void onAttach(Context context) {
     super.onAttach(context);
-
     try {
-      musicPlayerListener = (MusicPlayerListener) context;
+      listener = (MusicPlayerListener) context;
     } catch (ClassCastException e) {
       throw new ClassCastException(context.toString()
               + " must implement OnHeadlineSelectedListener");
     }
   }
 
-  public void init(Intent intent, final Runnable onFinish) {
-    track = intent.getParcelableExtra(com.atomjack.shared.Intent.EXTRA_MEDIA);
-    if(intent.getParcelableExtra(com.atomjack.shared.Intent.EXTRA_ALBUM) != null) {
-      PlexDirectory directory = intent.getParcelableExtra(com.atomjack.shared.Intent.EXTRA_ALBUM);
-      Logger.d("Directory: %s", directory.key);
-      PlexHttpClient.getChildren(directory, track.server, new PlexHttpMediaContainerHandler() {
-        @Override
-        public void onSuccess(MediaContainer mc) {
-          mediaContainer = mc;
-          // Add the server to each track
-          for(PlexTrack t : mediaContainer.tracks)
-            t.server = track.server;
-
-          if(onFinish != null)
-            onFinish.run();
-        }
-
-        @Override
-        public void onFailure(Throwable error) {
-
-        }
-      });
-    } else if(intent.getStringExtra(com.atomjack.shared.Intent.EXTRA_PLAYQUEUE) != null) {
-      Logger.d("Play queue id: %s", intent.getStringExtra(com.atomjack.shared.Intent.EXTRA_PLAYQUEUE));
-      PlexHttpClient.get(track.server, intent.getStringExtra(com.atomjack.shared.Intent.EXTRA_PLAYQUEUE), new PlexHttpMediaContainerHandler() {
-        @Override
-        public void onSuccess(MediaContainer mc) {
-          mediaContainer = mc;
-          // Add the server to each track
-          for(PlexTrack t : mediaContainer.tracks)
-            t.server = track.server;
-
-          if(onFinish != null)
-            onFinish.run();
-        }
-
-        @Override
-        public void onFailure(Throwable error) {
-          // TODO: Handle
-        }
-      });
-    } else {
-      // Only playing a single track
-
-    }
+  public void init(PlexTrack t, MediaContainer mc) {
+    track = t;
+    mediaContainer = mc;
   }
-
 
   private SeekBar.OnSeekBarChangeListener seekBarChangeListener = new SeekBar.OnSeekBarChangeListener() {
     @Override
     public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-      Logger.d("Setting time to %s", VoiceControlForPlexApplication.secondsToTimecode(progress));
+      if(progress % 10 == 0)
+        Logger.d("Setting time to %s", VoiceControlForPlexApplication.secondsToTimecode(progress));
       currentTimeView.setText(VoiceControlForPlexApplication.secondsToTimecode(progress));
     }
 
@@ -198,35 +139,31 @@ public class MusicPlayerFragment extends Fragment {
 
     @Override
     public void onStopTrackingTouch(SeekBar seekBar) {
-      musicService.seek(seekBar.getProgress()*1000);
+      listener.seek(seekBar.getProgress()*1000);
     }
   };
 
   @OnClick(R.id.previousButton)
   public void doPrevious(View v) {
-    musicService.doPrevious();
+    listener.doPrevious();
   }
 
   @OnClick(R.id.nextButton)
   public void doNext(View v) {
-    musicService.doNext();
+    listener.doNext();
   }
 
 
   @OnClick(R.id.playPauseButton)
   public void doPlayPause(View v) {
     Logger.d("[MusicPlayerFragment] doPlayPause");
-    musicService.doPlayPause();
+    listener.doPlayPause();
   }
 
   @OnClick(R.id.stopButton)
   public void doStop(View v) {
     Logger.d("[MusicPlayerFragment] doStop");
-    musicService.doStop();
-    Intent serviceIntent = new Intent(getActivity().getApplicationContext(), LocalMusicService.class);
-    getActivity().getApplicationContext().stopService(serviceIntent);
-    musicService = null;
-    musicPlayerListener.finished();
+    listener.doStop();
   }
 
   @OnClick(R.id.micButton)
@@ -286,8 +223,6 @@ public class MusicPlayerFragment extends Fragment {
 
   @Override
   public void onDestroy() {
-    getActivity().stopService(playIntent);
-    musicService = null;
     super.onDestroy();
   }
 
@@ -296,60 +231,27 @@ public class MusicPlayerFragment extends Fragment {
     super.onStart();
   }
 
-  //connect to the service
-  private ServiceConnection musicConnection = new ServiceConnection(){
-
-    @Override
-    public void onServiceConnected(ComponentName name, IBinder service) {
-      LocalMusicService.MusicBinder binder = (LocalMusicService.MusicBinder)service;
-      //get service
-      musicService = binder.getService();
-      musicService.setMediaContainer(mediaContainer);
-
-      binder.setListener(new MusicServiceListener() {
-        @Override
-        public void onTimeUpdate(PlayerState state, int time) {
+  @Override
+  public void onTimeUpdate(PlayerState state, int time) {
 //          Logger.d("[MusicPlayerFragment] got time update, state: %s, time: %d", state, time);
-          currentTimeView.setText(VoiceControlForPlexApplication.secondsToTimecode(time / 1000));
-          seekBar.setProgress(time / 1000);
-          if(state == PlayerState.PAUSED)
-            playPauseButton.setImageResource(R.drawable.button_play);
-          else if(state == PlayerState.PLAYING)
-            playPauseButton.setImageResource(R.drawable.button_pause);
-        }
-
-        @Override
-        public void onTrackChange(PlexTrack t) {
-          Logger.d("[MusicPlayerFragment] onTrackChange: %s", t.getTitle());
-          track = t;
-          showNowPlaying();
-        }
-
-        @Override
-        public void onFinished() {
-          musicPlayerListener.finished();
-        }
-      });
-
-      musicService.reset();
-      musicService.playSong();
-      musicBound = true;
-    }
-
-    @Override
-    public void onServiceDisconnected(ComponentName name) {
-      musicBound = false;
-    }
-  };
-
-  public interface MusicPlayerListener {
-    void finished();
+    currentTimeView.setText(VoiceControlForPlexApplication.secondsToTimecode(time / 1000));
+    seekBar.setProgress(time / 1000);
+    if(state == PlayerState.PAUSED)
+      playPauseButton.setImageResource(R.drawable.button_play);
+    else if(state == PlayerState.PLAYING)
+      playPauseButton.setImageResource(R.drawable.button_pause);
   }
 
-  public interface MusicServiceListener {
-    void onTimeUpdate(PlayerState state, int time);
-    void onTrackChange(PlexTrack track);
-    void onFinished();
+  @Override
+  public void onTrackChange(PlexTrack t) {
+    Logger.d("[MusicPlayerFragment] onTrackChange: %s", t.getTitle());
+    track = t;
+    showNowPlaying();
+  }
+
+  @Override
+  public void onFinished() {
+
   }
 
   @Override

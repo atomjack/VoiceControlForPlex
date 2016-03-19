@@ -45,6 +45,7 @@ import com.atomjack.vcfp.model.PlexDirectory;
 import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexServer;
 import com.atomjack.vcfp.model.PlexTrack;
+import com.atomjack.vcfp.services.LocalMusicService;
 import com.atomjack.vcfp.services.PlexControlService;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.wearable.Asset;
@@ -467,32 +468,20 @@ public class VoiceControlForPlexApplication extends Application
     if(notificationBitmapBig == null && notificationStatus == NOTIFICATION_STATUS.initializing && !skipThumb)
       fetchNotificationBitmap(key, client, media, currentState);
 
-    android.content.Intent rewindIntent = new android.content.Intent(VoiceControlForPlexApplication.this, PlexControlService.class);
-    rewindIntent.setAction(PlexControlService.ACTION_REWIND);
-    rewindIntent.putExtra(PlexControlService.CLIENT, client);
-    rewindIntent.putExtra(PlexControlService.MEDIA, media);
-    PendingIntent piRewind = PendingIntent.getService(VoiceControlForPlexApplication.this, 0, rewindIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-
-    android.content.Intent forwardIntent = new android.content.Intent(VoiceControlForPlexApplication.this, PlexControlService.class);
-    forwardIntent.setAction(PlexControlService.ACTION_FORWARD);
-    forwardIntent.putExtra(PlexControlService.CLIENT, client);
-    forwardIntent.putExtra(PlexControlService.MEDIA, media);
-    PendingIntent piForward = PendingIntent.getService(VoiceControlForPlexApplication.this, 0, forwardIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-
-    android.content.Intent playIntent = new android.content.Intent(VoiceControlForPlexApplication.this, PlexControlService.class);
-    playIntent.setAction(PlexControlService.ACTION_PLAY);
+    android.content.Intent playIntent = new android.content.Intent(VoiceControlForPlexApplication.this, client.isLocalClient ? LocalMusicService.class : PlexControlService.class);
+    playIntent.setAction(Intent.ACTION_PLAY);
     playIntent.putExtra(PlexControlService.CLIENT, client);
     playIntent.putExtra(PlexControlService.MEDIA, media);
     PendingIntent playPendingIntent = PendingIntent.getService(VoiceControlForPlexApplication.this, 0, playIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
-    android.content.Intent pauseIntent = new android.content.Intent(VoiceControlForPlexApplication.this, PlexControlService.class);
-    pauseIntent.setAction(PlexControlService.ACTION_PAUSE);
+    android.content.Intent pauseIntent = new android.content.Intent(VoiceControlForPlexApplication.this, client.isLocalClient ? LocalMusicService.class : PlexControlService.class);
+    pauseIntent.setAction(Intent.ACTION_PAUSE);
     pauseIntent.putExtra(PlexControlService.CLIENT, client);
     pauseIntent.putExtra(PlexControlService.MEDIA, media);
     PendingIntent pausePendingIntent = PendingIntent.getService(VoiceControlForPlexApplication.this, 0, pauseIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
-    android.content.Intent disconnectIntent = new android.content.Intent(VoiceControlForPlexApplication.this, PlexControlService.class);
-    disconnectIntent.setAction(PlexControlService.ACTION_DISCONNECT);
+    android.content.Intent disconnectIntent = new android.content.Intent(VoiceControlForPlexApplication.this, client.isLocalClient ? LocalMusicService.class : PlexControlService.class);
+    disconnectIntent.setAction(Intent.ACTION_DISCONNECT);
     disconnectIntent.putExtra(PlexControlService.CLIENT, client);
     disconnectIntent.putExtra(PlexControlService.MEDIA, media);
     PendingIntent piDisconnect = PendingIntent.getService(VoiceControlForPlexApplication.this, 0, disconnectIntent, PendingIntent.FLAG_UPDATE_CURRENT);
@@ -505,6 +494,60 @@ public class VoiceControlForPlexApplication extends Application
     nowPlayingIntent.putExtra(Intent.EXTRA_CLIENT, client);
     PendingIntent piNowPlaying = PendingIntent.getActivity(VoiceControlForPlexApplication.this, 0, nowPlayingIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
+    android.content.Intent rewindIntent;
+    android.content.Intent forwardIntent;
+    android.content.Intent previousIntent;
+    android.content.Intent nextIntent;
+
+    RemoteViews notificationContent;
+    RemoteViews notificationContentBig;
+
+    if(!media.isMusic()) {
+      rewindIntent = new android.content.Intent(VoiceControlForPlexApplication.this, client.isLocalClient ? LocalMusicService.class : PlexControlService.class);
+      rewindIntent.setAction(Intent.ACTION_REWIND);
+      rewindIntent.putExtra(PlexControlService.CLIENT, client);
+      rewindIntent.putExtra(PlexControlService.MEDIA, media);
+      PendingIntent piRewind = PendingIntent.getService(VoiceControlForPlexApplication.this, 0, rewindIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+      forwardIntent = new android.content.Intent(VoiceControlForPlexApplication.this, client.isLocalClient ? LocalMusicService.class : PlexControlService.class);
+      forwardIntent.setAction(Intent.ACTION_FORWARD);
+      forwardIntent.putExtra(PlexControlService.CLIENT, client);
+      forwardIntent.putExtra(PlexControlService.MEDIA, media);
+      PendingIntent piForward = PendingIntent.getService(VoiceControlForPlexApplication.this, 0, forwardIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+      notificationContent = getNotificationView(
+              R.layout.now_playing_notification,
+              notificationBitmap, media, client, playPendingIntent, pausePendingIntent,
+              piRewind, piForward, piDisconnect, currentState == PlayerState.PLAYING);
+
+      notificationContentBig = getNotificationView(
+              R.layout.now_playing_notification_big,
+              notificationBitmapBig, media, client, playPendingIntent, pausePendingIntent,
+              piRewind, piForward, piDisconnect, currentState == PlayerState.PLAYING);
+    } else {
+      previousIntent = new android.content.Intent(VoiceControlForPlexApplication.this, client.isLocalClient ? LocalMusicService.class : PlexControlService.class);
+      previousIntent.setAction(Intent.ACTION_PREVIOUS);
+      previousIntent.putExtra(PlexControlService.CLIENT, client);
+      previousIntent.putExtra(PlexControlService.MEDIA, media);
+      PendingIntent piPrevious = PendingIntent.getService(VoiceControlForPlexApplication.this, 0, previousIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+      nextIntent = new android.content.Intent(VoiceControlForPlexApplication.this, client.isLocalClient ? LocalMusicService.class : PlexControlService.class);
+      nextIntent.setAction(Intent.ACTION_NEXT);
+      nextIntent.putExtra(PlexControlService.CLIENT, client);
+      nextIntent.putExtra(PlexControlService.MEDIA, media);
+      PendingIntent piNext = PendingIntent.getService(VoiceControlForPlexApplication.this, 0, nextIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+      notificationContent = getNotificationView(
+              R.layout.now_playing_notification_music,
+              notificationBitmap, media, client, playPendingIntent, pausePendingIntent,
+              piPrevious, piNext, piDisconnect, currentState == PlayerState.PLAYING);
+
+      notificationContentBig = getNotificationView(
+              R.layout.now_playing_notification_big_music,
+              notificationBitmapBig, media, client, playPendingIntent, pausePendingIntent,
+              piPrevious, piNext, piDisconnect, currentState == PlayerState.PLAYING);
+    }
+
     try {
       NotificationCompat.Builder mBuilder =
               new NotificationCompat.Builder(VoiceControlForPlexApplication.this)
@@ -513,17 +556,11 @@ public class VoiceControlForPlexApplication extends Application
                       .setOngoing(true)
                       .setOnlyAlertOnce(true)
                       .setContentIntent(piNowPlaying)
-                      .setContent(getNotificationView(
-                              media.isMusic() ? R.layout.now_playing_notification_music : R.layout.now_playing_notification,
-                              notificationBitmap, media, client, playPendingIntent, pausePendingIntent,
-                              piRewind, piForward, piDisconnect, currentState == PlayerState.PLAYING))
+                      .setContent(notificationContent)
                       .setDefaults(Notification.DEFAULT_ALL);
       Notification n = mBuilder.build();
       if (Build.VERSION.SDK_INT >= 16)
-        n.bigContentView = getNotificationView(
-                media.isMusic() ? R.layout.now_playing_notification_big_music : R.layout.now_playing_notification_big,
-                notificationBitmapBig, media, client, playPendingIntent, pausePendingIntent,
-                piRewind, piForward, piDisconnect, currentState == PlayerState.PLAYING);
+        n.bigContentView = notificationContentBig;
 
       // Disable notification sound
       n.defaults = 0;
@@ -571,8 +608,13 @@ public class VoiceControlForPlexApplication extends Application
       remoteViews.setViewVisibility(R.id.playButton, View.VISIBLE);
       remoteViews.setViewVisibility(R.id.pauseButton, View.GONE);
     }
-    remoteViews.setOnClickPendingIntent(R.id.rewindButton, rewindIntent);
-    remoteViews.setOnClickPendingIntent(R.id.forwardButton, forwardIntent);
+    if(!media.isMusic()) {
+      remoteViews.setOnClickPendingIntent(R.id.rewindButton, rewindIntent);
+      remoteViews.setOnClickPendingIntent(R.id.forwardButton, forwardIntent);
+    } else {
+      remoteViews.setOnClickPendingIntent(R.id.previousButton, rewindIntent);
+      remoteViews.setOnClickPendingIntent(R.id.nextButton, forwardIntent);
+    }
     remoteViews.setOnClickPendingIntent(R.id.disconnectButton, disconnectIntent);
 
     return remoteViews;

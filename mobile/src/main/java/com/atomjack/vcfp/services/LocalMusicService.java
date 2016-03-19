@@ -15,8 +15,8 @@ import com.atomjack.shared.Logger;
 import com.atomjack.shared.PlayerState;
 import com.atomjack.vcfp.PlexHeaders;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
-import com.atomjack.vcfp.fragments.MusicPlayerFragment;
 import com.atomjack.vcfp.interfaces.ActiveConnectionHandler;
+import com.atomjack.vcfp.interfaces.MusicServiceListener;
 import com.atomjack.vcfp.model.Connection;
 import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.PlexClient;
@@ -36,15 +36,41 @@ public class LocalMusicService extends Service implements
   private Handler handler;
 
   private final IBinder musicBind = new MusicBinder();
-  private MusicPlayerFragment.MusicServiceListener musicServiceListener;
+  private MusicServiceListener musicServiceListener;
 
   @Override
   public void onCreate() {
     super.onCreate();
+    Logger.d("[LocalMusicService] onCreate");
     player = new MediaPlayer();
     currentSongIdx = 0;
     handler = new Handler();
     initMusicPlayer();
+  }
+
+  @Override
+  public int onStartCommand(Intent intent, int flags, int startId) {
+    Logger.d("[LocalMusicService] onStartCommand: %s", intent.getAction());
+
+    if(intent.getAction() != null) {
+      if (intent.getAction().equals(com.atomjack.shared.Intent.ACTION_PLAY) || intent.getAction().equals(com.atomjack.shared.Intent.ACTION_PAUSE)) {
+        doPlayPause();
+      } else if (intent.getAction().equals(com.atomjack.shared.Intent.ACTION_STOP)) {
+        doStop();
+      } else if (intent.getAction().equals(com.atomjack.shared.Intent.ACTION_PREVIOUS)) {
+        doPrevious();
+      } else if(intent.getAction().equals(com.atomjack.shared.Intent.ACTION_NEXT)) {
+        doNext();
+      } else if(intent.getAction().equals(com.atomjack.shared.Intent.ACTION_DISCONNECT)) {
+        doStop();
+      }
+
+      Logger.d("[PlexControlService] state: %s", currentState);
+//      if(currentState != PlayerState.STOPPED)
+//        VoiceControlForPlexApplication.getInstance().setNotification(PlexClient.getLocalPlaybackClient(), currentState, track);
+    }
+    return Service.START_NOT_STICKY;
+
   }
 
   private void initMusicPlayer() {
@@ -71,15 +97,20 @@ public class LocalMusicService extends Service implements
       return LocalMusicService.this;
     }
 
-    public void setListener(MusicPlayerFragment.MusicServiceListener listener) {
+    public void setListener(MusicServiceListener listener) {
       musicServiceListener = listener;
     }
+  }
+
+  public PlayerState getCurrentState() {
+    return currentState;
   }
 
   public void playSong() {
     player.reset();
     if(mediaContainer != null)
       track = mediaContainer.tracks.get(currentSongIdx);
+    Logger.d("Track: %s", track);
     if(track != null) {
       VoiceControlForPlexApplication.getInstance().setNotification(PlexClient.getLocalPlaybackClient(), currentState, track);
       track.server.findServerConnection(new ActiveConnectionHandler() {
@@ -116,6 +147,7 @@ public class LocalMusicService extends Service implements
   }
 
   public void doNext() {
+    Logger.d("[LocalMusicService] doNext, current: %d, size: %d", currentSongIdx, mediaContainer.tracks.size());
     if(currentSongIdx < mediaContainer.tracks.size()) {
       player.stop();
       currentSongIdx++;
@@ -127,6 +159,8 @@ public class LocalMusicService extends Service implements
     player.stop();
     handler.removeCallbacks(playerProgressUpdater);
     VoiceControlForPlexApplication.getInstance().cancelNotification();
+    musicServiceListener.onFinished();
+    stopSelf();
   }
 
   public void seek(int time) {
@@ -159,6 +193,7 @@ public class LocalMusicService extends Service implements
   @Nullable
   @Override
   public IBinder onBind(Intent intent) {
+    Logger.d("[LocalMusicService] onBind: %s", intent.getAction());
     return musicBind;
   }
 
@@ -217,4 +252,19 @@ public class LocalMusicService extends Service implements
       }
     }
   };
+
+
+  public PlexTrack getTrack() {
+    return track;
+  }
+
+  public MediaContainer getMediaContainer() {
+    return mediaContainer;
+  }
+
+  @Override
+  public void onDestroy() {
+    super.onDestroy();
+    Logger.d("[LocalMusicService] onDestroy");
+  }
 }

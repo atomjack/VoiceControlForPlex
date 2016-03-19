@@ -15,13 +15,6 @@ import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexResponse;
 
 public class PlexControlService extends IntentService {
-  public static final String ACTION_PLAY = "com.atomjack.vcfp.action_play";
-  public static final String ACTION_PAUSE = "com.atomjack.vcfp.action_pause";
-  public static final String ACTION_STOP = "com.atomjack.vcfp.action_stop";
-  public static final String ACTION_REWIND = "com.atomjack.vcfp.action_rewind";
-  public static final String ACTION_FORWARD = "com.atomjack.vcfp.action_forward";
-  public static final String ACTION_DISCONNECT = "com.atomjack.vcfp.action_disconnect";
-
   public static final String CLIENT = "com.atomjack.vcfp.mClient";
   public static final String MEDIA = "com.atomjack.vcfp.media";
 
@@ -64,7 +57,7 @@ public class PlexControlService extends IntentService {
 
       PlexResponse response;
 
-      if (intent.getAction().equals(ACTION_PLAY)) {
+      if (intent.getAction().equals(com.atomjack.shared.Intent.ACTION_PLAY)) {
         if(client.isCastClient) {
           castPlayerManager.play();
         } else {
@@ -72,7 +65,7 @@ public class PlexControlService extends IntentService {
           if (response.code == 200)
             currentState = PlayerState.PLAYING;
         }
-      } else if (intent.getAction().equals(ACTION_PAUSE)) {
+      } else if (intent.getAction().equals(com.atomjack.shared.Intent.ACTION_PAUSE)) {
         if(client.isCastClient) {
           castPlayerManager.pause();
         } else {
@@ -80,7 +73,7 @@ public class PlexControlService extends IntentService {
           if (response.code == 200)
             currentState = PlayerState.PAUSED;
         }
-      } else if (intent.getAction().equals(ACTION_STOP)) {
+      } else if (intent.getAction().equals(com.atomjack.shared.Intent.ACTION_STOP)) {
         if(client.isCastClient) {
           castPlayerManager.stop();
         } else {
@@ -88,7 +81,7 @@ public class PlexControlService extends IntentService {
           if (response.code == 200)
             currentState = PlayerState.STOPPED;
         }
-      } else if (intent.getAction().equals(ACTION_REWIND)) {
+      } else if (intent.getAction().equals(com.atomjack.shared.Intent.ACTION_REWIND)) {
         if(client.isCastClient) {
           castPlayerManager.seekTo(castPlayerManager.getPosition() - 15);
         } else {
@@ -97,7 +90,13 @@ public class PlexControlService extends IntentService {
             client.seekTo(position - 15000);
           }
         }
-      } else if(intent.getAction().equals(ACTION_FORWARD)) {
+      } else if (intent.getAction().equals(com.atomjack.shared.Intent.ACTION_PREVIOUS)) {
+        if(client.isCastClient) {
+          castPlayerManager.doPrevious();
+        } else {
+          client.next(null);
+        }
+      } else if(intent.getAction().equals(com.atomjack.shared.Intent.ACTION_FORWARD)) {
         if(client.isCastClient) {
           castPlayerManager.seekTo(castPlayerManager.getPosition() + 30);
         } else {
@@ -106,7 +105,13 @@ public class PlexControlService extends IntentService {
             client.seekTo(position + 30000);
           }
         }
-      } else if(intent.getAction().equals(ACTION_DISCONNECT)) {
+      } else if(intent.getAction().equals(com.atomjack.shared.Intent.ACTION_NEXT)) {
+        if(client.isCastClient) {
+          castPlayerManager.doNext();
+        } else {
+          client.next(null);
+        }
+      } else if(intent.getAction().equals(com.atomjack.shared.Intent.ACTION_DISCONNECT)) {
         if(client.isCastClient) {
           castPlayerManager.unsubscribe();
         } else {

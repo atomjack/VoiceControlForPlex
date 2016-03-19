@@ -5,9 +5,11 @@ import android.animation.AnimatorInflater;
 import android.animation.AnimatorSet;
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
@@ -22,6 +24,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
+import android.os.IBinder;
 import android.speech.tts.TextToSpeech;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.ActivityCompat;
@@ -87,18 +90,23 @@ import com.atomjack.vcfp.fragments.PlexPlayerFragment;
 import com.atomjack.vcfp.fragments.SetupFragment;
 import com.atomjack.vcfp.interfaces.ActivityListener;
 import com.atomjack.vcfp.interfaces.BitmapHandler;
+import com.atomjack.vcfp.interfaces.MusicPlayerListener;
+import com.atomjack.vcfp.interfaces.MusicServiceListener;
 import com.atomjack.vcfp.interfaces.PlexSubscriptionListener;
 import com.atomjack.vcfp.interfaces.ScanHandler;
+import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.Pin;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexDevice;
 import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexServer;
+import com.atomjack.vcfp.model.PlexTrack;
 import com.atomjack.vcfp.model.PlexUser;
 import com.atomjack.vcfp.model.Stream;
 import com.atomjack.vcfp.net.PlexHttpClient;
 import com.atomjack.vcfp.net.PlexHttpUserHandler;
 import com.atomjack.vcfp.net.PlexPinResponseHandler;
+import com.atomjack.vcfp.services.LocalMusicService;
 import com.atomjack.vcfp.services.PlexScannerService;
 import com.cubeactive.martin.inscription.WhatsNewDialog;
 import com.google.android.gms.cast.CastDevice;
@@ -139,7 +147,7 @@ public class MainActivity extends AppCompatActivity
         implements VoiceControlForPlexApplication.NetworkChangeListener,
         ActivityListener,
         TextToSpeech.OnInitListener,
-        MusicPlayerFragment.MusicPlayerListener {
+        MusicPlayerListener {
 
   public final static int RESULT_VOICE_FEEDBACK_SELECTED = 0;
   public final static int RESULT_TASKER_PROJECT_IMPORTED = 1;
@@ -162,6 +170,10 @@ public class MainActivity extends AppCompatActivity
   private NavigationView navigationViewMain;
   private ActionBarDrawerToggle drawerToggle;
   private boolean mainNavigationItemsVisible = true;
+
+  private LocalMusicService localMusicService;
+  private boolean musicPlayerIsBound = false;
+  private Intent musicServiceIntent;
 
   private String authToken;
 
@@ -269,6 +281,7 @@ public class MainActivity extends AppCompatActivity
       playerFragment = (PlayerFragment)getSupportFragmentManager().getFragment(savedInstanceState, com.atomjack.shared.Intent.EXTRA_PLAYER_FRAGMENT);
       musicPlayerFragment = (MusicPlayerFragment) getSupportFragmentManager().getFragment(savedInstanceState, com.atomjack.shared.Intent.EXTRA_MUSIC_PLAYER_FRAGMENT);
       Logger.d("musicPlayerFragment: %s", musicPlayerFragment);
+      musicPlayerIsBound = savedInstanceState.getBoolean(com.atomjack.shared.Intent.EXTRA_MUSIC_PLAYER_IS_BOUND);
     } else {
       Logger.d("savedInstanceState is null");
     }
@@ -546,7 +559,7 @@ public class MainActivity extends AppCompatActivity
     @Override
     public void run() {
       Logger.d("Auto disconnecting player");
-      if(playerFragment.isVisible()) {
+      if((playerFragment != null && playerFragment.isVisible()) || (musicPlayerFragment != null && musicPlayerFragment.isVisible())) {
         VoiceControlForPlexApplication.getInstance().cancelNotification();
         switchToMainFragment();
       }
@@ -571,6 +584,11 @@ public class MainActivity extends AppCompatActivity
         plexSubscription.resubscribe();
       }
     }
+
+    if(musicPlayerIsBound)
+      bindMusicPlayerService();
+    if(musicPlayerFragment != null && musicPlayerFragment.isVisible())
+      musicPlayerFragment.init(localMusicService.getTrack(), localMusicService.getMediaContainer());
 
     if(!doingFirstTimeSetup) {
       mDrawer.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);
@@ -987,7 +1005,7 @@ public class MainActivity extends AppCompatActivity
 
   @Override
   @SuppressWarnings("unchecked")
-  protected void onNewIntent(Intent intent) {
+  protected void onNewIntent(final Intent intent) {
     super.onNewIntent(intent);
     Logger.d("[MainActivity] onNewIntent: %s", intent.getAction());
 
@@ -1051,18 +1069,74 @@ public class MainActivity extends AppCompatActivity
       } else if(intent.getAction().equals(ACTION_SHOW_NOW_PLAYING)) {
         handleShowNowPlayingIntent(intent);
       } else if(intent.getAction().equals(com.atomjack.shared.Intent.ACTION_PLAY_LOCAL)) {
-        setCastIconActive();
-        if(musicPlayerFragment == null)
-          musicPlayerFragment = new MusicPlayerFragment();
-
-        musicPlayerFragment.init(intent, new Runnable() {
+        Logger.d("[MainActivity] Binding to LocalMusicService");
+        bindMusicPlayerService();
+        musicConnection.setOnConnected(new Runnable() {
           @Override
           public void run() {
+            PlexTrack track = intent.getParcelableExtra(com.atomjack.shared.Intent.EXTRA_MEDIA);
+            MediaContainer mediaContainer = intent.getParcelableExtra(com.atomjack.shared.Intent.EXTRA_ALBUM);
+            Logger.d("Got track %s and media container with %d tracks", (track != null ? track.title : null), mediaContainer.tracks.size());
+
+            localMusicService.setTrack(track);
+            localMusicService.setMediaContainer(mediaContainer);
+            localMusicService.reset();
+            localMusicService.playSong();
+
+            setCastIconActive();
+            if(musicPlayerFragment == null)
+              musicPlayerFragment = new MusicPlayerFragment();
+
+            musicPlayerFragment.init(localMusicService.getTrack(), localMusicService.getMediaContainer());
             Logger.d("Switching to music");
             switchToFragment(musicPlayerFragment);
+
+            /*
+            if(intent.getParcelableExtra(com.atomjack.shared.Intent.EXTRA_ALBUM) != null) {
+              PlexDirectory directory = intent.getParcelableExtra(com.atomjack.shared.Intent.EXTRA_ALBUM);
+              Logger.d("Directory: %s", directory.key);
+              PlexHttpClient.getChildren(directory, track.server, new PlexHttpMediaContainerHandler() {
+                @Override
+                public void onSuccess(MediaContainer mediaContainer) {
+                  // Add the server to each track
+                  for(PlexTrack t : mediaContainer.tracks)
+                    t.server = track.server;
+
+
+
+
+                }
+
+                @Override
+                public void onFailure(Throwable error) {
+
+                }
+              });
+            } else if(intent.getStringExtra(com.atomjack.shared.Intent.EXTRA_PLAYQUEUE) != null) {
+              Logger.d("Play queue id: %s", intent.getStringExtra(com.atomjack.shared.Intent.EXTRA_PLAYQUEUE));
+              PlexHttpClient.get(track.server, intent.getStringExtra(com.atomjack.shared.Intent.EXTRA_PLAYQUEUE), new PlexHttpMediaContainerHandler() {
+                @Override
+                public void onSuccess(MediaContainer mediaContainer) {
+                  // Add the server to each track
+                  for(PlexTrack t : mediaContainer.tracks)
+                    t.server = track.server;
+
+                  // TODO: same as above
+                }
+
+                @Override
+                public void onFailure(Throwable error) {
+                  // TODO: Handle
+                }
+              });
+            } else {
+              // Only playing a single track
+            }
+
+
+            */
           }
         });
-
 
       } else if(intent.getAction() != null && intent.getAction().equals(com.atomjack.shared.Intent.SHOW_WEAR_PURCHASE)) {
         // An Android Wear device was successfully pinged, so show popup alerting the
@@ -1122,28 +1196,49 @@ public class MainActivity extends AppCompatActivity
     boolean fromWear = intent.getBooleanExtra(WearConstants.FROM_WEAR, false);
     PlayerState state;
     // Need to overwrite what media is playing from the subscription manager, if it exists.
-    if(client.isCastClient) {
-      state = castPlayerManager.getCurrentState();
-      if(castPlayerManager.isSubscribed() && castPlayerManager.getNowPlayingMedia() != null)
-        media = castPlayerManager.getNowPlayingMedia();
+    if(client.isLocalClient && media instanceof PlexTrack) {
+      Logger.d("[MainActivity] Binding to LocalMusicService");
+      bindMusicPlayerService();
+      musicConnection.setOnConnected(new Runnable() {
+        @Override
+        public void run() {
+          musicPlayerFragment = new MusicPlayerFragment();
+          try {
+            musicPlayerFragment.init(localMusicService.getTrack(), localMusicService.getMediaContainer());
+
+            switchToFragment(musicPlayerFragment);
+          } catch (Exception e) {
+            e.printStackTrace();
+          }
+        }
+      });
     } else {
-      state = plexSubscription.getCurrentState();
-      if(plexSubscription.isSubscribed() && plexSubscription.getNowPlayingMedia() != null)
-        media = plexSubscription.getNowPlayingMedia();
-      plexSubscription.subscribe(client);
+      if(client.isCastClient) {
+        state = castPlayerManager.getCurrentState();
+        if(castPlayerManager.isSubscribed() && castPlayerManager.getNowPlayingMedia() != null)
+          media = castPlayerManager.getNowPlayingMedia();
+      } else {
+        state = plexSubscription.getCurrentState();
+        if(plexSubscription.isSubscribed() && plexSubscription.getNowPlayingMedia() != null)
+          media = plexSubscription.getNowPlayingMedia();
+        plexSubscription.subscribe(client);
+      }
+
+      Logger.d("[MainActivity] show now playing: %s", media.getTitle());
+
+      int layout = getLayoutForMedia(media, state);
+      if(layout != -1) {
+        playerFragment.init(layout, client, media, fromWear, plexSubscriptionListener);
+        if(playerFragment.isVisible())
+          playerFragment.mediaChanged(media);
+        else
+          switchToPlayerFragment();
+        int seconds = intent.getBooleanExtra(com.atomjack.shared.Intent.EXTRA_STARTING_PLAYBACK, false) ? 10 : 3;
+        Logger.d("Setting auto disconnect for %d seconds", seconds);
+        handler.postDelayed(autoDisconnectPlayerTimer, seconds*1000);
+      }
     }
-    Logger.d("[MainActivity] show now playing: %s", media.getTitle());
-    int layout = getLayoutForMedia(media, state);
-    if(layout != -1) {
-      playerFragment.init(layout, client, media, fromWear, plexSubscriptionListener);
-      if(playerFragment.isVisible())
-        playerFragment.mediaChanged(media);
-      else
-        switchToPlayerFragment();
-      int seconds = intent.getBooleanExtra(com.atomjack.shared.Intent.EXTRA_STARTING_PLAYBACK, false) ? 10 : 3;
-      Logger.d("Setting auto disconnect for %d seconds", seconds);
-      handler.postDelayed(autoDisconnectPlayerTimer, seconds*1000);
-    }
+
   }
 
   private void switchToPlayerFragment() {
@@ -2402,6 +2497,7 @@ public class MainActivity extends AppCompatActivity
     if(musicPlayerFragment != null && musicPlayerFragment.isVisible()) {
       getSupportFragmentManager().putFragment(outState, com.atomjack.shared.Intent.EXTRA_MUSIC_PLAYER_FRAGMENT, musicPlayerFragment);
     }
+    outState.putBoolean(com.atomjack.shared.Intent.EXTRA_MUSIC_PLAYER_IS_BOUND, musicPlayerIsBound);
   }
 
 
@@ -2607,10 +2703,97 @@ public class MainActivity extends AppCompatActivity
     }
   }
 
-  // Called when the (local) music player is done
-  @Override
-  public void finished() {
-    switchToMainFragment();
-    musicPlayerFragment = null;
+  private MusicConnection musicConnection = new MusicConnection();
+
+  class MusicConnection implements ServiceConnection {
+    private Runnable runnable;
+
+    @Override
+    public void onServiceConnected(ComponentName name, IBinder service) {
+      LocalMusicService.MusicBinder binder = (LocalMusicService.MusicBinder)service;
+      localMusicService = binder.getService();
+      musicPlayerIsBound = true;
+      Logger.d("[MainActivity] Got local music service");
+
+      binder.setListener(new MusicServiceListener() {
+        @Override
+        public void onTimeUpdate(PlayerState state, int time) {
+          musicPlayerFragment.onTimeUpdate(state, time);
+        }
+
+        @Override
+        public void onTrackChange(PlexTrack track) {
+          musicPlayerFragment.onTrackChange(track);
+        }
+
+        @Override
+        public void onFinished() {
+          Logger.d("[MainActivity] MusicConnection onFinished");
+          handler.post(new Runnable() {
+            @Override
+            public void run() {
+              switchToMainFragment();
+              musicPlayerFragment = null;
+              getApplicationContext().stopService(musicServiceIntent);
+              getApplicationContext().unbindService(musicConnection);
+              musicPlayerIsBound = false;
+            }
+          });
+        }
+      });
+
+      if(runnable != null)
+        runnable.run();
+    }
+
+    @Override
+    public void onServiceDisconnected(ComponentName name) {
+      // TODO: Something here?
+      Logger.d("[MainActivity] onServiceDisconnected");
+      musicPlayerIsBound = false;
+    }
+
+    public void setOnConnected(Runnable runnable) {
+      this.runnable = runnable;
+    }
+
   }
+
+  private void bindMusicPlayerService() {
+    musicServiceIntent = new Intent(getApplicationContext(), LocalMusicService.class);
+    getApplicationContext().bindService(musicServiceIntent, musicConnection, Context.BIND_AUTO_CREATE);
+    getApplicationContext().startService(musicServiceIntent);
+  }
+
+  // Implement MusicPlayerListener. Pass actions from music player fragment into the music player service
+  @Override
+  public void doNext() {
+    localMusicService.doNext();
+  }
+
+  @Override
+  public void doPlayPause() {
+    localMusicService.doPlayPause();
+  }
+
+  @Override
+  public void doPrevious() {
+    localMusicService.doPrevious();
+  }
+
+  @Override
+  public void doStop() {
+    localMusicService.doStop();
+  }
+
+  @Override
+  public PlexTrack getTrack() {
+    return localMusicService.getTrack();
+  }
+
+  @Override
+  public void seek(int time) {
+    localMusicService.seek(time);
+  }
+  // End implement MusicPlayerListener
 }

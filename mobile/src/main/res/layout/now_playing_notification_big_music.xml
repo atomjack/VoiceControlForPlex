@@ -48,7 +48,8 @@
                 android:layout_toRightOf="@+id/thumb"
                 android:text="Playing on Plex"
                 android:layout_marginTop="5sp"
-                android:singleLine="true"/>
+                android:singleLine="true"
+                android:textColor="@color/white"/>
 
 
         </LinearLayout>
@@ -70,8 +71,8 @@
             <ImageButton
                 android:layout_width="0dp"
                 android:layout_height="42dp"
-                android:id="@+id/rewindButton"
-                android:src="@drawable/notif_back15"
+                android:id="@+id/previousButton"
+                android:src="@drawable/button_previous"
                 android:background="@null"
                 android:layout_weight="1"
                 android:layout_marginTop="8dp"/>
@@ -108,6 +109,24 @@
                     android:layout_gravity="center_vertical"
                     android:baselineAlignBottom="false"/>
             </RelativeLayout>
+
+            <FrameLayout
+                android:layout_width="1dp"
+                android:layout_height="fill_parent"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="4dp"
+                android:background="?android:attr/dividerHorizontal">
+
+            </FrameLayout>
+
+            <ImageButton
+                android:layout_width="0dp"
+                android:layout_height="42dp"
+                android:id="@+id/nextButton"
+                android:layout_marginTop="8dp"
+                android:layout_weight="1"
+                android:background="@null"
+                android:src="@drawable/button_next"/>
 
         </LinearLayout>
     </LinearLayout>
