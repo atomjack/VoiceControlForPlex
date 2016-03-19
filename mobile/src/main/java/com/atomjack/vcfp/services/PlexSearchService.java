@@ -941,31 +941,30 @@ public class PlexSearchService extends Service {
 		}
 	}
 
-  private void sendResponseToLocalPlayer() {
+  private void sendCommandToLocalPlayer(String which) {
+    Logger.d("Sending command to local player: %s", whichLocalPlayer);
     Intent nowPlayingIntent = new Intent(this, whichLocalPlayer == com.atomjack.shared.Intent.PLAYER_AUDIO ? MainActivity.class : VideoPlayerActivity.class);
     nowPlayingIntent.setAction(com.atomjack.shared.Intent.ACTION_MIC_RESPONSE);
-//    nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_STARTING_PLAYBACK, true);
-//    nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_MEDIA, media);
-//    nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_CLIENT, client);
+    nowPlayingIntent.putExtra(com.atomjack.shared.Intent.ACTION_MIC_COMMAND, which); // 'which' is one of Intent.ACTION_*
     nowPlayingIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
     startActivity(nowPlayingIntent);
   }
 
 	private void adjustPlayback(String which, final String onFinish) {
-		ArrayList<String> validModes = new ArrayList<>(Arrays.asList("pause", "play", "stop"));
+		ArrayList<String> validModes = new ArrayList<>(Arrays.asList(com.atomjack.shared.Intent.ACTION_PAUSE, com.atomjack.shared.Intent.ACTION_PLAY, com.atomjack.shared.Intent.ACTION_STOP));
 		if(validModes.indexOf(which) == -1)
 			return;
 
     if(client.isLocalClient) {
       //whichLocalPlayer
-      sendResponseToLocalPlayer();
+      sendCommandToLocalPlayer(which);
       return;
     } else if(client.isCastClient) {
-      if(which.equals("pause"))
+      if(which.equals(com.atomjack.shared.Intent.ACTION_PAUSE))
         castPlayerManager.pause();
-      else if(which.equals("play"))
+      else if(which.equals(com.atomjack.shared.Intent.ACTION_PLAY))
         castPlayerManager.play();
-      else if(which.equals("stop"))
+      else if(which.equals(com.atomjack.shared.Intent.ACTION_STOP))
         castPlayerManager.stop();
       return;
     }
@@ -1001,15 +1000,15 @@ public class PlexSearchService extends Service {
 	}
 
 	private void pausePlayback() {
-		adjustPlayback("pause", getResources().getString(R.string.playback_paused));
+		adjustPlayback(com.atomjack.shared.Intent.ACTION_PAUSE, getResources().getString(R.string.playback_paused));
 	}
 
 	private void resumePlayback() {
-		adjustPlayback("play", getResources().getString(R.string.playback_resumed));
+		adjustPlayback(com.atomjack.shared.Intent.ACTION_PLAY, getResources().getString(R.string.playback_resumed));
 	}
 
 	private void stopPlayback() {
-		adjustPlayback("stop", getResources().getString(R.string.playback_stopped));
+		adjustPlayback(com.atomjack.shared.Intent.ACTION_STOP, getResources().getString(R.string.playback_stopped));
 	}
 
 	private void seekTo(int hours, int minutes, int seconds) {

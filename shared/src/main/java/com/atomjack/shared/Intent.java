@@ -17,6 +17,7 @@ public class Intent {
 
   public final static String ACTION_PLAY_LOCAL = "com.atomjack.vcfp.intent.action_play_local";
   public static final String ACTION_MIC_RESPONSE = "com.vcfp.atomjack.intent.mic_response";
+  public static final String ACTION_MIC_COMMAND = "com.vcfp.atomjack.intent.mic_command";
 
   public final static String SCAN_TYPE = "com.atomjack.vcfp.intent.scan_type";
   public final static String SCAN_TYPE_CLIENT = "com.atomjack.vcfp.intent.scan_type_client";
@@ -50,7 +51,7 @@ public class Intent {
 
   public static final String PLAYER = "com.atomjack.vcfp.intent.player";
   public static final int PLAYER_VIDEO = 0;
-  public static final int PLAYER_AUDIO = 0;
+  public static final int PLAYER_AUDIO = 1;
 
   public static final String ACTION_PLAY = "com.atomjack.vcfp.intent.action_play";
   public static final String ACTION_PAUSE = "com.atomjack.vcfp.intent.action_pause";
