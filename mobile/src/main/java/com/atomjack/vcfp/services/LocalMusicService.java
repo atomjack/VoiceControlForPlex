@@ -64,10 +64,6 @@ public class LocalMusicService extends Service implements
       } else if(intent.getAction().equals(com.atomjack.shared.Intent.ACTION_DISCONNECT)) {
         doStop();
       }
-
-      Logger.d("[PlexControlService] state: %s", currentState);
-//      if(currentState != PlayerState.STOPPED)
-//        VoiceControlForPlexApplication.getInstance().setNotification(PlexClient.getLocalPlaybackClient(), currentState, track);
     }
     return Service.START_NOT_STICKY;
 
@@ -110,7 +106,7 @@ public class LocalMusicService extends Service implements
     player.reset();
     if(mediaContainer != null)
       track = mediaContainer.tracks.get(currentSongIdx);
-    Logger.d("Track: %s", track);
+    Logger.d("Playing Track: %s", track.getTitle());
     if(track != null) {
       VoiceControlForPlexApplication.getInstance().setNotification(PlexClient.getLocalPlaybackClient(), currentState, track);
       track.server.findServerConnection(new ActiveConnectionHandler() {
@@ -119,12 +115,12 @@ public class LocalMusicService extends Service implements
           String url = String.format("%s%s", connection.uri, getTrackUrl(track));
           try {
             player.setDataSource(getApplicationContext(), Uri.parse(url));
+            player.prepareAsync();
+            musicServiceListener.onTrackChange(track);
+            VoiceControlForPlexApplication.getInstance().setNotification(PlexClient.getLocalPlaybackClient(), currentState, track);
           } catch (Exception e) {
             e.printStackTrace();
           }
-          player.prepareAsync();
-          musicServiceListener.onTrackChange(track);
-          VoiceControlForPlexApplication.getInstance().setNotification(PlexClient.getLocalPlaybackClient(), currentState, track);
         }
 
         @Override
@@ -149,8 +145,7 @@ public class LocalMusicService extends Service implements
   }
 
   public void doNext() {
-    Logger.d("[LocalMusicService] doNext, current: %d, size: %d", currentSongIdx, mediaContainer.tracks.size());
-    if(currentSongIdx < mediaContainer.tracks.size()) {
+    if(currentSongIdx+1 < mediaContainer.tracks.size()) {
       player.stop();
       currentSongIdx++;
       playSong();
