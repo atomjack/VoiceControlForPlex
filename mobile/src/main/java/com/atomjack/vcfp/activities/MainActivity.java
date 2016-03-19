@@ -406,6 +406,7 @@ public class MainActivity extends AppCompatActivity
       if(playerFragment != null && playerFragment.isVisible()) {
         if(state == PlayerState.STOPPED) {
           Logger.d("[MainActivity] onStopped");
+          VoiceControlForPlexApplication.getInstance().cancelNotification();
           switchToMainFragment();
         } else {
           playerFragment.setState(state);
