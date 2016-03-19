@@ -155,6 +155,7 @@ public class LocalMusicService extends Service implements
   public void doStop() {
     player.stop();
     handler.removeCallbacks(playerProgressUpdater);
+    PlexHttpClient.reportProgressToServer(track, player.getCurrentPosition(), PlayerState.STOPPED);
     VoiceControlForPlexApplication.getInstance().cancelNotification();
     musicServiceListener.onFinished();
     stopSelf();
