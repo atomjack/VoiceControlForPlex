@@ -7,10 +7,14 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.SeekBar;
 
+import com.atomjack.shared.Logger;
 import com.atomjack.shared.PlayerState;
 import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.model.PlexResponse;
 import com.atomjack.vcfp.net.PlexHttpResponseHandler;
+
+import butterknife.ButterKnife;
+import butterknife.OnClick;
 
 public class PlexPlayerFragment extends PlayerFragment {
   public PlexPlayerFragment() {
@@ -21,6 +25,12 @@ public class PlexPlayerFragment extends PlayerFragment {
   @Override
   public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
     return super.onCreateView(inflater, container, savedInstanceState);
+  }
+
+  @Override
+  public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
+    super.onViewCreated(view, savedInstanceState);
+    ButterKnife.bind(this, view);
   }
 
   @Override
@@ -38,12 +48,13 @@ public class PlexPlayerFragment extends PlayerFragment {
   }
 
   @Override
-  protected void doPlayPause() {
-    if(currentState == PlayerState.PLAYING) {
-      client.pause(null);
-    } else if(currentState == PlayerState.PAUSED) {
-      client.play(null);
-    }
+  protected void doPlay() {
+    client.play(null);
+  }
+
+  @Override
+  protected void doPause() {
+    client.pause(null);
   }
 
   @Override
@@ -57,9 +68,7 @@ public class PlexPlayerFragment extends PlayerFragment {
   }
 
   @Override
-  protected void doPrevious() {
-    client.previous(null);
-  }
+  protected void doPrevious() { client.previous(null); }
 
   @Override
   public void onStopTrackingTouch(SeekBar _seekBar) {

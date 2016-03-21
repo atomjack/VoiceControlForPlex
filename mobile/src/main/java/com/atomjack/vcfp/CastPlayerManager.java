@@ -10,6 +10,7 @@ import com.atomjack.vcfp.interfaces.ActiveConnectionHandler;
 import com.atomjack.vcfp.interfaces.PlexSubscriptionListener;
 import com.atomjack.vcfp.model.Capabilities;
 import com.atomjack.vcfp.model.Connection;
+import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexServer;
@@ -29,6 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class CastPlayerManager {
   private PlexMedia nowPlayingMedia;
+  private MediaContainer mediaContainer;
   private List<? extends PlexMedia> nowPlayingAlbum;
 
   private static VideoCastManager castManager = null;
@@ -393,7 +395,7 @@ public class CastPlayerManager {
             }
             if(listener != null && oldState != currentState) {
               if(oldState == PlayerState.STOPPED)
-                listener.onPlayStarted(nowPlayingMedia, currentState);
+                listener.onPlayStarted(nowPlayingMedia, mediaContainer, currentState);
               else
                 listener.onStateChanged(nowPlayingMedia, PlayerState.getState(obj.getString("state")));
             }

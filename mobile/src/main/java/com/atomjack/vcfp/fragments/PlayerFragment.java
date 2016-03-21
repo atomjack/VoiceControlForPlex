@@ -22,6 +22,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
@@ -38,8 +39,8 @@ import com.atomjack.vcfp.activities.MainActivity;
 import com.atomjack.vcfp.interfaces.ActiveConnectionHandler;
 import com.atomjack.vcfp.interfaces.ActivityListener;
 import com.atomjack.vcfp.interfaces.InputStreamHandler;
-import com.atomjack.vcfp.interfaces.PlexSubscriptionListener;
 import com.atomjack.vcfp.model.Connection;
+import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexTrack;
@@ -55,12 +56,18 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
 import java.security.SecureRandom;
+import java.util.List;
 
+import butterknife.Bind;
+import butterknife.ButterKnife;
+import butterknife.OnClick;
 import cz.fhucho.android.util.SimpleDiskCache;
 
 public abstract class PlayerFragment extends Fragment
         implements SeekBar.OnSeekBarChangeListener {
   protected PlexMedia nowPlayingMedia;
+  protected MediaContainer mediaContainer;
+  protected int currentMediaIndex = 0;
   protected PlexClient client;
 
   private View mainView;
@@ -75,7 +82,12 @@ public abstract class PlayerFragment extends Fragment
 
   // UI Elements
   protected boolean resumePlayback;
-  protected ImageButton playPauseButton;
+//  @Bind(R.id.playButton)
+  protected ImageButton playButton;
+//  @Bind(R.id.pauseButton)
+  protected ImageButton pauseButton;
+//  @Bind(R.id.playPauseSpinner)
+  protected ProgressBar playPauseSpinner;
   protected boolean isSeeking = false;
   protected SeekBar seekBar;
   protected TextView currentTimeDisplay;
@@ -94,17 +106,18 @@ public abstract class PlayerFragment extends Fragment
 
   protected ActivityListener activityListener;
 
-  protected PlexSubscriptionListener plexSubscriptionListener;
-
   @Nullable
   @Override
   public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
     if(savedInstanceState != null) {
       Logger.d("[PlayerFragment] onSavedInstanceState is not null");
       nowPlayingMedia = savedInstanceState.getParcelable(Intent.EXTRA_MEDIA);
+      mediaContainer = savedInstanceState.getParcelable(Intent.EXTRA_ALBUM);
       fromWear = savedInstanceState.getBoolean(WearConstants.FROM_WEAR, false);
       layout = savedInstanceState.getInt(Intent.EXTRA_LAYOUT);
       client = savedInstanceState.getParcelable(Intent.EXTRA_CLIENT);
+      currentState = (PlayerState) savedInstanceState.getSerializable(Intent.EXTRA_CURRENT_STATE);
+      Logger.d("got current state: %s", currentState);
     }
     Logger.d("[PlayerFragment] layout: %d", layout);
 
@@ -114,9 +127,12 @@ public abstract class PlayerFragment extends Fragment
     } else {
       mainView = inflater.inflate(layout, container, false);
 
+      ButterKnife.bind(getActivity(), mainView);
+
       this.inflater = inflater;
 
       showNowPlaying();
+      setState(currentState); // Call this right away so that the play/pause spinner gets changed to the appropriate button, when orientation is changing while playing or paused
       seekBar = (SeekBar) mainView.findViewById(R.id.seekBar);
       seekBar.setOnSeekBarChangeListener(this);
       seekBar.setMax(nowPlayingMedia.duration / 1000);
@@ -135,8 +151,10 @@ public abstract class PlayerFragment extends Fragment
   public void onSaveInstanceState(Bundle outState) {
     super.onSaveInstanceState(outState);
     outState.putParcelable(Intent.EXTRA_MEDIA, nowPlayingMedia);
+    outState.putParcelable(Intent.EXTRA_ALBUM, mediaContainer);
     outState.putInt(Intent.EXTRA_LAYOUT, layout);
     outState.putParcelable(Intent.EXTRA_CLIENT, client);
+    outState.putSerializable(Intent.EXTRA_CURRENT_STATE, currentState);
   }
 
 
@@ -144,12 +162,13 @@ public abstract class PlayerFragment extends Fragment
     simpleDiskCache = VoiceControlForPlexApplication.getInstance().mSimpleDiskCache;
   }
 
-  public void init(int layout, PlexClient client, PlexMedia media, boolean fromWear, PlexSubscriptionListener plexSubscriptionListener) {
+  public void init(int layout, PlexClient client, PlexMedia media, MediaContainer mc, boolean fromWear) {
     this.layout = layout;
     this.client = client;
     nowPlayingMedia = media;
+    mediaContainer = mc;
     this.fromWear = fromWear;
-    this.plexSubscriptionListener = plexSubscriptionListener;
+    currentMediaIndex = 0;
   }
 
   public void mediaChanged(PlexMedia media) {
@@ -295,13 +314,15 @@ public abstract class PlayerFragment extends Fragment
   private void setThumb(final byte[] bytes) {
     Logger.d("Setting thumb width %d bytes", bytes.length);
 
-    getActivity().runOnUiThread(new Runnable() {
-      @Override
-      public void run() {
-        Bitmap posterBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-        nowPlayingPoster.setImageBitmap(posterBitmap);
-      }
-    });
+    if(getActivity() != null) {
+      getActivity().runOnUiThread(new Runnable() {
+        @Override
+        public void run() {
+          Bitmap posterBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+          nowPlayingPoster.setImageBitmap(posterBitmap);
+        }
+      });
+    }
   }
 
   protected void setThumb(int maxWidth, int maxHeight) {
@@ -375,7 +396,7 @@ public abstract class PlayerFragment extends Fragment
               try {
                 simpleDiskCache.put(media.getCacheKey(thumb), is);
                 setThumb(maxWidth, maxHeight);
-              } catch (IOException e) {
+              } catch (Exception e) {
                 Logger.d("Exception getting/saving thumb");
                 e.printStackTrace();
               }
@@ -392,14 +413,6 @@ public abstract class PlayerFragment extends Fragment
   }
 
   private void attachUIElements() {
-    playPauseButton = (ImageButton)mainView.findViewById(R.id.playPauseButton);
-    playPauseButton.setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(View v) {
-        doPlayPause();
-      }
-    });
-
     nowPlayingPoster = (ImageView) mainView.findViewById(R.id.nowPlayingPoster);
 
     ImageButton rewindButton = (ImageButton)mainView.findViewById(R.id.rewindButton);
@@ -421,24 +434,58 @@ public abstract class PlayerFragment extends Fragment
     });
 
     ImageButton previousButton = (ImageButton)mainView.findViewById(R.id.previousButton);
-    if(previousButton != null)
-      previousButton.setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(View v) {
-        doPrevious();
+    if(previousButton != null) {
+      if(mediaContainer.tracks.size() == 1 || mediaContainer.videos.size() == 1) {
+        previousButton.setVisibility(View.GONE);
+      } else {
+        previousButton.setAlpha(1.0f);
+        previousButton.setOnClickListener(new View.OnClickListener() {
+          @Override
+          public void onClick(View v) {
+            doPrevious();
+          }
+        });
       }
-    });
+    }
+
+    playButton = (ImageButton)mainView.findViewById(R.id.playButton);
+    pauseButton = (ImageButton)mainView.findViewById(R.id.pauseButton);
+    playPauseSpinner = (ProgressBar)mainView.findViewById(R.id.playPauseSpinner);
 
     ImageButton nextButton = (ImageButton)mainView.findViewById(R.id.nextButton);
-    if(nextButton != null)
-      nextButton.setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(View v) {
-        doNext();
+    if(nextButton != null) {
+      if(mediaContainer.tracks.size() == 1 || mediaContainer.videos.size() == 1) {
+        nextButton.setVisibility(View.GONE);
+      } else {
+        nextButton.setAlpha(1.0f);
+        nextButton.setOnClickListener(new View.OnClickListener() {
+          @Override
+          public void onClick(View v) {
+            doNext();
+          }
+        });
       }
-    });
+    }
 
-
+    List<? extends PlexMedia> list = null;
+    if(mediaContainer.videos.size() > 0) {
+      list = mediaContainer.videos;
+    } else if(mediaContainer.tracks.size() > 0) {
+      list = mediaContainer.tracks;
+    }
+    if(list != null) {
+      int index = 0;
+      for(PlexMedia m : list) {
+        if(m.key.equals(nowPlayingMedia.key))
+          break;
+        index++;
+      }
+      Logger.d("Index: %d", index);
+      if(index == 0)
+        previousButton.setAlpha(0.4f);
+      else if(index+1 == list.size())
+        nextButton.setAlpha(0.4f);
+    }
 
     ImageButton mediaOptionsButton = (ImageButton)mainView.findViewById(R.id.mediaOptionsButton);
     if(mediaOptionsButton != null) {
@@ -451,12 +498,14 @@ public abstract class PlayerFragment extends Fragment
     }
 
     ImageButton micButton = (ImageButton)mainView.findViewById(R.id.micButton);
-    micButton.setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(View v) {
-        doMic();
-      }
-    });
+    if(micButton != null) {
+      micButton.setOnClickListener(new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+          doMic();
+        }
+      });
+    }
 
     ImageButton stopButton = (ImageButton)mainView.findViewById(R.id.stopButton);
     stopButton.setOnClickListener(new View.OnClickListener() {
@@ -481,6 +530,7 @@ public abstract class PlayerFragment extends Fragment
     }
   }
 
+
   class TouchGestureListener extends GestureDetector.SimpleOnGestureListener {
     @Override
     public boolean onDown(MotionEvent e) {
@@ -490,7 +540,10 @@ public abstract class PlayerFragment extends Fragment
     @Override
     public boolean onSingleTapUp(MotionEvent e) {
       Logger.d("Single tap.");
-      doPlayPause();
+      if(currentState == PlayerState.PLAYING)
+        doPause();
+      else
+        doPlay();
       return true;
     }
 
@@ -529,7 +582,10 @@ public abstract class PlayerFragment extends Fragment
   // The follow methods are defined in the PlexPlayerFragment and CastPlayerFragment subclasses
   protected abstract void doRewind();
   protected abstract void doForward();
-  protected abstract void doPlayPause();
+  @OnClick(R.id.playButton)
+  protected abstract void doPlay();
+  @OnClick(R.id.pauseButton)
+  protected abstract void doPause();
   protected abstract void doStop();
   protected abstract void doNext();
   protected abstract void doPrevious();
@@ -596,11 +652,19 @@ public abstract class PlayerFragment extends Fragment
   }
 
   public void setState(PlayerState newState) {
-    this.currentState = newState;
-    if(newState == PlayerState.PAUSED && playPauseButton != null) {
-      playPauseButton.setImageResource(R.drawable.button_play);
-    } else if(newState == PlayerState.PLAYING && playPauseButton != null) {
-      playPauseButton.setImageResource(R.drawable.button_pause);
+    currentState = newState;
+    if(playPauseSpinner != null && playButton != null && pauseButton != null) {
+      Logger.d("[PlayerFragment] setState: %s", newState);
+      playPauseSpinner.setVisibility(View.INVISIBLE);
+      playButton.setVisibility(View.INVISIBLE);
+      pauseButton.setVisibility(View.INVISIBLE);
+      if (currentState == PlayerState.PAUSED) {
+        playButton.setVisibility(View.VISIBLE);
+      } else if (currentState == PlayerState.PLAYING) {
+        pauseButton.setVisibility(View.VISIBLE);
+      } else if (currentState == PlayerState.BUFFERING) {
+        playPauseSpinner.setVisibility(View.VISIBLE);
+      }
     }
   }
 

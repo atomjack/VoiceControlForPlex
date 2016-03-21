@@ -249,6 +249,7 @@ public class PlexSearchService extends Service {
 				// Received spoken query from the RecognizerIntent
 				ArrayList<String> voiceResults = intent.getExtras().getStringArrayList(RecognizerIntent.EXTRA_RESULTS);
 				for(String q : voiceResults) {
+          q.toLowerCase();
 					if(q.matches(getString(R.string.pattern_recognition))) {
 						if(!queries.contains(q.toLowerCase()))
 							queries.add(q.toLowerCase());
@@ -1322,21 +1323,7 @@ public class PlexSearchService extends Service {
                   media instanceof PlexTrack ? mediaContainer.tracks : mediaContainer.videos,
                   getOffset(media instanceof PlexTrack ? mediaContainer.tracks.get(0) : mediaContainer.videos.get(0)));
           if(!fromGoogleNow || VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.GOOGLE_NOW_LAUNCH_NOW_PLAYING, true))
-            showPlayingMedia(media);
-          /*
-          if(!fromMic) {
-            Intent sendIntent = new Intent(PlexSearchService.this, CastActivity.class);
-            sendIntent.setAction(com.atomjack.shared.Intent.CAST_MEDIA);
-            sendIntent.putExtra(com.atomjack.shared.Intent.EXTRA_MEDIA, media instanceof PlexTrack ? mediaContainer.tracks.get(0) : mediaContainer.videos.get(0));
-            sendIntent.putParcelableArrayListExtra(com.atomjack.shared.Intent.EXTRA_ALBUM, media instanceof PlexTrack ? (ArrayList<? extends Parcelable>) mediaContainer.tracks : (ArrayList<? extends Parcelable>) mediaContainer.videos);
-            sendIntent.putExtra(WearConstants.FROM_WEAR, fromWear);
-            sendIntent.putExtra(com.atomjack.shared.Intent.EXTRA_CLIENT, client);
-            sendIntent.putExtra(com.atomjack.shared.Intent.EXTRA_FROM_MIC, fromMic);
-            sendIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            sendIntent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
-            startActivity(sendIntent);
-          }
-          */
+            showPlayingMedia(media, mediaContainer);
         }
       };
 
@@ -1368,7 +1355,7 @@ public class PlexSearchService extends Service {
           if (passed) {
             videoPlayed = true;
             if(!fromGoogleNow || VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.GOOGLE_NOW_LAUNCH_NOW_PLAYING, true))
-              showPlayingMedia(media);
+              showPlayingMedia(media.isMusic() ? mediaContainer.tracks.get(0) : mediaContainer.videos.get(0), mediaContainer);
           } else {
             feedback.e(getResources().getString(R.string.http_status_code_error), r.code);
           }
@@ -1418,15 +1405,16 @@ public class PlexSearchService extends Service {
     }
 	}
 
-	private void showPlayingMedia(PlexMedia media) {
+	private void showPlayingMedia(PlexMedia media, MediaContainer mediaContainer) {
     Logger.d("[PlexSearchService] nowPlayingMedia: %s", media.title);
 		Intent nowPlayingIntent = new Intent(this, MainActivity.class);
     nowPlayingIntent.setAction(MainActivity.ACTION_SHOW_NOW_PLAYING);
     nowPlayingIntent.putExtra(WearConstants.FROM_WEAR, fromWear);
     nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_STARTING_PLAYBACK, true);
 		nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_MEDIA, media);
-		nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_CLIENT, client);
-		nowPlayingIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_CLIENT, client);
+    nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_ALBUM, mediaContainer);
+    nowPlayingIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 		startActivity(nowPlayingIntent);
 	}
 

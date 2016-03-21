@@ -13,6 +13,7 @@ import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexResponse;
 import com.atomjack.vcfp.model.PlexServer;
+import com.atomjack.vcfp.model.PlexVideo;
 import com.atomjack.vcfp.model.Stream;
 import com.atomjack.vcfp.net.PlexHttpClient;
 import com.atomjack.vcfp.net.PlexHttpMediaContainerHandler;
@@ -439,8 +440,41 @@ public class PlexSubscription {
               PlayerState oldState = currentState;
               currentState = PlayerState.getState(timeline);
 
-              // If we don't currently have now playing media, or the media has changed, update nowPlayingMedia and call this method back
+              // If we don't currently have now playing media, or the media has changed, update nowPlayingMedia and call the appropriate listener method (onMediaChanged, or onPlayStarted)
               if((nowPlayingMedia == null || (nowPlayingMedia != null && !nowPlayingMedia.key.equals(timeline.key))) && currentState != PlayerState.STOPPED) {
+                PlexHttpClient.get(server, timeline.containerKey, new PlexHttpMediaContainerHandler() {
+                  @Override
+                  public void onSuccess(MediaContainer mediaContainer) {
+                    PlexMedia media = null;
+                    if(mediaContainer.tracks.size() > 0) {
+                      media = mediaContainer.tracks.get(0);
+                    } else if(mediaContainer.videos.size() > 0) {
+                      for(PlexVideo m : mediaContainer.videos) {
+                        if(m.isClip())
+                          m.setClipDuration();
+                        Logger.d("Comparing %s to %s", m.key, timeline.key);
+                        if(m.key.equals(timeline.key))
+                          media = m;
+                      }
+                    }
+                    if(media != null) {
+                      if(nowPlayingMedia != null) // if we're already playing media, this new media we found is different, so notify the listener
+                        listener.onMediaChanged(media, PlayerState.getState(timeline));
+                      else
+                        listener.onPlayStarted(media, mediaContainer, PlayerState.getState(timeline));
+                    } else {
+                      // TODO: Handle not finding any media?
+                    }
+                    nowPlayingMedia = media;
+                    VoiceControlForPlexApplication.getInstance().setNotification(mClient, currentState, media);
+                  }
+
+                  @Override
+                  public void onFailure(Throwable error) {
+
+                  }
+                });
+/*
                 getPlayingMedia(server, timeline, new PlexMediaHandler() {
                   @Override
                   public void onFinish(PlexMedia media) {
@@ -454,6 +488,7 @@ public class PlexSubscription {
                     VoiceControlForPlexApplication.getInstance().setNotification(mClient, currentState, media);
                   }
                 });
+                */
               } else {
                 if(oldState != currentState) {
                   // State has changed

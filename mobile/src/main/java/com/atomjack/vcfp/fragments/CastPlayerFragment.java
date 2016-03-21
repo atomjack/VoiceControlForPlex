@@ -1,5 +1,8 @@
 package com.atomjack.vcfp.fragments;
 
+import android.os.Bundle;
+import android.support.annotation.Nullable;
+import android.view.View;
 import android.widget.SeekBar;
 
 import com.atomjack.shared.Logger;
@@ -8,12 +11,20 @@ import com.atomjack.vcfp.CastPlayerManager;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.model.PlexMedia;
 
+import butterknife.ButterKnife;
+
 public class CastPlayerFragment extends PlayerFragment {
   private CastPlayerManager castPlayerManager;
 
   public CastPlayerFragment() {
     super();
     castPlayerManager = VoiceControlForPlexApplication.getInstance().castPlayerManager;
+  }
+
+  @Override
+  public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
+    super.onViewCreated(view, savedInstanceState);
+    ButterKnife.bind(this, view);
   }
 
   @Override
@@ -43,15 +54,13 @@ public class CastPlayerFragment extends PlayerFragment {
   }
 
   @Override
-  protected void doPlayPause() {
-    try {
-      Logger.d("doPlayPause, currentState: %s", currentState);
-      if(currentState !=  PlayerState.PLAYING) {
-        castPlayerManager.play();
-      } else if(currentState ==  PlayerState.PLAYING) {
-        castPlayerManager.pause();
-      }
-    } catch (Exception ex) {}
+  protected void doPlay() {
+    castPlayerManager.play();
+  }
+
+  @Override
+  protected void doPause() {
+    castPlayerManager.pause();
   }
 
   @Override

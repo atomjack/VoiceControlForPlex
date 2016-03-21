@@ -13,9 +13,9 @@
         android:layout_height="wrap_content"
         android:id="@+id/seekBar"
         android:paddingBottom="10dp"
-        android:layout_marginTop="20dp"
         android:layout_marginLeft="20dp"
-        android:layout_marginRight="20dp"/>
+        android:layout_marginRight="20dp"
+        android:layout_marginTop="20dp"/>
     <LinearLayout
         android:orientation="horizontal"
         android:layout_width="match_parent"
@@ -31,8 +31,8 @@
             android:gravity="center_vertical|left"
             android:maxLines="1"
             android:layout_weight="1"
-            android:layout_marginTop="18dp"
-            android:textColor="@color/white"/>
+            android:textColor="@color/white"
+            android:layout_gravity="center_vertical"/>
         <ImageButton
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -40,7 +40,7 @@
             android:onClick="doPrevious"
             android:id="@+id/previousButton" android:src="@drawable/button_previous"
             android:layout_weight="1"
-            android:layout_marginTop="13dp"/>
+            android:layout_marginTop="10dp"/>
 
         <FrameLayout
             android:layout_width="0dp"
@@ -89,7 +89,7 @@
             android:onClick="doNext"
             android:id="@+id/nextButton" android:src="@drawable/button_next"
             android:layout_weight="1"
-            android:layout_marginTop="13dp"/>
+            android:layout_marginTop="10dp"/>
 
         <ImageButton
             android:layout_width="0dp"
@@ -97,7 +97,8 @@
             android:background="@android:color/transparent"
             android:onClick="doMic"
             android:id="@+id/micButton" android:src="@drawable/button_microphone"
-            android:layout_weight="1" />
+            android:layout_weight="1"
+            android:layout_marginTop="10dp"/>
         <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -106,8 +107,8 @@
             android:id="@+id/durationView"
             android:maxLines="1"
             android:layout_weight="1"
-            android:layout_marginTop="18dp"
             android:textColor="@color/white"
-            android:gravity="right"/>
+            android:gravity="right"
+            android:layout_gravity="center_vertical"/>
     </LinearLayout>
 </LinearLayout>

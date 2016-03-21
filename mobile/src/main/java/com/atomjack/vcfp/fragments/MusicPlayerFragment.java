@@ -159,7 +159,6 @@ public class MusicPlayerFragment extends Fragment implements MusicServiceListene
     listener.doNext();
   }
 
-
   @OnClick(R.id.playButton)
   public void doPlay(View v) {
     listener.doPlay();

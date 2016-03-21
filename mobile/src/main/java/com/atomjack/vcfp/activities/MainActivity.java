@@ -375,7 +375,6 @@ public class MainActivity extends AppCompatActivity
         handler.removeCallbacks(autoDisconnectPlayerTimer);
       } else
         Logger.d("Got time update of %d seconds, but for some reason playerFragment is null", seconds);
-
     }
 
     @Override
@@ -387,13 +386,13 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
-    public void onPlayStarted(PlexMedia media, PlayerState state) {
+    public void onPlayStarted(PlexMedia media, MediaContainer mediaContainer, PlayerState state) {
       Logger.d("[MainActivity] onPlayStarted: %s", media.getTitle());
       handler.removeCallbacks(autoDisconnectPlayerTimer);
       int layout = getLayoutForMedia(media, state);
-
+      Logger.d("layout: %d", layout);
       if(layout != -1) {
-        playerFragment.init(layout, client, media, false, plexSubscriptionListener);
+        playerFragment.init(layout, client, media, mediaContainer, false);
         switchToPlayerFragment();
       }
       sendWearPlaybackChange(state, media);
@@ -1155,6 +1154,7 @@ public class MainActivity extends AppCompatActivity
   private void handleShowNowPlayingIntent(Intent intent) {
     client = intent.getParcelableExtra(com.atomjack.shared.Intent.EXTRA_CLIENT);
     PlexMedia media = intent.getParcelableExtra(com.atomjack.shared.Intent.EXTRA_MEDIA);
+    MediaContainer mediaContainer = intent.getParcelableExtra(com.atomjack.shared.Intent.EXTRA_ALBUM);
     boolean fromWear = intent.getBooleanExtra(WearConstants.FROM_WEAR, false);
     PlayerState state;
     // Need to overwrite what media is playing from the subscription manager, if it exists.
@@ -1190,7 +1190,7 @@ public class MainActivity extends AppCompatActivity
 
       int layout = getLayoutForMedia(media, state);
       if(layout != -1) {
-        playerFragment.init(layout, client, media, fromWear, plexSubscriptionListener);
+        playerFragment.init(layout, client, media, mediaContainer, fromWear);
         if(playerFragment.isVisible())
           playerFragment.mediaChanged(media);
         else
@@ -1628,8 +1628,8 @@ public class MainActivity extends AppCompatActivity
         });
         TextView clientName = (TextView)view.findViewById(R.id.popupConnectedToClientName);
         clientName.setText(client.name);
-        Button cancelButton = (Button)view.findViewById(R.id.popupConnectedToClientCancelButton);
-        cancelButton.setOnClickListener(new View.OnClickListener() {
+        Button disconnectButton = (Button)view.findViewById(R.id.popupConnectedToClientCancelButton);
+        disconnectButton.setOnClickListener(new View.OnClickListener() {
           @Override
           public void onClick(View v) {
             if(client.isLocalClient) {
@@ -2531,7 +2531,7 @@ public class MainActivity extends AppCompatActivity
     playerFragment.setPosition(Integer.parseInt(media.viewOffset)/1000); // View offset from PMS is in ms
 
     int layout = -1;
-    if(media.isMovie())
+    if(media.isMovie() || media.isClip())
       layout = R.layout.now_playing_movie;
     else if(media.isShow())
       layout = R.layout.now_playing_show;
@@ -2769,4 +2769,6 @@ public class MainActivity extends AppCompatActivity
   }
 
   // End implement MusicPlayerListener
+
+
 }

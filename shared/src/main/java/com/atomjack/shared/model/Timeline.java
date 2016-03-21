@@ -22,6 +22,8 @@ public class Timeline implements Parcelable {
 	public String machineIdentifier; // id of server
   @Attribute(required=false)
   public String continuing;
+  @Attribute(required=false)
+  public String containerKey;
 
 	public Timeline() {
 

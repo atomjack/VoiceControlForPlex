@@ -40,6 +40,7 @@ public class Intent {
   public final static String EXTRA_LAYOUT = "com.atomjack.vcfp.intent.EXTRA_LAYOUT";
   public final static String EXTRA_STARTING_PLAYBACK = "com.atomjack.vcfp.intent.EXTRA_STARTING_PLAYBACK";
   public final static String EXTRA_MUSIC_SERVICE = "com.atomjack.vcfp.intent.EXTRA_MUSIC_SERVICE";
+  public final static String EXTRA_CURRENT_STATE = "com.atomjack.vcfp.intent.EXTRA_CURRENT_STATE";
 
   public final static String EXTRA_QUERYTEXT = "com.atomjack.vcfp.intent.EXTRA_QUERYTEXT";
 
