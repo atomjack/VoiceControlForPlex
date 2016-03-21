@@ -44,6 +44,10 @@ public class Device implements Parcelable {
 	@Attribute(name="owned")
 	private int ownedInt;
 
+  public Device() {
+
+  }
+
 	@Commit
 	@SuppressWarnings("unused")
 	public void build() {
