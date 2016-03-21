@@ -8,14 +8,42 @@
               android:id="@+id/nowPlayingControls"
               android:background="@color/now_playing_background"
               android:paddingBottom="10dp">
-    <SeekBar
-        android:layout_width="fill_parent"
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/seekBar"
-        android:paddingBottom="10dp"
-        android:layout_marginTop="20dp"
         android:layout_marginLeft="20dp"
-        android:layout_marginRight="20dp"/>
+        android:layout_marginRight="20dp">
+
+        <ImageButton
+            android:layout_width="42dp"
+            android:layout_height="wrap_content"
+            android:background="@android:color/transparent"
+            android:onClick="doMic"
+            android:id="@+id/micButton" android:src="@drawable/button_microphone"
+            />
+
+        <SeekBar
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:id="@+id/seekBar"
+            android:paddingBottom="10dp"
+            android:layout_marginTop="20dp"
+            android:layout_marginLeft="20dp"
+            android:layout_marginRight="20dp"
+            android:layout_weight="1"/>
+
+        <ImageButton
+            android:layout_width="42dp"
+            android:layout_height="wrap_content"
+            android:background="@android:color/transparent"
+            android:onClick="doMediaOptions"
+            android:id="@+id/mediaOptionsButton"
+            android:src="@drawable/button_media_options"
+            />
+    </LinearLayout>
+
     <LinearLayout
         android:orientation="horizontal"
         android:layout_width="match_parent"
@@ -33,6 +61,16 @@
             android:layout_weight="1"
             android:layout_marginTop="18dp"
             android:textColor="@color/white"/>
+
+        <ImageButton
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:id="@+id/previousButton"
+            android:layout_weight="1"
+            android:src="@drawable/button_previous"
+            android:background="@android:color/transparent"
+            android:layout_marginTop="13dp"/>
+
         <ImageButton
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -69,19 +107,12 @@
         <ImageButton
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:id="@+id/nextButton"
+            android:layout_weight="1"
+            android:src="@drawable/button_next"
             android:background="@android:color/transparent"
-            android:onClick="doMediaOptions"
-            android:id="@+id/mediaOptionsButton"
-            android:src="@drawable/button_media_options"
-            android:layout_weight="1"/>
+            android:layout_marginTop="13dp"/>
 
-        <ImageButton
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:background="@android:color/transparent"
-            android:onClick="doMic"
-            android:id="@+id/micButton" android:src="@drawable/button_microphone"
-            android:layout_weight="1" />
         <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -94,4 +125,5 @@
             android:textColor="@color/white"
             android:gravity="right"/>
     </LinearLayout>
+
 </LinearLayout>

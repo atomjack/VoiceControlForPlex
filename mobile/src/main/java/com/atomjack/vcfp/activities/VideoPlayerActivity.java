@@ -34,6 +34,7 @@ import com.atomjack.vcfp.interfaces.ActiveConnectionHandler;
 import com.atomjack.vcfp.interfaces.BitmapHandler;
 import com.atomjack.vcfp.interfaces.GenericHandler;
 import com.atomjack.vcfp.model.Connection;
+import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexVideo;
@@ -55,7 +56,10 @@ public class VideoPlayerActivity extends AppCompatActivity
         SurfaceHolder.Callback,
         VideoControllerView.MediaPlayerControl {
 
-  protected PlexMedia media;
+  protected PlexVideo currentVideo;
+  private MediaContainer mediaContainer; // May contain a playlist of videos to play, if cinema trailers have been set
+  private int duration;
+  private int currentVideoIndex = 0; // Index of currently playing video from mediaContainer
   protected boolean resume = false;
 
   // When mic input is triggered while playing a video, the video will pause, then resume playback as soon as the activity resumes (comes back from voice input)
@@ -141,31 +145,71 @@ public class VideoPlayerActivity extends AppCompatActivity
   private void handlePlayCommand(Intent intent) {
     transientToken = intent.getStringExtra(com.atomjack.shared.Intent.EXTRA_TRANSIENT_TOKEN);
 
-    media = intent.getParcelableExtra(com.atomjack.shared.Intent.EXTRA_MEDIA);
-    // Overwrite the media's server if it exists (so it gets the current activeConnection)
-    if(VoiceControlForPlexApplication.servers.containsKey(media.server.name))
-      media.server = VoiceControlForPlexApplication.servers.get(media.server.name);
+    currentVideo = intent.getParcelableExtra(com.atomjack.shared.Intent.EXTRA_MEDIA);
+    mediaContainer = intent.getParcelableExtra(com.atomjack.shared.Intent.EXTRA_ALBUM);
+    if(mediaContainer == null) {
+      mediaContainer = new MediaContainer();
+      mediaContainer.videos.add(currentVideo);
+    } else {
+      for(PlexVideo video : mediaContainer.videos) {
+        // Overwrite the currentVideo's server if it exists (so it gets the current activeConnection)
+        if(VoiceControlForPlexApplication.servers.containsKey(video.server.name))
+          video.server = VoiceControlForPlexApplication.servers.get(video.server.name);
+      }
+    }
+    currentVideoIndex = 0;
+    currentVideo = mediaContainer.videos.get(currentVideoIndex);
 
     resume = intent.getBooleanExtra(com.atomjack.shared.Intent.EXTRA_RESUME, false);
 
-    media.server.findServerConnection(new ActiveConnectionHandler() {
+    playNewVideo();
+
+  }
+
+  private View.OnClickListener onPrevious = new View.OnClickListener() {
+    @Override
+    public void onClick(View v) {
+      controller.hide();
+      currentVideoIndex--;
+      currentVideo = mediaContainer.videos.get(currentVideoIndex);
+      playNewVideo();
+    }
+  };
+
+  private View.OnClickListener onNext = new View.OnClickListener() {
+    @Override
+    public void onClick(View v) {
+      controller.hide();
+      currentVideoIndex++;
+      currentVideo = mediaContainer.videos.get(currentVideoIndex);
+      playNewVideo();
+    }
+  };
+
+  private void playNewVideo() {
+    currentVideo.server.findServerConnection(new ActiveConnectionHandler() {
       @Override
       public void onSuccess(Connection connection) {
-        final String url = getTranscodeUrl(media, connection, transientToken);
+        final String url = getTranscodeUrl(currentVideo, connection, transientToken);
         Logger.d("Using url %s", url);
 
-        if(currentState == PlayerState.STOPPED) {
+        final boolean shouldPrepare;
+        if(videoSurface == null) {
           setContentView(R.layout.video_player);
-
           videoSurface = (SurfaceView) findViewById(R.id.videoSurface);
+          shouldPrepare = false;
         } else {
-          player.stop();
-          player.reset();
           handler.removeCallbacks(playerProgressRunnable);
-          PlexHttpClient.reportProgressToServer(media, getCurrentPosition(), PlayerState.STOPPED);
+          PlexHttpClient.reportProgressToServer(currentVideo, getCurrentPosition(), PlayerState.STOPPED);
+          if(currentState != PlayerState.STOPPED) {
+            player.stop();
+            currentState = PlayerState.STOPPED;
+          }
+          shouldPrepare = true;
+          player.reset();
         }
 
-        VoiceControlForPlexApplication.getInstance().fetchMediaThumb(media, screenWidth, screenHeight, media.art, media.getImageKey(PlexMedia.IMAGE_KEY.LOCAL_VIDEO_BACKGROUND), new BitmapHandler() {
+        VoiceControlForPlexApplication.getInstance().fetchMediaThumb(currentVideo, screenWidth, screenHeight, currentVideo.art, currentVideo.getImageKey(PlexMedia.IMAGE_KEY.LOCAL_VIDEO_BACKGROUND), new BitmapHandler() {
           @Override
           public void onSuccess(Bitmap bitmap) {
             final BitmapDrawable bitmapDrawable = new BitmapDrawable(getResources(), bitmap);
@@ -200,17 +244,25 @@ public class VideoPlayerActivity extends AppCompatActivity
 
             player.setOnErrorListener(VideoPlayerActivity.this);
             player.setOnCompletionListener(VideoPlayerActivity.this);
-            controller = new VideoControllerView(VideoPlayerActivity.this);
+            if(controller == null)
+              controller = new VideoControllerView(VideoPlayerActivity.this);
+            controller.setPrevNextListeners(currentVideoIndex > 0 ? onPrevious : null, currentVideoIndex+1 < mediaContainer.videos.size() ? onNext : null);
 
-            setControllerPoster();
+            handler.post(new Runnable() {
+              @Override
+              public void run() {
+                setControllerPoster();
+              }
+            });
 
             try {
               player.setAudioStreamType(AudioManager.STREAM_MUSIC);
               player.setDataSource(VideoPlayerActivity.this, Uri.parse(url));
               player.setOnPreparedListener(VideoPlayerActivity.this);
+              if(shouldPrepare)
+                player.prepareAsync();
             } catch (Exception e) {
               e.printStackTrace();
-              // TODO: Handle
             }
           }
         };
@@ -231,11 +283,11 @@ public class VideoPlayerActivity extends AppCompatActivity
   }
 
   private void setControllerPoster() {
-    VoiceControlForPlexApplication.getInstance().fetchMediaThumb(media,
+    VoiceControlForPlexApplication.getInstance().fetchMediaThumb(currentVideo,
             Utils.convertDpToPixel(this, getResources().getDimension(R.dimen.video_player_poster_width)),
             Utils.convertDpToPixel(this, getResources().getDimension(R.dimen.video_player_poster_height)),
-            media.thumb,
-            media.getImageKey(PlexMedia.IMAGE_KEY.LOCAL_VIDEO_THUMB),
+            currentVideo.thumb,
+            currentVideo.getImageKey(PlexMedia.IMAGE_KEY.LOCAL_VIDEO_THUMB),
             new BitmapHandler() {
       @Override
       public void onSuccess(Bitmap bitmap) {
@@ -326,18 +378,21 @@ public class VideoPlayerActivity extends AppCompatActivity
   @Override
   public void onCompletion(MediaPlayer mp) {
     Logger.d("[VideoPlayerActivity] onCompletion");
-    if(finishOnPlayerStop == null)
-      finish();
-    else {
+    if(finishOnPlayerStop == null) {
+      if(currentVideoIndex+1 < mediaContainer.videos.size()) {
+        currentState = PlayerState.STOPPED;
+        onNext.onClick(null);
+      } else
+        finish();
+    } else {
       finishOnPlayerStop.run();
-      player.prepareAsync();
       finishOnPlayerStop = null;
     }
   }
 
   @Override
   public boolean onInfo(MediaPlayer mp, int what, int extra) {
-    Logger.d("[VideoPlayerActivity] onInfo: %d, %d", what, extra);
+//    Logger.d("[VideoPlayerActivity] onInfo: %d, %d", what, extra);
     return false;
   }
 
@@ -365,19 +420,20 @@ public class VideoPlayerActivity extends AppCompatActivity
       lp.width = (int) (videoProportion * (float) screenHeight);
       lp.height = screenHeight;
     }
-    Logger.d("Setting width/height to %d/%d", lp.width, lp.height);
-    Logger.d("Setting screen width/height to %d/%d", screenWidth, screenHeight);
+//    Logger.d("Setting width/height to %d/%d", lp.width, lp.height);
+//    Logger.d("Setting screen width/height to %d/%d", screenWidth, screenHeight);
     videoSurface.setLayoutParams(lp);
 
-    if(resume && media.viewOffset != null) {
-      Logger.d("Seeking to %d before playing", Integer.parseInt(media.viewOffset) / 1000);
-      player.seekTo(Integer.parseInt(media.viewOffset));
+    if(resume && currentVideo.viewOffset != null) {
+      Logger.d("Seeking to %d before playing", Integer.parseInt(currentVideo.viewOffset) / 1000);
+      player.seekTo(Integer.parseInt(currentVideo.viewOffset));
     }
 
     // Video is ready to start playing, so hide the loading background
     final View videoPlayerLoadingBackground = findViewById(R.id.videoPlayerLoadingBackground);
     videoPlayerLoadingBackground.setVisibility(View.INVISIBLE);
 
+    duration = player.getDuration();
     player.start();
     player.setOnCompletionListener(this);
     player.setOnInfoListener(this);
@@ -411,11 +467,11 @@ public class VideoPlayerActivity extends AppCompatActivity
   protected void onStop() {
     super.onStop();
     handler.removeCallbacks(playerProgressRunnable);
-    PlexHttpClient.reportProgressToServer(media, getCurrentPosition(), PlayerState.STOPPED);
+    PlexHttpClient.reportProgressToServer(currentVideo, getCurrentPosition(), PlayerState.STOPPED);
     player.stop();
     player.release();
     Logger.d("Stopping transcoder");
-    PlexHttpClient.stopTranscoder(media.server, session, "video");
+    PlexHttpClient.stopTranscoder(currentVideo.server, session, "video");
   }
 
   @Override
@@ -454,10 +510,7 @@ public class VideoPlayerActivity extends AppCompatActivity
 
   @Override
   public int getDuration() {
-    try {
-      return player.getDuration();
-    } catch (Exception e) {}
-    return 0;
+    return duration;
   }
 
   @Override
@@ -522,14 +575,14 @@ public class VideoPlayerActivity extends AppCompatActivity
 
   @Override
   public void doMic() {
-    if(media.server != null) {
+    if(currentVideo.server != null) {
       if(player.isPlaying())
         doingMic = true;
       pause();
 
       android.content.Intent serviceIntent = new android.content.Intent(this, PlexSearchService.class);
 
-      serviceIntent.putExtra(com.atomjack.shared.Intent.EXTRA_SERVER, VoiceControlForPlexApplication.gsonWrite.toJson(media.server));
+      serviceIntent.putExtra(com.atomjack.shared.Intent.EXTRA_SERVER, VoiceControlForPlexApplication.gsonWrite.toJson(currentVideo.server));
       serviceIntent.putExtra(com.atomjack.shared.Intent.EXTRA_CLIENT, VoiceControlForPlexApplication.gsonWrite.toJson(PlexClient.getLocalPlaybackClient()));
       serviceIntent.putExtra(com.atomjack.shared.Intent.EXTRA_RESUME, resume);
       serviceIntent.putExtra(com.atomjack.shared.Intent.EXTRA_FROM_MIC, true);
@@ -553,24 +606,23 @@ public class VideoPlayerActivity extends AppCompatActivity
 
   @Override
   public void doMediaOptions() {
-    MediaOptionsDialog mediaOptionsDialog = new MediaOptionsDialog(this, media, PlexClient.getLocalPlaybackClient());
+    MediaOptionsDialog mediaOptionsDialog = new MediaOptionsDialog(this, currentVideo, PlexClient.getLocalPlaybackClient());
     mediaOptionsDialog.setLocalStreamChangeListener(new MediaOptionsDialog.LocalStreamChangeListener() {
       @Override
       public void setStream(final Stream stream) {
-        Logger.d("Setting stream %s", stream.getTitle());
-        PlexHttpClient.setStreamActive(media, stream, new Runnable() {
+        PlexHttpClient.setStreamActive(currentVideo, stream, new Runnable() {
           @Override
           public void run() {
-            media.server.findServerConnection(new ActiveConnectionHandler() {
+            currentVideo.server.findServerConnection(new ActiveConnectionHandler() {
               @Override
               public void onSuccess(final Connection connection) {
-                media.setActiveStream(stream);
+                currentVideo.setActiveStream(stream);
                 handler.removeCallbacks(playerProgressRunnable);
                 player.stop();
-                PlexHttpClient.stopTranscoder(media.server, session, "video", new GenericHandler() {
+                PlexHttpClient.stopTranscoder(currentVideo.server, session, "video", new GenericHandler() {
                   @Override
                   public void onSuccess() {
-                    String url = getTranscodeUrl(media, connection, transientToken);
+                    String url = getTranscodeUrl(currentVideo, connection, transientToken);
                     try {
                       player.reset();
                       player.setDataSource(VideoPlayerActivity.this, Uri.parse(url));
@@ -604,6 +656,12 @@ public class VideoPlayerActivity extends AppCompatActivity
   public void onPosterContainerTouch(View v, MotionEvent event) {
     onTouchEvent(event);
   }
+
+  @Override
+  public void stop() {
+    finish();
+  }
+
   // End VideoMediaController.MediaPlayerControl
 
   private Runnable videoIsPlayingCheck = new Runnable() {
@@ -622,11 +680,8 @@ public class VideoPlayerActivity extends AppCompatActivity
   private Runnable playerProgressRunnable = new Runnable() {
     @Override
     public void run() {
-      PlexHttpClient.reportProgressToServer(media, getCurrentPosition(), currentState);
-      if(getCurrentPosition() == 0) {
-        Logger.d("[VideoPlayerActivity] setting viewoffset to 0!");
-      }
-      media.viewOffset = Integer.toString(getCurrentPosition());
+      PlexHttpClient.reportProgressToServer(currentVideo, getCurrentPosition(), currentState);
+      currentVideo.viewOffset = Integer.toString(getCurrentPosition());
       handler.postDelayed(playerProgressRunnable, 1000);
     }
   };

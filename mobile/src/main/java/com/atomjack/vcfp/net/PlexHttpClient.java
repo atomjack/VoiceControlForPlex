@@ -449,12 +449,12 @@ public class PlexHttpClient
     });
   }
 
-  public static void createPlayQueue(Connection connection, final PlexMedia media, final String key, String transientToken, final PlexPlayQueueHandler responseHandler) {
+  public static void createPlayQueue(Connection connection, final PlexMedia media, boolean resume, final String key, String transientToken, final PlexPlayQueueHandler responseHandler) {
     Map<String, String> qs = new HashMap<>();
     qs.put("type", media.getType());
     qs.put("next", "0");
 
-    boolean hasOffset = media.viewOffset != null && Integer.parseInt(media.viewOffset) > 0;
+    boolean hasOffset = (VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.RESUME, false)|| resume) && media.viewOffset != null;//media.viewOffset != null && Integer.parseInt(media.viewOffset) > 0;
     if(media.isMovie() && !hasOffset) {
       qs.put("extrasPrefixCount", Integer.toString(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.NUM_CINEMA_TRAILERS, 0)));
     }

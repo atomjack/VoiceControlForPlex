@@ -1282,8 +1282,9 @@ public class PlexSearchService extends Service {
       nowPlayingIntent.putExtra(WearConstants.FROM_WEAR, fromWear);
       nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_STARTING_PLAYBACK, true);
       nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_MEDIA, media);
-      if(mediaContainer != null)
+      if(mediaContainer != null) {
         nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_ALBUM, mediaContainer);
+      }
       nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_TRANSIENT_TOKEN, transientToken);
       nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_RESUME, resumePlayback);
       nowPlayingIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -1295,6 +1296,8 @@ public class PlexSearchService extends Service {
             // Add the server to each track
             for(PlexTrack t : mediaContainer.tracks)
               t.server = media.server;
+            for(PlexVideo v : mediaContainer.videos)
+              v.server = media.server;
 
             nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_ALBUM, mediaContainer);
             startActivity(nowPlayingIntent);
@@ -1311,7 +1314,6 @@ public class PlexSearchService extends Service {
 
 
     } else if(client.isCastClient) {
-      Logger.d("playQueueID: %s", mediaContainer.playQueueID);
       Logger.d("num videos/tracks: %d", media instanceof PlexTrack ? mediaContainer.tracks.size() : mediaContainer.videos.size());
       Runnable sendCast = new Runnable() {
         @Override
@@ -1395,7 +1397,7 @@ public class PlexSearchService extends Service {
         @Override
         public void onSuccess(final Connection connection) {
           try {
-            PlexHttpClient.createPlayQueue(connection, media, album != null ? album.ratingKey : media.ratingKey, transientToken, new PlexPlayQueueHandler() {
+            PlexHttpClient.createPlayQueue(connection, media, resumePlayback, album != null ? album.ratingKey : media.ratingKey, transientToken, new PlexPlayQueueHandler() {
               @Override
               public void onSuccess(MediaContainer mediaContainer) {
                 playMedia(media, connection, album, transientToken, mediaContainer);

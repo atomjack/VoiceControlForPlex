@@ -34,7 +34,6 @@ import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
-import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
@@ -96,13 +95,14 @@ public class VideoControllerView extends FrameLayout {
   private ImageButton         mRewButton;
   private ImageButton         mNextButton;
   private ImageButton         mPrevButton;
+  private ImageButton         mStopButton;
   private ImageButton         mFullscreenButton;
   private ImageButton         mMicButton;
   private ImageButton         mMediaOptionsButton;
   private Handler             mHandler = new MessageHandler(this);
   private ImageView           mPoster;
   private Bitmap              mPosterBitmap;
-  private RelativeLayout      mMediaControllerPosterContainer;
+  private ViewGroup           mMediaControllerPosterContainer;
 
   public VideoControllerView(Context context, AttributeSet attrs) {
     super(context, attrs);
@@ -197,7 +197,7 @@ public class VideoControllerView extends FrameLayout {
       mMicButton.setOnClickListener(mMicListener);
     }
 
-    mMediaControllerPosterContainer = (RelativeLayout) v.findViewById(R.id.mediaControllerPosterContainer);
+    mMediaControllerPosterContainer = (ViewGroup) v.findViewById(R.id.mediaControllerPosterContainer);
     mMediaControllerPosterContainer.setOnTouchListener(new OnTouchListener() {
       @Override
       public boolean onTouch(View v, MotionEvent event) {
@@ -220,6 +220,11 @@ public class VideoControllerView extends FrameLayout {
       if (!mFromXml) {
         mRewButton.setVisibility(mUseFastForward ? View.VISIBLE : View.GONE);
       }
+    }
+
+    mStopButton = (ImageButton) v.findViewById(R.id.stop);
+    if( mStopButton != null) {
+      mStopButton.setOnClickListener(mStopListener);
     }
 
     // By default these are hidden. They will be enabled when setPrevNextListeners() is called
@@ -599,6 +604,9 @@ public class VideoControllerView extends FrameLayout {
     if (mPrevButton != null) {
       mPrevButton.setEnabled(enabled && mPrevListener != null);
     }
+    if (mStopButton != null) {
+      mStopButton.setEnabled(enabled && mStopListener != null);
+    }
     if (mProgress != null) {
       mProgress.setEnabled(enabled);
     }
@@ -648,19 +656,32 @@ public class VideoControllerView extends FrameLayout {
     }
   };
 
-  private void installPrevNextListeners() {
-    if (mNextButton != null) {
-      mNextButton.setOnClickListener(mNextListener);
-      mNextButton.setEnabled(mNextListener != null);
+  private View.OnClickListener mStopListener = new OnClickListener() {
+    @Override
+    public void onClick(View v) {
+      if(mPlayer != null) {
+        mPlayer.stop();
+      }
     }
+  };
 
+  private void installPrevNextListeners() {
     if (mPrevButton != null) {
       mPrevButton.setOnClickListener(mPrevListener);
       mPrevButton.setEnabled(mPrevListener != null);
+      mPrevButton.setVisibility(VISIBLE);
+      mPrevButton.setAlpha(mPrevListener != null ? 1.0f : 0.4f);
+    }
+
+    if (mNextButton != null) {
+      mNextButton.setOnClickListener(mNextListener);
+      mNextButton.setEnabled(mNextListener != null);
+      mNextButton.setVisibility(VISIBLE);
+      mNextButton.setAlpha(mNextListener != null ? 1.0f : 0.4f);
     }
   }
 
-  public void setPrevNextListeners(View.OnClickListener next, View.OnClickListener prev) {
+  public void setPrevNextListeners(View.OnClickListener prev, View.OnClickListener next) {
     mNextListener = next;
     mPrevListener = prev;
     mListenersSet = true;
@@ -693,6 +714,7 @@ public class VideoControllerView extends FrameLayout {
     void    doMic();
     void    doMediaOptions();
     void    onPosterContainerTouch(View v, MotionEvent event);
+    void    stop();
   }
 
   private static class MessageHandler extends Handler {
