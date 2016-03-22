@@ -93,6 +93,7 @@ public class VideoControllerView extends FrameLayout {
   private ImageButton         mPauseButton;
   private ImageButton         mFfwdButton;
   private ImageButton         mRewButton;
+  private boolean             mNextPrevButtonsHidden = false;
   private ImageButton         mNextButton;
   private ImageButton         mPrevButton;
   private ImageButton         mStopButton;
@@ -669,16 +670,20 @@ public class VideoControllerView extends FrameLayout {
     if (mPrevButton != null) {
       mPrevButton.setOnClickListener(mPrevListener);
       mPrevButton.setEnabled(mPrevListener != null);
-      mPrevButton.setVisibility(VISIBLE);
+      mPrevButton.setVisibility(mNextPrevButtonsHidden ? GONE : VISIBLE);
       mPrevButton.setAlpha(mPrevListener != null ? 1.0f : 0.4f);
     }
 
     if (mNextButton != null) {
       mNextButton.setOnClickListener(mNextListener);
       mNextButton.setEnabled(mNextListener != null);
-      mNextButton.setVisibility(VISIBLE);
+      mNextButton.setVisibility(mNextPrevButtonsHidden ? GONE : VISIBLE);
       mNextButton.setAlpha(mNextListener != null ? 1.0f : 0.4f);
     }
+  }
+
+  public void setPrevNextButtonsHidden() {
+    mNextPrevButtonsHidden = true;
   }
 
   public void setPrevNextListeners(View.OnClickListener prev, View.OnClickListener next) {

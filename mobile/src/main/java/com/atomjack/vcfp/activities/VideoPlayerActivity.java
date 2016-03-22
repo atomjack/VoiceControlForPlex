@@ -245,7 +245,11 @@ public class VideoPlayerActivity extends AppCompatActivity
             player.setOnCompletionListener(VideoPlayerActivity.this);
             if(controller == null)
               controller = new VideoControllerView(VideoPlayerActivity.this);
-            controller.setPrevNextListeners(currentVideoIndex > 0 ? onPrevious : null, currentVideoIndex+1 < mediaContainer.videos.size() ? onNext : null);
+            Logger.d("Have %d videos", mediaContainer.videos.size());
+            if(mediaContainer.videos.size() > 1) // Only show the prev/next buttons when there is more than one video to play
+              controller.setPrevNextListeners(currentVideoIndex > 0 ? onPrevious : null, currentVideoIndex+1 < mediaContainer.videos.size() ? onNext : null);
+            else
+              controller.setPrevNextButtonsHidden();
 
             handler.post(new Runnable() {
               @Override
@@ -266,7 +270,7 @@ public class VideoPlayerActivity extends AppCompatActivity
           }
         };
 
-
+        // If something is currently playing, we've set it to stop, but want to wait until onCompletion is done before setting up with new media
         if(currentState == PlayerState.STOPPED) {
           setupPlayer.run();
         } else {
