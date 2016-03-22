@@ -6,7 +6,6 @@ import android.view.View;
 import android.widget.SeekBar;
 
 import com.atomjack.shared.Logger;
-import com.atomjack.shared.PlayerState;
 import com.atomjack.vcfp.CastPlayerManager;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.model.PlexMedia;

@@ -3,6 +3,7 @@ package com.atomjack.vcfp.services;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.speech.RecognizerIntent;
@@ -18,6 +19,7 @@ import com.atomjack.shared.model.Timeline;
 import com.atomjack.vcfp.BuildConfig;
 import com.atomjack.vcfp.CastPlayerManager;
 import com.atomjack.vcfp.Feedback;
+import com.atomjack.vcfp.FetchMediaImageTask;
 import com.atomjack.vcfp.PlexSubscription;
 import com.atomjack.vcfp.QueryString;
 import com.atomjack.vcfp.R;
@@ -27,6 +29,7 @@ import com.atomjack.vcfp.activities.MainActivity;
 import com.atomjack.vcfp.activities.VideoPlayerActivity;
 import com.atomjack.vcfp.interfaces.ActiveConnectionHandler;
 import com.atomjack.vcfp.interfaces.AfterTransientTokenRequest;
+import com.atomjack.vcfp.interfaces.PlexMediaHandler;
 import com.atomjack.vcfp.interfaces.PlexPlayQueueHandler;
 import com.atomjack.vcfp.model.Connection;
 import com.atomjack.vcfp.model.MediaContainer;
@@ -1275,22 +1278,84 @@ public class PlexSearchService extends Service {
       return 0;
   }
 
-  private void playMedia(final PlexMedia media, Connection connection, PlexDirectory album, String transientToken, final MediaContainer mediaContainer) {
-    if(client.isLocalClient) {
-      VoiceControlForPlexApplication.getInstance().subscribedToLocalClient = true;
-      final Intent nowPlayingIntent = new Intent(this, media instanceof PlexVideo ? VideoPlayerActivity.class : MainActivity.class);
-      nowPlayingIntent.setAction(com.atomjack.shared.Intent.ACTION_PLAY_LOCAL);
-      nowPlayingIntent.putExtra(WearConstants.FROM_WEAR, fromWear);
-      nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_STARTING_PLAYBACK, true);
-      nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_MEDIA, media);
-      if(mediaContainer != null) {
-        nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_ALBUM, mediaContainer);
-      }
-      nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_TRANSIENT_TOKEN, transientToken);
-      nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_RESUME, resumePlayback);
-      nowPlayingIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+  private void playLocalMedia(PlexMedia media, String transientToken, MediaContainer mediaContainer) {
+    VoiceControlForPlexApplication.getInstance().subscribedToLocalClient = true;
+    final Intent nowPlayingIntent = new Intent(this, media instanceof PlexVideo ? VideoPlayerActivity.class : MainActivity.class);
+    nowPlayingIntent.setAction(com.atomjack.shared.Intent.ACTION_PLAY_LOCAL);
+    nowPlayingIntent.putExtra(WearConstants.FROM_WEAR, fromWear);
+    nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_STARTING_PLAYBACK, true);
+    nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_MEDIA, media);
+    if(mediaContainer != null) {
+      nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_ALBUM, mediaContainer);
+    }
+    nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_TRANSIENT_TOKEN, transientToken);
+    nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_RESUME, resumePlayback);
+    nowPlayingIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    startActivity(nowPlayingIntent);
+  }
 
-      if(album != null) {
+  private void playMedia(final PlexMedia media, Connection connection, PlexDirectory album, final String transientToken, final MediaContainer mediaContainer) {
+    if(client.isLocalClient) {
+      if(mediaContainer != null) {
+        if(media.isMusic()) {
+          playLocalMedia(media, transientToken, mediaContainer);
+        } else {
+          // Fetch the video background and thumbnail for the first video in the playlist. Once that is done, launch the video player, and also fetch
+          // the background and thumbnail for the remaining videos in the playlist (if there are any). If the first video has no background OR thumbnail,
+          // immediately launch the player (and fetch the remaining videos' images)
+          final int[] numMedia = new int[]{0}; // the total number
+          final int[] mediaDone = new int[]{0};
+          int[] dims = VoiceControlForPlexApplication.getScreenDimensions(PlexSearchService.this);
+          final int width = dims[0];
+          final int height = dims[1];
+          final PlexMedia firstVideo = mediaContainer.videos.get(0);
+          PlexMediaHandler onFinish = new PlexMediaHandler() {
+            @Override
+            public void onFinish(PlexMedia m2) {
+              if(m2 != null) {
+                Logger.d("Done with %s: %s", m2.key, m2.getTitle());
+              }
+              mediaDone[0]++;
+              if (mediaDone[0] == numMedia[0]) {
+                playLocalMedia(media, transientToken, mediaContainer);
+
+                // Fetch art and thumbnail for the rest of the videos in the container
+                List<FetchMediaImageTask> taskList = new ArrayList<>();
+                for(final PlexMedia m : mediaContainer.videos) {
+                  if(!m.key.equals(firstVideo.key)) {
+                    if (m.art != null) {
+                      taskList.add(new FetchMediaImageTask(m, width, height, m.art, m.getImageKey(PlexMedia.IMAGE_KEY.LOCAL_VIDEO_BACKGROUND)));
+                    }
+                    if (m.thumb != null) {
+                      taskList.add(new FetchMediaImageTask(m, com.google.android.libraries.cast.companionlibrary.utils.Utils.convertDpToPixel(PlexSearchService.this, getResources().getDimension(R.dimen.video_player_poster_width)),
+                              com.google.android.libraries.cast.companionlibrary.utils.Utils.convertDpToPixel(PlexSearchService.this, getResources().getDimension(R.dimen.video_player_poster_height)),
+                              m.thumb, m.getImageKey(PlexMedia.IMAGE_KEY.LOCAL_VIDEO_THUMB)));
+                    }
+                  }
+                }
+                Logger.d("numMedia: %d", numMedia[0]);
+                for (FetchMediaImageTask task : taskList)
+                  task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+              }
+            }
+          };
+
+          if(firstVideo.art != null) {
+            numMedia[0]++;
+            new FetchMediaImageTask(firstVideo, width, height, firstVideo.art, firstVideo.getImageKey(PlexMedia.IMAGE_KEY.LOCAL_VIDEO_BACKGROUND), onFinish).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+          }
+          if(firstVideo.thumb != null) {
+            numMedia[0]++;
+            new FetchMediaImageTask(firstVideo, com.google.android.libraries.cast.companionlibrary.utils.Utils.convertDpToPixel(this, getResources().getDimension(R.dimen.video_player_poster_width)),
+                    com.google.android.libraries.cast.companionlibrary.utils.Utils.convertDpToPixel(this, getResources().getDimension(R.dimen.video_player_poster_height)), firstVideo.thumb, firstVideo.getImageKey(PlexMedia.IMAGE_KEY.LOCAL_VIDEO_BACKGROUND), onFinish).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+          }
+          // Just in case the first video in the playlist doesn't have either art or thumb, force play
+          if(firstVideo.art == null && firstVideo.thumb == null) {
+            mediaDone[0] = -1; // Need to do this in order to ensure that the video player is launched, since we're expecting 0 videos
+            onFinish.onFinish(null);
+          }
+        }
+      } else if(album != null) {
         PlexHttpClient.getChildren(album, media.server, new PlexHttpMediaContainerHandler() {
           @Override
           public void onSuccess(MediaContainer mediaContainer) {
@@ -1300,8 +1365,7 @@ public class PlexSearchService extends Service {
             for(PlexVideo v : mediaContainer.videos)
               v.server = media.server;
 
-            nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_ALBUM, mediaContainer);
-            startActivity(nowPlayingIntent);
+            playLocalMedia(media, transientToken, mediaContainer);
           }
 
           @Override
@@ -1309,11 +1373,8 @@ public class PlexSearchService extends Service {
 
           }
         });
-      } else {
-        startActivity(nowPlayingIntent);
-      }
-
-
+      } else
+        playLocalMedia(media, transientToken, mediaContainer);
     } else if(client.isCastClient) {
       Logger.d("num videos/tracks: %d", media instanceof PlexTrack ? mediaContainer.tracks.size() : mediaContainer.videos.size());
       Runnable sendCast = new Runnable() {
@@ -1387,6 +1448,7 @@ public class PlexSearchService extends Service {
             PlexHttpClient.createPlayQueue(connection, media, resumePlayback, album != null ? album.ratingKey : media.ratingKey, transientToken, new PlexPlayQueueHandler() {
               @Override
               public void onSuccess(MediaContainer mediaContainer) {
+                Logger.d("Play queue id: %s", mediaContainer.playQueueID);
                 playMedia(media, connection, album, transientToken, mediaContainer);
               }
             });

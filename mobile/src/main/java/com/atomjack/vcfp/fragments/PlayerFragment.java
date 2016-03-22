@@ -58,7 +58,6 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.List;
 
-import butterknife.Bind;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 import cz.fhucho.android.util.SimpleDiskCache;

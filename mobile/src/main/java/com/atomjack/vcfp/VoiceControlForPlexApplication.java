@@ -18,7 +18,10 @@ import android.os.Build;
 import android.support.v4.app.NotificationCompat;
 import android.support.v7.media.MediaRouter;
 import android.text.TextUtils;
+import android.util.DisplayMetrics;
+import android.view.Display;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.RemoteViews;
 
 import com.android.vending.billing.IabBroadcastReceiver;
@@ -61,6 +64,8 @@ import org.simpleframework.xml.core.Persister;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.math.BigInteger;
 import java.security.MessageDigest;
@@ -371,12 +376,9 @@ public class VoiceControlForPlexApplication extends Application
 
         @Override
         public void onFailure(int statusCode) {
-
+          Logger.d("Failed to find server connection for %s while searching for thumb for %s", media.server.name, media.getTitle());
         }
       });
-
-
-
     } else {
       Logger.d("Found cached bitmap");
       if(bitmapHandler != null)
@@ -947,5 +949,42 @@ public class VoiceControlForPlexApplication extends Application
     if(prefs.getString(Preferences.PLEX_USERNAME) != null)
       key += prefs.getString(Preferences.PLEX_USERNAME);
     return key;
+  }
+
+  public static int[] getScreenDimensions(Context context) {
+    int screenWidth = 0, screenHeight = 0;
+    final DisplayMetrics metrics = new DisplayMetrics();
+    WindowManager window = (WindowManager) context.getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
+    Display display = window.getDefaultDisplay();
+    Method mGetRawH = null, mGetRawW = null;
+    try {
+      // For JellyBean 4.2 (API 17) and onward
+      if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR1) {
+        display.getRealMetrics(metrics);
+
+        screenWidth = metrics.widthPixels;
+        screenHeight = metrics.heightPixels;
+      } else {
+        mGetRawH = Display.class.getMethod("getRawHeight");
+        mGetRawW = Display.class.getMethod("getRawWidth");
+
+        try {
+          screenWidth = (Integer) mGetRawW.invoke(display);
+          screenHeight = (Integer) mGetRawH.invoke(display);
+        } catch (IllegalArgumentException e) {
+          // TODO Auto-generated catch block
+          e.printStackTrace();
+        } catch (IllegalAccessException e) {
+          // TODO Auto-generated catch block
+          e.printStackTrace();
+        } catch (InvocationTargetException e) {
+          // TODO Auto-generated catch block
+          e.printStackTrace();
+        }
+      }
+    } catch (NoSuchMethodException e3) {
+      e3.printStackTrace();
+    }
+    return new int[]{ screenWidth, screenHeight };
   }
 }

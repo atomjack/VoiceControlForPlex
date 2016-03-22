@@ -7,14 +7,11 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.SeekBar;
 
-import com.atomjack.shared.Logger;
-import com.atomjack.shared.PlayerState;
 import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.model.PlexResponse;
 import com.atomjack.vcfp.net.PlexHttpResponseHandler;
 
 import butterknife.ButterKnife;
-import butterknife.OnClick;
 
 public class PlexPlayerFragment extends PlayerFragment {
   public PlexPlayerFragment() {

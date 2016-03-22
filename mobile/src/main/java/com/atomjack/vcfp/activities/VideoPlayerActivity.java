@@ -145,7 +145,6 @@ public class VideoPlayerActivity extends AppCompatActivity
   private void handlePlayCommand(Intent intent) {
     transientToken = intent.getStringExtra(com.atomjack.shared.Intent.EXTRA_TRANSIENT_TOKEN);
 
-    currentVideo = intent.getParcelableExtra(com.atomjack.shared.Intent.EXTRA_MEDIA);
     mediaContainer = intent.getParcelableExtra(com.atomjack.shared.Intent.EXTRA_ALBUM);
     if(mediaContainer == null) {
       mediaContainer = new MediaContainer();
@@ -290,8 +289,13 @@ public class VideoPlayerActivity extends AppCompatActivity
             currentVideo.getImageKey(PlexMedia.IMAGE_KEY.LOCAL_VIDEO_THUMB),
             new BitmapHandler() {
       @Override
-      public void onSuccess(Bitmap bitmap) {
-        controller.setPoster(bitmap);
+      public void onSuccess(final Bitmap bitmap) {
+        handler.post(new Runnable() {
+          @Override
+          public void run() {
+            controller.setPoster(bitmap);
+          }
+        });
       }
     });
   }
