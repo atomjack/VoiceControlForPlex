@@ -3,7 +3,6 @@ package com.atomjack.vcfp;
 import android.graphics.Bitmap;
 import android.os.AsyncTask;
 
-import com.atomjack.shared.Logger;
 import com.atomjack.vcfp.interfaces.BitmapHandler;
 import com.atomjack.vcfp.interfaces.PlexMediaHandler;
 import com.atomjack.vcfp.model.PlexMedia;
@@ -34,18 +33,15 @@ public class FetchMediaImageTask extends AsyncTask<Void, Void, Void> {
 
   @Override
   protected Void doInBackground(Void... params) {
-    Logger.d("Fetching art for %s", media.getTitle());
     VoiceControlForPlexApplication.getInstance().fetchMediaThumb(media, width, height, whichThumb, imageKey, new BitmapHandler() {
       @Override
       public void onSuccess(Bitmap bitmap) {
-        Logger.d("Art fetched for %s", media.getTitle());
         if(onFinish != null)
           onFinish.onFinish(media);
       }
 
       @Override
       public void onFailure() {
-        Logger.d("Failed to fetch art for %s", media.getTitle());
         if(onFinish != null)
           onFinish.onFinish(media);
       }

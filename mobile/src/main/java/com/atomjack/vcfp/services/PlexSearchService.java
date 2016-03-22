@@ -1312,9 +1312,6 @@ public class PlexSearchService extends Service {
           PlexMediaHandler onFinish = new PlexMediaHandler() {
             @Override
             public void onFinish(PlexMedia m2) {
-              if(m2 != null) {
-                Logger.d("Done with %s: %s", m2.key, m2.getTitle());
-              }
               mediaDone[0]++;
               if (mediaDone[0] == numMedia[0]) {
                 playLocalMedia(media, transientToken, mediaContainer);
@@ -1333,7 +1330,6 @@ public class PlexSearchService extends Service {
                     }
                   }
                 }
-                Logger.d("numMedia: %d", numMedia[0]);
                 for (FetchMediaImageTask task : taskList)
                   task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
               }
