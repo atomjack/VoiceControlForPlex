@@ -118,7 +118,8 @@ public class VoiceControlForPlexApplication extends Application
 
   private IabBroadcastReceiver promoReceiver;
 
-  public static HashMap<String, String[]> videoQualityOptions = new LinkedHashMap<String, String[]>();
+  public static HashMap<String, String[]> chromecastVideoQualityOptions = new LinkedHashMap<String, String[]>();
+  public static HashMap<String, String[]> localVideoQualityOptions = new LinkedHashMap<String, String[]>();
 
   private NotificationManager mNotifyMgr;
   private Bitmap notificationBitmap = null;
@@ -186,15 +187,20 @@ public class VoiceControlForPlexApplication extends Application
 //      }
 //    });
 
-//    videoQualityOptions.put(getString(R.string.original), new String[]{"12000", "1920x1080", "1"}); // Disabled for now. Don't know how to get PMS to direct play to chromecast
-    videoQualityOptions.put("20mbps 720p", new String[]{"20000", "1280x720"});
-    videoQualityOptions.put("12mbps 720p", new String[]{"12000", "1280x720"});
-    videoQualityOptions.put("10mbps 720p", new String[]{"10000", "1280x720"});
-    videoQualityOptions.put("8mbps 720p", new String[]{"8000", "1280x720"});
-    videoQualityOptions.put("4mbps 720p", new String[]{"4000", "1280x720"});
-    videoQualityOptions.put("3mbps 720p", new String[]{"3000", "1280x720"});
-    videoQualityOptions.put("2mbps 720p", new String[]{"2000", "1280x720"});
-    videoQualityOptions.put("1.5mbps 720p", new String[]{"1500", "1280x720"});
+//    chromecastVideoQualityOptions.put(getString(R.string.original), new String[]{"12000", "1920x1080", "1"}); // Disabled for now. Don't know how to get PMS to direct play to chromecast
+    chromecastVideoQualityOptions.put("20mbps 720p", new String[]{"20000", "1280x720"});
+    chromecastVideoQualityOptions.put("12mbps 720p", new String[]{"12000", "1280x720"});
+    chromecastVideoQualityOptions.put("10mbps 720p", new String[]{"10000", "1280x720"});
+    chromecastVideoQualityOptions.put("8mbps 720p", new String[]{"8000", "1280x720"});
+    chromecastVideoQualityOptions.put("4mbps 720p", new String[]{"4000", "1280x720"});
+    chromecastVideoQualityOptions.put("3mbps 720p", new String[]{"3000", "1280x720"});
+    chromecastVideoQualityOptions.put("2mbps 720p", new String[]{"2000", "1280x720"});
+    chromecastVideoQualityOptions.put("1.5mbps 720p", new String[]{"1500", "1280x720"});
+    localVideoQualityOptions.putAll(chromecastVideoQualityOptions);
+    localVideoQualityOptions.put("720kbps 480p", new String[]{"720", "852x480"});
+    localVideoQualityOptions.put("512kbps 480p", new String[]{"512", "852x480"});
+    localVideoQualityOptions.put("320kbps 480p", new String[]{"320", "852x480"});
+
 
     if(VoiceControlForPlexApplication.getInstance().prefs.getString(Preferences.CHROMECAST_VIDEO_QUALITY_LOCAL) == null)
       VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.CHROMECAST_VIDEO_QUALITY_LOCAL, "8mbps 720p");

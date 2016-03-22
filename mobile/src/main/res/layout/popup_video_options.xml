@@ -14,6 +14,15 @@
         android:id="@+id/videoOptionsTitle"
         android:textColor="@color/white"/>
 
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:text="@string/chromecast_video_description"
+        android:id="@+id/videoOptionsDescription"
+        android:textColor="@color/white"
+        android:layout_marginTop="20dp"/>
+
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"

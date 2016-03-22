@@ -359,8 +359,8 @@ public class VideoPlayerActivity extends AppCompatActivity
     qs.add("directPlay", "0");
     qs.add("directStream", "1");
     qs.add("videoQuality", "60");
-    qs.add("maxVideoBitrate", VoiceControlForPlexApplication.videoQualityOptions.get(VoiceControlForPlexApplication.getInstance().prefs.getString(connection.local ? Preferences.LOCAL_VIDEO_QUALITY_LOCAL : Preferences.LOCAL_VIDEO_QUALITY_REMOTE))[0]);
-    qs.add("videoResolution", VoiceControlForPlexApplication.videoQualityOptions.get(VoiceControlForPlexApplication.getInstance().prefs.getString(connection.local ? Preferences.LOCAL_VIDEO_QUALITY_LOCAL : Preferences.LOCAL_VIDEO_QUALITY_REMOTE))[1]);
+    qs.add("maxVideoBitrate", VoiceControlForPlexApplication.localVideoQualityOptions.get(VoiceControlForPlexApplication.getInstance().prefs.getString(connection.local ? Preferences.LOCAL_VIDEO_QUALITY_LOCAL : Preferences.LOCAL_VIDEO_QUALITY_REMOTE))[0]);
+    qs.add("videoResolution", VoiceControlForPlexApplication.localVideoQualityOptions.get(VoiceControlForPlexApplication.getInstance().prefs.getString(connection.local ? Preferences.LOCAL_VIDEO_QUALITY_LOCAL : Preferences.LOCAL_VIDEO_QUALITY_REMOTE))[1]);
     qs.add("audioBoost", "100");
     qs.add("session", session);
     qs.add(PlexHeaders.XPlexClientIdentifier, VoiceControlForPlexApplication.getInstance().prefs.getUUID());

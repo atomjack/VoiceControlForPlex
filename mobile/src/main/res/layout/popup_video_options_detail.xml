@@ -13,9 +13,16 @@
         android:id="@+id/videoOptionsTitle"
         android:textColor="@color/white"/>
 
-    <RadioGroup
+    <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:id="@+id/videoOptionsRadioGroup">
-    </RadioGroup>
+        android:id="@+id/scrollView5">
+
+        <RadioGroup
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:id="@+id/videoOptionsRadioGroup">
+        </RadioGroup>
+    </ScrollView>
+
 </LinearLayout>

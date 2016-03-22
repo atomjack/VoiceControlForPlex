@@ -2255,6 +2255,9 @@ public class MainActivity extends AppCompatActivity
     TextView videoOptionsTitle = (TextView)layout.findViewById(R.id.videoOptionsTitle);
     videoOptionsTitle.setText(R.string.local_video_options_header);
 
+    TextView videoOptionsDescription = (TextView)layout.findViewById(R.id.videoOptionsDescription);
+    videoOptionsDescription.setText(R.string.local_video_description);
+
     builder.setView(layout);
     final AlertDialog chooserDialog = builder.create();
 
@@ -2278,6 +2281,12 @@ public class MainActivity extends AppCompatActivity
   }
 
   private void showVideoOptions(final boolean chromecast, final boolean local) {
+    HashMap<String, String[]> videoQualityOptions;
+    if(chromecast)
+      videoQualityOptions = VoiceControlForPlexApplication.chromecastVideoQualityOptions;
+    else
+      videoQualityOptions = VoiceControlForPlexApplication.localVideoQualityOptions;
+
     AlertDialog.Builder builder = new AlertDialog.Builder(this);
     View view = getLayoutInflater().inflate(R.layout.popup_video_options_detail, null);
     builder.setView(view);
@@ -2299,10 +2308,10 @@ public class MainActivity extends AppCompatActivity
     }
 
     RadioGroup videoOptionsRadioGroup = (RadioGroup)view.findViewById(R.id.videoOptionsRadioGroup);
-    final CharSequence[] items = VoiceControlForPlexApplication.videoQualityOptions.keySet().toArray(new CharSequence[VoiceControlForPlexApplication.videoQualityOptions.size()]);
-    int videoQuality = new ArrayList<>(VoiceControlForPlexApplication.videoQualityOptions.keySet()).indexOf(prefs.getString(prefKey));
+    final CharSequence[] items = videoQualityOptions.keySet().toArray(new CharSequence[videoQualityOptions.size()]);
+    int videoQuality = new ArrayList<>(videoQualityOptions.keySet()).indexOf(prefs.getString(prefKey));
     if(videoQuality == -1)
-      videoQuality = new ArrayList<>(VoiceControlForPlexApplication.videoQualityOptions.keySet()).indexOf("8mbps 720p");
+      videoQuality = new ArrayList<>(videoQualityOptions.keySet()).indexOf("8mbps 720p");
     LinearLayout.LayoutParams layoutParams = new RadioGroup.LayoutParams(
             RadioGroup.LayoutParams.WRAP_CONTENT,
             RadioGroup.LayoutParams.WRAP_CONTENT);

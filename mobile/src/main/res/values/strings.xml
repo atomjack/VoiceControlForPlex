@@ -190,8 +190,10 @@
     </string-array>
     <string name="menu_local_video">Local Video Options</string>
     <string name="local_video_options_header">Local Video Quality</string>
-    <string name="local_video_local_full">Chromecast Video Quality over Local Network</string>
-    <string name="local_video_remote_full">Chromecast Video Quality over Remote Network</string>
+    <string name="local_video_local_full">Local Video Quality over Local Network</string>
+    <string name="local_video_remote_full">Local Video Quality over Remote Network</string>
     <string name="unknown_error_occurred">Sorry, an unknown error occurred.</string>
     <string name="error_server_died">Sorry, the connection to the server was lost.</string>
+    <string name="local_video_description">Choose video resolution and bitrate settings for Local Video playback. You may set separate settings for servers on the same wifi network (local) and for those on remote networks.</string>
+    <string name="chromecast_video_description">Choose video resolution and bitrate settings for Chromecast playback. You may set separate settings for servers on the same wifi network (local) and for those on remote networks.</string>
 </resources>

@@ -46,6 +46,7 @@
               android:visible="false"/>
         <item android:id="@+id/menu_local_video"
               android:title="@string/menu_local_video"
+              android:icon="@drawable/menu_local_video"
               android:onClick="showLocalVideoOptions"/>
         <item android:id="@+id/menu_chromecast_video"
               android:title="@string/menu_chromecast_video"
