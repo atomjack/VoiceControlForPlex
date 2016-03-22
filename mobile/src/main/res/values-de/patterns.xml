@@ -37,8 +37,8 @@ Wenn du eine Übersetzung hinzufügst bitte modifiziere nicht die Muster (.*), $
     Die folgenden Muster erlauben Sprachbefehle wie "höre album <name> von <künstler>" oder 
     "höre das album <name> von <künstler>".
     -->
-    <item name="pattern_listen_to_album_by_artist" type="string">höre( das)? album (.+) von (.+)</item>
-    <item name="pattern_listen_to_album" type="string">höre( das)? album (.+)</item>
+    <item name="pattern_listen_to_album_by_artist" type="string">(höre )(das )?album (.+) von (.+)</item>
+    <item name="pattern_listen_to_album" type="string">(höre )(das )?album (.+)</item>
     <item name="pattern_listen_to_song_by_artist" type="string">höre( den titel)? (.+) von (.+)</item>
     <item name="pattern_listen_to_artist" type="string">höre künstler (.+)</item>
 

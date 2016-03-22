@@ -34,10 +34,10 @@ Also, you don't need to translate these comments.
     The following pattern lets the user say "listen to <album> by <artist>" or
     "listen to the album <album> by <artist>".
     -->
-    <item name="pattern_listen_to_album_by_artist" type="string">écouter l\'album (.+) de (.+)</item>
-
-    <item name="pattern_listen_to_album" type="string">écouter l\'album (.+)</item>
-    <item name="pattern_listen_to_song_by_artist" type="string">écouter (.+) de (.+)</item>
+    <item name="pattern_listen_to_album_by_artist" type="string">(écouter )()l\'album (.+) de (.+)</item>
+    <item name="pattern_listen_to_album" type="string">(écouter)() l\'album (.+)</item>
+    <item name="pattern_listen_to_song_by_artist" type="string">(écouter )(.+) de (.+)</item>
+    <item name="pattern_listen_to_artist" type="string">écouter (.+)</item>
 
     <!--
     The following three patterns allow for pause/resume/stop of playback. If your language reverses the order of the

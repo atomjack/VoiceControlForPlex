@@ -40,10 +40,9 @@ Also, you don't need to translate these comments.
     The following pattern lets the user say "listen to <album> by <artist>" or
     "listen to the album <album> by <artist>".
     -->
-    <item name="pattern_listen_to_album_by_artist" type="string">listen to the album (.+) by (.+)</item>
-
-    <item name="pattern_listen_to_album" type="string">listen to the album (.+)</item>
-    <item name="pattern_listen_to_song_by_artist" type="string">listen to (.+) by (.+)</item>
+    <item name="pattern_listen_to_album_by_artist" type="string">(listen to )(the )?album (.+) by (.+)</item>
+    <item name="pattern_listen_to_album" type="string">(listen to )(the )?album (.+)</item>
+    <item name="pattern_listen_to_song_by_artist" type="string">(listen to )(.+) by (.+)</item>
     <item name="pattern_listen_to_artist" type="string">listen to (.+)</item>
 
     <!--

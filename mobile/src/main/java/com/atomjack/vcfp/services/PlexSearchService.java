@@ -83,14 +83,12 @@ public class PlexSearchService extends Service {
 
 	private boolean didClientScan = false;
 
-  private boolean fromMic;
-
-  private boolean fromLocalPlayer = false; // Whether or not this event is coming from the local player. If it is, we'll want to send a response back to the activity
   private int whichLocalPlayer = -1; // Which local player (audio/video) this is coming from
 
   private boolean shuffle = false;
 
-	private ArrayList<String> queries;
+	private List<String> queries;
+
 	// Will be set to true after we scan for servers, so we don't have to do it again on the next query
 	private boolean didServerScan = false;
 
@@ -130,7 +128,6 @@ public class PlexSearchService extends Service {
 		videoPlayed = false;
     shuffle = false;
 
-    fromLocalPlayer = intent.getBooleanExtra(com.atomjack.shared.Intent.EXTRA_FROM_LOCAL_PLAYER, false);
     whichLocalPlayer = intent.getIntExtra(com.atomjack.shared.Intent.PLAYER, -1);
 
     if(plexSubscription == null) {
@@ -143,8 +140,6 @@ public class PlexSearchService extends Service {
     if(castPlayerManager.isSubscribed()) {
       Logger.d("CAST MANAGER IS SUBSCRIBED");
     }
-
-    fromMic = intent.getBooleanExtra(com.atomjack.shared.Intent.EXTRA_FROM_MIC, false);
 
     if(intent.getBooleanExtra(WearConstants.FROM_WEAR, false) == true && VoiceControlForPlexApplication.getInstance().hasWear()) {
       fromWear = true;
@@ -252,8 +247,7 @@ public class PlexSearchService extends Service {
 				// Received spoken query from the RecognizerIntent
 				ArrayList<String> voiceResults = intent.getExtras().getStringArrayList(RecognizerIntent.EXTRA_RESULTS);
 				for(String q : voiceResults) {
-          q.toLowerCase();
-					if(q.matches(getString(R.string.pattern_recognition))) {
+					if(q.toLowerCase().matches(getString(R.string.pattern_recognition))) {
 						if(!queries.contains(q.toLowerCase()))
 							queries.add(q.toLowerCase());
 					}
@@ -530,7 +524,6 @@ public class PlexSearchService extends Service {
 
 		p = Pattern.compile(getString(R.string.pattern_watch_next_episode_of_show));
 		matcher = p.matcher(queryText);
-
 		if(matcher.find()) {
 			final String queryTerm = matcher.group(2);
 			return new myRunnable() {
@@ -543,10 +536,8 @@ public class PlexSearchService extends Service {
 
 		p = Pattern.compile(getString(R.string.pattern_watch_latest_episode_of_show));
 		matcher = p.matcher(queryText);
-
 		if(matcher.find()) {
 			final String queryTerm = matcher.group(3);
-			Logger.d("found latest: %s", queryTerm);
 			return new myRunnable() {
 				@Override
 				public void run() {
@@ -584,8 +575,8 @@ public class PlexSearchService extends Service {
 		p = Pattern.compile(getString(R.string.pattern_listen_to_album_by_artist));
 		matcher = p.matcher(queryText);
 		if(matcher.find()) {
-			final String album = matcher.group(1);
-			final String artist = matcher.group(2);
+			final String album = matcher.group(3);
+			final String artist = matcher.group(4);
 			return new myRunnable() {
 				@Override
 				public void run() {
@@ -597,7 +588,7 @@ public class PlexSearchService extends Service {
 		p = Pattern.compile(getString(R.string.pattern_listen_to_album));
 		matcher = p.matcher(queryText);
 		if(matcher.find()) {
-			final String album = matcher.group(1);
+			final String album = matcher.group(3);
 			return new myRunnable() {
 				@Override
 				public void run() {
@@ -609,8 +600,8 @@ public class PlexSearchService extends Service {
 		p = Pattern.compile(getString(R.string.pattern_listen_to_song_by_artist));
 		matcher = p.matcher(queryText);
 		if(matcher.find()) {
-			final String track = matcher.group(1);
-			final String artist = matcher.group(2);
+			final String track = matcher.group(2);
+			final String artist = matcher.group(3);
 			return new myRunnable() {
 				@Override
 				public void run() {

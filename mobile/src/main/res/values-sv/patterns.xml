@@ -33,9 +33,10 @@ Den här filen innehåller reguljära uttryck som används för att räkna ut vi
     Följande mall låter användaren säga "lyssna på <album> från <artist>" eller 
     "lyssna på albumet <album> från <artist>".
     -->
-    <item name="pattern_listen_to_album_by_artist" type="string">lyssna på albumet (.+) från (.+)</item>
-    <item name="pattern_listen_to_album" type="string">lyssna på albumet (.+)</item>
+    <item name="pattern_listen_to_album_by_artist" type="string">(lyssna )(på )?albumet (.+) från (.+)</item>
+    <item name="pattern_listen_to_album" type="string">(lyssna)( på)? albumet (.+)</item>
     <item name="pattern_listen_to_song_by_artist" type="string">lyssna på ( låten)? (.+) från (.+)</item>
+    <item name="pattern_listen_to_artist" type="string">lyssna på (.+)</item>
 
     <!--
     Följande tre mallar tillåter pausa / återuppta / stopp av uppspelning. Om ditt språk vänder på ordningen för
