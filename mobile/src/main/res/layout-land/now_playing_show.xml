@@ -96,7 +96,8 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:id="@+id/nowPlayingPosterContainer">
+            android:id="@+id/nowPlayingPosterContainer"
+            android:layout_marginLeft="10dp">
 
             <ImageView
                 android:layout_width="wrap_content"

@@ -66,7 +66,7 @@
             android:layout_weight="1"
             android:src="@drawable/button_previous"
             android:background="@android:color/transparent"
-            android:layout_marginTop="13dp"/>
+            android:layout_gravity="center_vertical"/>
 
         <ImageButton
             android:layout_width="0dp"
@@ -74,7 +74,7 @@
             android:background="@android:color/transparent"
             android:id="@+id/rewindButton" android:src="@drawable/notif_back15"
             android:layout_weight="1"
-            android:layout_marginTop="13dp"/>
+            android:layout_gravity="center_vertical"/>
 
         <FrameLayout
             android:layout_width="0dp"
@@ -88,7 +88,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:background="@android:color/transparent"
-                />
+                android:layout_gravity="center_vertical"/>
 
             <ImageButton
                 android:layout_width="match_parent"
@@ -96,7 +96,8 @@
                 android:id="@+id/pauseButton"
                 android:src="@drawable/button_pause"
                 android:background="@android:color/transparent"
-                android:visibility="invisible"/>
+                android:visibility="invisible"
+                android:layout_gravity="center_vertical"/>
 
             <ImageButton
                 android:layout_width="match_parent"
@@ -104,7 +105,8 @@
                 android:background="@android:color/transparent"
                 android:id="@+id/playButton" android:src="@drawable/button_play"
                 android:layout_weight="1"
-                android:visibility="invisible"/>
+                android:visibility="invisible"
+                android:layout_gravity="center_vertical"/>
 
         </FrameLayout>
         <ImageButton
@@ -114,7 +116,7 @@
             android:onClick="doStop"
             android:id="@+id/stopButton" android:src="@drawable/button_stop"
             android:layout_weight="1"
-            android:layout_marginTop="10dp"/>
+            android:layout_gravity="center_vertical"/>
 
         <ImageButton
             android:layout_width="0dp"
@@ -122,7 +124,7 @@
             android:background="@android:color/transparent"
             android:id="@+id/forwardButton" android:src="@drawable/notif_ff30"
             android:layout_weight="1"
-            android:layout_marginTop="13dp"/>
+            android:layout_gravity="center_vertical"/>
 
         <ImageButton
             android:layout_width="0dp"
@@ -131,7 +133,7 @@
             android:layout_weight="1"
             android:src="@drawable/button_next"
             android:background="@android:color/transparent"
-            android:layout_marginTop="13dp"/>
+            android:layout_gravity="center_vertical"/>
 
     </LinearLayout>
 </LinearLayout>
