@@ -48,9 +48,6 @@ public class PlexServer extends PlexDevice {
 	public boolean owned = true;
 	public String accessToken;
 
-//	private Connection activeConnection;
-//  private Calendar activeConnectionExpires;
-
 	public boolean local;
 
   public boolean isScanAllServer = false;

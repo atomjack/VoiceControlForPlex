@@ -208,7 +208,7 @@ public class VideoPlayerActivity extends AppCompatActivity
           player.reset();
         }
 
-        VoiceControlForPlexApplication.getInstance().fetchMediaThumb(currentVideo, screenWidth, screenHeight, currentVideo.art, currentVideo.getImageKey(PlexMedia.IMAGE_KEY.LOCAL_VIDEO_BACKGROUND), new BitmapHandler() {
+        VoiceControlForPlexApplication.getInstance().fetchMediaThumb(currentVideo, screenWidth, screenHeight, currentVideo.isShow() ? currentVideo.grandparentArt : currentVideo.art, currentVideo.getImageKey(PlexMedia.IMAGE_KEY.LOCAL_VIDEO_BACKGROUND), new BitmapHandler() {
           @Override
           public void onSuccess(Bitmap bitmap) {
             final BitmapDrawable bitmapDrawable = new BitmapDrawable(getResources(), bitmap);
@@ -289,7 +289,7 @@ public class VideoPlayerActivity extends AppCompatActivity
     VoiceControlForPlexApplication.getInstance().fetchMediaThumb(currentVideo,
             Utils.convertDpToPixel(this, getResources().getDimension(R.dimen.video_player_poster_width)),
             Utils.convertDpToPixel(this, getResources().getDimension(R.dimen.video_player_poster_height)),
-            currentVideo.thumb,
+            currentVideo.isShow() ? currentVideo.grandparentThumb : currentVideo.thumb,
             currentVideo.getImageKey(PlexMedia.IMAGE_KEY.LOCAL_VIDEO_THUMB),
             new BitmapHandler() {
       @Override

@@ -15,75 +15,82 @@
         android:layout_weight="1"
         android:layout_marginLeft="20dp"
         android:layout_marginRight="20dp"
-        android:id="@+id/nowPlayingTapTarget">
+        android:id="@+id/nowPlayingTapTarget"
+        android:layout_marginTop="17dp">
 
-        <LinearLayout
-            android:orientation="vertical"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            >
+        <ScrollView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/scrollView6">
 
-            <TextView
-                android:id="@+id/nowPlayingOnClient"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentLeft="true"
-                android:layout_alignParentTop="true"
-                android:layout_marginTop="17dp"
-                style="@style/showShadow"
-                android:textColor="@color/white"
-                android:text="@string/now_playing_on" />
+            <LinearLayout
+                android:orientation="vertical"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                >
 
-            <TextView
-                android:id="@+id/nowPlayingShowTitle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignLeft="@+id/nowPlayingOnClient"
-                android:layout_alignParentRight="true"
-                android:layout_below="@+id/nowPlayingOnClient"
-                android:layout_marginTop="16dp"
-                style="@style/showShadow"
-                android:textSize="24sp"
-                android:textStyle="bold"
-                android:text="Game of Thrones"
-                android:textColor="@color/white"/>
+                <TextView
+                    android:id="@+id/nowPlayingOnClient"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentLeft="true"
+                    android:layout_alignParentTop="true"
+                    style="@style/showShadow"
+                    android:textColor="@color/white"
+                    android:text="@string/now_playing_on"
+                    />
 
-            <TextView
-                android:id="@+id/nowPlayingEpisodeTitle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignLeft="@+id/nowPlayingShowTitle"
-                android:layout_alignParentRight="true"
-                android:layout_below="@+id/nowPlayingShowTitle"
-                style="@style/showShadow"
-                android:textSize="24sp"
-                android:text="The Rains of Castamere"
-                android:textColor="@color/white"/>
+                <TextView
+                    android:id="@+id/nowPlayingShowTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignLeft="@+id/nowPlayingOnClient"
+                    android:layout_alignParentRight="true"
+                    android:layout_below="@+id/nowPlayingOnClient"
+                    android:layout_marginTop="5dp"
+                    style="@style/showShadow"
+                    android:textSize="24sp"
+                    android:textStyle="bold"
+                    android:text="Game of Thrones"
+                    android:textColor="@color/white"/>
 
-            <TextView
-                android:id="@+id/nowPlayingYear"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignLeft="@+id/nowPlayingEpisodeTitle"
-                android:layout_alignParentRight="true"
-                android:layout_below="@+id/nowPlayingEpisodeTitle"
-                style="@style/showShadow"
-                android:text="2013"
-                android:textColor="@color/white"/>
+                <TextView
+                    android:id="@+id/nowPlayingEpisodeTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignLeft="@+id/nowPlayingShowTitle"
+                    android:layout_alignParentRight="true"
+                    android:layout_below="@+id/nowPlayingShowTitle"
+                    style="@style/showShadow"
+                    android:textSize="24sp"
+                    android:text="The Rains of Castamere"
+                    android:textColor="@color/white"/>
 
-            <TextView
-                android:id="@+id/nowPlayingDuration"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignLeft="@+id/nowPlayingYear"
-                android:layout_alignParentRight="true"
-                android:layout_below="@+id/nowPlayingYear"
-                style="@style/showShadow"
-                android:text="52 min"
-                android:textColor="@color/white"/>
+                <TextView
+                    android:id="@+id/nowPlayingYear"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignLeft="@+id/nowPlayingEpisodeTitle"
+                    android:layout_alignParentRight="true"
+                    android:layout_below="@+id/nowPlayingEpisodeTitle"
+                    style="@style/showShadow"
+                    android:text="2013"
+                    android:textColor="@color/white"/>
 
-        </LinearLayout>
+                <TextView
+                    android:id="@+id/nowPlayingDuration"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignLeft="@+id/nowPlayingYear"
+                    android:layout_alignParentRight="true"
+                    android:layout_below="@+id/nowPlayingYear"
+                    style="@style/showShadow"
+                    android:text="52 min"
+                    android:textColor="@color/white"/>
+
+            </LinearLayout>
+        </ScrollView>
 
         <FrameLayout
             android:layout_width="match_parent"
@@ -107,7 +114,7 @@
         android:layout_alignParentBottom="true">
 
         <include layout="@layout/playback_controls"
-                 android:layout_height="110dp"
+                 android:layout_height="wrap_content"
                  android:layout_width="fill_parent"/>
     </RelativeLayout>
 

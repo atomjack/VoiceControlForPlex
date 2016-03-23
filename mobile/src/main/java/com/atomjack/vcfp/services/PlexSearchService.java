@@ -1118,18 +1118,22 @@ public class PlexSearchService extends Service {
 		}
 	}
 
-	private static Boolean compareTitle(String title, String queryTerm) {
+	private static boolean compareTitle(String title, String queryTerm) {
     // Replace & in the title with "and"
 //    title = title.replace("&", "and");
-
-    // Strip out some other punctuation from the title, like periods and commas
-    title = title.replaceAll("[\\.,]", "");
 
 		// First, check if the two terms are equal
 		if(title.toLowerCase().equals(queryTerm.toLowerCase()))
 			return true;
 
-		// No equal match, so split the query term up by words, and see if the title contains every single word
+    // Strip out some other punctuation from the title, like periods and commas
+    title = title.replaceAll("[\\.,]", "");
+
+    // Check for an exact match again
+    if(title.toLowerCase().equals(queryTerm.toLowerCase()))
+      return true;
+
+    // No equal match, so split the query term up by words, and see if the title contains every single word
 		String[] words = queryTerm.split(" ");
 		boolean missing = false;
 		for(int i=0;i<words.length;i++) {
@@ -1354,7 +1358,7 @@ public class PlexSearchService extends Service {
           int[] dims = VoiceControlForPlexApplication.getScreenDimensions(PlexSearchService.this);
           final int width = dims[0];
           final int height = dims[1];
-          final PlexMedia firstVideo = mediaContainer.videos.get(0);
+          final PlexVideo firstVideo = mediaContainer.videos.get(0);
           PlexMediaHandler onFinish = new PlexMediaHandler() {
             @Override
             public void onFinish(PlexMedia m2) {
@@ -1364,15 +1368,17 @@ public class PlexSearchService extends Service {
 
                 // Fetch art and thumbnail for the rest of the videos in the container
                 List<FetchMediaImageTask> taskList = new ArrayList<>();
-                for(final PlexMedia m : mediaContainer.videos) {
+                for(final PlexVideo m : mediaContainer.videos) {
                   if(!m.key.equals(firstVideo.key)) {
-                    if (m.art != null) {
-                      taskList.add(new FetchMediaImageTask(m, width, height, m.art, m.getImageKey(PlexMedia.IMAGE_KEY.LOCAL_VIDEO_BACKGROUND)));
+                    String background = m.isShow() ? m.grandparentArt : m.art;
+                    String thumb = m.isShow() ? m.grandparentThumb : m.thumb;
+                    if (background != null) {
+                      taskList.add(new FetchMediaImageTask(m, width, height, background, m.getImageKey(PlexMedia.IMAGE_KEY.LOCAL_VIDEO_BACKGROUND)));
                     }
-                    if (m.thumb != null) {
+                    if (thumb != null) {
                       taskList.add(new FetchMediaImageTask(m, com.google.android.libraries.cast.companionlibrary.utils.Utils.convertDpToPixel(PlexSearchService.this, getResources().getDimension(R.dimen.video_player_poster_width)),
                               com.google.android.libraries.cast.companionlibrary.utils.Utils.convertDpToPixel(PlexSearchService.this, getResources().getDimension(R.dimen.video_player_poster_height)),
-                              m.thumb, m.getImageKey(PlexMedia.IMAGE_KEY.LOCAL_VIDEO_THUMB)));
+                              thumb, m.getImageKey(PlexMedia.IMAGE_KEY.LOCAL_VIDEO_THUMB)));
                     }
                   }
                 }
@@ -1382,14 +1388,17 @@ public class PlexSearchService extends Service {
             }
           };
 
-          if(firstVideo.art != null) {
+          Logger.d("%s is show: %s", firstVideo.getTitle(), firstVideo.isShow());
+          String background = firstVideo.isShow() ? firstVideo.grandparentArt : firstVideo.art;
+          String thumb = firstVideo.isShow() ? firstVideo.grandparentThumb : firstVideo.thumb;
+          if(background != null) {
             numMedia[0]++;
-            new FetchMediaImageTask(firstVideo, width, height, firstVideo.art, firstVideo.getImageKey(PlexMedia.IMAGE_KEY.LOCAL_VIDEO_BACKGROUND), onFinish).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+            new FetchMediaImageTask(firstVideo, width, height, background, firstVideo.getImageKey(PlexMedia.IMAGE_KEY.LOCAL_VIDEO_BACKGROUND), onFinish).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
           }
-          if(firstVideo.thumb != null) {
+          if(thumb != null) {
             numMedia[0]++;
             new FetchMediaImageTask(firstVideo, com.google.android.libraries.cast.companionlibrary.utils.Utils.convertDpToPixel(this, getResources().getDimension(R.dimen.video_player_poster_width)),
-                    com.google.android.libraries.cast.companionlibrary.utils.Utils.convertDpToPixel(this, getResources().getDimension(R.dimen.video_player_poster_height)), firstVideo.thumb, firstVideo.getImageKey(PlexMedia.IMAGE_KEY.LOCAL_VIDEO_BACKGROUND), onFinish).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                    com.google.android.libraries.cast.companionlibrary.utils.Utils.convertDpToPixel(this, getResources().getDimension(R.dimen.video_player_poster_height)), thumb, firstVideo.getImageKey(PlexMedia.IMAGE_KEY.LOCAL_VIDEO_THUMB), onFinish).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
           }
           // Just in case the first video in the playlist doesn't have either art or thumb, force play
           if(firstVideo.art == null && firstVideo.thumb == null) {

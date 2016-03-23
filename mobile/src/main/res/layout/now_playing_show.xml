@@ -7,23 +7,52 @@
               android:background="@color/now_playing_background">
 
     <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="20dp"
+        android:layout_marginRight="20dp"
+        android:layout_marginTop="10dp">
+
+        <ImageButton
+            android:layout_width="30dp"
+            android:layout_height="wrap_content"
+            android:background="@android:color/transparent"
+            android:id="@+id/micButton"
+            android:src="@drawable/button_microphone"
+            android:layout_gravity="center_vertical"/>
+
+        <TextView
+            android:id="@+id/nowPlayingOnClient"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentTop="true"
+            android:layout_marginTop="17dp"
+            style="@style/showShadow"
+            android:textColor="@color/white"
+            android:text="@string/now_playing_on"
+            android:gravity="center_horizontal"
+            android:layout_weight="1"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="10dp"/>
+
+        <ImageButton
+            android:layout_width="42dp"
+            android:layout_height="wrap_content"
+            android:background="@android:color/transparent"
+            android:id="@+id/mediaOptionsButton"
+            android:src="@drawable/button_media_options"
+            android:layout_gravity="center_vertical"/>
+    </LinearLayout>
+
+    <LinearLayout
         android:orientation="vertical"
         android:layout_width="fill_parent"
         android:layout_height="0dp"
         android:gravity="center_horizontal"
         android:layout_weight="1"
         android:id="@+id/nowPlayingTapTarget">
-
-        <TextView
-                android:id="@+id/nowPlayingOnClient"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentLeft="true"
-                android:layout_alignParentTop="true"
-                android:layout_marginTop="17dp"
-                style="@style/showShadow"
-                android:textColor="@color/white"
-                android:text="@string/now_playing_on" />
 
         <TextView
             android:id="@+id/nowPlayingShowTitle"
@@ -95,7 +124,7 @@
 
     <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="100dp"
+        android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:background="@color/now_playing_background">
 
