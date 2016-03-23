@@ -31,7 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class CastPlayerManager {
   private PlexMedia nowPlayingMedia;
-  private ArrayList<? extends PlexMedia> nowPlayingAlbum;
+  private ArrayList<? extends PlexMedia> nowPlayingPlaylist;
 
   private static VideoCastManager castManager = null;
   private VCFPCastConsumer castConsumer;
@@ -233,7 +233,7 @@ public class CastPlayerManager {
   public void loadMedia(PlexMedia media, ArrayList<? extends PlexMedia> album, final int offset) {
     Logger.d("Loading media: %s", album);
     nowPlayingMedia = media;
-    nowPlayingAlbum = album;
+    nowPlayingPlaylist = album;
     nowPlayingMedia.server.findServerConnection(new ActiveConnectionHandler() {
       @Override
       public void onSuccess(Connection connection) {
@@ -373,7 +373,7 @@ public class CastPlayerManager {
               if(listener != null && oldState != currentState)
                 listener.onStateChanged(nowPlayingMedia, currentState);
               if(currentState != PlayerState.STOPPED) {
-                VoiceControlForPlexApplication.getInstance().setNotification(mClient, currentState, nowPlayingMedia, nowPlayingAlbum);
+                VoiceControlForPlexApplication.getInstance().setNotification(mClient, currentState, nowPlayingMedia, nowPlayingPlaylist);
               }
             }
           } else if(obj.has("event") && obj.getString("event").equals(RECEIVER_EVENTS.TIME_UPDATE) && obj.has("currentTime")) {
@@ -393,20 +393,30 @@ public class CastPlayerManager {
             PlayerState oldState = currentState;
             currentState = PlayerState.getState(obj.getString("state"));
             if(obj.has("media") && obj.has("type") && obj.has("client")) {
-              if(obj.getString("type").equals(PARAMS.MEDIA_TYPE_VIDEO))
+              if(obj.getString("type").equals(PARAMS.MEDIA_TYPE_VIDEO)) {
                 nowPlayingMedia = VoiceControlForPlexApplication.gsonRead.fromJson(obj.getString("media"), PlexVideo.class);
-              else
+                if(obj.has("playlist")) {
+                  Type type = new TypeToken<ArrayList<PlexVideo>>() {}.getType();
+                  nowPlayingPlaylist = VoiceControlForPlexApplication.gsonRead.fromJson(obj.getString("playlist"), type);
+                }
+              } else {
+                if(obj.has("playlist")) {
+                  Type type = new TypeToken<ArrayList<PlexTrack>>() {}.getType();
+                  nowPlayingPlaylist = VoiceControlForPlexApplication.gsonRead.fromJson(obj.getString("playlist"), type);
+                }
                 nowPlayingMedia = VoiceControlForPlexApplication.gsonRead.fromJson(obj.getString("media"), PlexTrack.class);
+              }
+
               mClient = VoiceControlForPlexApplication.gsonRead.fromJson(obj.getString("client"), PlexClient.class);
             }
             if(listener != null && oldState != currentState) {
               if(oldState == PlayerState.STOPPED)
-                listener.onPlayStarted(nowPlayingMedia, nowPlayingAlbum, currentState);
+                listener.onPlayStarted(nowPlayingMedia, nowPlayingPlaylist, currentState);
               else
                 listener.onStateChanged(nowPlayingMedia, PlayerState.getState(obj.getString("state")));
             }
             if(currentState != PlayerState.STOPPED) {
-              VoiceControlForPlexApplication.getInstance().setNotification(mClient, currentState, nowPlayingMedia, nowPlayingAlbum);
+              VoiceControlForPlexApplication.getInstance().setNotification(mClient, currentState, nowPlayingMedia, nowPlayingPlaylist);
             } else
               VoiceControlForPlexApplication.getInstance().cancelNotification();
           } else if(obj.has("event") && obj.getString("event").equals(RECEIVER_EVENTS.DEVICE_CAPABILITIES) && obj.has("capabilities")) {
@@ -598,7 +608,7 @@ public class CastPlayerManager {
   }
 
   private String getPlaylistJson() {
-    return VoiceControlForPlexApplication.gsonWrite.toJson(nowPlayingAlbum);
+    return VoiceControlForPlexApplication.gsonWrite.toJson(nowPlayingPlaylist);
   }
 
   public PlayerState getCurrentState() {
@@ -613,8 +623,8 @@ public class CastPlayerManager {
     return nowPlayingMedia;
   }
 
-  public List<? extends PlexMedia> getNowPlayingAlbum() {
-    return nowPlayingAlbum;
+  public List<? extends PlexMedia> getNowPlayingPlaylist() {
+    return nowPlayingPlaylist;
   }
 
   public String getSessionId() {

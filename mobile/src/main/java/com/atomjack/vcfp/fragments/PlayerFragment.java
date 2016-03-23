@@ -167,8 +167,7 @@ public abstract class PlayerFragment extends Fragment
     this.layout = layout;
     this.client = client;
     nowPlayingMedia = media;
-//    mediaContainer = mc;
-    nowPlayingPlaylist = playlist;
+    nowPlayingPlaylist = playlist == null ? new ArrayList<PlexMedia>() : playlist;
     Logger.d("Got %d items in playlist", playlist.size());
     this.fromWear = fromWear;
     currentMediaIndex = 0;
@@ -663,7 +662,7 @@ public abstract class PlayerFragment extends Fragment
         playButton.setVisibility(View.VISIBLE);
       } else if (currentState == PlayerState.PLAYING) {
         pauseButton.setVisibility(View.VISIBLE);
-      } else if (currentState == PlayerState.BUFFERING) {
+      } else {
         playPauseSpinner.setVisibility(View.VISIBLE);
       }
     }

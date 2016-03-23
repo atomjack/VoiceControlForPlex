@@ -427,6 +427,7 @@ public class MainActivity extends AppCompatActivity
     public void onUnsubscribed() {
       Logger.d("[MainActivity] unsubscribed");
       setCastIconInactive();
+      VoiceControlForPlexApplication.getInstance().cancelNotification();
       VoiceControlForPlexApplication.getInstance().subscribedToLocalClient = false;
       prefs.remove(Preferences.SUBSCRIBED_CLIENT);
       switchToMainFragment();
