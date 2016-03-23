@@ -13,6 +13,7 @@ import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexResponse;
 import com.atomjack.vcfp.model.PlexServer;
+import com.atomjack.vcfp.model.PlexTrack;
 import com.atomjack.vcfp.model.PlexVideo;
 import com.atomjack.vcfp.model.Stream;
 import com.atomjack.vcfp.net.PlexHttpClient;
@@ -447,12 +448,14 @@ public class PlexSubscription {
                   public void onSuccess(MediaContainer mediaContainer) {
                     PlexMedia media = null;
                     if(mediaContainer.tracks.size() > 0) {
-                      media = mediaContainer.tracks.get(0);
+                      for(PlexTrack t : mediaContainer.tracks) {
+                        if(t.key.equals(timeline.key))
+                          media = t;
+                      }
                     } else if(mediaContainer.videos.size() > 0) {
                       for(PlexVideo m : mediaContainer.videos) {
                         if(m.isClip())
                           m.setClipDuration();
-                        Logger.d("Comparing %s to %s", m.key, timeline.key);
                         if(m.key.equals(timeline.key))
                           media = m;
                       }

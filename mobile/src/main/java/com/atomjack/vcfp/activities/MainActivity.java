@@ -2439,10 +2439,12 @@ public class MainActivity extends AppCompatActivity
 
   protected void setCastIconActive() {
     Logger.d("[MainActivity] setCastIconActive");
-    try {
-      castIconMenuItem.setIcon(R.drawable.mr_ic_media_route_on_holo_dark);
-    } catch (Exception e) {
-      e.printStackTrace();
+    if(castIconMenuItem != null) {
+      try {
+        castIconMenuItem.setIcon(R.drawable.mr_ic_media_route_on_holo_dark);
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
     }
   }
 
