@@ -1290,9 +1290,66 @@ public class PlexSearchService extends Service {
     startActivity(nowPlayingIntent);
   }
 
-  interface PosterDimensionsHandler {
-    void onFinish(int posterWidth, int posterHeight);
+  private void preCacheMusicPlayerImages(ArrayList<PlexTrack> playlist, final Runnable onFinish) {
+    final int[] numMedia = new int[]{0}; // the total number
+    final int[] mediaDone = new int[]{0};
+    final int posterWidth = VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.MUSIC_POSTER_WIDTH, -1);
+    final int posterHeight = VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.MUSIC_POSTER_HEIGHT, -1);
+    // Since we can't reliably get the dimensions for the music poster from here, they will be saved the first time the local music
+    // player is launched. Then prefetching of music posters will happen.
+    if(posterWidth == -1 || posterHeight == -1) {
+      if(onFinish != null)
+        onFinish.run();
+      return;
+    }
+    final List<PlexTrack> list = new ArrayList<>();
+    List<String> keysToFetch = new ArrayList<>();
+    final PlexTrack firstTrack = playlist.get(0);
+    for(final PlexTrack t : playlist) {
+      if(!keysToFetch.contains(t.parentRatingKey) && !firstTrack.ratingKey.equals(t.ratingKey)) {
+        keysToFetch.add(t.parentRatingKey);
+        list.add(t);
+      }
+    }
+    Logger.d("After fetching images for first track, we will fetch %d more images", list.size());
+
+    BitmapHandler bitmapHandler = new BitmapHandler() {
+      @Override
+      public void onSuccess(Bitmap bitmap) {
+        mediaDone[0]++;
+        if (mediaDone[0] == numMedia[0]) {
+          if(onFinish != null)
+            onFinish.run();
+        }
+
+        // Fetch the images for the rest of the tracks
+        List<FetchMediaImageTask> taskList = new ArrayList<>();
+        for(final PlexTrack t : list) {
+          if(t.thumb != null || t.grandparentThumb != null) {
+            taskList.add(new FetchMediaImageTask(t, posterWidth, posterHeight, t.thumb != null ? t.thumb : t.grandparentThumb, t.getImageKey(PlexMedia.IMAGE_KEY.LOCAL_MUSIC_THUMB)));
+            taskList.add(new FetchMediaImageTask(t, PlexMedia.IMAGE_SIZES.get(PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB_MUSIC)[0], PlexMedia.IMAGE_SIZES.get(PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB_MUSIC)[1], t.thumb != null ? t.thumb : t.grandparentThumb, t.getImageKey(PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB_MUSIC)));
+            taskList.add(new FetchMediaImageTask(t, PlexMedia.IMAGE_SIZES.get(PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB_MUSIC_BIG)[0], PlexMedia.IMAGE_SIZES.get(PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB_MUSIC_BIG)[1], t.thumb != null ? t.thumb : t.grandparentThumb, t.getImageKey(PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB_MUSIC_BIG)));
+          }
+        }
+
+        for (FetchMediaImageTask task : taskList)
+          task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+      }
+    };
+
+    // fetch image for LOCAL_MUSIC_THUMB
+    if(firstTrack.thumb != null || firstTrack.grandparentThumb != null) {
+      numMedia[0]++;
+      new FetchMediaImageTask(firstTrack, posterWidth, posterHeight, firstTrack.thumb != null ? firstTrack.thumb : firstTrack.grandparentThumb, firstTrack.getImageKey(PlexMedia.IMAGE_KEY.LOCAL_MUSIC_THUMB), bitmapHandler).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+      numMedia[0]++;
+      new FetchMediaImageTask(firstTrack, PlexMedia.IMAGE_SIZES.get(PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB_MUSIC)[0], PlexMedia.IMAGE_SIZES.get(PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB_MUSIC)[1], firstTrack.thumb != null ? firstTrack.thumb : firstTrack.grandparentThumb, firstTrack.getImageKey(PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB_MUSIC), bitmapHandler).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+      numMedia[0]++;
+      new FetchMediaImageTask(firstTrack, PlexMedia.IMAGE_SIZES.get(PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB_MUSIC_BIG)[0], PlexMedia.IMAGE_SIZES.get(PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB_MUSIC_BIG)[1], firstTrack.thumb != null ? firstTrack.thumb : firstTrack.grandparentThumb, firstTrack.getImageKey(PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB_MUSIC_BIG), bitmapHandler).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+    } else {
+      bitmapHandler.onSuccess(null);
+    }
   }
+
 
   private void playMedia(final PlexMedia media, Connection connection, PlexDirectory album, final String transientToken, final MediaContainer mediaContainer) {
     if(client.isLocalClient) {
@@ -1300,53 +1357,12 @@ public class PlexSearchService extends Service {
         final int[] numMedia = new int[]{0}; // the total number
         final int[] mediaDone = new int[]{0};
         if(media.isMusic()) {
-          final int posterWidth = VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.MUSIC_POSTER_WIDTH, -1);
-          final int posterHeight = VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.MUSIC_POSTER_HEIGHT, -1);
-          // Since we can't reliably get the dimensions for the music poster from here, they will be saved the first time the local music
-          // player is launched. Then prefetching of music posters will happen.
-          if(posterWidth == -1 || posterHeight == -1) {
-            playLocalMedia(media, transientToken, mediaContainer);
-            return;
-          }
-          final List<PlexTrack> list = new ArrayList<>();
-          List<String> keysToFetch = new ArrayList<>();
-          final PlexTrack firstTrack = mediaContainer.tracks.get(0);
-          for(final PlexTrack t : mediaContainer.tracks) {
-            if(!keysToFetch.contains(t.parentRatingKey) && !firstTrack.ratingKey.equals(t.ratingKey)) {
-              keysToFetch.add(t.parentRatingKey);
-              list.add(t);
-            }
-          }
-          Logger.d("After fetching images for first track, we will fetch %d more images", list.size());
-
-          BitmapHandler onFinish = new BitmapHandler() {
+          preCacheMusicPlayerImages(mediaContainer.tracks, new Runnable() {
             @Override
-            public void onSuccess(Bitmap bitmap) {
-              mediaDone[0]++;
-              if (mediaDone[0] == numMedia[0]) {
-                playLocalMedia(media, transientToken, mediaContainer);
-              }
-
-              // Fetch the images for the rest of the tracks
-              List<FetchMediaImageTask> taskList = new ArrayList<>();
-              for(final PlexTrack t : list) {
-                if(t.thumb != null || t.grandparentThumb != null) {
-                  taskList.add(new FetchMediaImageTask(t, posterWidth, posterHeight, t.thumb != null ? t.thumb : t.grandparentThumb, t.getImageKey(PlexMedia.IMAGE_KEY.LOCAL_MUSIC_THUMB)));
-                }
-              }
-
-              for (FetchMediaImageTask task : taskList)
-                task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+            public void run() {
+              playLocalMedia(media, transientToken, mediaContainer);
             }
-          };
-
-          // fetch image for LOCAL_MUSIC_THUMB
-          if(firstTrack.thumb != null || firstTrack.grandparentThumb != null) {
-            numMedia[0]++;
-            new FetchMediaImageTask(firstTrack, posterWidth, posterHeight, firstTrack.thumb != null ? firstTrack.thumb : firstTrack.grandparentThumb, firstTrack.getImageKey(PlexMedia.IMAGE_KEY.LOCAL_MUSIC_THUMB), onFinish).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-          } else {
-            onFinish.onSuccess(null);
-          }
+          });
         } else {
           // Fetch the video background and thumbnail for the first video in the playlist. Once that is done, launch the video player, and also fetch
           // the background and thumbnail for the remaining videos in the playlist (if there are any). If the first video has no background OR thumbnail,
@@ -1514,17 +1530,29 @@ public class PlexSearchService extends Service {
     }
 	}
 
-	private void showPlayingMedia(PlexMedia media, MediaContainer mediaContainer) {
+	private void showPlayingMedia(final PlexMedia media, final MediaContainer mediaContainer) {
     Logger.d("[PlexSearchService] nowPlayingMedia: %s", media.title);
-		Intent nowPlayingIntent = new Intent(this, MainActivity.class);
-    nowPlayingIntent.setAction(MainActivity.ACTION_SHOW_NOW_PLAYING);
-    nowPlayingIntent.putExtra(WearConstants.FROM_WEAR, fromWear);
-    nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_STARTING_PLAYBACK, true);
-		nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_MEDIA, media);
-    nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_CLIENT, client);
-    nowPlayingIntent.putParcelableArrayListExtra(com.atomjack.shared.Intent.EXTRA_PLAYLIST, media.isMusic() ? mediaContainer.tracks : mediaContainer.videos);
-    nowPlayingIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-		startActivity(nowPlayingIntent);
+
+    Runnable onFinish = new Runnable() {
+      @Override
+      public void run() {
+        Intent nowPlayingIntent = new Intent(PlexSearchService.this, MainActivity.class);
+        nowPlayingIntent.setAction(MainActivity.ACTION_SHOW_NOW_PLAYING);
+        nowPlayingIntent.putExtra(WearConstants.FROM_WEAR, fromWear);
+        nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_STARTING_PLAYBACK, true);
+        nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_MEDIA, media);
+        nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_CLIENT, client);
+        nowPlayingIntent.putParcelableArrayListExtra(com.atomjack.shared.Intent.EXTRA_PLAYLIST, media.isMusic() ? mediaContainer.tracks : mediaContainer.videos);
+        nowPlayingIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(nowPlayingIntent);
+      }
+    };
+    if(media.isMusic())
+      preCacheMusicPlayerImages(mediaContainer.tracks, onFinish);
+    else
+      onFinish.run();
+
+
 	}
 
 	private void doNextEpisodeSearch(final String queryTerm, final boolean fallback) {

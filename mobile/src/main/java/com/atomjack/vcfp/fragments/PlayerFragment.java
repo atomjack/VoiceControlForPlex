@@ -289,8 +289,12 @@ public abstract class PlayerFragment extends Fragment
         public void onGlobalLayout() {
           if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
             nowPlayingPosterContainer.getViewTreeObserver().removeOnGlobalLayoutListener(this);
-          int height = nowPlayingPosterContainer.getMeasuredHeight();
           int width = nowPlayingPosterContainer.getMeasuredWidth();
+          int height = nowPlayingPosterContainer.getMeasuredHeight();
+          if(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.VIDEO_POSTER_WIDTH, -1) == -1) {
+            VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.VIDEO_POSTER_WIDTH, width);
+            VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.VIDEO_POSTER_HEIGHT, height);
+          }
           Logger.d("Found dimensions: %d/%d", width, height);
           setThumb(width, height);
         }
@@ -309,7 +313,7 @@ public abstract class PlayerFragment extends Fragment
   }
 
   private void setThumb(final byte[] bytes) {
-    Logger.d("Setting thumb width %d bytes", bytes.length);
+    Logger.d("Setting thumb with %d bytes", bytes.length);
 
     if(getActivity() != null) {
       getActivity().runOnUiThread(new Runnable() {

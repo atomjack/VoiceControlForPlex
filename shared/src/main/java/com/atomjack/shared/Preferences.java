@@ -41,6 +41,10 @@ public class Preferences {
   public final static String MUSIC_POSTER_WIDTH = "pref.music_poster_width";
   public final static String MUSIC_POSTER_HEIGHT = "pref.music_poster_height";
 
+  // The first time the remote video player is run, these values will be defined
+  public final static String VIDEO_POSTER_WIDTH = "pref.video_poster_width";
+  public final static String VIDEO_POSTER_HEIGHT = "pref.video_poster_height";
+
   public final static String ACTIVE_CONNECTION_EXPIRES = "pref.active_connection_expires";
   public final static String ACTIVE_CONNECTION = "pref.active_connection";
 
