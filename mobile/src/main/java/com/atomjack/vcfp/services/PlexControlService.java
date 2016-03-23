@@ -14,9 +14,12 @@ import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexResponse;
 
+import java.util.ArrayList;
+
 public class PlexControlService extends IntentService {
   public static final String CLIENT = "com.atomjack.vcfp.mClient";
   public static final String MEDIA = "com.atomjack.vcfp.media";
+  public static final String PLAYLIST = "com.atomjack.vcfp.playlist";
 
   private PlexClient client;
 
@@ -45,6 +48,7 @@ public class PlexControlService extends IntentService {
     if(intent.getAction() != null) {
       client = intent.getParcelableExtra(CLIENT);
       PlexMedia playingMedia = intent.getParcelableExtra(MEDIA);
+      ArrayList<? extends PlexMedia> playlist = intent.getParcelableArrayListExtra(PLAYLIST);
       PlayerState currentState;
       Timeline t = null;
 
@@ -121,7 +125,7 @@ public class PlexControlService extends IntentService {
 
       Logger.d("[PlexControlService] state: %s", currentState);
       if(currentState != PlayerState.STOPPED)
-        VoiceControlForPlexApplication.getInstance().setNotification(client, currentState, playingMedia);
+        VoiceControlForPlexApplication.getInstance().setNotification(client, currentState, playingMedia, playlist);
     }
   }
 }

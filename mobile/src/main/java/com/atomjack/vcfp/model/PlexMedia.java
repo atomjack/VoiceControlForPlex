@@ -145,6 +145,29 @@ public abstract class PlexMedia implements Parcelable {
     return getThumb(width, height, whichThumb, connection);
   }
 
+  public String getNotificationThumb(IMAGE_KEY key) {
+    int width;
+    width = IMAGE_SIZES.get(key)[0];
+    int height;
+    height = IMAGE_SIZES.get(key)[1];
+    String whichThumb = null;
+    if(isMovie()) {
+      if(width > height)
+        whichThumb = art;
+      else
+        whichThumb = thumb;
+
+    } else if(isShow()) {
+      if(width > height)
+        whichThumb = parentArt;
+      else
+        whichThumb = grandparentThumb;
+    } else if(isMusic()) {
+      whichThumb = thumb;
+    }
+    return whichThumb;
+  }
+
 //  public InputStream getThumb(int width, int height) {
 //    return getThumb(width, height, thumb);
 //  }

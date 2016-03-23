@@ -33,10 +33,10 @@ public class MediaContainer implements Parcelable {
 	public List<PlexDirectory> directories = new ArrayList<PlexDirectory>();
 	
 	@ElementList(required=false, inline=true, entry="Video")
-	public List<PlexVideo> videos = new ArrayList<PlexVideo>();
+	public ArrayList<PlexVideo> videos = new ArrayList<PlexVideo>();
 	
 	@ElementList(required=false, inline=true, entry="Track")
-	public List<PlexTrack> tracks = new ArrayList<PlexTrack>();
+	public ArrayList<PlexTrack> tracks = new ArrayList<PlexTrack>();
 
 	@ElementList(required=false, inline=true, entry="Device")
 	public List<Device> devices = new ArrayList<Device>();

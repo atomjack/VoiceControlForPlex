@@ -3,17 +3,13 @@ package com.atomjack.vcfp.services;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.os.AsyncTask;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.speech.RecognizerIntent;
 import android.support.v7.media.MediaRouteSelector;
 import android.support.v7.media.MediaRouter;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewTreeObserver;
-import android.widget.FrameLayout;
 
 import com.atomjack.shared.Logger;
 import com.atomjack.shared.PlayerState;
@@ -34,7 +30,7 @@ import com.atomjack.vcfp.activities.MainActivity;
 import com.atomjack.vcfp.activities.VideoPlayerActivity;
 import com.atomjack.vcfp.interfaces.ActiveConnectionHandler;
 import com.atomjack.vcfp.interfaces.AfterTransientTokenRequest;
-import com.atomjack.vcfp.interfaces.PlexMediaHandler;
+import com.atomjack.vcfp.interfaces.BitmapHandler;
 import com.atomjack.vcfp.interfaces.PlexPlayQueueHandler;
 import com.atomjack.vcfp.model.Connection;
 import com.atomjack.vcfp.model.MediaContainer;
@@ -1286,7 +1282,7 @@ public class PlexSearchService extends Service {
     nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_STARTING_PLAYBACK, true);
     nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_MEDIA, media);
     if(mediaContainer != null) {
-      nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_ALBUM, mediaContainer);
+      nowPlayingIntent.putParcelableArrayListExtra(com.atomjack.shared.Intent.EXTRA_PLAYLIST, media.isMusic() ? mediaContainer.tracks : mediaContainer.videos);
     }
     nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_TRANSIENT_TOKEN, transientToken);
     nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_RESUME, resumePlayback);
@@ -1323,9 +1319,9 @@ public class PlexSearchService extends Service {
           }
           Logger.d("After fetching images for first track, we will fetch %d more images", list.size());
 
-          PlexMediaHandler onFinish = new PlexMediaHandler() {
+          BitmapHandler onFinish = new BitmapHandler() {
             @Override
-            public void onFinish(PlexMedia media) {
+            public void onSuccess(Bitmap bitmap) {
               mediaDone[0]++;
               if (mediaDone[0] == numMedia[0]) {
                 playLocalMedia(media, transientToken, mediaContainer);
@@ -1349,7 +1345,7 @@ public class PlexSearchService extends Service {
             numMedia[0]++;
             new FetchMediaImageTask(firstTrack, posterWidth, posterHeight, firstTrack.thumb != null ? firstTrack.thumb : firstTrack.grandparentThumb, firstTrack.getImageKey(PlexMedia.IMAGE_KEY.LOCAL_MUSIC_THUMB), onFinish).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
           } else {
-            onFinish.onFinish(null);
+            onFinish.onSuccess(null);
           }
         } else {
           // Fetch the video background and thumbnail for the first video in the playlist. Once that is done, launch the video player, and also fetch
@@ -1359,9 +1355,9 @@ public class PlexSearchService extends Service {
           final int width = dims[0];
           final int height = dims[1];
           final PlexVideo firstVideo = mediaContainer.videos.get(0);
-          PlexMediaHandler onFinish = new PlexMediaHandler() {
+          BitmapHandler onFinish = new BitmapHandler() {
             @Override
-            public void onFinish(PlexMedia m2) {
+            public void onSuccess(Bitmap b) {
               mediaDone[0]++;
               if (mediaDone[0] == numMedia[0]) {
                 playLocalMedia(media, transientToken, mediaContainer);
@@ -1403,7 +1399,7 @@ public class PlexSearchService extends Service {
           // Just in case the first video in the playlist doesn't have either art or thumb, force play
           if(firstVideo.art == null && firstVideo.thumb == null) {
             mediaDone[0] = -1; // Need to do this in order to ensure that the video player is launched, since we're expecting 0 videos
-            onFinish.onFinish(null);
+            onFinish.onSuccess(null);
           }
         }
       } else if(album != null) {
@@ -1432,7 +1428,7 @@ public class PlexSearchService extends Service {
         @Override
         public void run() {
           castPlayerManager.loadMedia(media instanceof PlexTrack ? mediaContainer.tracks.get(0) : mediaContainer.videos.get(0),
-                  media instanceof PlexTrack ? mediaContainer.tracks : mediaContainer.videos,
+                  media instanceof PlexTrack ? (ArrayList)mediaContainer.tracks : (ArrayList)mediaContainer.videos,
                   getOffset(media instanceof PlexTrack ? mediaContainer.tracks.get(0) : mediaContainer.videos.get(0)));
           if(!fromGoogleNow || VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.GOOGLE_NOW_LAUNCH_NOW_PLAYING, true))
             showPlayingMedia(media, mediaContainer);
@@ -1526,7 +1522,7 @@ public class PlexSearchService extends Service {
     nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_STARTING_PLAYBACK, true);
 		nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_MEDIA, media);
     nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_CLIENT, client);
-    nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_ALBUM, mediaContainer);
+    nowPlayingIntent.putParcelableArrayListExtra(com.atomjack.shared.Intent.EXTRA_PLAYLIST, media.isMusic() ? mediaContainer.tracks : mediaContainer.videos);
     nowPlayingIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 		startActivity(nowPlayingIntent);
 	}

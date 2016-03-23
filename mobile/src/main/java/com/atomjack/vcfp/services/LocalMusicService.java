@@ -20,8 +20,11 @@ import com.atomjack.vcfp.interfaces.MusicServiceListener;
 import com.atomjack.vcfp.model.Connection;
 import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.PlexClient;
+import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexTrack;
 import com.atomjack.vcfp.net.PlexHttpClient;
+
+import java.util.ArrayList;
 
 public class LocalMusicService extends Service implements
         MediaPlayer.OnPreparedListener, MediaPlayer.OnErrorListener,
@@ -31,6 +34,7 @@ public class LocalMusicService extends Service implements
   private MediaPlayer player;
   private MediaContainer mediaContainer;
   private PlexTrack track;
+  private ArrayList<PlexTrack> playlist;
   private int currentSongIdx;
   private PlayerState currentState = PlayerState.STOPPED;
   private Handler handler;
@@ -79,12 +83,13 @@ public class LocalMusicService extends Service implements
     player.setOnErrorListener(this);
   }
 
-  public void setMediaContainer(MediaContainer container) {
-    mediaContainer = container;
+  @SuppressWarnings("unchecked")
+  public void setPlaylist(ArrayList<? extends PlexMedia> playlist) {
+    this.playlist = (ArrayList<PlexTrack>)playlist;
   }
 
   public void setTrack(PlexTrack t) {
-    mediaContainer = null;
+    playlist = null;
     track = t;
   }
 
@@ -104,11 +109,11 @@ public class LocalMusicService extends Service implements
 
   public void playSong() {
     player.reset();
-    if(mediaContainer != null)
-      track = mediaContainer.tracks.get(currentSongIdx);
+    if(playlist != null)
+      track = playlist.get(currentSongIdx);
     Logger.d("Playing Track: %s", track.getTitle());
     if(track != null) {
-      VoiceControlForPlexApplication.getInstance().setNotification(PlexClient.getLocalPlaybackClient(), currentState, track);
+      VoiceControlForPlexApplication.getInstance().setNotification(PlexClient.getLocalPlaybackClient(), currentState, track, playlist);
       track.server.findServerConnection(new ActiveConnectionHandler() {
         @Override
         public void onSuccess(Connection connection) {
@@ -117,7 +122,7 @@ public class LocalMusicService extends Service implements
             player.setDataSource(getApplicationContext(), Uri.parse(url));
             player.prepareAsync();
             musicServiceListener.onTrackChange(track);
-            VoiceControlForPlexApplication.getInstance().setNotification(PlexClient.getLocalPlaybackClient(), currentState, track);
+            VoiceControlForPlexApplication.getInstance().setNotification(PlexClient.getLocalPlaybackClient(), currentState, track, playlist);
           } catch (Exception e) {
             e.printStackTrace();
           }
@@ -145,7 +150,7 @@ public class LocalMusicService extends Service implements
   }
 
   public void doNext() {
-    if(currentSongIdx+1 < mediaContainer.tracks.size()) {
+    if(currentSongIdx+1 < playlist.size()) {
       player.stop();
       currentSongIdx++;
       playSong();
@@ -184,7 +189,7 @@ public class LocalMusicService extends Service implements
       player.start();
       currentState = PlayerState.PLAYING;
     }
-    VoiceControlForPlexApplication.getInstance().setNotification(PlexClient.getLocalPlaybackClient(), currentState, track);
+    VoiceControlForPlexApplication.getInstance().setNotification(PlexClient.getLocalPlaybackClient(), currentState, track, playlist);
   }
 
   public boolean isPlaying() {
@@ -220,8 +225,8 @@ public class LocalMusicService extends Service implements
   @Override
   public void onCompletion(MediaPlayer mp) {
     currentSongIdx++;
-    Logger.d("[LocalMusicService] onCompletion, current: %d, size: %d", currentSongIdx, mediaContainer.tracks.size());
-    if(currentSongIdx == mediaContainer.tracks.size()) {
+    Logger.d("[LocalMusicService] onCompletion, current: %d, size: %d", currentSongIdx, playlist.size());
+    if(currentSongIdx == playlist.size()) {
       // Last song
       musicServiceListener.onFinished();
     } else {
@@ -269,9 +274,13 @@ public class LocalMusicService extends Service implements
     return track;
   }
 
-  public MediaContainer getMediaContainer() {
-    return mediaContainer;
+  public ArrayList<PlexTrack> getPlaylist() {
+    return playlist;
   }
+
+//  public MediaContainer getMediaContainer() {
+//    return mediaContainer;
+//  }
 
   @Override
   public void onDestroy() {

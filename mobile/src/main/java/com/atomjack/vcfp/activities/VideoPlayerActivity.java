@@ -34,7 +34,6 @@ import com.atomjack.vcfp.interfaces.ActiveConnectionHandler;
 import com.atomjack.vcfp.interfaces.BitmapHandler;
 import com.atomjack.vcfp.interfaces.GenericHandler;
 import com.atomjack.vcfp.model.Connection;
-import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexVideo;
@@ -47,6 +46,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.math.BigInteger;
 import java.security.SecureRandom;
+import java.util.ArrayList;
 
 public class VideoPlayerActivity extends AppCompatActivity
         implements MediaPlayer.OnCompletionListener,
@@ -57,7 +57,7 @@ public class VideoPlayerActivity extends AppCompatActivity
         VideoControllerView.MediaPlayerControl {
 
   protected PlexVideo currentVideo;
-  private MediaContainer mediaContainer; // May contain a playlist of videos to play, if cinema trailers have been set
+  protected ArrayList<PlexVideo> playlist;
   private int duration;
   private int currentVideoIndex = 0; // Index of currently playing video from mediaContainer
   protected boolean resume = false;
@@ -145,19 +145,19 @@ public class VideoPlayerActivity extends AppCompatActivity
   private void handlePlayCommand(Intent intent) {
     transientToken = intent.getStringExtra(com.atomjack.shared.Intent.EXTRA_TRANSIENT_TOKEN);
 
-    mediaContainer = intent.getParcelableExtra(com.atomjack.shared.Intent.EXTRA_ALBUM);
-    if(mediaContainer == null) {
-      mediaContainer = new MediaContainer();
-      mediaContainer.videos.add(currentVideo);
+    playlist = intent.getParcelableArrayListExtra(com.atomjack.shared.Intent.EXTRA_PLAYLIST);
+    if(playlist == null) {
+      playlist = new ArrayList<>();
+      playlist.add(currentVideo);
     } else {
-      for(PlexVideo video : mediaContainer.videos) {
+      for(PlexVideo video : playlist) {
         // Overwrite the currentVideo's server if it exists (so it gets the current activeConnection)
         if(VoiceControlForPlexApplication.servers.containsKey(video.server.name))
           video.server = VoiceControlForPlexApplication.servers.get(video.server.name);
       }
     }
     currentVideoIndex = 0;
-    currentVideo = mediaContainer.videos.get(currentVideoIndex);
+    currentVideo = playlist.get(currentVideoIndex);
 
     resume = intent.getBooleanExtra(com.atomjack.shared.Intent.EXTRA_RESUME, false);
 
@@ -170,7 +170,7 @@ public class VideoPlayerActivity extends AppCompatActivity
     public void onClick(View v) {
       controller.hide();
       currentVideoIndex--;
-      currentVideo = mediaContainer.videos.get(currentVideoIndex);
+      currentVideo = playlist.get(currentVideoIndex);
       playNewVideo();
     }
   };
@@ -180,7 +180,7 @@ public class VideoPlayerActivity extends AppCompatActivity
     public void onClick(View v) {
       controller.hide();
       currentVideoIndex++;
-      currentVideo = mediaContainer.videos.get(currentVideoIndex);
+      currentVideo = playlist.get(currentVideoIndex);
       playNewVideo();
     }
   };
@@ -245,9 +245,9 @@ public class VideoPlayerActivity extends AppCompatActivity
             player.setOnCompletionListener(VideoPlayerActivity.this);
             if(controller == null)
               controller = new VideoControllerView(VideoPlayerActivity.this);
-            Logger.d("Have %d videos", mediaContainer.videos.size());
-            if(mediaContainer.videos.size() > 1) // Only show the prev/next buttons when there is more than one video to play
-              controller.setPrevNextListeners(currentVideoIndex > 0 ? onPrevious : null, currentVideoIndex+1 < mediaContainer.videos.size() ? onNext : null);
+            Logger.d("Have %d videos", playlist.size());
+            if(playlist.size() > 1) // Only show the prev/next buttons when there is more than one video to play
+              controller.setPrevNextListeners(currentVideoIndex > 0 ? onPrevious : null, currentVideoIndex+1 < playlist.size() ? onNext : null);
             else
               controller.setPrevNextButtonsHidden();
 
@@ -387,7 +387,7 @@ public class VideoPlayerActivity extends AppCompatActivity
   public void onCompletion(MediaPlayer mp) {
     Logger.d("[VideoPlayerActivity] onCompletion");
     if(finishOnPlayerStop == null) {
-      if(currentVideoIndex+1 < mediaContainer.videos.size()) {
+      if(currentVideoIndex+1 < playlist.size()) {
         currentState = PlayerState.STOPPED;
         onNext.onClick(null);
       } else

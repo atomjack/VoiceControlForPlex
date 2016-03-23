@@ -30,7 +30,7 @@ public class Intent {
 
   public final static String CAST_MEDIA = "com.atomjack.vcfp.intent.CAST_MEDIA";
   public final static String EXTRA_MEDIA = "com.atomjack.vcfp.intent.EXTRA_MEDIA";
-  public final static String EXTRA_ALBUM = "com.atomjack.vcfp.intent.EXTRA_ALBUM";
+  public final static String EXTRA_PLAYLIST = "com.atomjack.vcfp.intent.EXTRA_PLAYLIST";
   public final static String EXTRA_PLAYQUEUE = "com.atomjack.vcfp.intent.EXTRA_PLAYQUEUE";
   public final static String EXTRA_PLAYINTENT = "com.atomjack.vcfp.intent.EXTRA_PLAYINTENT";
   public final static String EXTRA_CLASS = "com.atomjack.vcfp.intent.EXTRA_CLASS";

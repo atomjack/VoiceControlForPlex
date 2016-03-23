@@ -115,7 +115,7 @@ public class WearListenerService extends WearableListenerService {
             Logger.d("now playing: %s", plexSubscription.getNowPlayingMedia().title);
             VoiceControlForPlexApplication.SetWearMediaTitles(dataMap, media);
             dataMap.putString(WearConstants.MEDIA_TYPE, media.getType());
-            VoiceControlForPlexApplication.getWearMediaImage(media, new BitmapHandler() {
+            VoiceControlForPlexApplication.getInstance().getWearMediaImage(media, new BitmapHandler() {
               @Override
               public void onSuccess(Bitmap bitmap) {
                 DataMap binaryDataMap = new DataMap();
@@ -140,7 +140,7 @@ public class WearListenerService extends WearableListenerService {
             Logger.d("now playing: %s", castPlayerManager.getNowPlayingMedia().title);
             VoiceControlForPlexApplication.SetWearMediaTitles(dataMap, castPlayerManager.getNowPlayingMedia());
             dataMap.putString(WearConstants.MEDIA_TYPE, castPlayerManager.getNowPlayingMedia().getType());
-            VoiceControlForPlexApplication.getWearMediaImage(castPlayerManager.getNowPlayingMedia(), new BitmapHandler() {
+            VoiceControlForPlexApplication.getInstance().getWearMediaImage(castPlayerManager.getNowPlayingMedia(), new BitmapHandler() {
               @Override
               public void onSuccess(Bitmap bitmap) {
                 DataMap binaryDataMap = new DataMap();

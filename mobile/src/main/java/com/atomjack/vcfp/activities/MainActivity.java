@@ -94,7 +94,6 @@ import com.atomjack.vcfp.interfaces.MusicPlayerListener;
 import com.atomjack.vcfp.interfaces.MusicServiceListener;
 import com.atomjack.vcfp.interfaces.PlexSubscriptionListener;
 import com.atomjack.vcfp.interfaces.ScanHandler;
-import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.Pin;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexDevice;
@@ -386,13 +385,13 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
-    public void onPlayStarted(PlexMedia media, MediaContainer mediaContainer, PlayerState state) {
+    public void onPlayStarted(PlexMedia media, ArrayList<? extends PlexMedia> playlist, PlayerState state) {
       Logger.d("[MainActivity] onPlayStarted: %s", media.getTitle());
       handler.removeCallbacks(autoDisconnectPlayerTimer);
       int layout = getLayoutForMedia(media, state);
       Logger.d("layout: %d", layout);
       if(layout != -1) {
-        playerFragment.init(layout, client, media, mediaContainer, false);
+        playerFragment.init(layout, client, media, playlist, false);
         switchToPlayerFragment();
       }
       sendWearPlaybackChange(state, media);
@@ -588,7 +587,7 @@ public class MainActivity extends AppCompatActivity
     if(musicPlayerIsBound)
       bindMusicPlayerService();
     if(musicPlayerFragment != null && musicPlayerFragment.isVisible())
-      musicPlayerFragment.init(localMusicService.getTrack(), localMusicService.getMediaContainer());
+      musicPlayerFragment.init(localMusicService.getTrack(), localMusicService.getPlaylist());
 
     if(!doingFirstTimeSetup) {
       mDrawer.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);
@@ -1072,11 +1071,11 @@ public class MainActivity extends AppCompatActivity
         Logger.d("[MainActivity] Binding to LocalMusicService");
         bindMusicPlayerService();
         final PlexTrack track = intent.getParcelableExtra(com.atomjack.shared.Intent.EXTRA_MEDIA);
-        final MediaContainer mediaContainer = intent.getParcelableExtra(com.atomjack.shared.Intent.EXTRA_ALBUM);
-        Logger.d("Got track %s and media container with %d tracks", (track != null ? track.title : null), mediaContainer.tracks.size());
+        final ArrayList<? extends PlexMedia> playlist = intent.getParcelableArrayListExtra(com.atomjack.shared.Intent.EXTRA_PLAYLIST);
+        Logger.d("Got track %s and media container with %d tracks", (track != null ? track.title : null), playlist.size());
         if(musicPlayerFragment != null && musicPlayerFragment.isVisible()) {
           localMusicService.setTrack(track);
-          localMusicService.setMediaContainer(mediaContainer);
+          localMusicService.setPlaylist(playlist);
           localMusicService.reset();
           localMusicService.playSong();
         } else {
@@ -1084,7 +1083,7 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void run() {
               localMusicService.setTrack(track);
-              localMusicService.setMediaContainer(mediaContainer);
+              localMusicService.setPlaylist(playlist);
               localMusicService.reset();
               localMusicService.playSong();
 
@@ -1092,7 +1091,7 @@ public class MainActivity extends AppCompatActivity
               if (musicPlayerFragment == null)
                 musicPlayerFragment = new MusicPlayerFragment();
 
-              musicPlayerFragment.init(localMusicService.getTrack(), localMusicService.getMediaContainer());
+              musicPlayerFragment.init(localMusicService.getTrack(), localMusicService.getPlaylist());
               Logger.d("Switching to music");
               switchToFragment(musicPlayerFragment);
             }
@@ -1154,7 +1153,7 @@ public class MainActivity extends AppCompatActivity
   private void handleShowNowPlayingIntent(Intent intent) {
     client = intent.getParcelableExtra(com.atomjack.shared.Intent.EXTRA_CLIENT);
     PlexMedia media = intent.getParcelableExtra(com.atomjack.shared.Intent.EXTRA_MEDIA);
-    MediaContainer mediaContainer = intent.getParcelableExtra(com.atomjack.shared.Intent.EXTRA_ALBUM);
+    ArrayList<? extends PlexMedia> playlist = intent.getParcelableArrayListExtra(com.atomjack.shared.Intent.EXTRA_PLAYLIST);
     boolean fromWear = intent.getBooleanExtra(WearConstants.FROM_WEAR, false);
     PlayerState state;
     // Need to overwrite what media is playing from the subscription manager, if it exists.
@@ -1166,7 +1165,7 @@ public class MainActivity extends AppCompatActivity
         public void run() {
           musicPlayerFragment = new MusicPlayerFragment();
           try {
-            musicPlayerFragment.init(localMusicService.getTrack(), localMusicService.getMediaContainer());
+            musicPlayerFragment.init(localMusicService.getTrack(), localMusicService.getPlaylist());
 
             switchToFragment(musicPlayerFragment);
           } catch (Exception e) {
@@ -1190,7 +1189,7 @@ public class MainActivity extends AppCompatActivity
 
       int layout = getLayoutForMedia(media, state);
       if(layout != -1) {
-        playerFragment.init(layout, client, media, mediaContainer, fromWear);
+        playerFragment.init(layout, client, media, playlist, fromWear);
         if(playerFragment.isVisible())
           playerFragment.mediaChanged(media);
         else
@@ -2612,7 +2611,7 @@ public class MainActivity extends AppCompatActivity
       }
       if (msg != null) {
         if (msg.equals(WearConstants.MEDIA_PLAYING)) {
-          VoiceControlForPlexApplication.getWearMediaImage(media, new BitmapHandler() {
+          VoiceControlForPlexApplication.getInstance().getWearMediaImage(media, new BitmapHandler() {
             @Override
             public void onSuccess(Bitmap bitmap) {
               DataMap binaryDataMap = new DataMap();
@@ -2696,7 +2695,8 @@ public class MainActivity extends AppCompatActivity
 
         @Override
         public void onTrackChange(PlexTrack track) {
-          musicPlayerFragment.onTrackChange(track);
+          if(musicPlayerFragment != null)
+            musicPlayerFragment.onTrackChange(track);
         }
 
         @Override

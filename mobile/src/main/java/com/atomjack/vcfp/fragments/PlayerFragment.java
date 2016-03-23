@@ -40,7 +40,6 @@ import com.atomjack.vcfp.interfaces.ActiveConnectionHandler;
 import com.atomjack.vcfp.interfaces.ActivityListener;
 import com.atomjack.vcfp.interfaces.InputStreamHandler;
 import com.atomjack.vcfp.model.Connection;
-import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexTrack;
@@ -56,7 +55,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
 import java.security.SecureRandom;
-import java.util.List;
+import java.util.ArrayList;
 
 import butterknife.ButterKnife;
 import butterknife.OnClick;
@@ -65,8 +64,8 @@ import cz.fhucho.android.util.SimpleDiskCache;
 public abstract class PlayerFragment extends Fragment
         implements SeekBar.OnSeekBarChangeListener {
   protected PlexMedia nowPlayingMedia;
-  protected MediaContainer mediaContainer;
-  protected int currentMediaIndex = 0;
+  protected ArrayList<? extends PlexMedia> nowPlayingPlaylist = new ArrayList<>();
+  protected int currentMediaIndex = 0; // the index of the currently playing media in the playlist
   protected PlexClient client;
 
   private View mainView;
@@ -113,7 +112,8 @@ public abstract class PlayerFragment extends Fragment
     if(savedInstanceState != null) {
       Logger.d("[PlayerFragment] onSavedInstanceState is not null");
       nowPlayingMedia = savedInstanceState.getParcelable(Intent.EXTRA_MEDIA);
-      mediaContainer = savedInstanceState.getParcelable(Intent.EXTRA_ALBUM);
+      nowPlayingPlaylist = savedInstanceState.getParcelableArrayList(Intent.EXTRA_PLAYLIST);
+//      mediaContainer = savedInstanceState.getParcelable(Intent.EXTRA_ALBUM);
       fromWear = savedInstanceState.getBoolean(WearConstants.FROM_WEAR, false);
       layout = savedInstanceState.getInt(Intent.EXTRA_LAYOUT);
       client = savedInstanceState.getParcelable(Intent.EXTRA_CLIENT);
@@ -152,7 +152,7 @@ public abstract class PlayerFragment extends Fragment
   public void onSaveInstanceState(Bundle outState) {
     super.onSaveInstanceState(outState);
     outState.putParcelable(Intent.EXTRA_MEDIA, nowPlayingMedia);
-    outState.putParcelable(Intent.EXTRA_ALBUM, mediaContainer);
+    outState.putParcelableArrayList(Intent.EXTRA_PLAYLIST, nowPlayingPlaylist);
     outState.putInt(Intent.EXTRA_LAYOUT, layout);
     outState.putParcelable(Intent.EXTRA_CLIENT, client);
     outState.putSerializable(Intent.EXTRA_CURRENT_STATE, currentState);
@@ -163,11 +163,13 @@ public abstract class PlayerFragment extends Fragment
     simpleDiskCache = VoiceControlForPlexApplication.getInstance().mSimpleDiskCache;
   }
 
-  public void init(int layout, PlexClient client, PlexMedia media, MediaContainer mc, boolean fromWear) {
+  public void init(int layout, PlexClient client, PlexMedia media, ArrayList<? extends PlexMedia> playlist, boolean fromWear) {
     this.layout = layout;
     this.client = client;
     nowPlayingMedia = media;
-    mediaContainer = mc;
+//    mediaContainer = mc;
+    nowPlayingPlaylist = playlist;
+    Logger.d("Got %d items in playlist", playlist.size());
     this.fromWear = fromWear;
     currentMediaIndex = 0;
   }
@@ -245,10 +247,6 @@ public abstract class PlayerFragment extends Fragment
         year.setText(video.year);
         TextView duration = (TextView) mainView.findViewById(R.id.nowPlayingDuration);
         duration.setText(video.getDuration());
-//        TextView summary = (TextView) mainView.findViewById(R.id.nowPlayingSummary);
-//        if(summary != null) {
-//          summary.setText(video.summary);
-//        }
       } else {
         TextView showTitle = (TextView)mainView.findViewById(R.id.nowPlayingShowTitle);
         showTitle.setText(video.grandparentTitle);
@@ -259,10 +257,6 @@ public abstract class PlayerFragment extends Fragment
         TextView duration = (TextView)mainView.findViewById(R.id.nowPlayingDuration);
 
         duration.setText(video.getDuration());
-//        TextView summary = (TextView)mainView.findViewById(R.id.nowPlayingSummary);
-//        if(summary != null)
-//          summary.setText(video.summary);
-
       }
 
     } else if (nowPlayingMedia instanceof PlexTrack) {
@@ -439,7 +433,7 @@ public abstract class PlayerFragment extends Fragment
 
     ImageButton previousButton = (ImageButton)mainView.findViewById(R.id.previousButton);
     if(previousButton != null) {
-      if(mediaContainer.tracks.size() == 1 || mediaContainer.videos.size() == 1) {
+      if(nowPlayingPlaylist == null || nowPlayingPlaylist.size() == 1) {
         previousButton.setVisibility(View.GONE);
       } else {
         previousButton.setAlpha(1.0f);
@@ -458,7 +452,7 @@ public abstract class PlayerFragment extends Fragment
 
     ImageButton nextButton = (ImageButton)mainView.findViewById(R.id.nextButton);
     if(nextButton != null) {
-      if(mediaContainer.tracks.size() == 1 || mediaContainer.videos.size() == 1) {
+      if(nowPlayingPlaylist == null || nowPlayingPlaylist.size() == 1) {
         nextButton.setVisibility(View.GONE);
       } else {
         nextButton.setAlpha(1.0f);
@@ -471,15 +465,15 @@ public abstract class PlayerFragment extends Fragment
       }
     }
 
-    List<? extends PlexMedia> list = null;
-    if(mediaContainer.videos.size() > 0) {
-      list = mediaContainer.videos;
-    } else if(mediaContainer.tracks.size() > 0) {
-      list = mediaContainer.tracks;
-    }
-    if(list != null) {
+//    List<? extends PlexMedia> list = null;
+//    if(mediaContainer.videos.size() > 0) {
+//      list = mediaContainer.videos;
+//    } else if(mediaContainer.tracks.size() > 0) {
+//      list = mediaContainer.tracks;
+//    }
+    if(nowPlayingPlaylist != null) {
       int index = 0;
-      for(PlexMedia m : list) {
+      for(PlexMedia m : nowPlayingPlaylist) {
         if(m.key.equals(nowPlayingMedia.key))
           break;
         index++;
@@ -487,7 +481,7 @@ public abstract class PlayerFragment extends Fragment
       Logger.d("Index: %d", index);
       if(index == 0)
         previousButton.setAlpha(0.4f);
-      else if(index+1 == list.size())
+      else if(index+1 == nowPlayingPlaylist.size())
         nextButton.setAlpha(0.4f);
     }
 

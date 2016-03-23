@@ -30,7 +30,6 @@ import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.interfaces.BitmapHandler;
 import com.atomjack.vcfp.interfaces.MusicPlayerListener;
 import com.atomjack.vcfp.interfaces.MusicServiceListener;
-import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexTrack;
@@ -38,6 +37,7 @@ import com.atomjack.vcfp.services.PlexSearchService;
 
 import java.math.BigInteger;
 import java.security.SecureRandom;
+import java.util.ArrayList;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
@@ -45,9 +45,10 @@ import butterknife.OnClick;
 
 public class MusicPlayerFragment extends Fragment implements MusicServiceListener {
   private PlexTrack track; // the current track
+  private ArrayList<PlexTrack> playlist = new ArrayList<>();
+  private int currentTrackIndex = 0;
 
   private MusicPlayerListener listener;
-  private MediaContainer mediaContainer;
 
   private Handler handler;
 
@@ -100,8 +101,8 @@ public class MusicPlayerFragment extends Fragment implements MusicServiceListene
   public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
     Logger.d("[MusicPlayerFragment] onCreateView");
     if(savedInstanceState != null) {
-      track = savedInstanceState.getParcelable(com.atomjack.shared.Intent.EXTRA_MEDIA);
-      mediaContainer = savedInstanceState.getParcelable(com.atomjack.shared.Intent.EXTRA_ALBUM);
+      track = savedInstanceState.getParcelable(Intent.EXTRA_MEDIA);
+      playlist = savedInstanceState.getParcelableArrayList(Intent.EXTRA_PLAYLIST);
     }
 
     View view = inflater.inflate(R.layout.fragment_music_player, container, false);
@@ -126,9 +127,9 @@ public class MusicPlayerFragment extends Fragment implements MusicServiceListene
     }
   }
 
-  public void init(PlexTrack t, MediaContainer mc) {
+  public void init(PlexTrack t, ArrayList<PlexTrack> pl) {
     track = t;
-    mediaContainer = mc;
+    playlist = pl;
   }
 
   private SeekBar.OnSeekBarChangeListener seekBarChangeListener = new SeekBar.OnSeekBarChangeListener() {
@@ -152,11 +153,13 @@ public class MusicPlayerFragment extends Fragment implements MusicServiceListene
 
   @OnClick(R.id.previousButton)
   public void doPrevious(View v) {
+    currentTrackIndex--;
     listener.doPrevious();
   }
 
   @OnClick(R.id.nextButton)
   public void doNext(View v) {
+    currentTrackIndex++;
     listener.doNext();
   }
 
@@ -183,11 +186,11 @@ public class MusicPlayerFragment extends Fragment implements MusicServiceListene
     listener.doPause();
     android.content.Intent serviceIntent = new android.content.Intent(getActivity(), PlexSearchService.class);
 
-    serviceIntent.putExtra(com.atomjack.shared.Intent.EXTRA_SERVER, VoiceControlForPlexApplication.gsonWrite.toJson(track.server));
-    serviceIntent.putExtra(com.atomjack.shared.Intent.EXTRA_CLIENT, VoiceControlForPlexApplication.gsonWrite.toJson(PlexClient.getLocalPlaybackClient()));
-    serviceIntent.putExtra(com.atomjack.shared.Intent.EXTRA_FROM_MIC, true);
-    serviceIntent.putExtra(com.atomjack.shared.Intent.EXTRA_FROM_LOCAL_PLAYER, true);
-    serviceIntent.putExtra(com.atomjack.shared.Intent.PLAYER, Intent.PLAYER_AUDIO);
+    serviceIntent.putExtra(Intent.EXTRA_SERVER, VoiceControlForPlexApplication.gsonWrite.toJson(track.server));
+    serviceIntent.putExtra(Intent.EXTRA_CLIENT, VoiceControlForPlexApplication.gsonWrite.toJson(PlexClient.getLocalPlaybackClient()));
+    serviceIntent.putExtra(Intent.EXTRA_FROM_MIC, true);
+    serviceIntent.putExtra(Intent.EXTRA_FROM_LOCAL_PLAYER, true);
+    serviceIntent.putExtra(Intent.PLAYER, Intent.PLAYER_AUDIO);
 
     SecureRandom random = new SecureRandom();
     serviceIntent.setData(Uri.parse(new BigInteger(130, random).toString(32)));
@@ -226,6 +229,15 @@ public class MusicPlayerFragment extends Fragment implements MusicServiceListene
     nowPlayingArtist.setText(track.getArtist());
     nowPlayingAlbum.setText(track.getAlbum());
     nowPlayingTitle.setText(track.title);
+
+    if(playlist == null || playlist.size() == 1) {
+      previousButton.setVisibility(View.GONE);
+      nextButton.setVisibility(View.GONE);
+    } else {
+      previousButton.setAlpha(currentTrackIndex == 0 ? 0.4f : 1.0f);
+      nextButton.setAlpha(currentTrackIndex+1 == playlist.size() ? 0.4f : 1.0f);
+    }
+
 
     if(nowPlayingPosterContainer != null) {
       if(posterHeight == -1 || posterWidth == -1) {
@@ -316,7 +328,7 @@ public class MusicPlayerFragment extends Fragment implements MusicServiceListene
   @Override
   public void onSaveInstanceState(Bundle outState) {
     super.onSaveInstanceState(outState);
-    outState.putParcelable(com.atomjack.shared.Intent.EXTRA_MEDIA, track);
-    outState.putParcelable(com.atomjack.shared.Intent.EXTRA_ALBUM, mediaContainer);
+    outState.putParcelable(Intent.EXTRA_MEDIA, track);
+    outState.putParcelableArrayList(Intent.EXTRA_PLAYLIST, playlist);
   }
 }

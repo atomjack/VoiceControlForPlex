@@ -10,7 +10,6 @@ import com.atomjack.vcfp.interfaces.ActiveConnectionHandler;
 import com.atomjack.vcfp.interfaces.PlexSubscriptionListener;
 import com.atomjack.vcfp.model.Capabilities;
 import com.atomjack.vcfp.model.Connection;
-import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexServer;
@@ -25,14 +24,14 @@ import com.google.gson.reflect.TypeToken;
 import org.json.JSONObject;
 
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class CastPlayerManager {
   private PlexMedia nowPlayingMedia;
-  private MediaContainer mediaContainer;
-  private List<? extends PlexMedia> nowPlayingAlbum;
+  private ArrayList<? extends PlexMedia> nowPlayingAlbum;
 
   private static VideoCastManager castManager = null;
   private VCFPCastConsumer castConsumer;
@@ -231,7 +230,7 @@ public class CastPlayerManager {
   }
 
   // This will send a message to the cast device to load the passed in media
-  public void loadMedia(PlexMedia media, List<? extends PlexMedia> album, final int offset) {
+  public void loadMedia(PlexMedia media, ArrayList<? extends PlexMedia> album, final int offset) {
     Logger.d("Loading media: %s", album);
     nowPlayingMedia = media;
     nowPlayingAlbum = album;
@@ -374,7 +373,7 @@ public class CastPlayerManager {
               if(listener != null && oldState != currentState)
                 listener.onStateChanged(nowPlayingMedia, currentState);
               if(currentState != PlayerState.STOPPED) {
-                VoiceControlForPlexApplication.getInstance().setNotification(mClient, currentState, nowPlayingMedia);
+                VoiceControlForPlexApplication.getInstance().setNotification(mClient, currentState, nowPlayingMedia, nowPlayingAlbum);
               }
             }
           } else if(obj.has("event") && obj.getString("event").equals(RECEIVER_EVENTS.TIME_UPDATE) && obj.has("currentTime")) {
@@ -402,18 +401,19 @@ public class CastPlayerManager {
             }
             if(listener != null && oldState != currentState) {
               if(oldState == PlayerState.STOPPED)
-                listener.onPlayStarted(nowPlayingMedia, mediaContainer, currentState);
+                listener.onPlayStarted(nowPlayingMedia, nowPlayingAlbum, currentState);
               else
                 listener.onStateChanged(nowPlayingMedia, PlayerState.getState(obj.getString("state")));
             }
             if(currentState != PlayerState.STOPPED) {
-              VoiceControlForPlexApplication.getInstance().setNotification(mClient, currentState, nowPlayingMedia);
+              VoiceControlForPlexApplication.getInstance().setNotification(mClient, currentState, nowPlayingMedia, nowPlayingAlbum);
             } else
               VoiceControlForPlexApplication.getInstance().cancelNotification();
           } else if(obj.has("event") && obj.getString("event").equals(RECEIVER_EVENTS.DEVICE_CAPABILITIES) && obj.has("capabilities")) {
             Capabilities capabilities = VoiceControlForPlexApplication.gsonRead.fromJson(obj.getString("capabilities"), Capabilities.class);
             mClient.isAudioOnly = !capabilities.displaySupported;
 
+            // TODO: Implement this
 //            if(listener != null)
 //              listener.onGetDeviceCapabilities(capabilities);
           } else if(obj.has("event") && obj.getString("event").equals(RECEIVER_EVENTS.SHUTDOWN)) {

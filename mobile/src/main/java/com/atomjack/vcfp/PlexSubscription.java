@@ -31,6 +31,7 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
@@ -46,7 +47,6 @@ public class PlexSubscription {
 
   public PlexClient mClient; // the client we are subscribing to
 
-
   private PlexSubscriptionListener listener;
   private PlexSubscriptionListener notificationListener; // This will be the listener but will not be reset, and will be used for changing the notification
 
@@ -58,6 +58,7 @@ public class PlexSubscription {
   Handler updateConversationHandler;
 
   private PlexMedia nowPlayingMedia;
+  private ArrayList<? extends PlexMedia> nowPlayingPlaylist;
 
   private int failedHeartbeats = 0;
   private final int failedHeartbeatMax = 5;
@@ -445,31 +446,37 @@ public class PlexSubscription {
               if((nowPlayingMedia == null || (nowPlayingMedia != null && !nowPlayingMedia.key.equals(timeline.key))) && currentState != PlayerState.STOPPED) {
                 PlexHttpClient.get(server, timeline.containerKey, new PlexHttpMediaContainerHandler() {
                   @Override
-                  public void onSuccess(MediaContainer mediaContainer) {
+                  public void onSuccess(MediaContainer playlistMediaContainer) {
                     PlexMedia media = null;
-                    if(mediaContainer.tracks.size() > 0) {
-                      for(PlexTrack t : mediaContainer.tracks) {
-                        if(t.key.equals(timeline.key))
+                    if(playlistMediaContainer.tracks.size() > 0) {
+                      nowPlayingPlaylist = (ArrayList)playlistMediaContainer.tracks;
+                      for(PlexTrack t : playlistMediaContainer.tracks) {
+                        if(t.key.equals(timeline.key)) {
                           media = t;
+                          break;
+                        }
                       }
-                    } else if(mediaContainer.videos.size() > 0) {
-                      for(PlexVideo m : mediaContainer.videos) {
-                        if(m.isClip())
-                          m.setClipDuration();
-                        if(m.key.equals(timeline.key))
+                    } else if(playlistMediaContainer.videos.size() > 0) {
+                      nowPlayingPlaylist = (ArrayList)playlistMediaContainer.videos;
+                      for(PlexVideo m : playlistMediaContainer.videos) {
+                        if(m.key.equals(timeline.key)) {
                           media = m;
+                          if(m.isClip())
+                            m.setClipDuration();
+                          break;
+                        }
                       }
                     }
                     if(media != null) {
                       if(nowPlayingMedia != null) // if we're already playing media, this new media we found is different, so notify the listener
                         listener.onMediaChanged(media, PlayerState.getState(timeline));
                       else
-                        listener.onPlayStarted(media, mediaContainer, PlayerState.getState(timeline));
+                        listener.onPlayStarted(media, nowPlayingPlaylist, PlayerState.getState(timeline));
                     } else {
                       // TODO: Handle not finding any media?
                     }
                     nowPlayingMedia = media;
-                    VoiceControlForPlexApplication.getInstance().setNotification(mClient, currentState, media);
+                    VoiceControlForPlexApplication.getInstance().setNotification(mClient, currentState, media, nowPlayingPlaylist);
                   }
 
                   @Override
@@ -501,7 +508,7 @@ public class PlexSubscription {
                     nowPlayingMedia = null;
                     VoiceControlForPlexApplication.getInstance().cancelNotification();
                   } else {
-                    VoiceControlForPlexApplication.getInstance().setNotification(mClient, currentState, nowPlayingMedia);
+                    VoiceControlForPlexApplication.getInstance().setNotification(mClient, currentState, nowPlayingMedia, nowPlayingPlaylist);
                   }
                 } else {
                   // State has not changed, so alert listener of the current timecode
