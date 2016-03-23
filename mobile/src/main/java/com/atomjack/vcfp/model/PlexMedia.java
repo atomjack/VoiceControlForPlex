@@ -121,7 +121,7 @@ public abstract class PlexMedia implements Parcelable {
     return VoiceControlForPlexApplication.secondsToTimecode(duration/1000);
   }
 
-  public InputStream getNotificationThumb(IMAGE_KEY key) {
+  public InputStream getNotificationThumb(IMAGE_KEY key, Connection connection) {
     int width;
     width = IMAGE_SIZES.get(key)[0];
     int height;
@@ -142,18 +142,18 @@ public abstract class PlexMedia implements Parcelable {
       whichThumb = thumb;
     }
     Logger.d("whichThumb: %s, width: %d, height: %d, key: %s", whichThumb, width, height, key);
-    return getThumb(width, height, whichThumb);
+    return getThumb(width, height, whichThumb, connection);
   }
 
-  public InputStream getThumb(int width, int height) {
-    return getThumb(width, height, thumb);
-  }
+//  public InputStream getThumb(int width, int height) {
+//    return getThumb(width, height, thumb);
+//  }
 
-  public InputStream getThumb(int width, int height, String whichThumb) {
+  public InputStream getThumb(int width, int height, String whichThumb, Connection connection) {
     if(whichThumb == null)
       whichThumb = thumb != null ? thumb :  grandparentThumb;
     String path = String.format("/photo/:/transcode?width=%d&height=%d&url=%s", width, height, Uri.encode(String.format("http://127.0.0.1:32400%s", whichThumb)));
-    String url = server.buildURL(path);
+    String url = server.buildURL(connection, path);
     Logger.d("thumb url: %s", url);
     try {
       byte[] imageData = PlexHttpClient.getSyncBytes(url);

@@ -72,6 +72,7 @@ import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -360,12 +361,12 @@ public class VoiceControlForPlexApplication extends Application
     if(bitmap == null) {
       media.server.findServerConnection(new ActiveConnectionHandler() {
         @Override
-        public void onSuccess(Connection connection) {
+        public void onSuccess(final Connection connection) {
           new AsyncTask<Void, Void, Void>() {
             @Override
             protected Void doInBackground(Void... params) {
               Logger.d("No cached bitmap found, fetching");
-              InputStream is = media.getThumb(width, height, whichThumb);
+              InputStream is = media.getThumb(width, height, whichThumb, connection);
               try {
                 Logger.d("Saving cached bitmap with key %s", key);
                 mSimpleDiskCache.put(key, is);
@@ -400,23 +401,33 @@ public class VoiceControlForPlexApplication extends Application
         @Override
         protected Void doInBackground(Void... voids) {
           if (client != null && media != null) {
-            InputStream inputStream = media.getNotificationThumb(key);
-            if(inputStream != null) {
-              try {
-                inputStream.reset();
-              } catch (IOException e) {
-              }
-              try {
-                Logger.d("image key: %s", media.getImageKey(key));
-                mSimpleDiskCache.put(media.getImageKey(key), inputStream);
+            media.server.findServerConnection(new ActiveConnectionHandler() {
+              @Override
+              public void onSuccess(Connection connection) {
+                InputStream inputStream = media.getNotificationThumb(key, connection);
+                if(inputStream != null) {
+                  try {
+                    inputStream.reset();
+                  } catch (IOException e) {
+                  }
+                  try {
+                    Logger.d("image key: %s", media.getImageKey(key));
+                    mSimpleDiskCache.put(media.getImageKey(key), inputStream);
 
-                inputStream.close();
-                Logger.d("Downloaded notification thumb. Redoing notification.");
-                setNotification(client, currentState, media, true);
-              } catch (Exception e) {
-                e.printStackTrace();
+                    inputStream.close();
+                    Logger.d("Downloaded notification thumb. Redoing notification.");
+                    setNotification(client, currentState, media, true);
+                  } catch (Exception e) {
+                    e.printStackTrace();
+                  }
+                }
               }
-            }
+
+              @Override
+              public void onFailure(int statusCode) {
+
+              }
+            });
           }
           return null;
         }
@@ -427,21 +438,31 @@ public class VoiceControlForPlexApplication extends Application
     new AsyncTask<Void, Void, Void>() {
       @Override
       protected Void doInBackground(Void... voids) {
-        InputStream inputStream = media.getNotificationThumb(key);
-        if(inputStream != null) {
-          try {
-            inputStream.reset();
-          } catch (IOException e) {
+        media.server.findServerConnection(new ActiveConnectionHandler() {
+          @Override
+          public void onSuccess(Connection connection) {
+            InputStream inputStream = media.getNotificationThumb(key, connection);
+            if(inputStream != null) {
+              try {
+                inputStream.reset();
+              } catch (IOException e) {
+              }
+              try {
+                Logger.d("image key: %s", media.getImageKey(key));
+                mSimpleDiskCache.put(media.getImageKey(key), inputStream);
+                inputStream.close();
+                if(onFinish != null)
+                  onFinish.run();
+              } catch (Exception e) {
+              }
+            }
           }
-          try {
-            Logger.d("image key: %s", media.getImageKey(key));
-            mSimpleDiskCache.put(media.getImageKey(key), inputStream);
-            inputStream.close();
-            if(onFinish != null)
-              onFinish.run();
-          } catch (Exception e) {
+
+          @Override
+          public void onFailure(int statusCode) {
+
           }
-        }
+        });
         return null;
       }
     }.execute();
@@ -992,5 +1013,31 @@ public class VoiceControlForPlexApplication extends Application
       e3.printStackTrace();
     }
     return new int[]{ screenWidth, screenHeight };
+  }
+
+  public HashMap<String, Calendar> getActiveConnectionExpiresList() {
+    Type calType = new TypeToken<HashMap<String, Calendar>>() {}.getType();
+    String json = VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.ACTIVE_CONNECTION_EXPIRES, null);
+    return json == null ? new HashMap<String, Calendar>() : (HashMap<String, Calendar>)VoiceControlForPlexApplication.gsonRead.fromJson(json, calType);
+  }
+
+  public HashMap<String, Connection> getActiveConnectionList() {
+    Type conType = new TypeToken<HashMap<String, Connection>>() {}.getType();
+    String json = VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.ACTIVE_CONNECTION, null);
+    return json == null ? new HashMap<String, Connection>() : (HashMap<String, Connection>)VoiceControlForPlexApplication.gsonRead.fromJson(json, conType);
+  }
+
+  public void saveActiveConnection(PlexServer server, Connection connection, Calendar expires) {
+    HashMap<String, Connection> connectionList = getActiveConnectionList();
+    connectionList.put(server.machineIdentifier, connection);
+    Type conType = new TypeToken<HashMap<String, Connection>>(){}.getType();
+    VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.ACTIVE_CONNECTION,
+            VoiceControlForPlexApplication.gsonWrite.toJson(connectionList, conType));
+    HashMap<String, Calendar> expiresList = getActiveConnectionExpiresList();
+    expiresList.put(server.machineIdentifier, expires);
+    Type calType = new TypeToken<HashMap<String, Calendar>>(){}.getType();
+    VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.ACTIVE_CONNECTION_EXPIRES,
+            VoiceControlForPlexApplication.gsonWrite.toJson(expiresList, calType));
+
   }
 }

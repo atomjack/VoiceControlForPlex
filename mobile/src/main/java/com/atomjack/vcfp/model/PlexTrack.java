@@ -12,6 +12,8 @@ public class PlexTrack extends PlexMedia {
 	public String parentThumb;
 	@Attribute(required=false)
 	public String parentTitle;
+  @Attribute(required=false)
+  public String parentRatingKey;
 
   public String getArtist() {
     return grandparentTitle;
@@ -35,12 +37,14 @@ public class PlexTrack extends PlexMedia {
     super.writeToParcel(out, i);
 		out.writeString(parentThumb);
 		out.writeString(parentTitle);
+    out.writeString(parentRatingKey);
 	}
 
 	public PlexTrack(Parcel in) {
     super(in);
 		parentThumb = in.readString();
 		parentTitle = in.readString();
+    parentRatingKey = in.readString();
 	}
 
 	public static final Parcelable.Creator<PlexTrack> CREATOR = new Parcelable.Creator<PlexTrack>() {
@@ -57,5 +61,13 @@ public class PlexTrack extends PlexMedia {
     return media.get(0).parts.get(0);
   }
 
+  @Override
+  public String getImageKey(IMAGE_KEY imageKey) {
+    if(server == null)
+      return null;
+    else
+      return String.format("%s/%s/%s", server.machineIdentifier, parentRatingKey, imageKey);
+
+  }
 }
 

@@ -24,6 +24,7 @@ import android.widget.TextView;
 import com.atomjack.shared.Intent;
 import com.atomjack.shared.Logger;
 import com.atomjack.shared.PlayerState;
+import com.atomjack.shared.Preferences;
 import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.interfaces.BitmapHandler;
@@ -236,6 +237,10 @@ public class MusicPlayerFragment extends Fragment implements MusicServiceListene
               nowPlayingPosterContainer.getViewTreeObserver().removeOnGlobalLayoutListener(this);
             posterWidth = nowPlayingPosterContainer.getMeasuredWidth();
             posterHeight = nowPlayingPosterContainer.getMeasuredHeight();
+            if(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.MUSIC_POSTER_WIDTH, -1) == -1) {
+              VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.MUSIC_POSTER_WIDTH, posterWidth);
+              VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.MUSIC_POSTER_HEIGHT, posterHeight);
+            }
             setMainImage();
           }
         });

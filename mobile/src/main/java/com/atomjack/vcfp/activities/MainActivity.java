@@ -2706,7 +2706,8 @@ public class MainActivity extends AppCompatActivity
               switchToMainFragment();
               musicPlayerFragment = null;
               getApplicationContext().stopService(musicServiceIntent);
-              getApplicationContext().unbindService(musicConnection);
+              if(musicPlayerIsBound)
+                getApplicationContext().unbindService(musicConnection);
               musicPlayerIsBound = false;
             }
           });

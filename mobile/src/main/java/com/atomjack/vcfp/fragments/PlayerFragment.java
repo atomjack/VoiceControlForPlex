@@ -386,7 +386,7 @@ public abstract class PlayerFragment extends Fragment
         @Override
         public void onSuccess(Connection connection) {
           String path = String.format("/photo/:/transcode?width=%d&height=%d&url=%s", maxWidth, maxHeight, Uri.encode(String.format("http://127.0.0.1:32400%s", thumb)));
-          String url = media.server.buildURL(path);
+          String url = media.server.buildURL(connection, path);
           Logger.d("thumb url: %s", url);
 
           PlexHttpClient.getThumb(url, new InputStreamHandler() {

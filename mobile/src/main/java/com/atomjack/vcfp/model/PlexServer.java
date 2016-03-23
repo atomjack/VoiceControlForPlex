@@ -23,7 +23,9 @@ import java.lang.reflect.Type;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import retrofit.Call;
@@ -46,8 +48,8 @@ public class PlexServer extends PlexDevice {
 	public boolean owned = true;
 	public String accessToken;
 
-	private Connection activeConnection;
-  private Calendar activeConnectionExpires;
+//	private Connection activeConnection;
+//  private Calendar activeConnectionExpires;
 
 	public boolean local;
 
@@ -146,7 +148,7 @@ public class PlexServer extends PlexDevice {
 		parcel.writeString(accessToken);
     parcel.writeString(machineIdentifier);
 		parcel.writeTypedList(connections);
-		parcel.writeParcelable(activeConnection, i);
+//		parcel.writeParcelable(activeConnection, i);
     parcel.writeStringList(movieSections);
     parcel.writeStringList(tvSections);
     parcel.writeStringList(musicSections);
@@ -164,7 +166,7 @@ public class PlexServer extends PlexDevice {
 		accessToken = in.readString();
     machineIdentifier = in.readString();
 		in.readTypedList(connections, Connection.CREATOR);
-		activeConnection = in.readParcelable(Connection.class.getClassLoader());
+//		activeConnection = in.readParcelable(Connection.class.getClassLoader());
     in.readStringList(movieSections);
     in.readStringList(tvSections);
     in.readStringList(musicSections);
@@ -182,6 +184,21 @@ public class PlexServer extends PlexDevice {
 	};
 
   public void findServerConnection(final ActiveConnectionHandler activeConnectionHandler) {
+    Calendar activeConnectionExpires = null;
+    Connection activeConnection = null;
+    try {
+      HashMap<String, Calendar> activeConnectionExpiresList = VoiceControlForPlexApplication.getInstance().getActiveConnectionExpiresList();
+      HashMap<String, Connection> activeConnectionList = VoiceControlForPlexApplication.getInstance().getActiveConnectionList();
+
+      if (activeConnectionExpiresList.containsKey(machineIdentifier))
+        activeConnectionExpires = activeConnectionExpiresList.get(machineIdentifier);
+
+      if(activeConnectionList.containsKey(machineIdentifier))
+        activeConnection = activeConnectionList.get(machineIdentifier);
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+
     if(activeConnectionExpires != null && !activeConnectionExpires.before(Calendar.getInstance())) {
       activeConnectionHandler.onSuccess(activeConnection);
     } else {
@@ -201,10 +218,12 @@ public class PlexServer extends PlexDevice {
       public void onFinish(int statusCode, boolean available) {
         if (available) {
           // This connection replied, so let's use it
-          activeConnection = connections.get(connectionIndex);
+          Connection activeConnection = connections.get(connectionIndex);
           Logger.d("Found connection for %s: %s", name, activeConnection);
-          activeConnectionExpires = Calendar.getInstance();
+          Calendar activeConnectionExpires = Calendar.getInstance();
           activeConnectionExpires.add(Calendar.HOUR_OF_DAY, 1);
+          // Now save this connection and expiration
+          VoiceControlForPlexApplication.getInstance().saveActiveConnection(PlexServer.this, activeConnection, activeConnectionExpires);
           VoiceControlForPlexApplication.servers.put(name, PlexServer.this);
           Type serverType = new TypeToken<ConcurrentHashMap<String, PlexServer>>(){}.getType();
           VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.SAVED_SERVERS, VoiceControlForPlexApplication.gsonWrite.toJson(VoiceControlForPlexApplication.servers, serverType));
@@ -212,9 +231,9 @@ public class PlexServer extends PlexDevice {
         } else {
           int newConnectionIndex = connectionIndex + 1;
           Logger.d("Not available, new connection index: %d", newConnectionIndex);
-          if (connections.size() <= newConnectionIndex)
+          if (connections.size() <= newConnectionIndex) {
             activeConnectionHandler.onFailure(statusCode);
-          else
+          } else
             findServerConnection(newConnectionIndex, activeConnectionHandler);
         }
       }
@@ -260,8 +279,8 @@ public class PlexServer extends PlexDevice {
 		});
 	}
 
-  public String buildURL(String path) {
-    String url = String.format("%s%s", activeConnection.uri, path);
+  public String buildURL(Connection connection, String path) {
+    String url = String.format("%s%s", connection.uri, path);
     if(accessToken != null)
       url += String.format("%s%s=%s", (url.contains("?") ? "&" : "?"), PlexHeaders.XPlexToken, accessToken);
     return url;
@@ -275,37 +294,47 @@ public class PlexServer extends PlexDevice {
     localPlay(media, resumePlayback, containerKey, null);
   }
 
-  public void localPlay(PlexMedia media, boolean resumePlayback, String containerKey, String transientToken) {
-    QueryString qs = new QueryString("machineIdentifier", machineIdentifier);
-    Logger.d("machine id: %s", machineIdentifier);
-    qs.add("key", media.key);
-    Logger.d("key: %s", media.key);
-    qs.add("port", activeConnection.port);
-    Logger.d("port: %s", activeConnection.port);
-    qs.add("address", activeConnection.address);
-    Logger.d("address: %s", activeConnection.address);
-
-    if(containerKey != null)
-      qs.add("containerKey", containerKey);
-
-    if((VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.RESUME, false) || resumePlayback) && media.viewOffset != null)
-      qs.add("viewOffset", media.viewOffset);
-    if(transientToken != null)
-      qs.add("token", transientToken);
-    if(accessToken != null)
-      qs.add(PlexHeaders.XPlexToken, accessToken);
-    String url = String.format("http://127.0.0.1:32400/player/playback/playMedia?%s", qs);
-    Logger.d("[PlexServer] Playback url: %s ", url);
-    PlexHttpClient.get("http://127.0.0.1:32400", String.format("player/playback/playMedia?%s", qs), new PlexHttpResponseHandler()
-    {
+  public void localPlay(final PlexMedia media, final boolean resumePlayback, final String containerKey, final String transientToken) {
+    findServerConnection(new ActiveConnectionHandler() {
       @Override
-      public void onSuccess(PlexResponse r)
-      {
+      public void onSuccess(Connection connection) {
+        QueryString qs = new QueryString("machineIdentifier", machineIdentifier);
+        Logger.d("machine id: %s", machineIdentifier);
+        qs.add("key", media.key);
+        Logger.d("key: %s", media.key);
+        qs.add("port", connection.port);
+        Logger.d("port: %s", connection.port);
+        qs.add("address", connection.address);
+        Logger.d("address: %s", connection.address);
+
+        if(containerKey != null)
+          qs.add("containerKey", containerKey);
+
+        if((VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.RESUME, false) || resumePlayback) && media.viewOffset != null)
+          qs.add("viewOffset", media.viewOffset);
+        if(transientToken != null)
+          qs.add("token", transientToken);
+        if(accessToken != null)
+          qs.add(PlexHeaders.XPlexToken, accessToken);
+        String url = String.format("http://127.0.0.1:32400/player/playback/playMedia?%s", qs);
+        Logger.d("[PlexServer] Playback url: %s ", url);
+        PlexHttpClient.get("http://127.0.0.1:32400", String.format("player/playback/playMedia?%s", qs), new PlexHttpResponseHandler()
+        {
+          @Override
+          public void onSuccess(PlexResponse r)
+          {
+          }
+
+          @Override
+          public void onFailure(Throwable error) {
+//        feedback.e(getResources().getString(R.string.got_error), error.getMessage());
+          }
+        });
       }
 
       @Override
-      public void onFailure(Throwable error) {
-//        feedback.e(getResources().getString(R.string.got_error), error.getMessage());
+      public void onFailure(int statusCode) {
+
       }
     });
   }
