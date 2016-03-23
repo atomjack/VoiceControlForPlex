@@ -73,6 +73,8 @@ public abstract class PlayerFragment extends Fragment
 
   protected Feedback feedback;
 
+  private boolean doingMic = false;
+
   protected PlayerState currentState = PlayerState.STOPPED;
 
   protected int position = -1;
@@ -306,7 +308,10 @@ public abstract class PlayerFragment extends Fragment
   @Override
   public void onResume() {
     Logger.d("[PlayerFragment] onResume");
-
+    if(doingMic) {
+      doPlay();
+      doingMic = false;
+    }
     super.onResume();
   }
 
@@ -591,6 +596,10 @@ public abstract class PlayerFragment extends Fragment
 
   protected void doMic() {
     if(nowPlayingMedia.server != null) {
+      if(currentState == PlayerState.PLAYING) {
+        doingMic = true;
+        doPause();
+      }
       android.content.Intent serviceIntent = new android.content.Intent(getActivity(), PlexSearchService.class);
 
       serviceIntent.putExtra(com.atomjack.shared.Intent.EXTRA_SERVER, VoiceControlForPlexApplication.gsonWrite.toJson(nowPlayingMedia.server));
@@ -653,7 +662,6 @@ public abstract class PlayerFragment extends Fragment
   public void setState(PlayerState newState) {
     currentState = newState;
     if(playPauseSpinner != null && playButton != null && pauseButton != null) {
-      Logger.d("[PlayerFragment] setState: %s", newState);
       playPauseSpinner.setVisibility(View.INVISIBLE);
       playButton.setVisibility(View.INVISIBLE);
       pauseButton.setVisibility(View.INVISIBLE);

@@ -991,11 +991,11 @@ public class PlexSearchService extends Service {
 				feedback.e(getResources().getString(R.string.got_error), error.getMessage());
 			}
 		};
-		if(which.equals("pause"))
+		if(which.equals(com.atomjack.shared.Intent.ACTION_PAUSE))
 			client.pause(responseHandler);
-		else if(which.equals("play"))
+		else if(which.equals(com.atomjack.shared.Intent.ACTION_PLAY))
 			client.play(responseHandler);
-		else if(which.equals("stop"))
+		else if(which.equals(com.atomjack.shared.Intent.ACTION_STOP))
 			client.stop(responseHandler);
 	}
 
