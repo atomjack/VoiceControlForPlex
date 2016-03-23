@@ -25,6 +25,7 @@ import com.google.gson.reflect.TypeToken;
 import org.json.JSONObject;
 
 import java.lang.reflect.Type;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -97,6 +98,7 @@ public class CastPlayerManager {
 
     public static final String RECEIVE_SERVERS = "receiveServers";
     public static final String SERVERS = "servers";
+    public static final String ACTIVE_CONNECTIONS = "active_connections";
 
   };
 
@@ -168,10 +170,15 @@ public class CastPlayerManager {
           if(server.name.equals(mContext.getString(R.string.scan_all)))
             obj.put(PARAMS.SERVERS, VoiceControlForPlexApplication.gsonWrite.toJson(VoiceControlForPlexApplication.getInstance().servers, serverType));
           else {
-            ConcurrentHashMap<String, PlexServer> map = new ConcurrentHashMap<String, PlexServer>();
+            ConcurrentHashMap<String, PlexServer> map = new ConcurrentHashMap<>();
             map.put(server.name, server);
             obj.put(PARAMS.SERVERS, VoiceControlForPlexApplication.gsonWrite.toJson(map, serverType));
           }
+
+          // Send all the active connections
+          Type conType = new TypeToken<HashMap<String, Connection>>() {}.getType();
+          obj.put(PARAMS.ACTIVE_CONNECTIONS, VoiceControlForPlexApplication.gsonWrite.toJson(VoiceControlForPlexApplication.getInstance().getActiveConnectionList(), conType));
+
           sendMessage(obj);
         } catch (Exception ex) {}
 
