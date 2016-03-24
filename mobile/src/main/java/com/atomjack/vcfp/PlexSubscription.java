@@ -476,7 +476,7 @@ public class PlexSubscription {
                       // TODO: Handle not finding any media?
                     }
                     nowPlayingMedia = media;
-                    VoiceControlForPlexApplication.getInstance().setNotification(mClient, currentState, media, nowPlayingPlaylist);
+                    VoiceControlForPlexApplication.getInstance().setNotification(mClient, currentState, nowPlayingMedia, nowPlayingPlaylist);
                   }
 
                   @Override

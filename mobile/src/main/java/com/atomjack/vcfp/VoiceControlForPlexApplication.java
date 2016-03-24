@@ -419,7 +419,9 @@ public class VoiceControlForPlexApplication extends Application
     }
     if(client.isLocalDevice())
       return;
+
     final int[] numBitmapsFetched = new int[]{0};
+    final int[] numBitmapsToFetch = new int[]{0};
 
     PlexMedia.IMAGE_KEY key = media instanceof PlexTrack ? PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB_MUSIC : PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB;
     PlexMedia.IMAGE_KEY keyBig = media instanceof PlexTrack ? PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB_MUSIC_BIG : PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB_BIG;
@@ -547,23 +549,37 @@ public class VoiceControlForPlexApplication extends Application
       bitmapsFetched[1] = bigBitmap;
       onFinished.run();
     } else {
-      // Fetch both (big and regular) versions of the notification bitmap, and when both are finished, launch the runnable above that will set the notification
-      new FetchMediaImageTask(media, PlexMedia.IMAGE_SIZES.get(key)[0], PlexMedia.IMAGE_SIZES.get(key)[1], media.getNotificationThumb(key), media.getImageKey(key), new BitmapHandler() {
-        @Override
-        public void onSuccess(Bitmap bitmap) {
-          bitmapsFetched[0] = bitmap;
-          if (numBitmapsFetched[0] + 1 == 2)
-            onFinished.run();
-        }
-      }).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-      new FetchMediaImageTask(media, PlexMedia.IMAGE_SIZES.get(keyBig)[0], PlexMedia.IMAGE_SIZES.get(keyBig)[1], media.getNotificationThumb(keyBig), media.getImageKey(keyBig), new BitmapHandler() {
-        @Override
-        public void onSuccess(Bitmap bitmap) {
-          bitmapsFetched[1] = bitmap;
-          if (numBitmapsFetched[0] + 1 == 2)
-            onFinished.run();
-        }
-      }).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+      ArrayList<FetchMediaImageTask> taskList = new ArrayList<>();
+      if(media.getNotificationThumb(key) != null) {
+        numBitmapsToFetch[0]++;
+        // Fetch both (big and regular) versions of the notification bitmap, and when both are finished, launch the runnable above that will set the notification
+        taskList.add(new FetchMediaImageTask(media, PlexMedia.IMAGE_SIZES.get(key)[0], PlexMedia.IMAGE_SIZES.get(key)[1], media.getNotificationThumb(key), media.getImageKey(key), new BitmapHandler() {
+          @Override
+          public void onSuccess(Bitmap bitmap) {
+            bitmapsFetched[0] = bitmap;
+            if (numBitmapsFetched[0] + 1 == numBitmapsToFetch[0])
+              onFinished.run();
+            numBitmapsFetched[0]++;
+          }
+        }));
+      }
+      if(media.getNotificationThumb(key) != null) {
+        numBitmapsToFetch[0]++;
+        taskList.add(new FetchMediaImageTask(media, PlexMedia.IMAGE_SIZES.get(keyBig)[0], PlexMedia.IMAGE_SIZES.get(keyBig)[1], media.getNotificationThumb(keyBig), media.getImageKey(keyBig), new BitmapHandler() {
+          @Override
+          public void onSuccess(Bitmap bitmap) {
+            bitmapsFetched[1] = bitmap;
+            if (numBitmapsFetched[0] + 1 == numBitmapsToFetch[0])
+              onFinished.run();
+            numBitmapsFetched[0]++;
+          }
+        }));
+      }
+      if(taskList.size() == 0)
+        onFinished.run();
+      else
+        for(FetchMediaImageTask task : taskList)
+          task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
   }
 

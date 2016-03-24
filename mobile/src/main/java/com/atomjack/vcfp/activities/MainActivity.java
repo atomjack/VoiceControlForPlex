@@ -307,10 +307,8 @@ public class MainActivity extends AppCompatActivity
           subscribed = true;
           VoiceControlForPlexApplication.getInstance().subscribedToLocalClient = true;
         } else if (client.isCastClient) {
-          if (!castPlayerManager.isSubscribed()) {
-            castPlayerManager.subscribe(client);
-          }
-        } else if (!plexSubscription.isSubscribed()) {
+          castPlayerManager.subscribe(client);
+        } else {
           plexSubscription.subscribe(client);
         }
       }

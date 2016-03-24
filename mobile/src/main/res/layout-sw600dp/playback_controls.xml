@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="fill_parent"
+              android:layout_height="wrap_content"
+              android:orientation="vertical"
+              android:layout_alignParentBottom="true"
+              android:layout_centerHorizontal="true"
+              android:id="@+id/nowPlayingControls"
+              android:paddingBottom="10dp"
+              android:paddingTop="10dp">
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="20dp"
+        android:layout_marginRight="20dp"
+        android:layout_marginBottom="15dp">
+
+        <TextView
+            android:layout_width="50dp"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:text="0:00:00"
+            android:id="@+id/currentTimeView"
+            android:maxLines="1"
+            android:textColor="@color/white"
+            android:layout_weight="0"
+            android:layout_gravity="center_vertical"
+            />
+
+        <SeekBar
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:id="@+id/seekBar"
+            android:layout_weight="1"
+            android:layout_gravity="center_vertical"
+            />
+
+        <TextView
+            android:layout_width="50dp"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:text="0:00:00"
+            android:id="@+id/durationView"
+            android:maxLines="1"
+            android:textColor="@color/white"
+            android:layout_weight="0"
+            android:layout_gravity="center_vertical"
+            />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:layout_marginLeft="20dp"
+        android:layout_marginRight="20dp">
+
+        <ImageButton
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:background="@android:color/transparent"
+            android:id="@+id/imageButton"
+            android:src="@drawable/button_microphone"
+            android:layout_gravity="center_vertical"
+            android:layout_weight="1"/>
+
+        <ImageButton
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:id="@+id/previousButton"
+            android:layout_weight="1"
+            android:src="@drawable/button_previous"
+            android:background="@android:color/transparent"
+            android:layout_gravity="center_vertical"/>
+
+        <ImageButton
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:background="@android:color/transparent"
+            android:id="@+id/rewindButton" android:src="@drawable/notif_back15"
+            android:layout_weight="1"
+            android:layout_gravity="center_vertical"/>
+
+        <FrameLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_gravity="center_vertical">
+
+            <ProgressBar
+                android:id="@+id/playPauseSpinner"
+                style="?android:attr/progressBarStyle"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@android:color/transparent"
+                android:layout_gravity="center_vertical"/>
+
+            <ImageButton
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:id="@+id/pauseButton"
+                android:src="@drawable/button_pause"
+                android:background="@android:color/transparent"
+                android:visibility="invisible"
+                android:layout_gravity="center_vertical"/>
+
+            <ImageButton
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@android:color/transparent"
+                android:id="@+id/playButton" android:src="@drawable/button_play"
+                android:layout_weight="1"
+                android:visibility="invisible"
+                android:layout_gravity="center_vertical"/>
+
+        </FrameLayout>
+        <ImageButton
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:background="@android:color/transparent"
+            android:onClick="doStop"
+            android:id="@+id/stopButton" android:src="@drawable/button_stop"
+            android:layout_weight="1"
+            android:layout_gravity="center_vertical"/>
+
+        <ImageButton
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:background="@android:color/transparent"
+            android:id="@+id/forwardButton" android:src="@drawable/notif_ff30"
+            android:layout_weight="1"
+            android:layout_gravity="center_vertical"/>
+
+        <ImageButton
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:id="@+id/nextButton"
+            android:layout_weight="1"
+            android:src="@drawable/button_next"
+            android:background="@android:color/transparent"
+            android:layout_gravity="center_vertical"/>
+
+        <ImageButton
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:background="@android:color/transparent"
+            android:id="@+id/imageButton2"
+            android:src="@drawable/button_media_options"
+            android:layout_gravity="center_vertical"
+            android:layout_weight="1"/>
+
+    </LinearLayout>
+</LinearLayout>

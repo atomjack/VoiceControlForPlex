@@ -160,7 +160,7 @@ public abstract class PlexMedia implements Parcelable {
 
     } else if(isShow()) {
       if(width > height)
-        whichThumb = parentArt;
+        whichThumb = grandparentArt;
       else
         whichThumb = grandparentThumb;
     } else if(isMusic()) {
