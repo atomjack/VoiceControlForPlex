@@ -10,7 +10,6 @@ import android.support.v4.content.LocalBroadcastManager;
 
 import com.atomjack.shared.Logger;
 import com.atomjack.shared.Preferences;
-import com.atomjack.vcfp.GDMService;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.interfaces.ActiveConnectionHandler;
 import com.atomjack.vcfp.model.Connection;

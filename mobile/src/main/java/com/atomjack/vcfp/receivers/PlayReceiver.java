@@ -1,4 +1,4 @@
-package com.atomjack.vcfp;
+package com.atomjack.vcfp.receivers;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -7,6 +7,9 @@ import android.os.Bundle;
 
 import com.atomjack.shared.Logger;
 import com.atomjack.shared.Preferences;
+import com.atomjack.vcfp.GoogleSearchApi;
+import com.atomjack.vcfp.R;
+import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.services.PlexSearchService;
 
 public class PlayReceiver extends BroadcastReceiver

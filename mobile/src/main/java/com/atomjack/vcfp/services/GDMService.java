@@ -1,4 +1,4 @@
-package com.atomjack.vcfp;
+package com.atomjack.vcfp.services;
 
 import android.app.IntentService;
 import android.content.Context;

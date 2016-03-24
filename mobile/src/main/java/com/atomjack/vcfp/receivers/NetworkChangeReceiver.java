@@ -1,4 +1,4 @@
-package com.atomjack.vcfp;
+package com.atomjack.vcfp.receivers;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;

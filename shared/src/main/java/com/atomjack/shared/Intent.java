@@ -63,6 +63,7 @@ public class Intent {
   public static final String ACTION_PREVIOUS = "com.atomjack.vcfp.intent.action_previous";
   public static final String ACTION_NEXT = "com.atomjack.vcfp.intent.action_next";
 
-
+  public static final String ACTION_MEDIA_BUTTON = "com.atomjack.vcfp.intent.action_media_button";
+  public static final String KEY_EVENT = "com.atomjack.vcfp.intent.key_event";
 
 }

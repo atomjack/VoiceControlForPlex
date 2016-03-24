@@ -1,15 +1,24 @@
 package com.atomjack.vcfp.services;
 
+import android.app.PendingIntent;
 import android.app.Service;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
+import android.media.session.MediaSession;
+import android.media.session.PlaybackState;
 import android.net.Uri;
 import android.os.Binder;
+import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.PowerManager;
+import android.os.SystemClock;
 import android.support.annotation.Nullable;
+import android.support.v4.media.session.PlaybackStateCompat;
+import android.view.KeyEvent;
 
 import com.atomjack.shared.Logger;
 import com.atomjack.shared.PlayerState;
@@ -18,11 +27,11 @@ import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.interfaces.ActiveConnectionHandler;
 import com.atomjack.vcfp.interfaces.MusicServiceListener;
 import com.atomjack.vcfp.model.Connection;
-import com.atomjack.vcfp.model.MediaContainer;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexTrack;
 import com.atomjack.vcfp.net.PlexHttpClient;
+import com.atomjack.vcfp.receivers.RemoteControlReceiver;
 
 import java.util.ArrayList;
 
@@ -32,7 +41,6 @@ public class LocalMusicService extends Service implements
   public static final int MSG_TIME_UPDATE = 0;
 
   private MediaPlayer player;
-  private MediaContainer mediaContainer;
   private PlexTrack track;
   private ArrayList<PlexTrack> playlist;
   private int currentSongIdx;
@@ -42,7 +50,14 @@ public class LocalMusicService extends Service implements
   private final IBinder musicBind = new MusicBinder();
   private MusicServiceListener musicServiceListener;
 
+  AudioManager audioManager;
+  ComponentName remoteControlReceiver;
+
+  private long headsetDownTime = 0;
+  private long headsetUpTime = 0;
+
   @Override
+  @SuppressWarnings("deprecation")
   public void onCreate() {
     super.onCreate();
     Logger.d("[LocalMusicService] onCreate");
@@ -50,11 +65,33 @@ public class LocalMusicService extends Service implements
     currentSongIdx = 0;
     handler = new Handler();
     initMusicPlayer();
+
+
+    if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+      MediaSession mediaSession = new MediaSession(this, "VCFPRemoteControlReceiver");
+      PlaybackState state = new PlaybackState.Builder()
+              .setActions(PlaybackStateCompat.ACTION_FAST_FORWARD | PlaybackStateCompat.ACTION_PAUSE | PlaybackStateCompat.ACTION_PLAY | PlaybackStateCompat.ACTION_PLAY_PAUSE | PlaybackStateCompat.ACTION_SKIP_TO_NEXT | PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS | PlaybackStateCompat.ACTION_STOP)
+              .setState(PlaybackStateCompat.STATE_PLAYING, 0, 1, SystemClock.elapsedRealtime())
+              .build();
+      mediaSession.setPlaybackState(state);
+
+
+      Intent intent = new Intent(this, RemoteControlReceiver.class);
+      PendingIntent pintent = PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+      mediaSession.setMediaButtonReceiver(pintent);
+      mediaSession.setActive(true);
+    } else {
+      remoteControlReceiver = new ComponentName(getPackageName(), RemoteControlReceiver.class.getName());
+      audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+      audioManager.registerMediaButtonEventReceiver(remoteControlReceiver);
+    }
   }
+
+
 
   @Override
   public int onStartCommand(Intent intent, int flags, int startId) {
-    Logger.d("[LocalMusicService] onStartCommand: %s", intent.getAction());
+//    Logger.d("[LocalMusicService] onStartCommand: %s", intent.getAction());
 
     if(intent.getAction() != null) {
       if (intent.getAction().equals(com.atomjack.shared.Intent.ACTION_PLAY) || intent.getAction().equals(com.atomjack.shared.Intent.ACTION_PAUSE)) {
@@ -67,6 +104,8 @@ public class LocalMusicService extends Service implements
         doNext();
       } else if(intent.getAction().equals(com.atomjack.shared.Intent.ACTION_DISCONNECT)) {
         doStop();
+      } else if(intent.getAction().equals(com.atomjack.shared.Intent.ACTION_MEDIA_BUTTON)) {
+        handleMediaButton((KeyEvent)intent.getParcelableExtra(com.atomjack.shared.Intent.KEY_EVENT));
       }
     }
     return Service.START_NOT_STICKY;
@@ -278,13 +317,69 @@ public class LocalMusicService extends Service implements
     return playlist;
   }
 
-//  public MediaContainer getMediaContainer() {
-//    return mediaContainer;
-//  }
-
   @Override
+  @SuppressWarnings("deprecation")
   public void onDestroy() {
     super.onDestroy();
     Logger.d("[LocalMusicService] onDestroy");
+    if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+
+    } else {
+      audioManager.unregisterMediaButtonEventReceiver(remoteControlReceiver);
+    }
   }
+
+  // Do play/pause 501ms after headset button is clicked. If it is doubleclicked, this task will get canceled, and doNext() will be called instead
+  private Runnable handleSingleClick = new Runnable() {
+    @Override
+    public void run() {
+      Logger.d("Single click");
+      doPlayPause();
+    }
+  };
+
+  public void handleMediaButton(KeyEvent event) {
+    switch (event.getKeyCode()) {
+      /*
+       * one click => play/pause
+       * double click => next
+       */
+      case KeyEvent.KEYCODE_HEADSETHOOK:
+      case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
+        long time = SystemClock.uptimeMillis();
+        switch (event.getAction()) {
+          case KeyEvent.ACTION_DOWN:
+            if (event.getRepeatCount() > 0)
+              break;
+            headsetDownTime = time;
+            break;
+          case KeyEvent.ACTION_UP:
+            if (time - headsetUpTime <= 250) {
+              handler.removeCallbacks(handleSingleClick);
+              doNext();
+            } else {
+              handler.postDelayed(handleSingleClick, 251);
+            }
+            headsetUpTime = time;
+            break;
+        }
+        break;
+      case KeyEvent.KEYCODE_MEDIA_PLAY:
+        doPlay();
+        break;
+      case KeyEvent.KEYCODE_MEDIA_PAUSE:
+        doPause();
+        break;
+      case KeyEvent.KEYCODE_MEDIA_STOP:
+        doStop();
+        break;
+      case KeyEvent.KEYCODE_MEDIA_NEXT:
+        doNext();
+        break;
+      case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
+        doPrevious();
+        break;
+    }
+  }
+
 }
