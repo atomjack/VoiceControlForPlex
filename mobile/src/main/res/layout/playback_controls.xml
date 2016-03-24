@@ -6,8 +6,8 @@
               android:layout_alignParentBottom="true"
               android:layout_centerHorizontal="true"
               android:id="@+id/nowPlayingControls"
-              android:paddingTop="20dp"
-              android:paddingBottom="20dp">
+              android:paddingBottom="10dp"
+              android:paddingTop="10dp">
 
     <LinearLayout
         android:orientation="horizontal"
@@ -18,17 +18,16 @@
         android:layout_marginBottom="15dp">
 
         <TextView
-            android:layout_width="wrap_content"
+            android:layout_width="50dp"
             android:layout_height="wrap_content"
             android:textAppearance="?android:attr/textAppearanceSmall"
-            android:text="00:00:00"
+            android:text="0:00:00"
             android:id="@+id/currentTimeView"
             android:maxLines="1"
-            android:gravity="left"
             android:textColor="@color/white"
             android:layout_weight="0"
             android:layout_gravity="center_vertical"
-            android:layout_marginRight="10dp"/>
+            />
 
         <SeekBar
             android:layout_width="0dp"
@@ -39,23 +38,23 @@
             />
 
         <TextView
-            android:layout_width="wrap_content"
+            android:layout_width="50dp"
             android:layout_height="wrap_content"
             android:textAppearance="?android:attr/textAppearanceSmall"
-            android:text="00:00:00"
+            android:text="0:00:00"
             android:id="@+id/durationView"
             android:maxLines="1"
             android:textColor="@color/white"
             android:layout_weight="0"
             android:layout_gravity="center_vertical"
-            android:layout_marginLeft="10dp"/>
+            />
 
     </LinearLayout>
 
     <LinearLayout
         android:orientation="horizontal"
         android:layout_width="match_parent"
-        android:layout_height="60dp"
+        android:layout_height="50dp"
         android:layout_marginLeft="20dp"
         android:layout_marginRight="20dp">
 

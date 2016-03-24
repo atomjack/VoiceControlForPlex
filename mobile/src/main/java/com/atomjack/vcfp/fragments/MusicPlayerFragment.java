@@ -266,7 +266,7 @@ public class MusicPlayerFragment extends Fragment implements MusicServiceListene
   private void setMainImage() {
     Logger.d("[MusicPlayerFragment] Fetching main image");
 
-    VoiceControlForPlexApplication.getInstance().fetchMediaThumb(track, posterWidth, posterHeight, track.thumb != null ? track.thumb : track.grandparentThumb, track.getImageKey(PlexMedia.IMAGE_KEY.LOCAL_MUSIC_THUMB), new BitmapHandler() {
+    VoiceControlForPlexApplication.getInstance().fetchMediaThumb(track, posterWidth, posterHeight, track.thumb != null ? track.thumb : track.grandparentThumb, track.getImageKey(PlexMedia.IMAGE_KEY.MUSIC_THUMB), new BitmapHandler() {
       @Override
       public void onSuccess(final Bitmap bitmap) {
         handler.post(new Runnable() {

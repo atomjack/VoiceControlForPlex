@@ -25,14 +25,13 @@
             android:id="@+id/nowPlayingOnClient"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="17dp"
-            style="@style/showShadow"
             android:textColor="@color/white"
             android:text="@string/now_playing_on"
             android:layout_weight="1"
             android:gravity="center_horizontal"
             android:layout_marginLeft="10dp"
-            android:layout_marginRight="10dp"/>
+            android:layout_marginRight="10dp"
+            android:layout_gravity="center_vertical"/>
 
         <ImageButton
             android:layout_width="42dp"
@@ -56,47 +55,22 @@
             android:id="@+id/nowPlayingTitle"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
             android:textSize="24sp"
             android:textStyle="bold"
-            style="@style/showShadow"
-            android:text="Aliens"
             android:textColor="@color/white"
-            android:gravity="center_horizontal"/>
-
-        <TextView
-            android:id="@+id/nowPlayingGenre"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            style="@style/showShadow"
-            android:text="Horror"
-            android:textColor="@color/white"
-            android:gravity="center_horizontal"/>
-
-        <TextView
-            android:id="@+id/nowPlayingYear"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            style="@style/showShadow"
-            android:text="1986"
-            android:textColor="@color/white"
-            android:gravity="center_horizontal"/>
-
-        <TextView
-            android:id="@+id/nowPlayingDuration"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            style="@style/showShadow"
-            android:text="2:30:00"
-            android:textColor="@color/white"
-            android:gravity="center_horizontal"/>
+            android:gravity="center_horizontal"
+            android:layout_marginLeft="5dp"
+            android:layout_marginRight="5dp"/>
 
         <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:id="@+id/nowPlayingPosterContainer"
-            android:layout_marginTop="30dp"
-            android:layout_marginBottom="30dp">
+            android:layout_marginTop="15dp"
+            >
 
             <ImageView
                 android:layout_width="wrap_content"

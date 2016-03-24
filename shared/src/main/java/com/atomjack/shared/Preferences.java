@@ -37,13 +37,22 @@ public class Preferences {
   public final static String CRASHED = "pref.crashed";
   public final static String SHOW_USAGE_HINTS = "pref.show_usage_hints";
   public final static String GOOGLE_NOW_LAUNCH_NOW_PLAYING = "pref.google_now_launch_now_playing";
+
   // The first time the local music player is run, these values will be defined, so that music posters can be fetched from within PlexSearchService
   public final static String MUSIC_POSTER_WIDTH = "pref.music_poster_width";
   public final static String MUSIC_POSTER_HEIGHT = "pref.music_poster_height";
+  public final static String MUSIC_POSTER_WIDTH_LAND = "pref.music_poster_width_land";
+  public final static String MUSIC_POSTER_HEIGHT_LAND = "pref.music_poster_height_land";
 
   // The first time the remote video player is run, these values will be defined
-  public final static String VIDEO_POSTER_WIDTH = "pref.video_poster_width";
-  public final static String VIDEO_POSTER_HEIGHT = "pref.video_poster_height";
+  public final static String MOVIE_POSTER_WIDTH = "pref.movie_poster_width";
+  public final static String MOVIE_POSTER_HEIGHT = "pref.movie_poster_height";
+  public final static String MOVIE_POSTER_WIDTH_LAND = "pref.movie_poster_width_land";
+  public final static String MOVIE_POSTER_HEIGHT_LAND = "pref.movie_poster_height_land";
+  public final static String SHOW_POSTER_WIDTH = "pref.show_poster_width";
+  public final static String SHOW_POSTER_HEIGHT = "pref.show_poster_height";
+  public final static String SHOW_POSTER_WIDTH_LAND = "pref.show_poster_width_land";
+  public final static String SHOW_POSTER_HEIGHT_LAND = "pref.show_poster_height_land";
 
   public final static String ACTIVE_CONNECTION_EXPIRES = "pref.active_connection_expires";
   public final static String ACTIVE_CONNECTION = "pref.active_connection";

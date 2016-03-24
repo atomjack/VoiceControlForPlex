@@ -1,10 +1,4 @@
 <resources>
-    <style name="showShadow">
-        <item name="android:shadowColor">@color/black</item>
-        <item name="android:shadowRadius">4</item>
-        <item name="android:shadowDx">0</item>
-        <item name="android:shadowDy">0</item>
-    </style>
     <!--
     <style name="NotificationText">
         <item name="android:textColor">?android:attr/textColorPrimaryInverse</item>

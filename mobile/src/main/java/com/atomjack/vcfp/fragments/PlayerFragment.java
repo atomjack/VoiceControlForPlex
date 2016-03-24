@@ -78,6 +78,9 @@ public abstract class PlayerFragment extends Fragment
 
   protected int position = -1;
 
+  int screenWidth = -1;
+  int screenHeight = -1;
+
   SimpleDiskCache simpleDiskCache;
 
   // UI Elements
@@ -240,22 +243,11 @@ public abstract class PlayerFragment extends Fragment
       if(video.isMovie() || video.isClip()) {
         TextView title = (TextView) mainView.findViewById(R.id.nowPlayingTitle);
         title.setText(video.title);
-        TextView genre = (TextView) mainView.findViewById(R.id.nowPlayingGenre);
-        genre.setText(video.getGenres());
-        TextView year = (TextView) mainView.findViewById(R.id.nowPlayingYear);
-        year.setText(video.year);
-        TextView duration = (TextView) mainView.findViewById(R.id.nowPlayingDuration);
-        duration.setText(video.getDuration());
       } else {
         TextView showTitle = (TextView)mainView.findViewById(R.id.nowPlayingShowTitle);
         showTitle.setText(video.grandparentTitle);
         TextView episodeTitle = (TextView)mainView.findViewById(R.id.nowPlayingEpisodeTitle);
         episodeTitle.setText(String.format("%s (s%02de%02d)", video.title, Integer.parseInt(video.parentIndex), Integer.parseInt(video.index)));
-        TextView year = (TextView)mainView.findViewById(R.id.nowPlayingYear);
-        year.setText(video.year);
-        TextView duration = (TextView)mainView.findViewById(R.id.nowPlayingDuration);
-
-        duration.setText(video.getDuration());
       }
 
     } else if (nowPlayingMedia instanceof PlexTrack) {
@@ -283,22 +275,28 @@ public abstract class PlayerFragment extends Fragment
     final FrameLayout nowPlayingPosterContainer = (FrameLayout)mainView.findViewById(R.id.nowPlayingPosterContainer);
     Logger.d("nowPlayingPosterContainer: %s", nowPlayingPosterContainer);
     if(nowPlayingPosterContainer != null) {
-      ViewTreeObserver vto = nowPlayingPosterContainer.getViewTreeObserver();
-      vto.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-        @Override
-        public void onGlobalLayout() {
-          if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
-            nowPlayingPosterContainer.getViewTreeObserver().removeOnGlobalLayoutListener(this);
-          int width = nowPlayingPosterContainer.getMeasuredWidth();
-          int height = nowPlayingPosterContainer.getMeasuredHeight();
-          if(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.VIDEO_POSTER_WIDTH, -1) == -1) {
-            VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.VIDEO_POSTER_WIDTH, width);
-            VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.VIDEO_POSTER_HEIGHT, height);
+      if(screenWidth != -1) {
+        setThumb(screenWidth, screenHeight);
+      } else {
+        ViewTreeObserver vto = nowPlayingPosterContainer.getViewTreeObserver();
+        vto.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+          @Override
+          public void onGlobalLayout() {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
+              nowPlayingPosterContainer.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+            screenWidth = nowPlayingPosterContainer.getMeasuredWidth();
+            screenHeight = nowPlayingPosterContainer.getMeasuredHeight();
+            String[] prefs = VoiceControlForPlexApplication.getMediaPosterPrefs(nowPlayingMedia);
+
+            if (VoiceControlForPlexApplication.getInstance().prefs.get(prefs[0], -1) == -1) {
+              VoiceControlForPlexApplication.getInstance().prefs.put(prefs[0], screenWidth);
+              VoiceControlForPlexApplication.getInstance().prefs.put(prefs[1], screenHeight);
+            }
+            Logger.d("Found dimensions: %d/%d", screenWidth, screenHeight);
+            setThumb(screenWidth, screenHeight);
           }
-          Logger.d("Found dimensions: %d/%d", width, height);
-          setThumb(width, height);
-        }
-      });
+        });
+      }
     }
   }
 
@@ -333,17 +331,17 @@ public abstract class PlayerFragment extends Fragment
     if(nowPlayingMedia instanceof PlexVideo) {
       PlexVideo video = (PlexVideo)nowPlayingMedia;
       thumb = video.isMovie() || video.isClip() ? video.thumb : video.grandparentThumb;
-      Logger.d("orientation: %s, type: %s", getOrientation(), video.type);
+      Logger.d("orientation: %s, type: %s", VoiceControlForPlexApplication.getOrientation(), video.type);
       if(video.isClip()) {
 
       }
 
-      if(getOrientation() == Configuration.ORIENTATION_LANDSCAPE) {
+      if(VoiceControlForPlexApplication.getOrientation() == Configuration.ORIENTATION_LANDSCAPE) {
         thumb = video.art;
       }
     } else if(nowPlayingMedia instanceof PlexTrack) {
       PlexTrack track = (PlexTrack)nowPlayingMedia;
-      if(getOrientation() == Configuration.ORIENTATION_LANDSCAPE)
+      if(VoiceControlForPlexApplication.getOrientation() == Configuration.ORIENTATION_LANDSCAPE)
         thumb = track.art;
       else
         thumb = track.thumb;
@@ -570,14 +568,6 @@ public abstract class PlayerFragment extends Fragment
       }
       return true;
     }
-  }
-
-  protected int getOrientation() {
-
-    try {
-      return getResources().getConfiguration().orientation;
-    } catch (Exception e) {}
-    return Configuration.ORIENTATION_PORTRAIT;
   }
 
   // The follow methods are defined in the PlexPlayerFragment and CastPlayerFragment subclasses

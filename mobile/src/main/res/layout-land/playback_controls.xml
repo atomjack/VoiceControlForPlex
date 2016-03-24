@@ -7,8 +7,8 @@
               android:layout_centerHorizontal="true"
               android:id="@+id/nowPlayingControls"
               android:background="@color/now_playing_background"
-              android:paddingBottom="20dp"
-    >
+              android:paddingBottom="10dp"
+              android:paddingTop="10dp">
 
     <LinearLayout
         android:orientation="horizontal"
@@ -18,31 +18,33 @@
         android:layout_marginRight="20dp"
         android:layout_marginBottom="10dp">
 
-        <ImageButton
-            android:layout_width="42dp"
+        <TextView
+            android:layout_width="50dp"
             android:layout_height="wrap_content"
-            android:background="@android:color/transparent"
-            android:onClick="doMic"
-            android:id="@+id/micButton" android:src="@drawable/button_microphone"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:text="0:00:00"
+            android:id="@+id/currentTimeView"
+            android:maxLines="1"
+            android:textColor="@color/white"
             android:layout_gravity="center_vertical"/>
 
         <SeekBar
             android:layout_width="0dp"
             android:layout_height="32dip"
             android:id="@+id/seekBar"
-            android:layout_marginLeft="20dp"
-            android:layout_marginRight="20dp"
             android:layout_weight="1"
             android:layout_gravity="center_vertical"/>
 
-        <ImageButton
-            android:layout_width="42dp"
+        <TextView
+            android:layout_width="50dp"
             android:layout_height="wrap_content"
-            android:background="@android:color/transparent"
-            android:onClick="doMediaOptions"
-            android:id="@+id/mediaOptionsButton"
-            android:src="@drawable/button_media_options"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:text="0:00:00"
+            android:id="@+id/durationView"
+            android:maxLines="1"
+            android:textColor="@color/white"
             android:layout_gravity="center_vertical"/>
+
     </LinearLayout>
 
     <LinearLayout
@@ -51,17 +53,15 @@
         android:layout_height="wrap_content"
         android:layout_marginLeft="20dp"
         android:layout_marginRight="20dp">
-        <TextView
+
+        <ImageButton
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:textAppearance="?android:attr/textAppearanceSmall"
-            android:text="00:00"
-            android:id="@+id/currentTimeView"
-            android:gravity="center_vertical|left"
-            android:maxLines="1"
-            android:layout_weight="1"
-            android:textColor="@color/white"
-            android:layout_gravity="center_vertical"/>
+            android:background="@android:color/transparent"
+            android:onClick="doMic"
+            android:id="@+id/micButton" android:src="@drawable/button_microphone"
+            android:layout_gravity="center_vertical"
+            android:layout_weight="1"/>
 
         <ImageButton
             android:layout_width="0dp"
@@ -84,7 +84,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_marginTop="3dp">
+            android:layout_gravity="center_vertical">
 
             <ProgressBar
                 android:id="@+id/playPauseSpinner"
@@ -139,17 +139,16 @@
             android:background="@android:color/transparent"
             android:layout_gravity="center_vertical"/>
 
-        <TextView
+        <ImageButton
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:textAppearance="?android:attr/textAppearanceSmall"
-            android:text="00:00"
-            android:id="@+id/durationView"
-            android:maxLines="1"
-            android:layout_weight="1"
-            android:textColor="@color/white"
-            android:gravity="right"
-            android:layout_gravity="center_vertical"/>
+            android:background="@android:color/transparent"
+            android:onClick="doMediaOptions"
+            android:id="@+id/mediaOptionsButton"
+            android:src="@drawable/button_media_options"
+            android:layout_gravity="center_vertical"
+            android:layout_weight="1"/>
+
     </LinearLayout>
 
 </LinearLayout>

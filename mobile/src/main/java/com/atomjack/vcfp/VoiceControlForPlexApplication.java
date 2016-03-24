@@ -11,6 +11,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.IntentFilter;
 import android.content.pm.PackageInfo;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -294,7 +295,7 @@ public class VoiceControlForPlexApplication extends Application
 		minutes = Math.floor((_seconds - (hours * 3600)) / 60);
 		seconds = Math.floor(_seconds - (hours * 3600) - (minutes * 60));
 		if(hours > 0)
-			timecode.add(twoDigitsInt((int)hours));
+			timecode.add(String.valueOf((int)hours));
 		timecode.add(twoDigitsInt((int)minutes));
 		timecode.add(twoDigitsInt((int) seconds));
 		return TextUtils.join(":", timecode);
@@ -995,5 +996,27 @@ public class VoiceControlForPlexApplication extends Application
     VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.ACTIVE_CONNECTION_EXPIRES,
             VoiceControlForPlexApplication.gsonWrite.toJson(expiresList, calType));
 
+  }
+
+  public static int getOrientation() {
+    try {
+      return getInstance().getResources().getConfiguration().orientation;
+    } catch (Exception e) {}
+    return Configuration.ORIENTATION_PORTRAIT;
+  }
+
+  public static String[] getMediaPosterPrefs(PlexMedia media) {
+    String widthPref, heightPref;
+    if(media.isMusic()) {
+      widthPref = getOrientation() != Configuration.ORIENTATION_LANDSCAPE ? Preferences.MUSIC_POSTER_WIDTH : Preferences.MUSIC_POSTER_WIDTH_LAND;
+      heightPref = getOrientation() != Configuration.ORIENTATION_LANDSCAPE ? Preferences.MUSIC_POSTER_HEIGHT : Preferences.MUSIC_POSTER_HEIGHT_LAND;
+    } else if(media.isShow()) {
+      widthPref = getOrientation() != Configuration.ORIENTATION_LANDSCAPE ? Preferences.SHOW_POSTER_WIDTH : Preferences.SHOW_POSTER_WIDTH_LAND;
+      heightPref = getOrientation() != Configuration.ORIENTATION_LANDSCAPE ? Preferences.SHOW_POSTER_HEIGHT : Preferences.SHOW_POSTER_HEIGHT_LAND;
+    } else {
+      widthPref = getOrientation() != Configuration.ORIENTATION_LANDSCAPE ? Preferences.MOVIE_POSTER_WIDTH : Preferences.MOVIE_POSTER_WIDTH_LAND;
+      heightPref = getOrientation() != Configuration.ORIENTATION_LANDSCAPE ? Preferences.MOVIE_POSTER_HEIGHT : Preferences.MOVIE_POSTER_HEIGHT_LAND;
+    }
+    return new String[]{widthPref, heightPref};
   }
 }

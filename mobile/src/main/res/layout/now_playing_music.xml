@@ -18,22 +18,14 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/now_playing_on"
-            style="@style/showShadow"
             android:textColor="@color/white"
-            android:layout_marginTop="5dp"
-            android:layout_alignParentTop="true"
-            android:layout_alignParentLeft="true"
-            android:layout_alignParentStart="true"/>
+            android:layout_marginTop="5dp"/>
 
         <TextView
             android:id="@+id/nowPlayingArtist"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            style="@style/showShadow"
             android:textSize="24sp"
-            android:layout_below="@+id/nowPlayingOnClient"
-            android:layout_alignParentLeft="true"
-            android:layout_alignParentStart="true"
             android:text="Bonobo"
             android:textColor="@color/white"
             android:layout_marginTop="16dp"
@@ -43,11 +35,7 @@
             android:id="@+id/nowPlayingTitle"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            style="@style/showShadow"
             android:textSize="18sp"
-            android:layout_below="@+id/nowPlayingArtist"
-            android:layout_alignParentLeft="true"
-            android:layout_alignParentStart="true"
             android:text="Animals"
             android:textColor="@color/white"
             android:gravity="center_horizontal"/>
@@ -56,18 +44,14 @@
             android:id="@+id/nowPlayingAlbum"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            style="@style/showShadow"
             android:textSize="20sp"
-            android:layout_below="@+id/nowPlayingTitle"
-            android:layout_alignParentLeft="true"
-            android:layout_alignParentStart="true"
             android:text="Black Sands"
             android:textColor="@color/white"
             android:gravity="center_horizontal"/>
 
         <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="0dp"
             android:layout_weight="1"
             android:id="@+id/nowPlayingPosterContainer"
             android:layout_marginTop="30dp"
@@ -103,7 +87,6 @@
                 android:orientation="vertical"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
-                android:layout_above="@+id/nowPlayingControls"
                 android:id="@+id/nowPlayingMusic">
 
             </LinearLayout>
@@ -112,9 +95,6 @@
     </FrameLayout>
 
     <include layout="@layout/playback_controls_music"
-             android:layout_alignParentBottom="true"
-             android:layout_alignParentLeft="true"
-             android:layout_alignParentStart="true"
              android:layout_height="120dp"
              android:layout_width="fill_parent"/>
 

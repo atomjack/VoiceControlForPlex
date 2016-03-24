@@ -30,7 +30,9 @@ public abstract class PlexMedia implements Parcelable {
     WEAR_BACKGROUND,
     LOCAL_VIDEO_BACKGROUND,
     LOCAL_VIDEO_THUMB,
-    LOCAL_MUSIC_THUMB
+    MUSIC_THUMB,
+    MOVIE_THUMB,
+    SHOW_THUMB
   }
 
   public final static Map<IMAGE_KEY, int[]> IMAGE_SIZES = new HashMap<IMAGE_KEY, int[]>() {
@@ -135,21 +137,20 @@ public abstract class PlexMedia implements Parcelable {
 
     } else if(isShow()) {
       if(width > height)
-        whichThumb = parentArt;
+        whichThumb = art;
       else
         whichThumb = grandparentThumb;
     } else if(isMusic()) {
-      whichThumb = thumb;
+      whichThumb = thumb != null ? thumb : grandparentThumb;
     }
     Logger.d("whichThumb: %s, width: %d, height: %d, key: %s", whichThumb, width, height, key);
     return getThumb(width, height, whichThumb, connection);
   }
 
+  // Provides the appropriate notification thumb(image) for the supplied image key
   public String getNotificationThumb(IMAGE_KEY key) {
-    int width;
-    width = IMAGE_SIZES.get(key)[0];
-    int height;
-    height = IMAGE_SIZES.get(key)[1];
+    int width = IMAGE_SIZES.get(key)[0];
+    int height = IMAGE_SIZES.get(key)[1];
     String whichThumb = null;
     if(isMovie()) {
       if(width > height)
@@ -163,14 +164,10 @@ public abstract class PlexMedia implements Parcelable {
       else
         whichThumb = grandparentThumb;
     } else if(isMusic()) {
-      whichThumb = thumb;
+      whichThumb = thumb != null ? thumb : grandparentThumb;
     }
     return whichThumb;
   }
-
-//  public InputStream getThumb(int width, int height) {
-//    return getThumb(width, height, thumb);
-//  }
 
   public InputStream getThumb(int width, int height, String whichThumb, Connection connection) {
     if(whichThumb == null)

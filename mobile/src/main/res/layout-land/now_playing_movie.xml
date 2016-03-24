@@ -9,9 +9,6 @@
     <LinearLayout
         android:orientation="horizontal"
         android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentLeft="true"
         android:layout_weight="1"
         android:layout_marginLeft="20dp"
         android:layout_marginRight="20dp"
@@ -19,23 +16,20 @@
         android:layout_marginTop="17dp">
 
         <ScrollView
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:id="@+id/scrollView4">
+            android:id="@+id/scrollView4"
+            android:layout_weight="1">
 
             <LinearLayout
                 android:orientation="vertical"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_weight="2">
+                android:layout_height="wrap_content">
 
                 <TextView
                     android:id="@+id/nowPlayingOnClient"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_alignParentLeft="true"
-                    android:layout_alignParentTop="true"
-                    style="@style/showShadow"
                     android:textColor="@color/white"
                     android:text="@string/now_playing_on" />
 
@@ -43,54 +37,17 @@
                     android:id="@+id/nowPlayingTitle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_alignLeft="@+id/nowPlayingOnClient"
-                    android:layout_alignParentRight="true"
-                    android:layout_below="@+id/nowPlayingOnClient"
                     android:layout_marginTop="5dp"
                     android:textSize="24sp"
                     android:textStyle="bold"
-                    style="@style/showShadow"
                     android:text="Aliens"
-                    android:textColor="@color/white"/>
-
-                <TextView
-                    android:id="@+id/nowPlayingGenre"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_alignLeft="@+id/nowPlayingTitle"
-                    android:layout_alignParentRight="true"
-                    android:layout_below="@+id/nowPlayingTitle"
-                    style="@style/showShadow"
-                    android:text="Science Fiction, Horror"
-                    android:textColor="@color/white"/>
-
-                <TextView
-                    android:id="@+id/nowPlayingYear"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_alignLeft="@+id/nowPlayingGenre"
-                    android:layout_alignParentRight="true"
-                    android:layout_below="@+id/nowPlayingGenre"
-                    style="@style/showShadow"
-                    android:text="2016"
-                    android:textColor="@color/white"/>
-
-                <TextView
-                    android:id="@+id/nowPlayingDuration"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_alignLeft="@+id/nowPlayingYear"
-                    android:layout_alignParentRight="true"
-                    android:layout_below="@+id/nowPlayingYear"
-                    style="@style/showShadow"
-                    android:text="2:00:00"
                     android:textColor="@color/white"/>
 
             </LinearLayout>
         </ScrollView>
 
         <FrameLayout
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:id="@+id/nowPlayingPosterContainer"
@@ -107,14 +64,8 @@
     </LinearLayout>
 
 
-    <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true">
-
-        <include layout="@layout/playback_controls"
-                 android:layout_height="wrap_content"
-                 android:layout_width="fill_parent"/>
-    </RelativeLayout>
+    <include layout="@layout/playback_controls"
+             android:layout_height="wrap_content"
+             android:layout_width="fill_parent"/>
 
 </LinearLayout>
