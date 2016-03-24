@@ -7,7 +7,7 @@ import android.net.DhcpInfo;
 import android.net.wifi.WifiManager;
 import android.support.v4.content.LocalBroadcastManager;
 
-import com.atomjack.shared.Logger;
+import com.atomjack.shared.NewLogger;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -17,12 +17,14 @@ import java.net.InetSocketAddress;
 import java.net.SocketTimeoutException;
 
 public class GDMService extends IntentService {
+    private NewLogger logger;
     public static final String MSG_RECEIVED = ".GDMService.MESSAGE_RECEIVED";
     public static final String SOCKET_CLOSED = ".GDMService.SOCKET_CLOSED";
     public static final String PORT = ".GDMService.PORT";
 
     public GDMService() {
-        super("GDMService");
+      super("GDMService");
+      logger = new NewLogger(this);
     }
 
     @Override
@@ -37,7 +39,7 @@ public class GDMService extends IntentService {
         String data = "M-SEARCH * HTTP/1.1";
         DatagramPacket packet = new DatagramPacket(data.getBytes(), data.length(), getBroadcastAddress(), port);
         socket.send(packet);
-        Logger.i("Search Packet Broadcasted");
+        logger.i("Search Packet Broadcasted");
 
         byte[] buf = new byte[8096];
         packet = new DatagramPacket(buf, buf.length);
@@ -50,7 +52,7 @@ public class GDMService extends IntentService {
             if (packetData.startsWith("HTTP/1.0 200 OK") ||
                     packetData.startsWith("HELLO * HTTP/1.0")) // A version of the Roku is known to send this invalid response.
             {
-              Logger.i("PMS Packet Received");
+              logger.i("PMS Packet Received");
               //Broadcast Received Packet
               Intent packetBroadcast = new Intent(GDMService.MSG_RECEIVED);
               packetBroadcast.putExtra("data", packetData);
@@ -59,7 +61,7 @@ public class GDMService extends IntentService {
               LocalBroadcastManager.getInstance(this).sendBroadcast(packetBroadcast);
             }
           } catch (SocketTimeoutException e) {
-            Logger.w("Socket Timeout");
+            logger.w("Socket Timeout");
             socket.close();
             listening = false;
             Intent socketBroadcast = new Intent(GDMService.SOCKET_CLOSED);
@@ -73,7 +75,7 @@ public class GDMService extends IntentService {
 			}
 			catch (IOException e)
 			{
-				Logger.e(e.toString());
+				logger.e(e.toString());
 				e.printStackTrace();
 			}
     }

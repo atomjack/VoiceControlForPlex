@@ -65,7 +65,7 @@ import android.widget.TextView;
 import com.android.vending.billing.IabHelper;
 import com.android.vending.billing.IabResult;
 import com.android.vending.billing.Purchase;
-import com.atomjack.shared.Logger;
+import com.atomjack.shared.NewLogger;
 import com.atomjack.shared.PlayerState;
 import com.atomjack.shared.Preferences;
 import com.atomjack.shared.SendToDataLayerThread;
@@ -262,14 +262,16 @@ public class MainActivity extends AppCompatActivity
   protected NetworkState currentNetworkState;
   protected NetworkMonitor networkMonitor;
 
+  private NewLogger logger;
+
   LinearLayout navigationFooter;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    Logger.d("[MainActivity] onCreate");
+    logger = new NewLogger(this);
+    logger.d("onCreate");
 
-//    B​aseCastManager.checkGooglePlayServices(this);
 
     // This will enable the UI to be updated (Wear Support hidden/Wear Options shown)
     // once inventory is queried via Google, if wear support has been purchased
@@ -279,10 +281,10 @@ public class MainActivity extends AppCompatActivity
       client = savedInstanceState.getParcelable(com.atomjack.shared.Intent.EXTRA_CLIENT);
       playerFragment = (PlayerFragment)getSupportFragmentManager().getFragment(savedInstanceState, com.atomjack.shared.Intent.EXTRA_PLAYER_FRAGMENT);
       musicPlayerFragment = (MusicPlayerFragment) getSupportFragmentManager().getFragment(savedInstanceState, com.atomjack.shared.Intent.EXTRA_MUSIC_PLAYER_FRAGMENT);
-      Logger.d("musicPlayerFragment: %s", musicPlayerFragment);
+      logger.d("musicPlayerFragment: %s", musicPlayerFragment);
       musicPlayerIsBound = savedInstanceState.getBoolean(com.atomjack.shared.Intent.EXTRA_MUSIC_PLAYER_IS_BOUND);
     } else {
-      Logger.d("savedInstanceState is null");
+      logger.d("savedInstanceState is null");
     }
 
     prefs = VoiceControlForPlexApplication.getInstance().prefs;
@@ -330,7 +332,7 @@ public class MainActivity extends AppCompatActivity
     setContentView(R.layout.main);
 
     if(!isSubscribed()) {
-      Logger.d("Not subscribed: %s", plexSubscription.mClient);
+      logger.d("Not subscribed: %s", plexSubscription.mClient);
       // In case the notification is still up due to a crash
       VoiceControlForPlexApplication.getInstance().cancelNotification();
     }
@@ -351,7 +353,7 @@ public class MainActivity extends AppCompatActivity
   private PlexSubscriptionListener plexSubscriptionListener = new PlexSubscriptionListener() {
     @Override
     public void onSubscribed(final PlexClient client) {
-      Logger.d("[MainActivity] onSubscribed");
+      logger.d("onSubscribed");
 
       prefs.put(Preferences.SUBSCRIBED_CLIENT, gsonWrite.toJson(client));
 
@@ -371,12 +373,12 @@ public class MainActivity extends AppCompatActivity
         playerFragment.setState(state);
         handler.removeCallbacks(autoDisconnectPlayerTimer);
       } else
-        Logger.d("Got time update of %d seconds, but for some reason playerFragment is null", seconds);
+        logger.d("Got time update of %d seconds, but for some reason playerFragment is null", seconds);
     }
 
     @Override
     public void onMediaChanged(PlexMedia media, PlayerState state) {
-      Logger.d("[MainActivity] onMediaChanged: %s %s", media.getTitle(), state);
+      logger.d("onMediaChanged: %s %s", media.getTitle(), state);
       handler.removeCallbacks(autoDisconnectPlayerTimer);
       playerFragment.mediaChanged(media);
       sendWearPlaybackChange(state, media);
@@ -384,10 +386,10 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onPlayStarted(PlexMedia media, ArrayList<? extends PlexMedia> playlist, PlayerState state) {
-      Logger.d("[MainActivity] onPlayStarted: %s", media.getTitle());
+      logger.d("onPlayStarted: %s", media.getTitle());
       handler.removeCallbacks(autoDisconnectPlayerTimer);
       int layout = getLayoutForMedia(media, state);
-      Logger.d("layout: %d", layout);
+      logger.d("layout: %d", layout);
       if(layout != -1) {
         playerFragment.init(layout, client, media, playlist, false);
         switchToPlayerFragment();
@@ -397,25 +399,25 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onStateChanged(PlexMedia media, PlayerState state) {
-      Logger.d("[MainActivity] onStateChanged: %s", state);
+      logger.d("onStateChanged: %s", state);
       handler.removeCallbacks(autoDisconnectPlayerTimer);
       if(playerFragment != null && playerFragment.isVisible()) {
         if(state == PlayerState.STOPPED) {
-          Logger.d("[MainActivity] onStopped");
+          logger.d("onStopped");
           VoiceControlForPlexApplication.getInstance().cancelNotification();
           switchToMainFragment();
         } else {
           playerFragment.setState(state);
         }
       } else {
-        Logger.d("Got state change to %s, but for some reason playerFragment is null", state);
+        logger.d("Got state change to %s, but for some reason playerFragment is null", state);
       }
       sendWearPlaybackChange(state, media);
     }
 
     @Override
     public void onSubscribeError(String message) {
-      Logger.d("[MainActivity] onSubscribeError");
+      logger.d("onSubscribeError");
       setCastIconInactive();
       subscribing = false;
       feedback.e(String.format(getString(R.string.cast_connect_error), client.name));
@@ -423,7 +425,7 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onUnsubscribed() {
-      Logger.d("[MainActivity] unsubscribed");
+      logger.d("unsubscribed");
       setCastIconInactive();
       VoiceControlForPlexApplication.getInstance().cancelNotification();
       VoiceControlForPlexApplication.getInstance().subscribedToLocalClient = false;
@@ -477,13 +479,13 @@ public class MainActivity extends AppCompatActivity
         showWearPurchase = false;
         showWearPurchase();
       }
-      Logger.d("[MainActivity] Intent action: %s", getIntent().getAction());
+      logger.d("Intent action: %s", getIntent().getAction());
       Intent intent = getIntent();
       if(intent.getAction() != null && getIntent().getAction().equals(ACTION_SHOW_NOW_PLAYING)) {
         handleShowNowPlayingIntent(getIntent());
       } else {
 
-        Logger.d("Loading main fragment");
+        logger.d("Loading main fragment");
 
         if(playerFragment != null)
           fragment = playerFragment;
@@ -521,7 +523,7 @@ public class MainActivity extends AppCompatActivity
   @Override
   protected void onPause() {
     super.onPause();
-    Logger.d("[MainActivity] onPause");
+    logger.d("onPause");
     handler.removeCallbacks(autoDisconnectPlayerTimer);
     VoiceControlForPlexApplication.applicationPaused();
     if (isFinishing() && mMediaRouter != null) {
@@ -532,7 +534,7 @@ public class MainActivity extends AppCompatActivity
   @Override
   protected void onStop() {
     super.onStop();
-    Logger.d("[MainActivity] onStop");
+    logger.d("onStop");
     if(prefs.get(Preferences.SERVER_SCAN_FINISHED, true) == false) {
       Intent scannerIntent = new Intent(MainActivity.this, PlexScannerService.class);
       scannerIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
@@ -549,14 +551,14 @@ public class MainActivity extends AppCompatActivity
   @Override
   protected void onRestart() {
     super.onRestart();
-    Logger.d("[MainActivity] onRestart");
+    logger.d("onRestart");
     VoiceControlForPlexApplication.getInstance().refreshInAppInventory();
   }
 
   private Runnable autoDisconnectPlayerTimer = new Runnable() {
     @Override
     public void run() {
-      Logger.d("Auto disconnecting player");
+      logger.d("Auto disconnecting player");
       if((playerFragment != null && playerFragment.isVisible()) || (musicPlayerFragment != null && musicPlayerFragment.isVisible())) {
         VoiceControlForPlexApplication.getInstance().cancelNotification();
         switchToMainFragment();
@@ -567,7 +569,7 @@ public class MainActivity extends AppCompatActivity
   @Override
   protected void onResume() {
     super.onResume();
-    Logger.d("[MainActivity] onResume, interacting: %s", userIsInteracting);
+    logger.d("onResume, interacting: %s", userIsInteracting);
     VoiceControlForPlexApplication.applicationResumed();
 
     plexSubscription.setListener(plexSubscriptionListener);
@@ -578,7 +580,7 @@ public class MainActivity extends AppCompatActivity
       SimpleDateFormat format = new SimpleDateFormat("EEEE, MMMM d, yyyy 'at' h:mm:ss a");
       cal.add(Calendar.SECOND, -60);
       if(plexSubscription.getLastHeartbeatResponded().before(cal)) {
-        Logger.d("It's been more than 60 seconds since last heartbeat responded. now: %s, last heartbeat responded: %s", format.format(Calendar.getInstance().getTime()), format.format(plexSubscription.getLastHeartbeatResponded().getTime()));
+        logger.d("It's been more than 60 seconds since last heartbeat responded. now: %s, last heartbeat responded: %s", format.format(Calendar.getInstance().getTime()), format.format(plexSubscription.getLastHeartbeatResponded().getTime()));
         plexSubscription.resubscribe();
       }
     }
@@ -596,19 +598,19 @@ public class MainActivity extends AppCompatActivity
 
   private void doAutomaticDeviceScan() {
     if(BuildConfig.AUTO_REFRESH_DEVICES) {
-      Logger.d("Doing automatic device scan");
+      logger.d("Doing automatic device scan");
       // Kick off a scan for servers, if it's been more than five minutes since the last one.
       // We'll do this every five, to keep the list up to date. Also, if the last server scan didn't
       // finish, kick off another one right now instead (another scan in 5 minutes will be queued up when that one finishes).
       int s =  VoiceControlForPlexApplication.getInstance().getSecondsSinceLastServerScan();
-      Logger.d("It's been %d seconds since last scan, last scan finished: %s", s, prefs.get(Preferences.SERVER_SCAN_FINISHED, true));
+      logger.d("It's been %d seconds since last scan, last scan finished: %s", s, prefs.get(Preferences.SERVER_SCAN_FINISHED, true));
       if (s >= (SERVER_SCAN_INTERVAL / 1000) || prefs.get(Preferences.SERVER_SCAN_FINISHED, true) == false) {
-        Logger.d("It's been more than 5 minutes since last scan, so scanning now.");
+        logger.d("It's been more than 5 minutes since last scan, so scanning now.");
         refreshServers.run();
         refreshClients.run();
       } else {
         int d = (SERVER_SCAN_INTERVAL - (s * 1000));
-        Logger.d("It's been less than 5 minutes since the last server scan, so doing another in %d ms", d);
+        logger.d("It's been less than 5 minutes since the last server scan, so doing another in %d ms", d);
         handler.removeCallbacks(refreshServers);
         handler.removeCallbacks(refreshClients);
         handler.postDelayed(refreshServers, d);
@@ -620,7 +622,7 @@ public class MainActivity extends AppCompatActivity
   @Override
   protected void onActivityResult(int requestCode, int resultCode, Intent data) {
     super.onActivityResult(requestCode, resultCode, data);
-    Logger.d("onActivityResult: %d, %d", requestCode, resultCode);
+    logger.d("onActivityResult: %d, %d", requestCode, resultCode);
     // Pass on the activity result to the helper for handling
     if (VoiceControlForPlexApplication.getInstance().getIabHelper() == null || !VoiceControlForPlexApplication.getInstance().getIabHelper().handleActivityResult(requestCode, resultCode, data)) {
       if (requestCode == RESULT_VOICE_FEEDBACK_SELECTED) {
@@ -645,7 +647,7 @@ public class MainActivity extends AppCompatActivity
         }
       }
     } else {
-      Logger.d("onActivityResult handled by IABUtil.");
+      logger.d("onActivityResult handled by IABUtil.");
     }
   }
 
@@ -826,7 +828,7 @@ public class MainActivity extends AppCompatActivity
 
           @Override
           public void onFailure(int statusCode) {
-            Logger.e("Failure logging in");
+            logger.d("Failure logging in");
             String err = getString(R.string.login_error);
             if(statusCode == 401) {
               err = getString(R.string.login_incorrect);
@@ -852,7 +854,7 @@ public class MainActivity extends AppCompatActivity
   }
 
   public void logout(MenuItem item) {
-    Logger.d("logging out");
+    logger.d("logging out");
 
     prefs.remove(Preferences.AUTHENTICATION_TOKEN);
     prefs.remove(Preferences.PLEX_USERNAME);
@@ -955,7 +957,7 @@ public class MainActivity extends AppCompatActivity
       navigationViewMain.inflateHeaderView(R.layout.nav_header_logged_in);
       if(prefs.getString(Preferences.PLEX_EMAIL) != null) {
         setUserThumb();
-        Logger.d("Username = %s", prefs.getString(Preferences.PLEX_USERNAME));
+        logger.d("Username = %s", prefs.getString(Preferences.PLEX_USERNAME));
         final View navHeader = navigationViewMain.getHeaderView(0);
 
         serverListRefreshSpinner = (ProgressBar)navHeader.findViewById(R.id.serverListRefreshSpinner);
@@ -1005,12 +1007,12 @@ public class MainActivity extends AppCompatActivity
   @SuppressWarnings("unchecked")
   protected void onNewIntent(final Intent intent) {
     super.onNewIntent(intent);
-    Logger.d("[MainActivity] onNewIntent: %s", intent.getAction());
+    logger.d("onNewIntent: %s", intent.getAction());
 
     if(intent.getAction() != null) {
       if (intent.getAction().equals(PlexScannerService.ACTION_SERVER_SCAN_FINISHED)) {
         HashMap<String, PlexServer> s = (HashMap<String, PlexServer>) intent.getSerializableExtra(com.atomjack.shared.Intent.EXTRA_SERVERS);
-        Logger.d("[MainActivity] finished scanning for servers, have %d servers", s.size());
+        logger.d("finished scanning for servers, have %d servers", s.size());
         // Save the fact that we've finished this server scan
         prefs.put(Preferences.SERVER_SCAN_FINISHED, true);
         VoiceControlForPlexApplication.servers = new ConcurrentHashMap<>(s);
@@ -1020,7 +1022,7 @@ public class MainActivity extends AppCompatActivity
         }
         Type serverType = new TypeToken<ConcurrentHashMap<String, PlexServer>>(){}.getType();
         prefs.put(Preferences.SAVED_SERVERS, gsonWrite.toJson(VoiceControlForPlexApplication.servers, serverType));
-        Logger.d("doing first time setup: %s, client scan finished: %s", doingFirstTimeSetup, firstTimeSetupClientScanFinished);
+        logger.d("doing first time setup: %s, client scan finished: %s", doingFirstTimeSetup, firstTimeSetupClientScanFinished);
         if(doingFirstTimeSetup) {
           firstTimeSetupServerScanFinished = true;
           if(firstTimeSetupClientScanFinished)
@@ -1035,11 +1037,11 @@ public class MainActivity extends AppCompatActivity
         VoiceControlForPlexApplication.clients = new HashMap<>();
         List<PlexClient> c = (ArrayList<PlexClient>)intent.getSerializableExtra(com.atomjack.shared.Intent.EXTRA_CLIENTS);
         if(c != null) {
-          Logger.d("Got %d clients", c.size());
+          logger.d("Got %d clients", c.size());
           for (PlexClient client : c) {
             if (!VoiceControlForPlexApplication.clients.containsKey(client.name)) {
               VoiceControlForPlexApplication.clients.put(client.name, client);
-              Logger.d("Saved %s", client.name);
+              logger.d("Saved %s", client.name);
             }
           }
           prefs.put(Preferences.SAVED_CLIENTS, gsonWrite.toJson(VoiceControlForPlexApplication.clients));
@@ -1067,11 +1069,11 @@ public class MainActivity extends AppCompatActivity
       } else if(intent.getAction().equals(ACTION_SHOW_NOW_PLAYING)) {
         handleShowNowPlayingIntent(intent);
         } else if(intent.getAction().equals(com.atomjack.shared.Intent.ACTION_PLAY_LOCAL)) {
-        Logger.d("[MainActivity] Binding to LocalMusicService");
+        logger.d("Binding to LocalMusicService");
         bindMusicPlayerService();
         final PlexTrack track = intent.getParcelableExtra(com.atomjack.shared.Intent.EXTRA_MEDIA);
         final ArrayList<? extends PlexMedia> playlist = intent.getParcelableArrayListExtra(com.atomjack.shared.Intent.EXTRA_PLAYLIST);
-        Logger.d("Got track %s and media container with %d tracks", (track != null ? track.title : null), playlist.size());
+        logger.d("Got track %s and media container with %d tracks", (track != null ? track.title : null), playlist.size());
         if(musicPlayerFragment != null && musicPlayerFragment.isVisible()) {
           localMusicService.setTrack(track);
           localMusicService.setPlaylist(playlist);
@@ -1091,7 +1093,7 @@ public class MainActivity extends AppCompatActivity
                 musicPlayerFragment = new MusicPlayerFragment();
 
               musicPlayerFragment.init(localMusicService.getTrack(), localMusicService.getPlaylist());
-              Logger.d("Switching to music");
+              logger.d("Switching to music");
               switchToFragment(musicPlayerFragment);
             }
           });
@@ -1139,7 +1141,7 @@ public class MainActivity extends AppCompatActivity
 
   // This is called after first time setup client & server scan is done.
   private void onFirstTimeScanFinished() {
-    Logger.d("first time scan finished");
+    logger.d("first time scan finished");
     doingFirstTimeSetup = false;
     prefs.put(Preferences.FIRST_TIME_SETUP_COMPLETED, true);
     if(alertDialog != null)
@@ -1157,7 +1159,7 @@ public class MainActivity extends AppCompatActivity
     PlayerState state;
     // Need to overwrite what media is playing from the subscription manager, if it exists.
     if(client.isLocalClient && media instanceof PlexTrack) {
-      Logger.d("[MainActivity] Binding to LocalMusicService");
+      logger.d("Binding to LocalMusicService");
       bindMusicPlayerService();
       musicConnection.setOnConnected(new Runnable() {
         @Override
@@ -1184,7 +1186,7 @@ public class MainActivity extends AppCompatActivity
         plexSubscription.subscribe(client);
       }
 
-      Logger.d("[MainActivity] show now playing: %s", media.getTitle());
+      logger.d("show now playing: %s", media.getTitle());
 
       int layout = getLayoutForMedia(media, state);
       if(layout != -1) {
@@ -1194,7 +1196,7 @@ public class MainActivity extends AppCompatActivity
         else
           switchToPlayerFragment();
         int seconds = intent.getBooleanExtra(com.atomjack.shared.Intent.EXTRA_STARTING_PLAYBACK, false) ? 10 : 3;
-        Logger.d("Setting auto disconnect for %d seconds", seconds);
+        logger.d("Setting auto disconnect for %d seconds", seconds);
         handler.postDelayed(autoDisconnectPlayerTimer, seconds*1000);
       }
     }
@@ -1222,7 +1224,7 @@ public class MainActivity extends AppCompatActivity
     public void run() {
       // First, save the fact that we have started but not yet finished this server scan. On startup, we'll check for this and if it hasn't finished, kick off
       // a new scan right away.
-      Logger.d("Refreshing servers");
+      logger.d("Refreshing servers");
       prefs.put(Preferences.SERVER_SCAN_FINISHED, false);
       Intent scannerIntent = new Intent(MainActivity.this, PlexScannerService.class);
       scannerIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
@@ -1237,7 +1239,7 @@ public class MainActivity extends AppCompatActivity
   private Runnable refreshClients = new Runnable() {
     @Override
     public void run() {
-      Logger.d("Refreshing clients");
+      logger.d("Refreshing clients");
       Intent scannerIntent = new Intent(MainActivity.this, PlexScannerService.class);
       scannerIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
       scannerIntent.putExtra(PlexScannerService.CLASS, MainActivity.class);
@@ -1403,10 +1405,10 @@ public class MainActivity extends AppCompatActivity
       protected Void doInBackground(Void... params) {
         try {
           String url = String.format("http://www.gravatar.com/avatar/%s?s=60&d=404", Utils.md5(prefs.getString(Preferences.PLEX_EMAIL)));
-          Logger.d("url: %s", url);
+          logger.d("url: %s", url);
           byte[] imageData = PlexHttpClient.getSyncBytes(url);
           if(imageData != null) {
-            Logger.d("got %d bytes", imageData.length);
+            logger.d("got %d bytes", imageData.length);
             InputStream is = new ByteArrayInputStream(imageData);
             is.reset();
             VoiceControlForPlexApplication.getInstance().mSimpleDiskCache.put(VoiceControlForPlexApplication.getInstance().getUserThumbKey(), is);
@@ -1414,7 +1416,7 @@ public class MainActivity extends AppCompatActivity
           setUserThumb(true);
         }
         catch(SocketTimeoutException e) {
-          Logger.d("Couldn't get user thumb.");
+          logger.d("Couldn't get user thumb.");
         }
         catch(Exception ex) {
           ex.printStackTrace();
@@ -1486,7 +1488,7 @@ public class MainActivity extends AppCompatActivity
         if (clientSelected.isCastClient) {
           if(VoiceControlForPlexApplication.getInstance().hasChromecast()) {
             client = clientSelected;
-            Logger.d("[MainActivity] subscribing to %s", client.name);
+            logger.d("subscribing to %s", client.name);
             castPlayerManager.subscribe(client);
           } else {
             subscribing = false;
@@ -1508,7 +1510,7 @@ public class MainActivity extends AppCompatActivity
   };
 
   protected void setClient(PlexClient _client) {
-    Logger.d("[MainActivity] setClient");
+    logger.d("setClient");
     client = _client;
     prefs.put(Preferences.CLIENT, gsonWrite.toJson(_client));
     if(getMainFragment().isVisible())
@@ -1540,17 +1542,17 @@ public class MainActivity extends AppCompatActivity
           onClientRefreshFinished = new Runnable() {
             @Override
             public void run() {
-              Logger.d("Changing buttons");
+              logger.d("Changing buttons");
               button.setVisibility(View.VISIBLE);
               spinnerImage.setVisibility(View.GONE);
-              Logger.d("Setting %d clients", VoiceControlForPlexApplication.getAllClients().size());
+              logger.d("Setting %d clients", VoiceControlForPlexApplication.getAllClients().size());
               adapter.setClients(VoiceControlForPlexApplication.getAllClients());
 
               adapter.notifyDataSetChanged();
               onClientRefreshFinished = null;
             }
           };
-          Logger.d("Refreshing");
+          logger.d("Refreshing");
           button.setVisibility(View.GONE);
           spinnerImage.setVisibility(View.VISIBLE);
           handler.removeCallbacks(refreshClients);
@@ -1593,7 +1595,7 @@ public class MainActivity extends AppCompatActivity
         public void onItemClick(AdapterView<?> parentAdapter, View view, int position,
                                 long id) {
           PlexClient s = (PlexClient) parentAdapter.getItemAtPosition(position);
-          Logger.d("client clicked: %s", s.name);
+          logger.d("client clicked: %s", s.name);
           deviceSelectDialog.dismiss();
           if (onFinish != null)
             onFinish.onDeviceSelected(s, deviceListResume.isChecked());
@@ -1608,7 +1610,7 @@ public class MainActivity extends AppCompatActivity
         client = plexSubscription.mClient;
 //          }
       if(client == null) {
-        Logger.d("Lost subscribed client.");
+        logger.d("Lost subscribed client.");
         setCastIconInactive();
       } else {
         View view = getLayoutInflater().inflate(R.layout.popup_connected_to_client, null);
@@ -1709,7 +1711,7 @@ public class MainActivity extends AppCompatActivity
     @Override
     public void onRouteRemoved(MediaRouter router, MediaRouter.RouteInfo route) {
       super.onRouteRemoved(router, route);
-      Logger.d("Cast Client %s has gone missing. Removing.", route.getName());
+      logger.d("Cast Client %s has gone missing. Removing.", route.getName());
       if(VoiceControlForPlexApplication.castClients.containsKey(route.getName())) {
         VoiceControlForPlexApplication.castClients.remove(route.getName());
         if(deviceSelectDialog != null && deviceSelectDialog.isShowing()) {
@@ -1721,7 +1723,7 @@ public class MainActivity extends AppCompatActivity
     @Override
     public void onRouteAdded(MediaRouter router, MediaRouter.RouteInfo route)
     {
-      Logger.d("onRouteAdded: %s", route);
+      logger.d("onRouteAdded: %s", route);
       if(!VoiceControlForPlexApplication.castClients.containsKey(route.getName())) {
         VoiceControlForPlexApplication.castClients.remove(route.getName());
       }
@@ -1732,7 +1734,7 @@ public class MainActivity extends AppCompatActivity
       client.castDevice = CastDevice.getFromBundle(route.getExtras());
       client.machineIdentifier = client.castDevice.getDeviceId();
       VoiceControlForPlexApplication.castClients.put(client.name, client);
-      Logger.d("Added cast client %s (%s)", client.name, client.machineIdentifier);
+      logger.d("Added cast client %s (%s)", client.name, client.machineIdentifier);
       if(deviceSelectDialog != null && deviceSelectDialog.isShowing()) {
         deviceSelectDialogRefresh();
       }
@@ -1740,12 +1742,12 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onRouteSelected(MediaRouter router, MediaRouter.RouteInfo route) {
-      Logger.d("onRouteSelected: %s", route);
+      logger.d("onRouteSelected: %s", route);
     }
 
     @Override
     public void onRouteUnselected(MediaRouter router, MediaRouter.RouteInfo route) {
-      Logger.d("onRouteUnselected: %s", route);
+      logger.d("onRouteUnselected: %s", route);
     }
   }
 
@@ -1855,7 +1857,7 @@ public class MainActivity extends AppCompatActivity
     if(VoiceControlForPlexApplication.getInstance().hasWear()) {
       receivedWearLogsResponse = false;
       new SendToDataLayerThread(WearConstants.GET_DEVICE_LOGS, this).start();
-      Logger.d("requesting device logs from wear device");
+      logger.d("requesting device logs from wear device");
       // Now start a 5 second timer. If receivedWearLogsResponse is not true, go ahead and email just the mobile device's log
       final Handler handler = new Handler();
       handler.postDelayed(new Runnable() {
@@ -1885,7 +1887,7 @@ public class MainActivity extends AppCompatActivity
                     new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
                     REQUEST_WRITE_STORAGE);
           } else {
-            Logger.d("Emailing device logs");
+            logger.d("Emailing device logs");
             Intent emailIntent = new Intent(Intent.ACTION_SEND_MULTIPLE);
             emailIntent.putExtra(Intent.EXTRA_SUBJECT, "Voice Control for Plex Android Logs");
             emailIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
@@ -1935,7 +1937,7 @@ public class MainActivity extends AppCompatActivity
 //            uris.add(FileProvider.getUriForFile(MainActivity.this, "com.atomjack.vcfp.fileprovider", tempFile));
 
             if (!wearLog.equals("")) {
-              Logger.d("attaching wear log");
+              logger.d("attaching wear log");
               tempFile = new File(tempDirectory, "/vcfp-wear-log.txt");
               fos = new FileOutputStream(tempFile);
               out = new OutputStreamWriter(fos, "UTF-8");
@@ -1949,7 +1951,7 @@ public class MainActivity extends AppCompatActivity
             startActivity(emailIntent);
           }
         } catch (final Exception ex) {
-          Logger.e("Exception emailing device logs: %s", ex);
+          logger.d("Exception emailing device logs: %s", ex);
           runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -2164,7 +2166,7 @@ public class MainActivity extends AppCompatActivity
     public void onIabPurchaseFinished(IabResult result, Purchase purchase)
     {
       if (result.isFailure()) {
-        Logger.d("Error purchasing: " + result);
+        logger.d("Error purchasing: " + result);
         if(result.getResponse() != -1005) {
           feedback.e(result.getMessage());
         }
@@ -2175,13 +2177,13 @@ public class MainActivity extends AppCompatActivity
         return;
       }
       else if (purchase.getSku().equals(VoiceControlForPlexApplication.SKU_CHROMECAST)) {
-        Logger.d("Purchased chromecast!");
+        logger.d("Purchased chromecast!");
         VoiceControlForPlexApplication.getInstance().setHasChromecast(true);
         if(postChromecastPurchaseAction != null) {
           postChromecastPurchaseAction.run();
         }
       } else if(purchase.getSku().equals(VoiceControlForPlexApplication.SKU_WEAR)) {
-        Logger.d("Purchased Wear Support!");
+        logger.d("Purchased Wear Support!");
         VoiceControlForPlexApplication.getInstance().setHasWear(true);
         hidePurchaseWearMenuItem();
         // Send a message to the wear device that wear support has been purchased
@@ -2323,7 +2325,7 @@ public class MainActivity extends AppCompatActivity
     videoOptionsRadioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
       @Override
       public void onCheckedChanged(RadioGroup group, int checkedId) {
-        Logger.d("Checked %s", items[checkedId]);
+        logger.d("Checked %s", items[checkedId]);
         prefs.put(prefKey, (String)items[checkedId]);
         dialog.dismiss();
       }
@@ -2346,21 +2348,21 @@ public class MainActivity extends AppCompatActivity
       String xmlContents = new String(buffer);
       xmlContents = xmlContents.replace("%RECOGNITION_REGEX%", getString(R.string.pattern_recognition));
       buffer = xmlContents.getBytes();
-      Logger.d("directory: %s", Environment.getExternalStorageDirectory());
+      logger.d("directory: %s", Environment.getExternalStorageDirectory());
 
       File f = new File(Environment.getExternalStorageDirectory() + "/" + xmlfile);
       FileOutputStream fos = new FileOutputStream(f);
       fos.write(buffer);
       fos.close();
 
-      Logger.d("Wrote xml file");
+      logger.d("Wrote xml file");
 
       Intent i = new Intent();
       i.setAction(Intent.ACTION_VIEW);
       i.setDataAndType(Uri.fromFile(f), "text/xml");
       startActivityForResult(i, RESULT_TASKER_PROJECT_IMPORTED);
     } catch (Exception e) {
-      Logger.d("Exception opening tasker profile xml: ");
+      logger.d("Exception opening tasker profile xml: ");
       e.printStackTrace();
       return;
     }
@@ -2393,7 +2395,7 @@ public class MainActivity extends AppCompatActivity
         return true;
       }
     } catch(Exception e) {
-      Logger.d("Exception getting autovoice version: " + e.getStackTrace());
+      logger.d("Exception getting autovoice version: " + e.getStackTrace());
     }
     return false;
   }
@@ -2406,7 +2408,7 @@ public class MainActivity extends AppCompatActivity
         return true;
       }
     } catch(Exception e) {
-      Logger.d("Exception getting utter version: " + e.getStackTrace());
+      logger.d("Exception getting utter version: " + e.getStackTrace());
     }
     return false;
   }
@@ -2423,20 +2425,20 @@ public class MainActivity extends AppCompatActivity
       pinfo = getPackageManager().getPackageInfo("net.dinglisch.android.taskerm", 0);
       return true;
     } catch(Exception e) {
-      Logger.d("Exception getting tasker version: " + e.getStackTrace());
+      logger.d("Exception getting tasker version: " + e.getStackTrace());
     }
     return false;
   }
 
   protected void setCastIconInactive() {
-    Logger.d("[MainActivity] setCastIconInactive");
+    logger.d("setCastIconInactive");
     try {
       castIconMenuItem.setIcon(R.drawable.mr_ic_media_route_holo_dark);
     } catch (Exception e) {}
   }
 
   protected void setCastIconActive() {
-    Logger.d("[MainActivity] setCastIconActive");
+    logger.d("setCastIconActive");
     if(castIconMenuItem != null) {
       try {
         castIconMenuItem.setIcon(R.drawable.mr_ic_media_route_on_holo_dark);
@@ -2460,7 +2462,7 @@ public class MainActivity extends AppCompatActivity
   @Override
   protected void onSaveInstanceState(Bundle outState) {
     super.onSaveInstanceState(outState);
-    Logger.d("Saving instance state");
+    logger.d("Saving instance state");
     outState.putParcelable(com.atomjack.shared.Intent.EXTRA_CLIENT, client);
     if(playerFragment != null && playerFragment.isVisible()) {
       getSupportFragmentManager().putFragment(outState, com.atomjack.shared.Intent.EXTRA_PLAYER_FRAGMENT, playerFragment);
@@ -2483,7 +2485,7 @@ public class MainActivity extends AppCompatActivity
 
   @Override
   public void onDisconnected() {
-    Logger.d("Disconnected");
+    logger.d("Disconnected");
     currentNetworkState = NetworkState.DISCONNECTED;
 
     // We have no network connection, so hide the cast button
@@ -2492,7 +2494,7 @@ public class MainActivity extends AppCompatActivity
 
   @Override
   public void onConnected(int connectionType) {
-    Logger.d("Connected with type %d", connectionType);
+    logger.d("Connected with type %d", connectionType);
     // Only show the cast button if the previous state was disconnected.
     if(currentNetworkState == NetworkState.DISCONNECTED) {
       castIconMenuItem.setVisible(true);
@@ -2560,7 +2562,7 @@ public class MainActivity extends AppCompatActivity
 
         @Override
         public void onFailure(int statusCode) {
-          Logger.d("Failure: %d",statusCode);
+          logger.d("Failure: %d",statusCode);
         }
       });
     }
@@ -2595,7 +2597,7 @@ public class MainActivity extends AppCompatActivity
 
   public void sendWearPlaybackChange(final PlayerState state, PlexMedia media) {
     if(VoiceControlForPlexApplication.getInstance().hasWear()) {
-      Logger.d("[PlayerFragment] Sending Wear Notification: %s", state);
+      logger.d("[PlayerFragment] Sending Wear Notification: %s", state);
       final DataMap data = new DataMap();
       String msg = null;
       if (state == PlayerState.PLAYING) {
@@ -2684,7 +2686,7 @@ public class MainActivity extends AppCompatActivity
       LocalMusicService.MusicBinder binder = (LocalMusicService.MusicBinder)service;
       localMusicService = binder.getService();
       musicPlayerIsBound = true;
-      Logger.d("[MainActivity] Got local music service");
+      logger.d("Got local music service");
 
       binder.setListener(new MusicServiceListener() {
         @Override
@@ -2700,7 +2702,7 @@ public class MainActivity extends AppCompatActivity
 
         @Override
         public void onFinished() {
-          Logger.d("[MainActivity] MusicConnection onFinished");
+          logger.d("MusicConnection onFinished");
           handler.post(new Runnable() {
             @Override
             public void run() {
@@ -2722,7 +2724,7 @@ public class MainActivity extends AppCompatActivity
     @Override
     public void onServiceDisconnected(ComponentName name) {
       // TODO: Something here?
-      Logger.d("[MainActivity] onServiceDisconnected");
+      logger.d("onServiceDisconnected");
       musicPlayerIsBound = false;
     }
 

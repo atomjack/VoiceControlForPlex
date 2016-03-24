@@ -1,7 +1,6 @@
 package com.atomjack.shared;
 
 import android.content.Context;
-import android.net.Uri;
 import android.os.Bundle;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -15,16 +14,12 @@ import com.google.android.gms.wearable.NodeApi;
 import com.google.android.gms.wearable.PutDataMapRequest;
 import com.google.android.gms.wearable.PutDataRequest;
 import com.google.android.gms.wearable.Wearable;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.reflect.TypeToken;
 
-import java.lang.reflect.Type;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Hashtable;
 
 public class SendToDataLayerThread extends Thread {
+  private NewLogger logger;
   String path;
   DataMap dataMap = new DataMap();
   boolean sendDataItem = false;
@@ -33,6 +28,7 @@ public class SendToDataLayerThread extends Thread {
 
   // Main constructor
   public SendToDataLayerThread(String path, DataMap data, Context context) {
+    logger = new NewLogger(this);
     this.path = path;
     dataMap = data;
     if(googleApiClient == null) {
@@ -40,18 +36,18 @@ public class SendToDataLayerThread extends Thread {
               .addConnectionCallbacks(new GoogleApiClient.ConnectionCallbacks() {
                 @Override
                 public void onConnected(Bundle connectionHint) {
-                  Logger.d("[SendToDataLayerThread] onConnected: " + connectionHint);
+                  logger.d("onConnected: " + connectionHint);
                   // Now you can use the Data Layer API
                 }
                 @Override
                 public void onConnectionSuspended(int cause) {
-                  Logger.d("[SendToDataLayerThread] onConnectionSuspended: " + cause);
+                  logger.d("onConnectionSuspended: " + cause);
                 }
               })
               .addOnConnectionFailedListener(new GoogleApiClient.OnConnectionFailedListener() {
                 @Override
                 public void onConnectionFailed(ConnectionResult result) {
-                  Logger.d("[SendToDataLayerThread] onConnectionFailed: " + result);
+                  logger.d("onConnectionFailed: " + result);
                 }
               })
               .addApi(Wearable.API)
@@ -65,6 +61,7 @@ public class SendToDataLayerThread extends Thread {
   }
 
   public void sendDataItem() {
+    logger = new NewLogger(this);
     sendDataItem = true;
     start();
   }
@@ -82,7 +79,7 @@ public class SendToDataLayerThread extends Thread {
                 .setResultCallback(new ResultCallback<DataApi.DataItemResult>() {
                   @Override
                   public void onResult(DataApi.DataItemResult dataItemResult) {
-                    Logger.d("Message: %s putDataItem status: %s", path, dataItemResult.getStatus().toString());
+                    logger.d("Message: %s putDataItem status: %s", path, dataItemResult.getStatus().toString());
                   }
                 });
       }
@@ -91,10 +88,10 @@ public class SendToDataLayerThread extends Thread {
       for (Node node : nodes.getNodes()) {
         MessageApi.SendMessageResult result = Wearable.MessageApi.sendMessage(googleApiClient, node.getId(), path, dataMap.toByteArray()).await();
         if (result.getStatus().isSuccess()) {
-          Logger.d("Message: {" + path + "} sent to: %s", node.getDisplayName());
+          logger.d("Message: {" + path + "} sent to: %s", node.getDisplayName());
         } else {
           // Log an error
-          Logger.e("ERROR: failed to send Message");
+          logger.e("ERROR: failed to send Message");
         }
       }
     }

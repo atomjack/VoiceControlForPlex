@@ -15,7 +15,7 @@ import android.widget.CheckBox;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import com.atomjack.shared.Logger;
+import com.atomjack.shared.NewLogger;
 import com.atomjack.shared.Preferences;
 import com.atomjack.shared.UriDeserializer;
 import com.atomjack.shared.UriSerializer;
@@ -35,6 +35,7 @@ import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ShortcutProviderActivity extends AppCompatActivity implements DialogInterface.OnCancelListener {
+  private NewLogger logger;
 	private Gson gsonWrite = new GsonBuilder()
 					.registerTypeAdapter(Uri.class, new UriSerializer())
 					.create();
@@ -47,7 +48,7 @@ public class ShortcutProviderActivity extends AppCompatActivity implements Dialo
 	ConcurrentHashMap<String, PlexServer> servers;
 	HashMap<String, PlexClient> clients;
 
-  private  boolean cancelScan = false;
+  private boolean cancelScan = false;
   private Dialog deviceSelectDialog;
 
 	private boolean resume = false;
@@ -55,14 +56,15 @@ public class ShortcutProviderActivity extends AppCompatActivity implements Dialo
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		Logger.d("ShortcutProviderActivity onCreate");
+    logger = new NewLogger(this);
+		logger.d("onCreate");
 
 		Type serverType = new TypeToken<ConcurrentHashMap<String, PlexServer>>(){}.getType();
 		Type clientType = new TypeToken<HashMap<String, PlexClient>>(){}.getType();
 		servers = gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.SAVED_SERVERS, ""), serverType);
 		clients = gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.SAVED_CLIENTS, ""), clientType);
 
-		Logger.d("servers: %s", servers);
+		logger.d("servers: %s", servers);
 		boolean didScan = false;
 		if(servers != null && servers.size() > 0 && VoiceControlForPlexApplication.getAllClients().size() > 0)
 			didScan = true;
@@ -95,7 +97,7 @@ public class ShortcutProviderActivity extends AppCompatActivity implements Dialo
                 public void onDeviceSelected(PlexDevice device, boolean _resume) {
                   // Set the client that was selected, and whether or not to resume
                   client = (PlexClient)device;
-                  Logger.d("resume is set to %s", _resume);
+                  logger.d("resume is set to %s", _resume);
                   resume = _resume;
                   createShortcut(false);
                 }
@@ -126,14 +128,14 @@ public class ShortcutProviderActivity extends AppCompatActivity implements Dialo
 	}
 
 	private void createShortcut(boolean use_current) {
-		Logger.d("Creating shortcut.");
+		logger.d("Creating shortcut.");
 		Intent.ShortcutIconResource icon = Intent.ShortcutIconResource.fromContext(this, R.drawable.ic_launcher);
 
 		Intent sendIntent = new Intent();
 
 		Intent launchIntent = new Intent(this, ShortcutActivity.class);
 		if(!use_current) {
-			Logger.d("setting client to %s", client.name);
+			logger.d("setting client to %s", client.name);
 			launchIntent.putExtra(com.atomjack.shared.Intent.EXTRA_SERVER, gsonWrite.toJson(server));
 			launchIntent.putExtra(com.atomjack.shared.Intent.EXTRA_CLIENT, gsonWrite.toJson(client));
 			launchIntent.putExtra(com.atomjack.shared.Intent.EXTRA_RESUME, resume);
@@ -194,7 +196,7 @@ public class ShortcutProviderActivity extends AppCompatActivity implements Dialo
 
       @Override
       public void onItemClick(AdapterView<?> parentAdapter, View view, int position, long id) {
-        Logger.d("Clicked position %d", position);
+        logger.d("Clicked position %d", position);
         PlexServer s = (PlexServer)parentAdapter.getItemAtPosition(position);
         deviceSelectDialog.dismiss();
         scanHandler.onDeviceSelected(s, false);

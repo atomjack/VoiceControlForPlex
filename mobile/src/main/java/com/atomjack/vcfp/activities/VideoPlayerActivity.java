@@ -20,7 +20,7 @@ import android.view.SurfaceView;
 import android.view.View;
 import android.widget.FrameLayout;
 
-import com.atomjack.shared.Logger;
+import com.atomjack.shared.NewLogger;
 import com.atomjack.shared.PlayerState;
 import com.atomjack.shared.Preferences;
 import com.atomjack.vcfp.Feedback;
@@ -55,6 +55,8 @@ public class VideoPlayerActivity extends AppCompatActivity
         MediaPlayer.OnErrorListener,
         SurfaceHolder.Callback,
         VideoControllerView.MediaPlayerControl {
+
+  private NewLogger logger;
 
   protected PlexVideo currentVideo;
   protected ArrayList<PlexVideo> playlist;
@@ -91,7 +93,8 @@ public class VideoPlayerActivity extends AppCompatActivity
   @Override
   protected void onCreate(@Nullable Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    Logger.d("[VideoPlayerActivity] onCreate");
+    logger = new NewLogger(this);
+    logger.d("onCreate");
     session = VoiceControlForPlexApplication.generateRandomString();
 
     feedback = new Feedback(this);
@@ -190,7 +193,7 @@ public class VideoPlayerActivity extends AppCompatActivity
       @Override
       public void onSuccess(Connection connection) {
         final String url = getTranscodeUrl(currentVideo, connection, transientToken);
-        Logger.d("Using url %s", url);
+        logger.d("Using url %s", url);
 
         final boolean shouldPrepare;
         if(videoSurface == null) {
@@ -245,7 +248,7 @@ public class VideoPlayerActivity extends AppCompatActivity
             player.setOnCompletionListener(VideoPlayerActivity.this);
             if(controller == null)
               controller = new VideoControllerView(VideoPlayerActivity.this);
-            Logger.d("Have %d videos", playlist.size());
+            logger.d("Have %d videos", playlist.size());
             if(playlist.size() > 1) // Only show the prev/next buttons when there is more than one video to play
               controller.setPrevNextListeners(currentVideoIndex > 0 ? onPrevious : null, currentVideoIndex+1 < playlist.size() ? onNext : null);
             else
@@ -318,7 +321,7 @@ public class VideoPlayerActivity extends AppCompatActivity
   @Override
   protected void onNewIntent(Intent intent) {
     super.onNewIntent(intent);
-    Logger.d("[VideoPlayerActivity] onNewIntent: %s", intent.getAction());
+    logger.d("onNewIntent: %s", intent.getAction());
     if(intent.getAction() != null) {
       if(intent.getAction().equals(com.atomjack.shared.Intent.ACTION_MIC_RESPONSE)) {
         String command = intent.getStringExtra(com.atomjack.shared.Intent.ACTION_MIC_COMMAND);
@@ -385,7 +388,7 @@ public class VideoPlayerActivity extends AppCompatActivity
 
   @Override
   public void onCompletion(MediaPlayer mp) {
-    Logger.d("[VideoPlayerActivity] onCompletion");
+    logger.d("onCompletion");
     if(finishOnPlayerStop == null) {
       if(currentVideoIndex+1 < playlist.size()) {
         currentState = PlayerState.STOPPED;
@@ -400,14 +403,14 @@ public class VideoPlayerActivity extends AppCompatActivity
 
   @Override
   public boolean onInfo(MediaPlayer mp, int what, int extra) {
-//    Logger.d("[VideoPlayerActivity] onInfo: %d, %d", what, extra);
+//    logger.d("onInfo: %d, %d", what, extra);
     return false;
   }
 
   // Implement MediaPlayer.OnPreparedListener
   @Override
   public void onPrepared(MediaPlayer mp) {
-    Logger.d("[VideoPlayerActivity] onPrepared");
+    logger.d("onPrepared");
     currentState = PlayerState.BUFFERING;
 
     controller.setMediaPlayer(this);
@@ -428,12 +431,12 @@ public class VideoPlayerActivity extends AppCompatActivity
       lp.width = (int) (videoProportion * (float) screenHeight);
       lp.height = screenHeight;
     }
-//    Logger.d("Setting width/height to %d/%d", lp.width, lp.height);
-//    Logger.d("Setting screen width/height to %d/%d", screenWidth, screenHeight);
+//    logger.d("Setting width/height to %d/%d", lp.width, lp.height);
+//    logger.d("Setting screen width/height to %d/%d", screenWidth, screenHeight);
     videoSurface.setLayoutParams(lp);
 
     if(resume && currentVideo.viewOffset != null) {
-      Logger.d("Seeking to %d before playing", Integer.parseInt(currentVideo.viewOffset) / 1000);
+      logger.d("Seeking to %d before playing", Integer.parseInt(currentVideo.viewOffset) / 1000);
       player.seekTo(Integer.parseInt(currentVideo.viewOffset));
     }
 
@@ -453,7 +456,7 @@ public class VideoPlayerActivity extends AppCompatActivity
 
   @Override
   public boolean onError(MediaPlayer mp, int what, int extra) {
-    Logger.d("Media Player Error: %d", what);
+    logger.d("Media Player Error: %d", what);
     if(what == MediaPlayer.MEDIA_ERROR_UNKNOWN) {
       feedback.e(R.string.unknown_error_occurred);
     } else if (what == MediaPlayer.MEDIA_ERROR_SERVER_DIED) {
@@ -478,7 +481,7 @@ public class VideoPlayerActivity extends AppCompatActivity
     PlexHttpClient.reportProgressToServer(currentVideo, getCurrentPosition(), PlayerState.STOPPED);
     player.stop();
     player.release();
-    Logger.d("Stopping transcoder");
+    logger.d("Stopping transcoder");
     PlexHttpClient.stopTranscoder(currentVideo.server, session, "video");
   }
 
@@ -676,7 +679,7 @@ public class VideoPlayerActivity extends AppCompatActivity
     @Override
     public void run() {
       if(getDuration() > 0) {
-        Logger.d("Video is playing");
+        logger.d("Video is playing");
         currentState = PlayerState.PLAYING;
         handler.postDelayed(playerProgressRunnable, 1000);
       } else {

@@ -13,6 +13,7 @@ import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
+import com.atomjack.shared.NewLogger;
 import com.atomjack.shared.Preferences;
 import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.VCFPHint;
@@ -28,6 +29,7 @@ import butterknife.Bind;
 import butterknife.ButterKnife;
 
 public class MainFragment extends Fragment {
+  private NewLogger logger;
   TextView mainStreamingFromTo;
   @Bind(R.id.mainViewUsageHint) TextView mainViewUsageHint;
   PlexServer server;
@@ -35,6 +37,7 @@ public class MainFragment extends Fragment {
   private VCFPHint vcfpHint;
 
   public MainFragment() {
+    logger = new NewLogger(this);
   }
 
   public void setClient(PlexClient client) {

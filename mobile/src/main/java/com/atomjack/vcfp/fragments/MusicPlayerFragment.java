@@ -22,7 +22,7 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.atomjack.shared.Intent;
-import com.atomjack.shared.Logger;
+import com.atomjack.shared.NewLogger;
 import com.atomjack.shared.PlayerState;
 import com.atomjack.shared.Preferences;
 import com.atomjack.vcfp.R;
@@ -44,6 +44,7 @@ import butterknife.ButterKnife;
 import butterknife.OnClick;
 
 public class MusicPlayerFragment extends Fragment implements MusicServiceListener {
+  private NewLogger logger;
   private PlexTrack track; // the current track
   private ArrayList<PlexTrack> playlist = new ArrayList<>();
   private int currentTrackIndex = 0;
@@ -93,13 +94,14 @@ public class MusicPlayerFragment extends Fragment implements MusicServiceListene
   ImageButton previousButton;
 
   public MusicPlayerFragment() {
-    Logger.d("[MusicPlayerFragment]");
+    logger.d("");
   }
 
   @Nullable
   @Override
   public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-    Logger.d("[MusicPlayerFragment] onCreateView");
+    logger = new NewLogger(this);
+    logger.d("onCreateView");
     if(savedInstanceState != null) {
       track = savedInstanceState.getParcelable(Intent.EXTRA_MEDIA);
       playlist = savedInstanceState.getParcelableArrayList(Intent.EXTRA_PLAYLIST);
@@ -136,7 +138,7 @@ public class MusicPlayerFragment extends Fragment implements MusicServiceListene
     @Override
     public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
       if(progress % 10 == 0)
-        Logger.d("Setting time to %s", VoiceControlForPlexApplication.secondsToTimecode(progress));
+        logger.d("Setting time to %s", VoiceControlForPlexApplication.secondsToTimecode(progress));
       currentTimeView.setText(VoiceControlForPlexApplication.secondsToTimecode(progress));
     }
 
@@ -175,7 +177,7 @@ public class MusicPlayerFragment extends Fragment implements MusicServiceListene
 
   @OnClick(R.id.stopButton)
   public void doStop(View v) {
-    Logger.d("[MusicPlayerFragment] doStop");
+    logger.d("doStop");
     listener.doStop();
   }
 
@@ -209,7 +211,7 @@ public class MusicPlayerFragment extends Fragment implements MusicServiceListene
   @Override
   public void onResume() {
     super.onResume();
-    Logger.d("[MusicPlayerFragment] onResume");
+    logger.d("onResume");
     if(doingMic)
       listener.doPlay();
     doingMic = false;
@@ -225,7 +227,7 @@ public class MusicPlayerFragment extends Fragment implements MusicServiceListene
     setPlayPauseButtonState(PlayerState.BUFFERING);
 
     nowPlayingOnClient.setVisibility(View.GONE);
-    Logger.d("Setting artist/album to %s/%s", track.getArtist(), track.getAlbum());
+    logger.d("Setting artist/album to %s/%s", track.getArtist(), track.getAlbum());
     nowPlayingArtist.setText(track.getArtist());
     nowPlayingAlbum.setText(track.getAlbum());
     nowPlayingTitle.setText(track.title);
@@ -264,7 +266,7 @@ public class MusicPlayerFragment extends Fragment implements MusicServiceListene
   }
 
   private void setMainImage() {
-    Logger.d("[MusicPlayerFragment] Fetching main image");
+    logger.d("Fetching main image");
 
     VoiceControlForPlexApplication.getInstance().fetchMediaThumb(track, posterWidth, posterHeight, track.thumb != null ? track.thumb : track.grandparentThumb, track.getImageKey(PlexMedia.IMAGE_KEY.MUSIC_THUMB), new BitmapHandler() {
       @Override
@@ -291,7 +293,7 @@ public class MusicPlayerFragment extends Fragment implements MusicServiceListene
 
   @Override
   public void onTimeUpdate(PlayerState state, int time) {
-//          Logger.d("[MusicPlayerFragment] got time update, state: %s, time: %d", state, time);
+//          logger.d("got time update, state: %s, time: %d", state, time);
     currentTimeView.setText(VoiceControlForPlexApplication.secondsToTimecode(time / 1000));
     seekBar.setProgress(time / 1000);
     setPlayPauseButtonState(state);
@@ -315,7 +317,7 @@ public class MusicPlayerFragment extends Fragment implements MusicServiceListene
 
   @Override
   public void onTrackChange(PlexTrack t) {
-    Logger.d("[MusicPlayerFragment] onTrackChange: %s", t.getTitle());
+    logger.d("onTrackChange: %s", t.getTitle());
     track = t;
     showNowPlaying();
   }

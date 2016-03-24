@@ -11,7 +11,7 @@ import android.speech.RecognizerIntent;
 import android.support.v7.media.MediaRouteSelector;
 import android.support.v7.media.MediaRouter;
 
-import com.atomjack.shared.Logger;
+import com.atomjack.shared.NewLogger;
 import com.atomjack.shared.PlayerState;
 import com.atomjack.shared.Preferences;
 import com.atomjack.shared.SendToDataLayerThread;
@@ -66,6 +66,7 @@ import java.util.regex.Pattern;
 
 public class PlexSearchService extends Service {
 
+  private NewLogger logger;
 	private String queryText;
 	private SearchFeedback feedback;
 
@@ -121,7 +122,7 @@ public class PlexSearchService extends Service {
 	@Override
   @SuppressWarnings("unchecked")
 	public int onStartCommand(Intent intent, int flags, int startId) {
-		Logger.d("PlexSearch: onStartCommand");
+		logger.d("[PlexSearchService]: onStartCommand: %s", intent.getAction());
 
 		if(BuildConfig.USE_BUGSENSE)
 			Mint.initAndStartSession(PlexSearchService.this, MainActivity.BUGSENSE_APIKEY);
@@ -139,7 +140,7 @@ public class PlexSearchService extends Service {
       castPlayerManager = VoiceControlForPlexApplication.getInstance().castPlayerManager;
     castPlayerManager.setContext(this);
     if(castPlayerManager.isSubscribed()) {
-      Logger.d("CAST MANAGER IS SUBSCRIBED");
+      logger.d("CAST MANAGER IS SUBSCRIBED");
     }
 
     if(intent.getBooleanExtra(WearConstants.FROM_WEAR, false) == true && VoiceControlForPlexApplication.getInstance().hasWear()) {
@@ -149,13 +150,13 @@ public class PlexSearchService extends Service {
 
     currentNetworkState = MainActivity.NetworkState.getCurrentNetworkState(this);
 
-		Logger.d("action: %s", intent.getAction());
-		Logger.d("scan type: %s", intent.getStringExtra(com.atomjack.shared.Intent.SCAN_TYPE));
+		logger.d("action: %s", intent.getAction());
+		logger.d("scan type: %s", intent.getStringExtra(com.atomjack.shared.Intent.SCAN_TYPE));
 		if(intent.getAction() != null) {
       if (intent.getAction().equals(PlexScannerService.ACTION_SERVER_SCAN_FINISHED)) {
         // We just scanned for servers and are returning from that, so set the servers we found
         // and then figure out which client to play to
-        Logger.d("Got back from scanning for servers.");
+        logger.d("Got back from scanning for servers.");
         videoPlayed = false;
         HashMap<String, PlexServer> s = (HashMap<String, PlexServer>) intent.getSerializableExtra(com.atomjack.shared.Intent.EXTRA_SERVERS);
         VoiceControlForPlexApplication.servers = new ConcurrentHashMap<>(s);
@@ -193,7 +194,7 @@ public class PlexSearchService extends Service {
 				@Override
 				public void onApplicationStatusChanged() {
 					if (mApiClient != null) {
-						Logger.d("onApplicationStatusChanged: "
+						logger.d("onApplicationStatusChanged: "
 										+ Cast.CastApi.getApplicationStatus(mApiClient));
 					}
 				}
@@ -201,7 +202,7 @@ public class PlexSearchService extends Service {
 				@Override
 				public void onVolumeChanged() {
 					if (mApiClient != null) {
-						Logger.d("onVolumeChanged: " + Cast.CastApi.getVolume(mApiClient));
+						logger.d("onVolumeChanged: " + Cast.CastApi.getVolume(mApiClient));
 					}
 				}
 
@@ -219,17 +220,17 @@ public class PlexSearchService extends Service {
 
 			specifiedServer = VoiceControlForPlexApplication.gsonRead.fromJson(intent.getStringExtra(com.atomjack.shared.Intent.EXTRA_SERVER), PlexServer.class);
 			if(specifiedServer != null)
-				Logger.d("specified server %s", specifiedServer);
+				logger.d("specified server %s", specifiedServer);
 			PlexClient thisClient = VoiceControlForPlexApplication.gsonRead.fromJson(intent.getStringExtra(com.atomjack.shared.Intent.EXTRA_CLIENT), PlexClient.class);
       if(thisClient != null) {
         client = thisClient;
-//        Logger.d("Got client from hardcoded shortcut, lastUpdated: %s.", client.lastUpdated);
+//        logger.d("Got client from hardcoded shortcut, lastUpdated: %s.", client.lastUpdated);
         // See if this same client has been saved into settings more recently than the shortcut was created, and if so, use the saved client in case its IP address has changed
         for (PlexClient theClient : VoiceControlForPlexApplication.clients.values()) {
           if(theClient.machineIdentifier != null && theClient.machineIdentifier.equals(client.machineIdentifier)) {
-//            Logger.d("Found saved client, last updated: %s", theClient.lastUpdated);
+//            logger.d("Found saved client, last updated: %s", theClient.lastUpdated);
             if(client.lastUpdated == null || (theClient.lastUpdated != null && theClient.lastUpdated.after(client.lastUpdated))) {
-              Logger.d("Saved client was updated after shortcut was created. Using saved client instead.");
+              logger.d("Saved client was updated after shortcut was created. Using saved client instead.");
               client = theClient;
             }
           }
@@ -239,12 +240,12 @@ public class PlexSearchService extends Service {
 				resumePlayback = true;
 
       if(intent.getBooleanExtra(com.atomjack.shared.Intent.USE_CURRENT, false)) {
-        Logger.d("Using current, setting resume playback to %s", VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.RESUME, false));
+        logger.d("Using current, setting resume playback to %s", VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.RESUME, false));
         resumePlayback = VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.RESUME, false);
       }
 
 			if (intent.getExtras().getStringArrayList(RecognizerIntent.EXTRA_RESULTS) != null) {
-				Logger.d("internal query");
+				logger.d("internal query");
 				// Received spoken query from the RecognizerIntent
 				ArrayList<String> voiceResults = intent.getExtras().getStringArrayList(RecognizerIntent.EXTRA_RESULTS);
 				for(String q : voiceResults) {
@@ -254,19 +255,19 @@ public class PlexSearchService extends Service {
 					}
 				}
 				if(queries.size() == 0) {
-          Logger.d("Didn't understand query %s", intent.getExtras().getStringArrayList(RecognizerIntent.EXTRA_RESULTS));
+          logger.d("Didn't understand query %s", intent.getExtras().getStringArrayList(RecognizerIntent.EXTRA_RESULTS));
 					feedback.e(getResources().getString(R.string.didnt_understand_that));
 					return Service.START_NOT_STICKY;
 				}
 			} else {
 				// Received spoken query from Google Search API
-				Logger.d("Google Search API query");
+				logger.d("Google Search API query");
 				queries.add(intent.getStringExtra(com.atomjack.shared.Intent.EXTRA_QUERYTEXT));
 			}
 
 			if(client == null) {
         client = VoiceControlForPlexApplication.gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.CLIENT, ""), PlexClient.class);
-        Logger.d("[PlexSearchService] set client to %s", client);
+        logger.d("[PlexSearchService] set client to %s", client);
       }
 
 			if(client == null && didClientScan) {
@@ -277,20 +278,20 @@ public class PlexSearchService extends Service {
 
 			if(castPlayerManager.isSubscribed()) {
 				if(client != null && castPlayerManager.mClient != null && !client.machineIdentifier.equals(castPlayerManager.mClient.machineIdentifier)) {
-					Logger.d("Subscribed to a chromecast but need to play on a different client.");
+					logger.d("Subscribed to a chromecast but need to play on a different client.");
 					castPlayerManager.unsubscribe();
 				}
 			} else if(plexSubscription.isSubscribed()) {
 				// Chromecast clients don't have a machine identifier, so if the selected client doesn't have one, it's
 				// a Chromecast, and we're already subscribed to a non-chromecast, so unsubscribe.
 				if(client.machineIdentifier == null || !client.machineIdentifier.equals(plexSubscription.getClient().machineIdentifier)) {
-					Logger.d("Subscribed to non-chromecast client but need to play on a different client.");
+					logger.d("Subscribed to non-chromecast client but need to play on a different client.");
 					plexSubscription.unsubscribe();
 				}
 			}
 
 			if (queries.size() > 0) {
-				Logger.d("Starting up, with queries: %s", queries);
+				logger.d("Starting up, with queries: %s", queries);
 				startup();
 			} else
 				feedback.e(getResources().getString(R.string.didnt_understand_that));
@@ -306,14 +307,15 @@ public class PlexSearchService extends Service {
 
 	@Override
 	public void onCreate() {
-		Logger.d("PlexSearch onCreate");
-		queryText = null;
-		feedback = new SearchFeedback(this);
+    logger = new NewLogger(this);
+    logger.d("onCreate");
+    queryText = null;
+    feedback = new SearchFeedback(this);
 	}
 
 	@Override
 	public IBinder onBind(Intent intent) {
-		Logger.d("PlexSearch: onBind");
+		logger.d(": onBind");
 		return null;
 	}
 
@@ -334,7 +336,7 @@ public class PlexSearchService extends Service {
 		}
 
 
-		Logger.d("Starting up with query string: %s", queryText);
+		logger.d("Starting up with query string: %s", queryText);
 		tracks = new ArrayList<>();
 		videos = new ArrayList<>();
 		shows = new ArrayList<>();
@@ -342,7 +344,7 @@ public class PlexSearchService extends Service {
 		final PlexServer defaultServer = VoiceControlForPlexApplication.gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.SERVER, ""), PlexServer.class);
 		if(specifiedServer != null && client != null && !specifiedServer.name.equals(getResources().getString(R.string.scan_all))) {
 			// got a specified server and client from a shortcut
-			Logger.d("Got hardcoded server and client from shortcut with %d music sections", specifiedServer.musicSections.size());
+			logger.d("Got hardcoded server and client from shortcut with %d music sections", specifiedServer.musicSections.size());
 			plexmediaServers = new ConcurrentHashMap<>();
       // If the chosen server exists in the master list of servers, use that one as it will have the last time a connection scan was done
       if(VoiceControlForPlexApplication.servers.containsKey(specifiedServer.name))
@@ -352,7 +354,7 @@ public class PlexSearchService extends Service {
 			setClient();
 		} else if(specifiedServer == null && defaultServer != null && !defaultServer.name.equals(getResources().getString(R.string.scan_all))) {
 			// Use the server specified in the main settings
-			Logger.d("Using server and client specified in main settings");
+			logger.d("Using server and client specified in main settings");
 			plexmediaServers = new ConcurrentHashMap<>();
       // If the chosen server exists in the master list of servers, use that one as it will have the last time a connection scan was done
       if(VoiceControlForPlexApplication.servers.containsKey(defaultServer.name))
@@ -362,7 +364,7 @@ public class PlexSearchService extends Service {
 			setClient();
 		} else {
 			// Scan All was chosen
-			Logger.d("Scan all was chosen, seconds since last server scan: %d", VoiceControlForPlexApplication.getInstance().getSecondsSinceLastServerScan());
+			logger.d("Scan all was chosen, seconds since last server scan: %d", VoiceControlForPlexApplication.getInstance().getSecondsSinceLastServerScan());
 
 			if(didServerScan || VoiceControlForPlexApplication.getInstance().getSecondsSinceLastServerScan() <= (MainActivity.SERVER_SCAN_INTERVAL/ 1000) || !BuildConfig.AUTO_REFRESH_DEVICES) {
         // Set the media servers we will scan to the ones saved in the application. This will either just have been saved after a server scan, due to
@@ -408,7 +410,7 @@ public class PlexSearchService extends Service {
 	}
 
 	private myRunnable handleVoiceSearch(boolean noChange) {
-		Logger.d("GOT QUERY: %s", queryText);
+		logger.d("GOT QUERY: %s", queryText);
 
 		Pattern p;
 		Matcher matcher;
@@ -422,8 +424,8 @@ public class PlexSearchService extends Service {
 			if (matcher.find() && !matcher2.find()) {
 				String specifiedClient = matcher.group(2).toLowerCase();
 
-				Logger.d("Clients: %d", clients.size());
-				Logger.d("Specified client: %s", specifiedClient);
+				logger.d("Clients: %d", clients.size());
+				logger.d("Specified client: %s", specifiedClient);
 				for(PlexClient c : clients.values()) {
 					if (c.name.toLowerCase().equals(specifiedClient)) {
             if(c.isCastClient && !VoiceControlForPlexApplication.getInstance().hasChromecast()) {
@@ -436,7 +438,7 @@ public class PlexSearchService extends Service {
             } else {
               client = c;
               queryText = queryText.replaceAll(getString(R.string.pattern_on_client), "$1");
-              Logger.d("query text now %s", queryText);
+              logger.d("query text now %s", queryText);
               break;
             }
 					}
@@ -459,9 +461,9 @@ public class PlexSearchService extends Service {
         shuffle = true;
         // Remove "on shuffle" from the query text
         queryText = matcher.replaceAll("").trim();
-        Logger.d("Shuffling, query is now !%s!", queryText);
+        logger.d("Shuffling, query is now !%s!", queryText);
       } else {
-        Logger.d("No shuffle");
+        logger.d("No shuffle");
       }
 		}
 
@@ -638,7 +640,7 @@ public class PlexSearchService extends Service {
 		p = Pattern.compile(getString(R.string.pattern_resume_playback), Pattern.DOTALL);
 		matcher = p.matcher(queryText);
 		if (matcher.find()) {
-			Logger.d("resuming playback");
+			logger.d("resuming playback");
 			return new StopRunnable() {
 				@Override
 				public void run() {
@@ -650,7 +652,7 @@ public class PlexSearchService extends Service {
 		p = Pattern.compile(getString(R.string.pattern_stop_playback), Pattern.DOTALL);
 		matcher = p.matcher(queryText);
 		if (matcher.find()) {
-			Logger.d("stopping playback");
+			logger.d("stopping playback");
 			return new StopRunnable() {
 				@Override
 				public void run() {
@@ -696,21 +698,21 @@ public class PlexSearchService extends Service {
     if(matcher.find()) {
       final String amount = matcher.group(1) != null && matcher.group(1).matches("two|to") ? "2" : matcher.group(1);
       final String del = matcher.group(2);
-      Logger.d("[ffr] del = %s", del);
+      logger.d("[ffr] del = %s", del);
       int mul = 1; // default multiplier, for seconds
       if(del.matches("minutes?"))
         mul = 60;
       else if(del.matches("hours?"))
         mul = 60*60;
-      Logger.d("[ffr] mul = %d", mul);
+      logger.d("[ffr] mul = %d", mul);
       final int seconds = Integer.parseInt(amount) * mul;
       return new StopRunnable() {
         @Override
         public void run() {
-          Logger.d("[ffr] Skipping ahead %d seconds", seconds);
+          logger.d("[ffr] Skipping ahead %d seconds", seconds);
           if(client.isCastClient) {
             int currentOffset = Integer.parseInt(castPlayerManager.getNowPlayingMedia().viewOffset);
-            Logger.d("[ffr] currentOffset: %d", currentOffset);
+            logger.d("[ffr] currentOffset: %d", currentOffset);
             seekTo(currentOffset + (seconds * 1000));
           } else {
             PlexHttpClient.getClientTimeline(client, 0, new PlexHttpMediaContainerHandler() {
@@ -725,7 +727,7 @@ public class PlexSearchService extends Service {
                   }
                 }
                 if(currentTime > -1) {
-                  Logger.d("[ffr] currentOffset: %d", currentTime);
+                  logger.d("[ffr] currentOffset: %d", currentTime);
                   seekTo(currentTime + (seconds * 1000));
                 } else {
                   // TODO: Handle failure
@@ -734,7 +736,7 @@ public class PlexSearchService extends Service {
 
               @Override
               public void onFailure(Throwable error) {
-                Logger.d("Failure getting client timeline");
+                logger.d("Failure getting client timeline");
                 error.printStackTrace();
               }
             });
@@ -749,7 +751,7 @@ public class PlexSearchService extends Service {
     if(matcher.find()) {
       final String amount = matcher.group(2) != null && matcher.group(2).matches("two|to") ? "2" : matcher.group(2);
       final String del = matcher.group(3);
-      Logger.d("[ffr] del = %s", del);
+      logger.d("[ffr] del = %s", del);
       int mul = 1; // default multiplier, for seconds
       if(del.matches("minutes?"))
         mul = 60;
@@ -759,11 +761,11 @@ public class PlexSearchService extends Service {
       return new StopRunnable() {
         @Override
         public void run() {
-          Logger.d("[ffr] Rewinding %d seconds", seconds);
+          logger.d("[ffr] Rewinding %d seconds", seconds);
 					int currentOffset;
           if(client.isCastClient) {
             currentOffset = Integer.parseInt(castPlayerManager.getNowPlayingMedia().viewOffset);
-            Logger.d("[ffr] currentOffset: %d", currentOffset);
+            logger.d("[ffr] currentOffset: %d", currentOffset);
             seekTo(currentOffset - (seconds * 1000));
           } else {
             PlexHttpClient.getClientTimeline(client, 0, new PlexHttpMediaContainerHandler() {
@@ -778,7 +780,7 @@ public class PlexSearchService extends Service {
                   }
                 }
                 if(currentTime > -1) {
-                  Logger.d("[ffr] currentOffset: %d", currentTime);
+                  logger.d("[ffr] currentOffset: %d", currentTime);
                   seekTo(currentTime - (seconds * 1000));
                 } else {
                   // TODO: Handle failure
@@ -787,7 +789,7 @@ public class PlexSearchService extends Service {
 
               @Override
               public void onFailure(Throwable error) {
-                Logger.d("Failure getting client timeline");
+                logger.d("Failure getting client timeline");
                 error.printStackTrace();
               }
             });
@@ -829,7 +831,7 @@ public class PlexSearchService extends Service {
         return new StopRunnable() {
           @Override
           public void run() {
-          Logger.d("PlexSearchService Subscribing to %s", theClient.name);
+          logger.d("Service Subscribing to %s", theClient.name);
           if(theClient.isCastClient)
             VoiceControlForPlexApplication.getInstance().castPlayerManager.subscribe(theClient);
           else
@@ -938,7 +940,7 @@ public class PlexSearchService extends Service {
 	}
 
   private void sendCommandToLocalPlayer(String which) {
-    Logger.d("Sending command to local player: %s", whichLocalPlayer);
+    logger.d("Sending command to local player: %s", whichLocalPlayer);
     Intent nowPlayingIntent = new Intent(this, whichLocalPlayer == com.atomjack.shared.Intent.PLAYER_AUDIO ? MainActivity.class : VideoPlayerActivity.class);
     nowPlayingIntent.setAction(com.atomjack.shared.Intent.ACTION_MIC_RESPONSE);
     nowPlayingIntent.putExtra(com.atomjack.shared.Intent.ACTION_MIC_COMMAND, which); // 'which' is one of Intent.ACTION_*
@@ -974,7 +976,7 @@ public class PlexSearchService extends Service {
 				if(r.code != 200) {
 					passed = false;
 				}
-				Logger.d("Playback response: %d", r.code);
+				logger.d("Playback response: %d", r.code);
 				if(passed) {
 					feedback.m(onFinish);
 				} else {
@@ -1008,15 +1010,15 @@ public class PlexSearchService extends Service {
 	}
 
 	private void seekTo(int hours, int minutes, int seconds) {
-		Logger.d("Seeking to %d hours, %d minutes, %d seconds", hours, minutes, seconds);
+		logger.d("Seeking to %d hours, %d minutes, %d seconds", hours, minutes, seconds);
 		int offset = 1000*((hours*60*60)+(minutes*60)+seconds);
-		Logger.d("offset: %d milliseconds", offset);
+		logger.d("offset: %d milliseconds", offset);
 
     seekTo(offset);
 	}
 
   private void seekTo(int offset) {
-    Logger.d("Seeking to %d", offset);
+    logger.d("Seeking to %d", offset);
     if(client.isCastClient) {
       castPlayerManager.seekTo(offset / 1000);
     } else {
@@ -1027,7 +1029,7 @@ public class PlexSearchService extends Service {
 					if (r.code != 200) {
 						passed = false;
 					}
-          Logger.d("Playback response: %d", r.code);
+          logger.d("Playback response: %d", r.code);
           if (!passed) {
             feedback.e(getResources().getString(R.string.http_status_code_error), r.code);
           }
@@ -1046,7 +1048,7 @@ public class PlexSearchService extends Service {
   }
 
 	private void doMovieSearch(final String queryTerm) {
-		Logger.d("Doing movie search. %d servers", plexmediaServers.size());
+		logger.d("Doing movie search. %d servers", plexmediaServers.size());
     if(client.isCastClient && client.isAudioOnly) {
       videoAttemptedOnAudioOnlyDevice();
       return;
@@ -1059,7 +1061,7 @@ public class PlexSearchService extends Service {
 				@Override
 				public void onSuccess(Connection connection) {
 					server.movieSectionsSearched = 0;
-					Logger.d("Searching server (for movies): %s, %d sections", server.name, server.movieSections.size());
+					logger.d("Searching server (for movies): %s, %d sections", server.name, server.movieSections.size());
 
 					if(server.movieSections.size() == 0) {
 						serversSearched++;
@@ -1084,8 +1086,8 @@ public class PlexSearchService extends Service {
                     videos.add(video);
                   }
                 }
-                Logger.d("Videos: %d", mc.videos.size());
-                Logger.d("%d sections searched out of %d", server.movieSectionsSearched, server.movieSections.size());
+                logger.d("Videos: %d", mc.videos.size());
+                logger.d("%d sections searched out of %d", server.movieSectionsSearched, server.movieSections.size());
                 if (server.movieSections.size() == server.movieSectionsSearched) {
                   serversSearched++;
                   if (serversSearched == plexmediaServers.size()) {
@@ -1140,18 +1142,18 @@ public class PlexSearchService extends Service {
 	}
 
 	private void onMovieSearchFinished(String queryTerm) {
-		Logger.d("Done searching! Have movies: %d", videos.size());
+		logger.d("Done searching! Have movies: %d", videos.size());
 
 		if(videos.size() == 1) {
-			Logger.d("Chosen video: %s", videos.get(0).title);
+			logger.d("Chosen video: %s", videos.get(0).title);
       fetchAndPlayMedia(videos.get(0));
 		} else if(videos.size() > 1) {
 			// We found more than one match, but let's see if any of them are an exact match
 			Boolean exactMatch = false;
 			for(int i=0;i<videos.size();i++) {
-				Logger.d("Looking at video %s", videos.get(i).title);
+				logger.d("Looking at video %s", videos.get(i).title);
 				if(videos.get(i).title.toLowerCase().equals(queryTerm.toLowerCase())) {
-					Logger.d("found exact match!");
+					logger.d("found exact match!");
 					exactMatch = true;
           fetchAndPlayMedia(videos.get(i));
 					break;
@@ -1165,7 +1167,7 @@ public class PlexSearchService extends Service {
 				return;
 			}
 		} else {
-			Logger.d("Didn't find a video");
+			logger.d("Didn't find a video");
 			// Let's also support using this syntax to play the next episode in a tv show. Probably will want to use a different error message if nothing is found, though.
 			doNextEpisodeSearch(queryTerm, true);
 		}
@@ -1190,7 +1192,7 @@ public class PlexSearchService extends Service {
   // fetch the specific media element by its key. This prevents the need to add new missing fields to the media
   //
   private void fetchAndPlayMedia(final PlexMedia media) {
-    Logger.d("fetchAndPlayMedia: %s", media.title);
+    logger.d("fetchAndPlayMedia: %s", media.title);
     PlexHttpClient.get(media.server, media.key, new PlexHttpMediaContainerHandler() {
       @Override
       public void onSuccess(MediaContainer mediaContainer) {
@@ -1201,12 +1203,12 @@ public class PlexSearchService extends Service {
           theMedia = mediaContainer.tracks.get(0);
         if (theMedia != null) {
           theMedia.server = media.server;
-          Logger.d("fetchAndPlayMedia, set server to %s", theMedia.server);
+          logger.d("fetchAndPlayMedia, set server to %s", theMedia.server);
           playMedia(theMedia);
           onActionFinished(WearConstants.SPEECH_QUERY_RESULT, false, theMedia);
         } else {
           // TODO: Handle failure
-          Logger.d("Failed!");
+          logger.d("Failed!");
         }
       }
 
@@ -1239,14 +1241,14 @@ public class PlexSearchService extends Service {
 	}
 
   private void playAllFromArtist(final PlexDirectory artist) {
-    Logger.d("Playing all tracks from %s", artist.title);
+    logger.d("Playing all tracks from %s", artist.title);
     artist.server.findServerConnection(new ActiveConnectionHandler() {
       @Override
       public void onSuccess(final Connection connection) {
         PlexHttpClient.createArtistPlayQueue(connection, artist, new PlexPlayQueueHandler() {
           @Override
           public void onSuccess(MediaContainer mediaContainer) {
-            Logger.d("got play queue: %s", mediaContainer.playQueueID);
+            logger.d("got play queue: %s", mediaContainer.playQueueID);
             tracks = mediaContainer.tracks;
             if (tracks.size() > 0) {
               for(PlexTrack track : mediaContainer.tracks) {
@@ -1267,7 +1269,7 @@ public class PlexSearchService extends Service {
   }
 
   private int getOffset(PlexMedia media) {
-    Logger.d("getting offset, mediaoffset: %s", media.viewOffset);
+    logger.d("getting offset, mediaoffset: %s", media.viewOffset);
     if((VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.RESUME, false) || resumePlayback) && media.viewOffset != null)
       return Integer.parseInt(media.viewOffset) / 1000;
     else
@@ -1325,7 +1327,7 @@ public class PlexSearchService extends Service {
         }
       }
     }
-    Logger.d("After fetching images for first track, we will fetch %d more images", list.size());
+    logger.d("After fetching images for first track, we will fetch %d more images", list.size());
 
     final PlexMedia.IMAGE_KEY notificationImageKey = firstMedia.isMusic() ? PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB_MUSIC : PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB;
     final PlexMedia.IMAGE_KEY notificationImageKeyBig = firstMedia.isMusic() ? PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB_MUSIC_BIG : PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB_BIG;
@@ -1450,7 +1452,7 @@ public class PlexSearchService extends Service {
             }
           };
 
-          Logger.d("%s is show: %s", firstVideo.getTitle(), firstVideo.isShow());
+          logger.d("%s is show: %s", firstVideo.getTitle(), firstVideo.isShow());
           String background = firstVideo.isShow() ? firstVideo.grandparentArt : firstVideo.art;
           String thumb = firstVideo.isShow() ? firstVideo.grandparentThumb : firstVideo.thumb;
           if(background != null) {
@@ -1489,7 +1491,7 @@ public class PlexSearchService extends Service {
       } else
         playLocalMedia(media, transientToken, mediaContainer);
     } else if(client.isCastClient) {
-      Logger.d("num videos/tracks: %d", media instanceof PlexTrack ? mediaContainer.tracks.size() : mediaContainer.videos.size());
+      logger.d("num videos/tracks: %d", media instanceof PlexTrack ? mediaContainer.tracks.size() : mediaContainer.videos.size());
       Runnable sendCast = new Runnable() {
         @Override
         public void run() {
@@ -1510,7 +1512,7 @@ public class PlexSearchService extends Service {
     } else {
       QueryString qs = VoiceControlForPlexApplication.getPlaybackQueryString(media, mediaContainer, connection, transientToken, album, resumePlayback);
 
-      Logger.d("Resume playback: %s, qs: %s", resumePlayback, qs);
+      logger.d("Resume playback: %s, qs: %s", resumePlayback, qs);
       PlexHttpClient.get(String.format("http://%s:%s", client.address, client.port), String.format("player/playback/playMedia?%s", qs), new PlexHttpResponseHandler() {
         @Override
         public void onSuccess(PlexResponse r) {
@@ -1525,7 +1527,7 @@ public class PlexSearchService extends Service {
 					if (r.code != 200) {
 						passed = false;
 					}
-          Logger.d("Playback response: %s", r.code);
+          logger.d("Playback response: %s", r.code);
           if (passed) {
             videoPlayed = true;
             if(!fromGoogleNow || VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.GOOGLE_NOW_LAUNCH_NOW_PLAYING, true))
@@ -1538,7 +1540,7 @@ public class PlexSearchService extends Service {
         @Override
         public void onFailure(Throwable error) {
           feedback.e(String.format(getResources().getString(R.string.couldnt_play_to_client), client.name));
-          Logger.e("Couldn't connect to client %s.", client.name);
+          logger.e("Couldn't connect to client %s.", client.name);
           error.printStackTrace();
         }
       });
@@ -1546,10 +1548,10 @@ public class PlexSearchService extends Service {
   }
 
 	private void createPlayQueueAndPlayMedia(final PlexMedia media, final PlexDirectory album, final String transientToken) {
-		Logger.d("Playing media: %s", media.title);
-		Logger.d("Client: %s", client);
+		logger.d("Playing media: %s", media.title);
+		logger.d("Client: %s", client);
 
-    Logger.d("currentNetworkState: %s", currentNetworkState);
+    logger.d("currentNetworkState: %s", currentNetworkState);
     if(currentNetworkState == MainActivity.NetworkState.MOBILE && !client.isLocalClient) {
       media.server.localPlay(media, resumePlayback, transientToken);
     } else if(currentNetworkState == MainActivity.NetworkState.WIFI || client.isLocalClient) {
@@ -1561,13 +1563,13 @@ public class PlexSearchService extends Service {
             PlexHttpClient.createPlayQueue(connection, media, resumePlayback, album != null ? album.ratingKey : media.ratingKey, transientToken, new PlexPlayQueueHandler() {
               @Override
               public void onSuccess(MediaContainer mediaContainer) {
-                Logger.d("Play queue id: %s", mediaContainer.playQueueID);
+                logger.d("Play queue id: %s", mediaContainer.playQueueID);
                 playMedia(media, connection, album, transientToken, mediaContainer);
               }
             });
           } catch (Exception e) {
             feedback.e(getResources().getString(R.string.got_error), e.getMessage());
-            Logger.e("Exception trying to play video: %s", e.toString());
+            logger.e("Exception trying to play video: %s", e.toString());
             e.printStackTrace();
           }
         }
@@ -1581,7 +1583,7 @@ public class PlexSearchService extends Service {
 	}
 
 	private void showPlayingMedia(final PlexMedia media, final MediaContainer mediaContainer) {
-    Logger.d("[PlexSearchService] nowPlayingMedia: %s", media.title);
+    logger.d("[PlexSearchService] nowPlayingMedia: %s", media.title);
 
     preCachePlayerImages(media, mediaContainer.tracks, new Runnable() {
       @Override
@@ -1607,7 +1609,7 @@ public class PlexSearchService extends Service {
 		feedback.m(getString(R.string.searching_for), queryTerm);
 		serversSearched = 0;
 		for(final PlexServer server : plexmediaServers.values()) {
-      Logger.d("Searching (for next episode) %s for %s", server.name, queryTerm);
+      logger.d("Searching (for next episode) %s for %s", server.name, queryTerm);
 			server.findServerConnection(new ActiveConnectionHandler() {
 				@Override
 				public void onSuccess(Connection connection) {
@@ -1633,7 +1635,7 @@ public class PlexSearchService extends Service {
 										video.showTitle = video.grandparentTitle;
                     video.parentArt = mc.art;
 										videos.add(video);
-										Logger.d("ADDING " + video.grandparentTitle);
+										logger.d("ADDING " + video.grandparentTitle);
 									}
 								}
 
@@ -1702,16 +1704,16 @@ public class PlexSearchService extends Service {
       return;
     }
 		feedback.m(getString(R.string.searching_for), queryTerm);
-		Logger.d("doLatestEpisodeSearch: %s", queryTerm);
+		logger.d("doLatestEpisodeSearch: %s", queryTerm);
 		serversSearched = 0;
 		for(final PlexServer server : plexmediaServers.values()) {
 			server.findServerConnection(new ActiveConnectionHandler() {
 				@Override
 				public void onSuccess(Connection connection) {
 					server.showSectionsSearched = 0;
-					Logger.d("Searching server %s", server.name);
+					logger.d("Searching server %s", server.name);
 					if (server.tvSections.size() == 0) {
-						Logger.d(server.name + " has no tv sections");
+						logger.d(server.name + " has no tv sections");
 						serversSearched++;
 						if (serversSearched == plexmediaServers.size()) {
 							doLatestEpisode(queryTerm);
@@ -1729,7 +1731,7 @@ public class PlexSearchService extends Service {
 									if (compareTitle(show.title, queryTerm)) {
 										show.server = server;
 										shows.add(show);
-										Logger.d("Adding %s", show.title);
+										logger.d("Adding %s", show.title);
 									}
 								}
 
@@ -1807,7 +1809,7 @@ public class PlexSearchService extends Service {
 					}
 				}
 				latestVideo.server = show.server;
-				Logger.d("Found video: %s", latestVideo.airDate());
+				logger.d("Found video: %s", latestVideo.airDate());
 				if(latestVideo != null) {
 					fetchAndPlayMedia(latestVideo);
 				} else {
@@ -1852,14 +1854,14 @@ public class PlexSearchService extends Service {
 							public void onSuccess(MediaContainer mc) {
 								server.showSectionsSearched++;
 								for (int j = 0; j < mc.videos.size(); j++) {
-									Logger.d("Show: %s", mc.videos.get(j).grandparentTitle);
+									logger.d("Show: %s", mc.videos.get(j).grandparentTitle);
 									PlexVideo video = mc.videos.get(j);
 									if (compareTitle(video.grandparentTitle, showSpecified)) {
 										video.server = server;
 										video.thumb = video.grandparentThumb;
 										video.showTitle = video.grandparentTitle;
                     video.parentArt = mc.art;
-										Logger.d("Adding %s - %s.", video.showTitle, video.title);
+										logger.d("Adding %s - %s.", video.showTitle, video.title);
 										videos.add(video);
 									}
 								}
@@ -1930,16 +1932,16 @@ public class PlexSearchService extends Service {
       return;
     }
 		feedback.m(getString(R.string.searching_for_show_season_episode), queryTerm, season, episode);
-		Logger.d("doShowSearch: %s s%s e%s", queryTerm, season, episode);
+		logger.d("doShowSearch: %s s%s e%s", queryTerm, season, episode);
 		serversSearched = 0;
 		for(final PlexServer server : plexmediaServers.values()) {
 			server.findServerConnection(new ActiveConnectionHandler() {
 				@Override
 				public void onSuccess(Connection connection) {
 					server.showSectionsSearched = 0;
-					Logger.d("Searching server %s", server.name);
+					logger.d("Searching server %s", server.name);
 					if (server.tvSections.size() == 0) {
-						Logger.d("%s has no tv sections", server.name);
+						logger.d("%s has no tv sections", server.name);
 						serversSearched++;
 						if (serversSearched == plexmediaServers.size()) {
 							doEpisodeSearch(queryTerm, season, episode);
@@ -1984,7 +1986,7 @@ public class PlexSearchService extends Service {
 	}
 
 	private void doEpisodeSearch(String queryTerm, final String season, final String episode) {
-		Logger.d("Found shows: %d", shows.size());
+		logger.d("Found shows: %d", shows.size());
 		serversSearched = 0;
 		for(final PlexServer server : plexmediaServers.values()) {
 			if(shows.size() == 0 && serversSearched == plexmediaServers.size()) {
@@ -1995,7 +1997,7 @@ public class PlexSearchService extends Service {
 					startup();
 			} else if(shows.size() == 1) {
 				final PlexDirectory show = shows.get(0);
-				Logger.d("Show key: %s", show.key);
+				logger.d("Show key: %s", show.key);
 				PlexHttpClient.get(server, show.key, new PlexHttpMediaContainerHandler()
 				{
 					@Override
@@ -2005,7 +2007,7 @@ public class PlexSearchService extends Service {
 						for(int i=0;i<mc.directories.size();i++) {
 							PlexDirectory directory = mc.directories.get(i);
 							if(directory.title.equals("Season " + season)) {
-								Logger.d("Found season %s: %s.", season, directory.key);
+								logger.d("Found season %s: %s.", season, directory.key);
 								foundSeason = directory;
 								break;
 							}
@@ -2024,10 +2026,10 @@ public class PlexSearchService extends Service {
 								public void onSuccess(MediaContainer mc)
 								{
 									Boolean foundEpisode = false;
-									Logger.d("Looking for episode %s", episode);
-									Logger.d("videoPlayed: %s", videoPlayed);
+									logger.d("Looking for episode %s", episode);
+									logger.d("videoPlayed: %s", videoPlayed);
 									for(int i=0;i<mc.videos.size();i++) {
-										Logger.d("Looking at episode %s", mc.videos.get(i).index);
+										logger.d("Looking at episode %s", mc.videos.get(i).index);
 										if(mc.videos.get(i).index.equals(episode) && !videoPlayed) {
 											serversSearched++;
 											PlexVideo video = mc.videos.get(i);
@@ -2037,7 +2039,7 @@ public class PlexSearchService extends Service {
 											break;
 										}
 									}
-									Logger.d("foundEpisode = %s", foundEpisode);
+									logger.d("foundEpisode = %s", foundEpisode);
 									if(foundEpisode == false && serversSearched == plexmediaServers.size() && !videoPlayed) {
 										serversSearched++;
 										feedback.e(getResources().getString(R.string.couldnt_find_episode));
@@ -2073,9 +2075,9 @@ public class PlexSearchService extends Service {
       feedback.m(getString(R.string.searching_for_album), album, artist);
     else
       feedback.m(getString(R.string.searching_for_the_album), album);
-		Logger.d("Searching for album %s by %s.", album, artist);
+		logger.d("Searching for album %s by %s.", album, artist);
 		serversSearched = 0;
-		Logger.d("Servers: %d", plexmediaServers.size());
+		logger.d("Servers: %d", plexmediaServers.size());
 		for(final PlexServer server : plexmediaServers.values()) {
 			server.findServerConnection(new ActiveConnectionHandler() {
 				@Override
@@ -2106,10 +2108,10 @@ public class PlexSearchService extends Service {
 								server.musicSectionsSearched++;
 								for(int j=0;j<mc.directories.size();j++) {
 									PlexDirectory thisAlbum = mc.directories.get(j);
-									Logger.d("Album: %s by %s.", thisAlbum.title, thisAlbum.parentTitle);
+									logger.d("Album: %s by %s.", thisAlbum.title, thisAlbum.parentTitle);
 									if(compareTitle(thisAlbum.title, album)) {
                     if(compareTitle(thisAlbum.parentTitle, artist) || artist.equals("")) {
-                      Logger.d("adding album");
+                      logger.d("adding album");
                       thisAlbum.server = server;
                       albums.add(thisAlbum);
                     }
@@ -2119,7 +2121,7 @@ public class PlexSearchService extends Service {
 								if(server.musicSections.size() == server.musicSectionsSearched) {
 									serversSearched++;
 									if(serversSearched == plexmediaServers.size()) {
-										Logger.d("found %d albums to play.", albums.size());
+										logger.d("found %d albums to play.", albums.size());
 										if(albums.size() == 1) {
 											playAlbum(albums.get(0));
 										} else {
@@ -2127,7 +2129,7 @@ public class PlexSearchService extends Service {
                       List<PlexDirectory> exactMatchAlbum = new ArrayList<>();
 											for(int k=0;k<albums.size();k++) {
 												if(albums.get(k).title.toLowerCase().equals(album.toLowerCase())) {
-                          Logger.d("Found an exact match : %s", album);
+                          logger.d("Found an exact match : %s", album);
 													exactMatch = true;
                           exactMatchAlbum.add(albums.get(k));
 												}
@@ -2177,7 +2179,7 @@ public class PlexSearchService extends Service {
 	private void searchForSong(final String artist, final String track) {
 		serversSearched = 0;
 		feedback.m(getString(R.string.searching_for_album), track, artist);
-		Logger.d("Servers: %d", plexmediaServers.size());
+		logger.d("Servers: %d", plexmediaServers.size());
 		for(final PlexServer server : plexmediaServers.values()) {
 			server.findServerConnection(new ActiveConnectionHandler() {
 				@Override
@@ -2208,7 +2210,7 @@ public class PlexSearchService extends Service {
 								server.musicSectionsSearched++;
 								for(int j=0;j<mc.tracks.size();j++) {
 									PlexTrack thisTrack = mc.tracks.get(j);
-									Logger.d("Track: %s by %s.", thisTrack.title, thisTrack.getArtist());
+									logger.d("Track: %s by %s.", thisTrack.title, thisTrack.getArtist());
 									if(compareTitle(thisTrack.getArtist(), artist)) {
 										thisTrack.server = server;
 										tracks.add(thisTrack);
@@ -2218,7 +2220,7 @@ public class PlexSearchService extends Service {
 								if(server.musicSections.size() == server.musicSectionsSearched) {
 									serversSearched++;
 									if(serversSearched == plexmediaServers.size()) {
-										Logger.d("found %d tracks to play.", tracks.size());
+										logger.d("found %d tracks to play.", tracks.size());
 										if(tracks.size() == 1) {
                       fetchAndPlayMedia(tracks.get(0));
 										} else {
@@ -2272,7 +2274,7 @@ public class PlexSearchService extends Service {
 	private void searchForArtist(final String artist) {
 		serversSearched = 0;
 		feedback.m(getString(R.string.searching_for_artist), artist);
-		Logger.d("Servers: %d", plexmediaServers.size());
+		logger.d("Servers: %d", plexmediaServers.size());
 		for(final PlexServer server : plexmediaServers.values()) {
 			server.findServerConnection(new ActiveConnectionHandler() {
 				@Override
@@ -2306,7 +2308,7 @@ public class PlexSearchService extends Service {
                   PlexDirectory thisArtist = mc.directories.get(j);
 //									thisTrack.artist = thisTrack.grandparentTitle;
 //									thisTrack.album = thisTrack.parentTitle;
-									Logger.d("Artist: %s.", thisArtist.title);
+									logger.d("Artist: %s.", thisArtist.title);
 									if(compareTitle(thisArtist.title, artist)) {
                     thisArtist.server = server;
                     theFoundArtist = thisArtist;
@@ -2358,7 +2360,7 @@ public class PlexSearchService extends Service {
 	}
 
 	private void playAlbum(final PlexDirectory album) {
-    Logger.d("[PlexSearchService] playing album %s", album.key);
+    logger.d("[PlexSearchService] playing album %s", album.key);
 		PlexHttpClient.get(album.server, album.key, new PlexHttpMediaContainerHandler()
 		{
 			@Override
@@ -2381,7 +2383,7 @@ public class PlexSearchService extends Service {
           }
           playMedia(tracks.get(0), album);
 				} else {
-					Logger.d("Didn't find any tracks");
+					logger.d("Didn't find any tracks");
 					if(queries.size() > 0)
 						startup();
 					else
@@ -2412,16 +2414,16 @@ public class PlexSearchService extends Service {
 
 		public void onRouteAdded(MediaRouter router, MediaRouter.RouteInfo route)
 		{
-			Logger.d("onRouteAdded: %s", route);
+			logger.d("onRouteAdded: %s", route);
 		}
 		@Override
 		public void onRouteSelected(MediaRouter router, MediaRouter.RouteInfo route) {
-			Logger.d("onRouteSelected: %s", route);
+			logger.d("onRouteSelected: %s", route);
 //			MainActivity.this.onRouteSelected(route);
 		}
 		@Override
 		public void onRouteUnselected(MediaRouter router, MediaRouter.RouteInfo route) {
-			Logger.d("onRouteUnselected: %s", route);
+			logger.d("onRouteUnselected: %s", route);
 //			MainActivity.this.onRouteUnselected(route);
 		}
 	}
@@ -2456,7 +2458,7 @@ public class PlexSearchService extends Service {
 													});
 
 				} catch (Exception e) {
-					Logger.d("Failed to launch application", e);
+					logger.d("Failed to launch application", e);
 				}
 			}
 		}
@@ -2468,7 +2470,7 @@ public class PlexSearchService extends Service {
 	}
 
   private void sendClientScanIntent() {
-    Logger.d("Scanning for clients");
+    logger.d("Scanning for clients");
     Intent scannerIntent = new Intent(PlexSearchService.this, PlexScannerService.class);
     scannerIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
     scannerIntent.putExtra(PlexScannerService.CLASS, PlexSearchService.class);
@@ -2478,7 +2480,7 @@ public class PlexSearchService extends Service {
 
   private void onActionFinished(String action, boolean error, PlexMedia media) {
     if(fromWear) {
-      Logger.d("[PlexSearchService] onActionFinished: %s", action);
+      logger.d("[PlexSearchService] onActionFinished: %s", action);
 
       DataMap dataMap = new DataMap();
       dataMap.putBoolean(WearConstants.SPEECH_QUERY_RESULT, !error);

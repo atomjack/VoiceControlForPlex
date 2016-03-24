@@ -6,11 +6,11 @@ import android.content.Context;
 import android.content.Intent;
 
 import com.atomjack.shared.Logger;
-import com.atomjack.vcfp.services.GDMService;
 import com.atomjack.vcfp.activities.MainActivity;
 import com.atomjack.vcfp.model.Connection;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexServer;
+import com.atomjack.vcfp.services.GDMService;
 import com.atomjack.vcfp.services.PlexScannerService;
 
 import java.util.ArrayList;

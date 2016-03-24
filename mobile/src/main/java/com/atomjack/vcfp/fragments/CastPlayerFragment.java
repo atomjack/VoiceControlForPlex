@@ -5,7 +5,6 @@ import android.support.annotation.Nullable;
 import android.view.View;
 import android.widget.SeekBar;
 
-import com.atomjack.shared.Logger;
 import com.atomjack.vcfp.CastPlayerManager;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.model.PlexMedia;
@@ -45,7 +44,7 @@ public class CastPlayerFragment extends PlayerFragment {
 
   @Override
   protected void doForward() {
-    Logger.d("Doing forward, position: %d", position);
+    logger.d("Doing forward, position: %d", position);
     if(position > -1) {
       nowPlayingMedia.viewOffset = Integer.toString((position * 1000) + 30000);
       castPlayerManager.seekTo(Integer.parseInt(nowPlayingMedia.viewOffset) / 1000);
@@ -83,7 +82,7 @@ public class CastPlayerFragment extends PlayerFragment {
 
   @Override
   public void onStopTrackingTouch(SeekBar seekBar) {
-    Logger.d("stopped changing progress: %d", seekBar.getProgress());
+    logger.d("stopped changing progress: %d", seekBar.getProgress());
     try {
       nowPlayingMedia.viewOffset = Integer.toString(seekBar.getProgress() * 1000);
       castPlayerManager.seekTo(Integer.parseInt(nowPlayingMedia.viewOffset) / 1000);

@@ -28,6 +28,7 @@ import android.widget.TextView;
 
 import com.atomjack.shared.Intent;
 import com.atomjack.shared.Logger;
+import com.atomjack.shared.NewLogger;
 import com.atomjack.shared.PlayerState;
 import com.atomjack.shared.Preferences;
 import com.atomjack.shared.WearConstants;
@@ -63,6 +64,7 @@ import cz.fhucho.android.util.SimpleDiskCache;
 
 public abstract class PlayerFragment extends Fragment
         implements SeekBar.OnSeekBarChangeListener {
+  protected NewLogger logger;
   protected PlexMedia nowPlayingMedia;
   protected ArrayList<? extends PlexMedia> nowPlayingPlaylist = new ArrayList<>();
   protected int currentMediaIndex = 0; // the index of the currently playing media in the playlist
@@ -113,7 +115,7 @@ public abstract class PlayerFragment extends Fragment
   @Override
   public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
     if(savedInstanceState != null) {
-      Logger.d("[PlayerFragment] onSavedInstanceState is not null");
+      logger.d("onSavedInstanceState is not null");
       nowPlayingMedia = savedInstanceState.getParcelable(Intent.EXTRA_MEDIA);
       nowPlayingPlaylist = savedInstanceState.getParcelableArrayList(Intent.EXTRA_PLAYLIST);
 //      mediaContainer = savedInstanceState.getParcelable(Intent.EXTRA_ALBUM);
@@ -121,9 +123,9 @@ public abstract class PlayerFragment extends Fragment
       layout = savedInstanceState.getInt(Intent.EXTRA_LAYOUT);
       client = savedInstanceState.getParcelable(Intent.EXTRA_CLIENT);
       currentState = (PlayerState) savedInstanceState.getSerializable(Intent.EXTRA_CURRENT_STATE);
-      Logger.d("got current state: %s", currentState);
+      logger.d("got current state: %s", currentState);
     }
-    Logger.d("[PlayerFragment] layout: %d", layout);
+    logger.d("layout: %d", layout);
 
     if(layout == -1) { // Layout can't be found, so alert activity something went wrong so it closes fragment out
       mainView = inflater.inflate(R.layout.player_fragment, container, false);
@@ -164,6 +166,7 @@ public abstract class PlayerFragment extends Fragment
 
   public PlayerFragment() {
     simpleDiskCache = VoiceControlForPlexApplication.getInstance().mSimpleDiskCache;
+    logger = new NewLogger(this);
   }
 
   public void init(int layout, PlexClient client, PlexMedia media, ArrayList<? extends PlexMedia> playlist, boolean fromWear) {
@@ -171,7 +174,7 @@ public abstract class PlayerFragment extends Fragment
     this.client = client;
     nowPlayingMedia = media;
     nowPlayingPlaylist = playlist == null ? new ArrayList<PlexMedia>() : playlist;
-    Logger.d("Got %d items in playlist", playlist.size());
+    logger.d("Got %d items in playlist", playlist.size());
     this.fromWear = fromWear;
     currentMediaIndex = 0;
   }
@@ -254,7 +257,7 @@ public abstract class PlayerFragment extends Fragment
       PlexTrack track = (PlexTrack)nowPlayingMedia;
 
       TextView artist = (TextView)mainView.findViewById(R.id.nowPlayingArtist);
-      Logger.d("Setting artist to %s", track.grandparentTitle);
+      logger.d("Setting artist to %s", track.grandparentTitle);
       artist.setText(track.grandparentTitle);
       TextView album = (TextView)mainView.findViewById(R.id.nowPlayingAlbum);
       album.setText(track.parentTitle);
@@ -269,11 +272,11 @@ public abstract class PlayerFragment extends Fragment
       mainView.findViewById(R.id.mediaOptionsButton).setVisibility(View.GONE);
     }
 
-    Logger.d("[PlayerFragment] Setting thumb in showNowPlaying");
+    logger.d("Setting thumb in showNowPlaying");
     attachUIElements();
 
     final FrameLayout nowPlayingPosterContainer = (FrameLayout)mainView.findViewById(R.id.nowPlayingPosterContainer);
-    Logger.d("nowPlayingPosterContainer: %s", nowPlayingPosterContainer);
+    logger.d("nowPlayingPosterContainer: %s", nowPlayingPosterContainer);
     if(nowPlayingPosterContainer != null) {
       if(screenWidth != -1) {
         setThumb(screenWidth, screenHeight);
@@ -292,7 +295,7 @@ public abstract class PlayerFragment extends Fragment
               VoiceControlForPlexApplication.getInstance().prefs.put(prefs[0], screenWidth);
               VoiceControlForPlexApplication.getInstance().prefs.put(prefs[1], screenHeight);
             }
-            Logger.d("Found dimensions: %d/%d", screenWidth, screenHeight);
+            logger.d("Found dimensions: %d/%d", screenWidth, screenHeight);
             setThumb(screenWidth, screenHeight);
           }
         });
@@ -302,7 +305,7 @@ public abstract class PlayerFragment extends Fragment
 
   @Override
   public void onResume() {
-    Logger.d("[PlayerFragment] onResume");
+    logger.d("onResume");
     if(doingMic) {
       doPlay();
       doingMic = false;
@@ -311,7 +314,7 @@ public abstract class PlayerFragment extends Fragment
   }
 
   private void setThumb(final byte[] bytes) {
-    Logger.d("Setting thumb with %d bytes", bytes.length);
+    logger.d("Setting thumb with %d bytes", bytes.length);
 
     if(getActivity() != null) {
       getActivity().runOnUiThread(new Runnable() {
@@ -327,11 +330,11 @@ public abstract class PlayerFragment extends Fragment
   protected void setThumb(int maxWidth, int maxHeight) {
     String thumb = nowPlayingMedia.thumb;
 
-    Logger.d("setThumb: %s", thumb);
+    logger.d("setThumb: %s", thumb);
     if(nowPlayingMedia instanceof PlexVideo) {
       PlexVideo video = (PlexVideo)nowPlayingMedia;
       thumb = video.isMovie() || video.isClip() ? video.thumb : video.grandparentThumb;
-      Logger.d("orientation: %s, type: %s", VoiceControlForPlexApplication.getOrientation(), video.type);
+      logger.d("orientation: %s, type: %s", VoiceControlForPlexApplication.getOrientation(), video.type);
       if(video.isClip()) {
 
       }
@@ -350,7 +353,7 @@ public abstract class PlayerFragment extends Fragment
     if(thumb != null && thumb.equals("")) {
       thumb = null;
     }
-    Logger.d("thumb: %s", thumb);
+    logger.d("thumb: %s", thumb);
 
     SimpleDiskCache.InputStreamEntry thumbEntry = null;
     try {
@@ -359,12 +362,12 @@ public abstract class PlayerFragment extends Fragment
       ex.printStackTrace();
     }
     if (thumbEntry != null) {
-      Logger.d("Using cached thumb: %s", nowPlayingMedia.getCacheKey(thumb));
+      logger.d("Using cached thumb: %s", nowPlayingMedia.getCacheKey(thumb));
       try {
         setThumb(IOUtils.toByteArray(thumbEntry.getInputStream()));
       } catch (Exception e) { e.printStackTrace(); }
     } else {
-      Logger.d("Downloading thumb");
+      logger.d("Downloading thumb");
       getThumb(maxWidth, maxHeight, thumb, nowPlayingMedia);
     }
   }
@@ -378,7 +381,7 @@ public abstract class PlayerFragment extends Fragment
         simpleDiskCache.put(media.getCacheKey(media.key), iss);
         setThumb(IOUtils.toByteArray(iss));
       } catch (IOException e) {
-        Logger.d("Exception getting/saving thumb");
+        logger.d("Exception getting/saving thumb");
         e.printStackTrace();
       }
     } else {
@@ -387,7 +390,7 @@ public abstract class PlayerFragment extends Fragment
         public void onSuccess(Connection connection) {
           String path = String.format("/photo/:/transcode?width=%d&height=%d&url=%s", maxWidth, maxHeight, Uri.encode(String.format("http://127.0.0.1:32400%s", thumb)));
           String url = media.server.buildURL(connection, path);
-          Logger.d("thumb url: %s", url);
+          logger.d("thumb url: %s", url);
 
           PlexHttpClient.getThumb(url, new InputStreamHandler() {
             @Override
@@ -396,7 +399,7 @@ public abstract class PlayerFragment extends Fragment
                 simpleDiskCache.put(media.getCacheKey(thumb), is);
                 setThumb(maxWidth, maxHeight);
               } catch (Exception e) {
-                Logger.d("Exception getting/saving thumb");
+                logger.d("Exception getting/saving thumb");
                 e.printStackTrace();
               }
             }
@@ -479,7 +482,7 @@ public abstract class PlayerFragment extends Fragment
           break;
         index++;
       }
-      Logger.d("Index: %d", index);
+      logger.d("Index: %d", index);
       if(index == 0)
         previousButton.setAlpha(0.4f);
       else if(index+1 == nowPlayingPlaylist.size())
@@ -538,7 +541,7 @@ public abstract class PlayerFragment extends Fragment
 
     @Override
     public boolean onSingleTapUp(MotionEvent e) {
-      Logger.d("Single tap.");
+      logger.d("Single tap.");
       if(currentState == PlayerState.PLAYING)
         doPause();
       else
@@ -556,10 +559,10 @@ public abstract class PlayerFragment extends Fragment
         if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(velocityX) >= SWIPE_SPEED_THRESHOLD) {
 
           if (diffX > 0) {
-            Logger.d("Doing forward via fling right");
+            logger.d("Doing forward via fling right");
             doForward();
           } else {
-            Logger.d("Doing back via fling left");
+            logger.d("Doing back via fling left");
             doRewind();
           }
         }
@@ -615,7 +618,7 @@ public abstract class PlayerFragment extends Fragment
   }
 
   protected void doMediaOptions() {
-    Logger.d("[PlayerFragment] doMediaOptions!!!");
+    logger.d("doMediaOptions!!!");
 
     if(nowPlayingMedia == null) {
       return;
@@ -629,7 +632,7 @@ public abstract class PlayerFragment extends Fragment
   }
 
   protected int getOffset(PlexMedia media) {
-    Logger.d("getting offset, mediaoffset: %s", media.viewOffset);
+    logger.d("getting offset, mediaoffset: %s", media.viewOffset);
     if((VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.RESUME, false) || resumePlayback) && media.viewOffset != null)
       return Integer.parseInt(media.viewOffset) / 1000;
     else
@@ -665,12 +668,12 @@ public abstract class PlayerFragment extends Fragment
   public void setPosition(int position) {
     if(!isSeeking) {
 //      if(position != this.position)
-//        Logger.d("[PlayerFragment] setting position to %d", position);
+//        logger.d("setting position to %d", position);
       this.position = position;
       if (seekBar != null)
         seekBar.setProgress(position);
       else
-        Logger.d("Seekbar is null");
+        logger.d("Seekbar is null");
       if (currentTimeDisplay != null)
         setCurrentTimeDisplay(position);
     }
