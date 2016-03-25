@@ -17,7 +17,8 @@ public class Intent {
 
   public final static String ACTION_PLAY_LOCAL = "com.atomjack.vcfp.intent.action_play_local";
   public static final String ACTION_MIC_RESPONSE = "com.vcfp.atomjack.intent.mic_response";
-  public static final String ACTION_MIC_COMMAND = "com.vcfp.atomjack.intent.mic_command";
+  public static final String ACTION_VIDEO_COMMAND = "com.vcfp.atomjack.intent.video_command";
+  public static final String ACTION_VIDEO_DO_PLAYBACK = "com.vcfp.atomjack.intent.video_do_playback";
 
   public final static String SCAN_TYPE = "com.atomjack.vcfp.intent.scan_type";
   public final static String SCAN_TYPE_CLIENT = "com.atomjack.vcfp.intent.scan_type_client";

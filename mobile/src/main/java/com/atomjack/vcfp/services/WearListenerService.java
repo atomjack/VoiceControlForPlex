@@ -44,6 +44,7 @@ public class WearListenerService extends WearableListenerService {
   public void onMessageReceived(MessageEvent messageEvent) {
     String message = messageEvent.getPath() == null ? "" : messageEvent.getPath();
     Logger.d("[WearListenerService] onMessageReceived: %s", message);
+
     if(!VoiceControlForPlexApplication.getInstance().getInventoryQueried() && !VoiceControlForPlexApplication.getInstance().hasWear() && message.equals(WearConstants.GET_PLAYBACK_STATE)) {
       // This message was received before we've had a chance to check with Google on whether or not Wear support
       // has been purchased. After a delay of 500ms, send a message back to the Wearable to get playback state again.
@@ -82,14 +83,14 @@ public class WearListenerService extends WearableListenerService {
       PlexSubscription plexSubscription = VoiceControlForPlexApplication.getInstance().plexSubscription;
       CastPlayerManager castPlayerManager = VoiceControlForPlexApplication.getInstance().castPlayerManager;
       PlexClient client = new PlexClient();
-      if (plexSubscription.isSubscribed()) {
+      if(VoiceControlForPlexApplication.getInstance().localClientSubscription.subscribed) {
+        client = PlexClient.getLocalPlaybackClient();
+      } else if (plexSubscription.isSubscribed()) {
         client = plexSubscription.mClient;
 
       } else if (castPlayerManager.isSubscribed()) {
         client = castPlayerManager.mClient;
       }
-
-
       if(message.equals(WearConstants.SPEECH_QUERY)) {
         Logger.d("[WearListenerService] message received: %s", receivedDataMap);
 
@@ -103,7 +104,16 @@ public class WearListenerService extends WearableListenerService {
       } else if(message.equals(WearConstants.GET_PLAYBACK_STATE)) {
         Logger.d("[WearListenerService] get playback state");
         dataMap.putBoolean(WearConstants.LAUNCHED, receivedDataMap.getBoolean(WearConstants.LAUNCHED, false));
-        if (plexSubscription.isSubscribed()) {
+        if (VoiceControlForPlexApplication.getInstance().localClientSubscription.subscribed) {
+          PlexMedia media = VoiceControlForPlexApplication.getInstance().localClientSubscription.media;
+          if(media != null && !media.isMusic()) {
+            // video is playing, get current state and send to wear device
+            sendPlayingStatusToWear(media, client, VoiceControlForPlexApplication.getInstance().localClientSubscription.currentState, receivedDataMap);
+          } else if(media == null) {
+            dataMap.putString(WearConstants.PLAYBACK_STATE, PlayerState.STOPPED.name());
+            new SendToDataLayerThread(WearConstants.GET_PLAYBACK_STATE, dataMap, this).start();
+          }
+        } else if (plexSubscription.isSubscribed()) {
           PlayerState currentState = plexSubscription.getCurrentState();
           Logger.d("[WearListenerService] current State: %s", currentState);
 
@@ -113,7 +123,7 @@ public class WearListenerService extends WearableListenerService {
           if(plexSubscription.getNowPlayingMedia() != null) {
             PlexMedia media = plexSubscription.getNowPlayingMedia();
             Logger.d("now playing: %s", plexSubscription.getNowPlayingMedia().title);
-            VoiceControlForPlexApplication.SetWearMediaTitles(dataMap, media);
+            VoiceControlForPlexApplication.setWearMediaTitles(dataMap, media);
             dataMap.putString(WearConstants.MEDIA_TYPE, media.getType());
             VoiceControlForPlexApplication.getInstance().getWearMediaImage(media, new BitmapHandler() {
               @Override
@@ -138,7 +148,7 @@ public class WearListenerService extends WearableListenerService {
 
           if(castPlayerManager.getNowPlayingMedia() != null) {
             Logger.d("now playing: %s", castPlayerManager.getNowPlayingMedia().title);
-            VoiceControlForPlexApplication.SetWearMediaTitles(dataMap, castPlayerManager.getNowPlayingMedia());
+            VoiceControlForPlexApplication.setWearMediaTitles(dataMap, castPlayerManager.getNowPlayingMedia());
             dataMap.putString(WearConstants.MEDIA_TYPE, castPlayerManager.getNowPlayingMedia().getType());
             VoiceControlForPlexApplication.getInstance().getWearMediaImage(castPlayerManager.getNowPlayingMedia(), new BitmapHandler() {
               @Override
@@ -187,7 +197,9 @@ public class WearListenerService extends WearableListenerService {
         }
       } else if(message.equals(WearConstants.ACTION_PAUSE) || message.equals(WearConstants.ACTION_PLAY) || message.equals(WearConstants.ACTION_STOP)) {
         PlexMedia media = null;
-        if(castPlayerManager.isSubscribed())
+        if(client.isLocalClient) {
+          media = VoiceControlForPlexApplication.getInstance().localClientSubscription.media;
+        } else if(castPlayerManager.isSubscribed())
           media = castPlayerManager.getNowPlayingMedia();
         else if(plexSubscription.isSubscribed())
           media = plexSubscription.getNowPlayingMedia();
@@ -211,5 +223,25 @@ public class WearListenerService extends WearableListenerService {
     }
   }
 
+  private void sendPlayingStatusToWear(PlexMedia media, PlexClient client, PlayerState currentState, DataMap receivedDataMap) {
+    final DataMap dataMap = new DataMap();
+    dataMap.putBoolean(WearConstants.LAUNCHED, receivedDataMap.getBoolean(WearConstants.LAUNCHED, false));
+    dataMap.putString(WearConstants.PLAYBACK_STATE, currentState.name());
+    dataMap.putString(WearConstants.CLIENT_NAME, client.name);
 
+    VoiceControlForPlexApplication.setWearMediaTitles(dataMap, media);
+
+    VoiceControlForPlexApplication.getInstance().getWearMediaImage(media, new BitmapHandler() {
+      @Override
+      public void onSuccess(Bitmap bitmap) {
+        DataMap binaryDataMap = new DataMap();
+        binaryDataMap.putAll(dataMap);
+        binaryDataMap.putAsset(WearConstants.IMAGE, VoiceControlForPlexApplication.createAssetFromBitmap(bitmap));
+        binaryDataMap.putString(WearConstants.PLAYBACK_STATE, dataMap.getString(WearConstants.PLAYBACK_STATE));
+        new SendToDataLayerThread(WearConstants.RECEIVE_MEDIA_IMAGE, binaryDataMap, WearListenerService.this).sendDataItem();
+        new SendToDataLayerThread(WearConstants.GET_PLAYBACK_STATE, dataMap, WearListenerService.this).start();
+        Logger.d("[WearListenerService] sent is playing status (%s) to wearable.", dataMap.getString(WearConstants.PLAYBACK_STATE));
+      }
+    });
+  }
 }

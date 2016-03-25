@@ -1,11 +1,14 @@
 package com.atomjack.vcfp.services;
 
+import android.annotation.TargetApi;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.media.AudioManager;
+import android.media.MediaMetadata;
 import android.media.MediaPlayer;
 import android.media.session.MediaSession;
 import android.media.session.PlaybackState;
@@ -20,11 +23,13 @@ import android.support.annotation.Nullable;
 import android.support.v4.media.session.PlaybackStateCompat;
 import android.view.KeyEvent;
 
-import com.atomjack.shared.Logger;
+import com.atomjack.shared.NewLogger;
 import com.atomjack.shared.PlayerState;
+import com.atomjack.vcfp.FetchMediaImageTask;
 import com.atomjack.vcfp.PlexHeaders;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.interfaces.ActiveConnectionHandler;
+import com.atomjack.vcfp.interfaces.BitmapHandler;
 import com.atomjack.vcfp.interfaces.MusicServiceListener;
 import com.atomjack.vcfp.model.Connection;
 import com.atomjack.vcfp.model.PlexClient;
@@ -38,6 +43,7 @@ import java.util.ArrayList;
 public class LocalMusicService extends Service implements
         MediaPlayer.OnPreparedListener, MediaPlayer.OnErrorListener,
         MediaPlayer.OnCompletionListener {
+  private NewLogger logger;
   public static final int MSG_TIME_UPDATE = 0;
 
   private MediaPlayer player;
@@ -52,6 +58,7 @@ public class LocalMusicService extends Service implements
 
   AudioManager audioManager;
   ComponentName remoteControlReceiver;
+  private MediaSession mediaSession;
 
   private long headsetDownTime = 0;
   private long headsetUpTime = 0;
@@ -60,7 +67,8 @@ public class LocalMusicService extends Service implements
   @SuppressWarnings("deprecation")
   public void onCreate() {
     super.onCreate();
-    Logger.d("[LocalMusicService] onCreate");
+    logger = new NewLogger(this);
+    logger.d("onCreate");
     player = new MediaPlayer();
     currentSongIdx = 0;
     handler = new Handler();
@@ -68,18 +76,18 @@ public class LocalMusicService extends Service implements
 
 
     if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-      MediaSession mediaSession = new MediaSession(this, "VCFPRemoteControlReceiver");
+      mediaSession = new MediaSession(this, "VCFPRemoteControlReceiver");
+
       PlaybackState state = new PlaybackState.Builder()
               .setActions(PlaybackStateCompat.ACTION_FAST_FORWARD | PlaybackStateCompat.ACTION_PAUSE | PlaybackStateCompat.ACTION_PLAY | PlaybackStateCompat.ACTION_PLAY_PAUSE | PlaybackStateCompat.ACTION_SKIP_TO_NEXT | PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS | PlaybackStateCompat.ACTION_STOP)
               .setState(PlaybackStateCompat.STATE_PLAYING, 0, 1, SystemClock.elapsedRealtime())
               .build();
       mediaSession.setPlaybackState(state);
 
-
       Intent intent = new Intent(this, RemoteControlReceiver.class);
       PendingIntent pintent = PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
       mediaSession.setMediaButtonReceiver(pintent);
-      mediaSession.setActive(true);
+      mediaSession.setActive(false);
     } else {
       remoteControlReceiver = new ComponentName(getPackageName(), RemoteControlReceiver.class.getName());
       audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
@@ -91,7 +99,7 @@ public class LocalMusicService extends Service implements
 
   @Override
   public int onStartCommand(Intent intent, int flags, int startId) {
-//    Logger.d("[LocalMusicService] onStartCommand: %s", intent.getAction());
+//    logger.d("onStartCommand: %s", intent.getAction());
 
     if(intent.getAction() != null) {
       if (intent.getAction().equals(com.atomjack.shared.Intent.ACTION_PLAY) || intent.getAction().equals(com.atomjack.shared.Intent.ACTION_PAUSE)) {
@@ -130,6 +138,7 @@ public class LocalMusicService extends Service implements
   public void setTrack(PlexTrack t) {
     playlist = null;
     track = t;
+    VoiceControlForPlexApplication.getInstance().localClientSubscription.media = track;
   }
 
   public class MusicBinder extends Binder {
@@ -150,7 +159,8 @@ public class LocalMusicService extends Service implements
     player.reset();
     if(playlist != null)
       track = playlist.get(currentSongIdx);
-    Logger.d("Playing Track: %s", track.getTitle());
+    VoiceControlForPlexApplication.getInstance().localClientSubscription.media = track;
+    logger.d("Playing Track: %s", track.getTitle());
     if(track != null) {
       VoiceControlForPlexApplication.getInstance().setNotification(PlexClient.getLocalPlaybackClient(), currentState, track, playlist);
       track.server.findServerConnection(new ActiveConnectionHandler() {
@@ -162,6 +172,31 @@ public class LocalMusicService extends Service implements
             player.prepareAsync();
             musicServiceListener.onTrackChange(track);
             VoiceControlForPlexApplication.getInstance().setNotification(PlexClient.getLocalPlaybackClient(), currentState, track, playlist);
+
+            new FetchMediaImageTask(track, 500, 500, track.getNotificationThumb(PlexMedia.IMAGE_KEY.WEAR_BACKGROUND), track.getImageKey(PlexMedia.IMAGE_KEY.WEAR_BACKGROUND), new BitmapHandler() {
+              @Override
+              public void onSuccess(Bitmap bitmap) {
+                if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                  mediaSession.setMetadata(new MediaMetadata.Builder()
+                          .putBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART, bitmap)
+                          .putString(MediaMetadata.METADATA_KEY_ARTIST, track.getArtist())
+                          .putString(MediaMetadata.METADATA_KEY_ALBUM, track.getAlbum())
+                          .putString(MediaMetadata.METADATA_KEY_TITLE, track.getTitle())
+                          .build()
+                  );
+                  mediaSession.setFlags(MediaSession.FLAG_HANDLES_TRANSPORT_CONTROLS);
+                  handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                      if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                        registerMediaSessionCallback();
+                        mediaSession.setActive(true);
+                      }
+                    }
+                  });
+                }
+              }
+            }).execute();
           } catch (Exception e) {
             e.printStackTrace();
           }
@@ -202,6 +237,9 @@ public class LocalMusicService extends Service implements
     PlexHttpClient.reportProgressToServer(track, player.getCurrentPosition(), PlayerState.STOPPED);
     VoiceControlForPlexApplication.getInstance().cancelNotification();
     musicServiceListener.onFinished();
+    VoiceControlForPlexApplication.getInstance().localClientSubscription.media = null;
+    if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
+      mediaSession.setActive(false);
     stopSelf();
   }
 
@@ -210,7 +248,7 @@ public class LocalMusicService extends Service implements
   }
 
   public void doPlay() {
-    Logger.d("[LocalMusicService] doPlay");
+    logger.d("doPlay");
     player.start();
     currentState = PlayerState.PLAYING;
   }
@@ -250,7 +288,7 @@ public class LocalMusicService extends Service implements
   @Nullable
   @Override
   public IBinder onBind(Intent intent) {
-    Logger.d("[LocalMusicService] onBind: %s", intent.getAction());
+    logger.d("onBind: %s", intent.getAction());
     return musicBind;
   }
 
@@ -264,7 +302,7 @@ public class LocalMusicService extends Service implements
   @Override
   public void onCompletion(MediaPlayer mp) {
     currentSongIdx++;
-    Logger.d("[LocalMusicService] onCompletion, current: %d, size: %d", currentSongIdx, playlist.size());
+    logger.d("onCompletion, current: %d, size: %d", currentSongIdx, playlist.size());
     if(currentSongIdx == playlist.size()) {
       // Last song
       musicServiceListener.onFinished();
@@ -280,7 +318,7 @@ public class LocalMusicService extends Service implements
 
   @Override
   public void onPrepared(MediaPlayer mp) {
-    Logger.d("[LocalMusicService] onPrepared");
+    logger.d("onPrepared");
     currentState = PlayerState.BUFFERING;
     player.start();
     musicIsPlayingCheck.run();
@@ -299,7 +337,7 @@ public class LocalMusicService extends Service implements
     @Override
     public void run() {
       if(player.getDuration() > 0) {
-        Logger.d("Audio is playing");
+        logger.d("Audio is playing");
         currentState = PlayerState.PLAYING;
         handler.postDelayed(playerProgressUpdater, 1000);
       } else {
@@ -321,9 +359,9 @@ public class LocalMusicService extends Service implements
   @SuppressWarnings("deprecation")
   public void onDestroy() {
     super.onDestroy();
-    Logger.d("[LocalMusicService] onDestroy");
+    logger.d("onDestroy");
     if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-
+      mediaSession.release();
     } else {
       audioManager.unregisterMediaButtonEventReceiver(remoteControlReceiver);
     }
@@ -333,7 +371,7 @@ public class LocalMusicService extends Service implements
   private Runnable handleSingleClick = new Runnable() {
     @Override
     public void run() {
-      Logger.d("Single click");
+      logger.d("Single click");
       doPlayPause();
     }
   };
@@ -380,6 +418,36 @@ public class LocalMusicService extends Service implements
         doPrevious();
         break;
     }
+  }
+
+  @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+  private void registerMediaSessionCallback() {
+    mediaSession.setCallback(new MediaSession.Callback() {
+      @Override
+      public void onPlay() {
+        doPlay();
+      }
+
+      @Override
+      public void onPause() {
+        doPause();
+      }
+
+      @Override
+      public void onSkipToNext() {
+        doNext();
+      }
+
+      @Override
+      public void onSkipToPrevious() {
+        doPrevious();
+      }
+
+      @Override
+      public void onStop() {
+        doStop();
+      }
+    });
   }
 
 }

@@ -10,7 +10,6 @@ import android.view.View;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
-import com.atomjack.shared.Logger;
 import com.atomjack.shared.NewLogger;
 import com.atomjack.shared.SendToDataLayerThread;
 import com.atomjack.shared.WearConstants;

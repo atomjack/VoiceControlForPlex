@@ -60,6 +60,7 @@ public class VideoPlayerActivity extends AppCompatActivity
 
   protected PlexVideo currentVideo;
   protected ArrayList<PlexVideo> playlist;
+  private VoiceControlForPlexApplication.LocalClientSubscription localClientSubscription;
   private int duration;
   private int currentVideoIndex = 0; // Index of currently playing video from mediaContainer
   protected boolean resume = false;
@@ -96,6 +97,7 @@ public class VideoPlayerActivity extends AppCompatActivity
     logger = new NewLogger(this);
     logger.d("onCreate");
     session = VoiceControlForPlexApplication.generateRandomString();
+    localClientSubscription = VoiceControlForPlexApplication.getInstance().localClientSubscription;
 
     feedback = new Feedback(this);
     player = new MediaPlayer();
@@ -161,6 +163,7 @@ public class VideoPlayerActivity extends AppCompatActivity
     }
     currentVideoIndex = 0;
     currentVideo = playlist.get(currentVideoIndex);
+    localClientSubscription.media = currentVideo;
 
     resume = intent.getBooleanExtra(com.atomjack.shared.Intent.EXTRA_RESUME, false);
 
@@ -174,6 +177,7 @@ public class VideoPlayerActivity extends AppCompatActivity
       controller.hide();
       currentVideoIndex--;
       currentVideo = playlist.get(currentVideoIndex);
+      localClientSubscription.media = currentVideo;
       playNewVideo();
     }
   };
@@ -184,6 +188,7 @@ public class VideoPlayerActivity extends AppCompatActivity
       controller.hide();
       currentVideoIndex++;
       currentVideo = playlist.get(currentVideoIndex);
+      localClientSubscription.media = currentVideo;
       playNewVideo();
     }
   };
@@ -323,8 +328,8 @@ public class VideoPlayerActivity extends AppCompatActivity
     super.onNewIntent(intent);
     logger.d("onNewIntent: %s", intent.getAction());
     if(intent.getAction() != null) {
-      if(intent.getAction().equals(com.atomjack.shared.Intent.ACTION_MIC_RESPONSE)) {
-        String command = intent.getStringExtra(com.atomjack.shared.Intent.ACTION_MIC_COMMAND);
+      if(intent.getAction().equals(com.atomjack.shared.Intent.ACTION_MIC_RESPONSE) || intent.getAction().equals(com.atomjack.shared.Intent.ACTION_VIDEO_DO_PLAYBACK)) {
+        String command = intent.getStringExtra(com.atomjack.shared.Intent.ACTION_VIDEO_COMMAND);
         if(command.equals(com.atomjack.shared.Intent.ACTION_PLAY)) {
           start();
         } else if(command.equals(com.atomjack.shared.Intent.ACTION_PAUSE)) {
@@ -448,6 +453,9 @@ public class VideoPlayerActivity extends AppCompatActivity
     player.start();
     player.setOnCompletionListener(this);
     player.setOnInfoListener(this);
+
+
+
     videoIsPlayingCheck.run();
   }
   // End MediaPlayer.OnPreparedListener
@@ -479,21 +487,36 @@ public class VideoPlayerActivity extends AppCompatActivity
     super.onStop();
     handler.removeCallbacks(playerProgressRunnable);
     PlexHttpClient.reportProgressToServer(currentVideo, getCurrentPosition(), PlayerState.STOPPED);
+  }
+
+  @Override
+  protected void onDestroy() {
+    super.onDestroy();
     player.stop();
     player.release();
     logger.d("Stopping transcoder");
+    currentState = PlayerState.STOPPED;
+    VoiceControlForPlexApplication.getInstance().sendWearPlaybackChange(currentState, currentVideo);
     PlexHttpClient.stopTranscoder(currentVideo.server, session, "video");
   }
 
   @Override
   protected void onPause() {
     super.onPause();
+    if(player.isPlaying()) {
+      pause();
+    }
   }
 
   @Override
   public void surfaceCreated(SurfaceHolder holder) {
     player.setDisplay(holder);
-    player.prepareAsync();
+    if(currentState == PlayerState.PAUSED) {
+      player.start();
+      handler.postDelayed(playerProgressRunnable, 1000);
+    } else {
+      player.prepareAsync();
+    }
   }
 
   @Override
@@ -511,12 +534,14 @@ public class VideoPlayerActivity extends AppCompatActivity
   public void start() {
     currentState = PlayerState.PLAYING;
     player.start();
+    VoiceControlForPlexApplication.getInstance().sendWearPlaybackChange(currentState, currentVideo);
   }
 
   @Override
   public void pause() {
     currentState = PlayerState.PAUSED;
     player.pause();
+    VoiceControlForPlexApplication.getInstance().sendWearPlaybackChange(currentState, currentVideo);
   }
 
   @Override
@@ -670,6 +695,8 @@ public class VideoPlayerActivity extends AppCompatActivity
 
   @Override
   public void stop() {
+    currentState = PlayerState.STOPPED;
+    VoiceControlForPlexApplication.getInstance().sendWearPlaybackChange(currentState, currentVideo);
     finish();
   }
 
@@ -681,6 +708,7 @@ public class VideoPlayerActivity extends AppCompatActivity
       if(getDuration() > 0) {
         logger.d("Video is playing");
         currentState = PlayerState.PLAYING;
+        VoiceControlForPlexApplication.getInstance().sendWearPlaybackChange(currentState, currentVideo);
         handler.postDelayed(playerProgressRunnable, 1000);
       } else {
         handler.postDelayed(videoIsPlayingCheck, 100);

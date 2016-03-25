@@ -943,7 +943,7 @@ public class PlexSearchService extends Service {
     logger.d("Sending command to local player: %s", whichLocalPlayer);
     Intent nowPlayingIntent = new Intent(this, whichLocalPlayer == com.atomjack.shared.Intent.PLAYER_AUDIO ? MainActivity.class : VideoPlayerActivity.class);
     nowPlayingIntent.setAction(com.atomjack.shared.Intent.ACTION_MIC_RESPONSE);
-    nowPlayingIntent.putExtra(com.atomjack.shared.Intent.ACTION_MIC_COMMAND, which); // 'which' is one of Intent.ACTION_*
+    nowPlayingIntent.putExtra(com.atomjack.shared.Intent.ACTION_VIDEO_COMMAND, which); // 'which' is one of Intent.ACTION_*
     nowPlayingIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
     startActivity(nowPlayingIntent);
   }
@@ -1277,7 +1277,8 @@ public class PlexSearchService extends Service {
   }
 
   private void playLocalMedia(PlexMedia media, String transientToken, MediaContainer mediaContainer) {
-    VoiceControlForPlexApplication.getInstance().subscribedToLocalClient = true;
+    VoiceControlForPlexApplication.getInstance().localClientSubscription.subscribed = true;
+    VoiceControlForPlexApplication.getInstance().localClientSubscription.media = media;
     final Intent nowPlayingIntent = new Intent(this, media instanceof PlexVideo ? VideoPlayerActivity.class : MainActivity.class);
     nowPlayingIntent.setAction(com.atomjack.shared.Intent.ACTION_PLAY_LOCAL);
     nowPlayingIntent.putExtra(WearConstants.FROM_WEAR, fromWear);
@@ -1288,7 +1289,7 @@ public class PlexSearchService extends Service {
     }
     nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_TRANSIENT_TOKEN, transientToken);
     nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_RESUME, resumePlayback);
-    nowPlayingIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    nowPlayingIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
     startActivity(nowPlayingIntent);
   }
 

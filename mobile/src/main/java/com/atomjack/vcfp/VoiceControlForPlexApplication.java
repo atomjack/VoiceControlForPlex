@@ -33,6 +33,7 @@ import com.android.vending.billing.Purchase;
 import com.android.vending.billing.SkuDetails;
 import com.atomjack.shared.Intent;
 import com.atomjack.shared.Logger;
+import com.atomjack.shared.NewLogger;
 import com.atomjack.shared.PlayerState;
 import com.atomjack.shared.Preferences;
 import com.atomjack.shared.SendToDataLayerThread;
@@ -87,6 +88,7 @@ import cz.fhucho.android.util.SimpleDiskCache;
 
 public class VoiceControlForPlexApplication extends Application
 {
+  private NewLogger logger;
 	public final static String MINIMUM_PHT_VERSION = "1.0.7";
 
 	private static boolean isApplicationVisible;
@@ -109,7 +111,7 @@ public class VoiceControlForPlexApplication extends Application
   // alert the user that one or more servers like this were found.
   public List<String> unauthorizedLocalServersFound = new ArrayList<>();
 
-  public boolean subscribedToLocalClient = false;
+  public LocalClientSubscription localClientSubscription;
 
   private IabBroadcastReceiver promoReceiver;
 
@@ -162,6 +164,7 @@ public class VoiceControlForPlexApplication extends Application
   public void onCreate() {
     super.onCreate();
     instance = this;
+    logger = new NewLogger(this);
 
     googleApiClient = new GoogleApiClient.Builder(this)
             .addApi(Wearable.API)
@@ -172,6 +175,7 @@ public class VoiceControlForPlexApplication extends Application
 
     plexSubscription = new PlexSubscription();
     castPlayerManager = new CastPlayerManager(getApplicationContext());
+    localClientSubscription = new LocalClientSubscription();
 
 //    chromecastVideoQualityOptions.put(getString(R.string.original), new String[]{"12000", "1920x1080", "1"}); // Disabled for now. Don't know how to get PMS to direct play to chromecast
     chromecastVideoQualityOptions.put("20mbps 720p", new String[]{"20000", "1280x720"});
@@ -843,11 +847,11 @@ public class VoiceControlForPlexApplication extends Application
     return Asset.createFromBytes(byteStream.toByteArray());
   }
 
-  public static void SetWearMediaTitles(DataMap dataMap, PlexMedia media) {
+  public static void setWearMediaTitles(DataMap dataMap, PlexMedia media) {
     if(media.isShow()) {
       dataMap.putString(WearConstants.MEDIA_TITLE, media.getTitle());
       dataMap.putString(WearConstants.MEDIA_SUBTITLE, media.getEpisodeTitle());
-    } else if(media.isMovie()) {
+    } else if(media.isMovie() || media.isClip()) {
       dataMap.putString(WearConstants.MEDIA_TITLE, media.title);
       dataMap.remove(WearConstants.MEDIA_SUBTITLE);
     } else if(media.isMusic()) {
@@ -1034,5 +1038,44 @@ public class VoiceControlForPlexApplication extends Application
       heightPref = getOrientation() != Configuration.ORIENTATION_LANDSCAPE ? Preferences.MOVIE_POSTER_HEIGHT : Preferences.MOVIE_POSTER_HEIGHT_LAND;
     }
     return new String[]{widthPref, heightPref};
+  }
+
+  public void sendWearPlaybackChange(final PlayerState state, PlexMedia media) {
+    if(hasWear()) {
+      logger.d("Sending Wear Notification: %s", state);
+      final DataMap data = new DataMap();
+      String msg = null;
+      if (state == PlayerState.PLAYING) {
+        data.putString(WearConstants.MEDIA_TYPE, media.getType());
+        VoiceControlForPlexApplication.setWearMediaTitles(data, media);
+        msg = WearConstants.MEDIA_PLAYING;
+      } else if (state == PlayerState.STOPPED) {
+        msg = WearConstants.MEDIA_STOPPED;
+      } else if (state == PlayerState.PAUSED) {
+        msg = WearConstants.MEDIA_PAUSED;
+        VoiceControlForPlexApplication.setWearMediaTitles(data, media);
+      }
+      if (msg != null) {
+        if (msg.equals(WearConstants.MEDIA_PLAYING)) {
+          getWearMediaImage(media, new BitmapHandler() {
+            @Override
+            public void onSuccess(Bitmap bitmap) {
+              DataMap binaryDataMap = new DataMap();
+              binaryDataMap.putAll(data);
+              binaryDataMap.putAsset(WearConstants.IMAGE, VoiceControlForPlexApplication.createAssetFromBitmap(bitmap));
+              binaryDataMap.putString(WearConstants.PLAYBACK_STATE, state.name());
+              new SendToDataLayerThread(WearConstants.RECEIVE_MEDIA_IMAGE, binaryDataMap, getInstance()).sendDataItem();
+            }
+          });
+        }
+        new SendToDataLayerThread(msg, data, this).start();
+      }
+    }
+  }
+
+  public class LocalClientSubscription {
+    public PlexMedia media;
+    public PlayerState currentState;
+    public boolean subscribed = false;
   }
 }

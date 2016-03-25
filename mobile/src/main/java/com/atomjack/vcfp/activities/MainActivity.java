@@ -89,7 +89,6 @@ import com.atomjack.vcfp.fragments.PlayerFragment;
 import com.atomjack.vcfp.fragments.PlexPlayerFragment;
 import com.atomjack.vcfp.fragments.SetupFragment;
 import com.atomjack.vcfp.interfaces.ActivityListener;
-import com.atomjack.vcfp.interfaces.BitmapHandler;
 import com.atomjack.vcfp.interfaces.MusicPlayerListener;
 import com.atomjack.vcfp.interfaces.MusicServiceListener;
 import com.atomjack.vcfp.interfaces.PlexSubscriptionListener;
@@ -171,6 +170,7 @@ public class MainActivity extends AppCompatActivity
   private boolean mainNavigationItemsVisible = true;
 
   private LocalMusicService localMusicService;
+  private VoiceControlForPlexApplication.LocalClientSubscription localClientSubscription = VoiceControlForPlexApplication.getInstance().localClientSubscription;
   private boolean musicPlayerIsBound = false;
   private Intent musicServiceIntent;
 
@@ -307,7 +307,7 @@ public class MainActivity extends AppCompatActivity
         client = gsonRead.fromJson(prefs.get(Preferences.SUBSCRIBED_CLIENT, ""), PlexClient.class);
         if(client.isLocalClient) {
           subscribed = true;
-          VoiceControlForPlexApplication.getInstance().subscribedToLocalClient = true;
+          VoiceControlForPlexApplication.getInstance().localClientSubscription.subscribed = true;
         } else if (client.isCastClient) {
           castPlayerManager.subscribe(client);
         } else {
@@ -381,7 +381,7 @@ public class MainActivity extends AppCompatActivity
       logger.d("onMediaChanged: %s %s", media.getTitle(), state);
       handler.removeCallbacks(autoDisconnectPlayerTimer);
       playerFragment.mediaChanged(media);
-      sendWearPlaybackChange(state, media);
+      VoiceControlForPlexApplication.getInstance().sendWearPlaybackChange(state, media);
     }
 
     @Override
@@ -394,7 +394,7 @@ public class MainActivity extends AppCompatActivity
         playerFragment.init(layout, client, media, playlist, false);
         switchToPlayerFragment();
       }
-      sendWearPlaybackChange(state, media);
+      VoiceControlForPlexApplication.getInstance().sendWearPlaybackChange(state, media);
     }
 
     @Override
@@ -412,7 +412,7 @@ public class MainActivity extends AppCompatActivity
       } else {
         logger.d("Got state change to %s, but for some reason playerFragment is null", state);
       }
-      sendWearPlaybackChange(state, media);
+      VoiceControlForPlexApplication.getInstance().sendWearPlaybackChange(state, media);
     }
 
     @Override
@@ -428,7 +428,7 @@ public class MainActivity extends AppCompatActivity
       logger.d("unsubscribed");
       setCastIconInactive();
       VoiceControlForPlexApplication.getInstance().cancelNotification();
-      VoiceControlForPlexApplication.getInstance().subscribedToLocalClient = false;
+      VoiceControlForPlexApplication.getInstance().localClientSubscription.subscribed = false;
       prefs.remove(Preferences.SUBSCRIBED_CLIENT);
       switchToMainFragment();
       if(VoiceControlForPlexApplication.getInstance().hasWear()) {
@@ -1068,7 +1068,7 @@ public class MainActivity extends AppCompatActivity
 
       } else if(intent.getAction().equals(ACTION_SHOW_NOW_PLAYING)) {
         handleShowNowPlayingIntent(intent);
-        } else if(intent.getAction().equals(com.atomjack.shared.Intent.ACTION_PLAY_LOCAL)) {
+      } else if(intent.getAction().equals(com.atomjack.shared.Intent.ACTION_PLAY_LOCAL)) { // this intent will only arrive when playing music. playing video will go to VideoPlayerActivity
         logger.d("Binding to LocalMusicService");
         bindMusicPlayerService();
         final PlexTrack track = intent.getParcelableExtra(com.atomjack.shared.Intent.EXTRA_MEDIA);
@@ -1124,7 +1124,10 @@ public class MainActivity extends AppCompatActivity
         emailDeviceLogs(wearLog);
       } else if(intent.getAction().equals(com.atomjack.shared.Intent.GET_PLAYING_MEDIA)) {
         PlexMedia media = null;
-        if(plexSubscription.isSubscribed())
+        if(VoiceControlForPlexApplication.getInstance().localClientSubscription.subscribed) {
+          media = localClientSubscription.media;
+//          media = VoiceControlForPlexApplication.getInstance().localClientMedia;
+        } else if(plexSubscription.isSubscribed())
           media = plexSubscription.getNowPlayingMedia();
         else if(castPlayerManager.isSubscribed())
           media = castPlayerManager.getNowPlayingMedia();
@@ -1477,7 +1480,7 @@ public class MainActivity extends AppCompatActivity
           setCastIconActive();
           subscribing = false;
           subscribed = true;
-          VoiceControlForPlexApplication.getInstance().subscribedToLocalClient = true;
+          VoiceControlForPlexApplication.getInstance().localClientSubscription.subscribed = true;
           prefs.put(Preferences.SUBSCRIBED_CLIENT, gsonWrite.toJson(clientSelected));
           client = clientSelected;
           return;
@@ -1518,7 +1521,7 @@ public class MainActivity extends AppCompatActivity
   }
 
   private boolean isSubscribed() {
-    return plexSubscription.isSubscribed() || castPlayerManager.isSubscribed() || VoiceControlForPlexApplication.getInstance().subscribedToLocalClient;
+    return plexSubscription.isSubscribed() || castPlayerManager.isSubscribed() || VoiceControlForPlexApplication.getInstance().localClientSubscription.subscribed;
   }
 
   private Runnable onClientRefreshFinished = null;
@@ -1633,7 +1636,7 @@ public class MainActivity extends AppCompatActivity
           @Override
           public void onClick(View v) {
             if(client.isLocalClient) {
-              VoiceControlForPlexApplication.getInstance().subscribedToLocalClient = false;
+              VoiceControlForPlexApplication.getInstance().localClientSubscription.subscribed = false;
               setCastIconInactive();
             } else if (client.isCastClient)
               castPlayerManager.unsubscribe();
@@ -2593,39 +2596,6 @@ public class MainActivity extends AppCompatActivity
       }
     }
     return super.dispatchKeyEvent(event);
-  }
-
-  public void sendWearPlaybackChange(final PlayerState state, PlexMedia media) {
-    if(VoiceControlForPlexApplication.getInstance().hasWear()) {
-      logger.d("[PlayerFragment] Sending Wear Notification: %s", state);
-      final DataMap data = new DataMap();
-      String msg = null;
-      if (state == PlayerState.PLAYING) {
-        data.putString(WearConstants.MEDIA_TYPE, media.getType());
-        VoiceControlForPlexApplication.SetWearMediaTitles(data, media);
-        msg = WearConstants.MEDIA_PLAYING;
-      } else if (state == PlayerState.STOPPED) {
-        msg = WearConstants.MEDIA_STOPPED;
-      } else if (state == PlayerState.PAUSED) {
-        msg = WearConstants.MEDIA_PAUSED;
-        VoiceControlForPlexApplication.SetWearMediaTitles(data, media);
-      }
-      if (msg != null) {
-        if (msg.equals(WearConstants.MEDIA_PLAYING)) {
-          VoiceControlForPlexApplication.getInstance().getWearMediaImage(media, new BitmapHandler() {
-            @Override
-            public void onSuccess(Bitmap bitmap) {
-              DataMap binaryDataMap = new DataMap();
-              binaryDataMap.putAll(data);
-              binaryDataMap.putAsset(WearConstants.IMAGE, VoiceControlForPlexApplication.createAssetFromBitmap(bitmap));
-              binaryDataMap.putString(WearConstants.PLAYBACK_STATE, state.name());
-              new SendToDataLayerThread(WearConstants.RECEIVE_MEDIA_IMAGE, binaryDataMap, MainActivity.this).sendDataItem();
-            }
-          });
-        }
-        new SendToDataLayerThread(msg, data, this).start();
-      }
-    }
   }
 
   @Override
