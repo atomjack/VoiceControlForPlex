@@ -248,8 +248,10 @@ public abstract class PlayerFragment extends Fragment
       } else {
         TextView showTitle = (TextView)mainView.findViewById(R.id.nowPlayingShowTitle);
         showTitle.setText(video.grandparentTitle);
+        showTitle.setSelected(true);
         TextView episodeTitle = (TextView)mainView.findViewById(R.id.nowPlayingEpisodeTitle);
         episodeTitle.setText(String.format("%s (s%02de%02d)", video.title, Integer.parseInt(video.parentIndex), Integer.parseInt(video.index)));
+        episodeTitle.setSelected(true);
       }
 
     } else if (nowPlayingMedia instanceof PlexTrack) {

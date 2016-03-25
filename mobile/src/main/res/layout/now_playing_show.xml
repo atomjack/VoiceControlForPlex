@@ -6,95 +6,114 @@
               android:orientation="vertical"
               android:background="@color/now_playing_background">
 
-    <LinearLayout
-        android:orientation="horizontal"
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginLeft="20dp"
-        android:layout_marginRight="20dp"
-        android:layout_marginTop="10dp">
+        android:layout_height="0dp"
+        android:layout_weight="1">
 
-        <ImageButton
-            android:layout_width="30dp"
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@android:color/transparent"
-            android:id="@+id/micButton"
-            android:src="@drawable/button_microphone"
-            android:layout_gravity="center_vertical"/>
+            android:layout_marginLeft="20dp"
+            android:layout_marginRight="20dp"
+            android:layout_marginTop="10dp">
 
-        <TextView
-            android:id="@+id/nowPlayingOnClient"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentLeft="true"
-            android:layout_alignParentTop="true"
-            android:layout_marginTop="17dp"
-            android:textColor="@color/white"
-            android:text="@string/now_playing_on"
+            <ImageButton
+                android:layout_width="30dp"
+                android:layout_height="wrap_content"
+                android:background="@android:color/transparent"
+                android:id="@+id/micButton"
+                android:src="@drawable/button_microphone"
+                android:layout_gravity="center_vertical"/>
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_weight="1"></View>
+
+            <ImageButton
+                android:layout_width="42dp"
+                android:layout_height="wrap_content"
+                android:background="@android:color/transparent"
+                android:id="@+id/mediaOptionsButton"
+                android:src="@drawable/button_media_options"
+                android:layout_gravity="center_vertical"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
             android:gravity="center_horizontal"
             android:layout_weight="1"
-            android:layout_marginLeft="10dp"
-            android:layout_marginRight="10dp"/>
+            android:id="@+id/nowPlayingTapTarget"
+            android:layout_marginTop="30dp"
+            android:layout_marginLeft="20dp"
+            android:layout_marginRight="20dp">
 
-        <ImageButton
-            android:layout_width="42dp"
-            android:layout_height="wrap_content"
-            android:background="@android:color/transparent"
-            android:id="@+id/mediaOptionsButton"
-            android:src="@drawable/button_media_options"
-            android:layout_gravity="center_vertical"/>
-    </LinearLayout>
+            <TextView
+                android:id="@+id/nowPlayingOnClient"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_alignParentTop="true"
+                android:textColor="@color/white"
+                android:text="@string/now_playing_on"
+                android:gravity="center_horizontal"
+                android:layout_marginLeft="10dp"
+                android:layout_marginRight="10dp"
+                />
 
-    <LinearLayout
-        android:orientation="vertical"
-        android:layout_width="fill_parent"
-        android:layout_height="0dp"
-        android:gravity="center_horizontal"
-        android:layout_weight="1"
-        android:id="@+id/nowPlayingTapTarget">
+            <TextView
+                android:id="@+id/nowPlayingShowTitle"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:singleLine="true"
+                android:ellipsize="marquee"
+                android:marqueeRepeatLimit="marquee_forever"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:text="Game of Thrones of Thrones of Thrones"
+                android:textColor="@color/white"
+                android:gravity="center_horizontal"
+                android:layout_marginLeft="5dp"
+                android:layout_marginRight="5dp"
+                android:layout_marginTop="8dp"/>
 
-        <TextView
-            android:id="@+id/nowPlayingShowTitle"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:maxLines="1"
-            android:textSize="24sp"
-            android:textStyle="bold"
-            android:text="Game of Thrones"
-            android:textColor="@color/white"
-            android:gravity="center_horizontal"
-            android:layout_marginLeft="5dp"
-            android:layout_marginRight="5dp"/>
+            <TextView
+                android:id="@+id/nowPlayingEpisodeTitle"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:singleLine="true"
+                android:ellipsize="marquee"
+                android:marqueeRepeatLimit="marquee_forever"
+                android:textSize="24sp"
+                android:text="The Rains of Castamere"
+                android:textColor="@color/white"
+                android:gravity="center_horizontal"
+                android:layout_marginLeft="5dp"
+                android:layout_marginRight="5dp"/>
 
-        <TextView
-            android:id="@+id/nowPlayingEpisodeTitle"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:maxLines="1"
-            android:textSize="24sp"
-            android:text="The Rains of Castamere"
-            android:textColor="@color/white"
-            android:gravity="center_horizontal"
-            android:layout_marginLeft="5dp"
-            android:layout_marginRight="5dp"/>
+            <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="fill_parent"
+                    android:layout_weight="1"
+                    android:id="@+id/nowPlayingPosterContainer"
+                    android:layout_marginTop="15dp"
+                >
 
-        <FrameLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:id="@+id/nowPlayingPosterContainer"
-                android:layout_marginTop="15dp"
-            >
+                    <ImageView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:id="@+id/nowPlayingPoster"
+                        android:adjustViewBounds="true"
+                        android:scaleType="fitXY"
+                        android:layout_gravity="center_horizontal"/>
+                </FrameLayout>
+        </LinearLayout>
 
-                <ImageView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:id="@+id/nowPlayingPoster"
-                    android:adjustViewBounds="true"
-                    android:scaleType="fitXY"
-                    android:layout_gravity="center_horizontal"/>
-            </FrameLayout>
-    </LinearLayout>
+    </FrameLayout>
 
     <include layout="@layout/playback_controls"
              android:layout_height="wrap_content"
