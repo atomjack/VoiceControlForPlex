@@ -6,9 +6,12 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.speech.RecognizerIntent;
 import android.support.wearable.view.WatchViewStub;
+import android.view.View;
+import android.widget.ImageButton;
 import android.widget.TextView;
 
 import com.atomjack.shared.Logger;
+import com.atomjack.shared.NewLogger;
 import com.atomjack.shared.SendToDataLayerThread;
 import com.atomjack.shared.WearConstants;
 import com.google.android.gms.common.ConnectionResult;
@@ -18,6 +21,10 @@ import com.google.android.gms.wearable.Wearable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+
+import butterknife.Bind;
+import butterknife.ButterKnife;
+import butterknife.OnClick;
 
 public class MainActivity extends Activity implements
         GoogleApiClient.ConnectionCallbacks,
@@ -32,10 +39,17 @@ public class MainActivity extends Activity implements
   GoogleApiClient googleApiClient;
   WatchViewStub watchViewStub;
 
+  @Bind(R.id.mainMicButton)
+  public ImageButton mainMicButton;
+  
+  private NewLogger logger;
+
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    Logger.d("[MainActivity] onCreate: %s", getIntent().getAction());
+    logger = new NewLogger(this);
+    
+    logger.d("onCreate: %s", getIntent().getAction());
 
     setMainView();
 
@@ -52,7 +66,7 @@ public class MainActivity extends Activity implements
         dataMap.putBoolean(WearConstants.LAUNCHED, true);
         new SendToDataLayerThread(WearConstants.GET_PLAYBACK_STATE, dataMap, this).start();
       } else if(action.equals(WearConstants.SET_INFO)) {
-        Logger.d("[MainActivity] setting info to %s", getIntent().getStringExtra(WearConstants.INFORMATION));
+        logger.d("setting info to %s", getIntent().getStringExtra(WearConstants.INFORMATION));
         setInformationView(getIntent().getStringExtra(WearConstants.INFORMATION));
       } else if(action.equals(RECEIVE_VOICE_INPUT)) {
         String query = getMessageText(getIntent());
@@ -60,6 +74,11 @@ public class MainActivity extends Activity implements
         dataMap.putStringArrayList(WearConstants.SPEECH_QUERY, new ArrayList<>(Arrays.asList(query)));
         new SendToDataLayerThread(WearConstants.SPEECH_QUERY, dataMap, this).start();
         finish();
+      } else if(action.equals(WearConstants.SPEECH_QUERY_RESULT)) {
+        boolean result = getIntent().getBooleanExtra(WearConstants.SPEECH_QUERY_RESULT, false);
+        if (result) {
+          finish();
+        }
       }
     }
   }
@@ -75,7 +94,7 @@ public class MainActivity extends Activity implements
   @Override
   protected void onPause() {
     super.onPause();
-    Logger.d("[MainActivity] onPause");
+    logger.d("onPause");
   }
 
   @Override
@@ -99,7 +118,7 @@ public class MainActivity extends Activity implements
 
     if(intent.getAction() != null) {
       String action = intent.getAction();
-      Logger.d("[MainActivity] onNewIntent: %s", action);
+      logger.d("onNewIntent: %s", action);
       if(action.equals(SHOW_WEAR_UNAUTHORIZED)) {
         watchViewStub.setRectLayout(R.layout.main_unauthorized_rect);
         watchViewStub.setRoundLayout(R.layout.main_unauthorized_round);
@@ -113,8 +132,8 @@ public class MainActivity extends Activity implements
       } else if(action.equals(WearConstants.SET_INFO)) {
         setInformationView(intent.getStringExtra(WearConstants.INFORMATION));
       } else if (action.equals(START_SPEECH_RECOGNITION)) {
-        Logger.d("[MainActivity] starting speech recognition.");
-        Logger.d("client: %s", intent.getStringExtra(WearConstants.CLIENT_NAME));
+        logger.d("starting speech recognition.");
+        logger.d("client: %s", intent.getStringExtra(WearConstants.CLIENT_NAME));
         Intent recIntent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
         recIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
         startActivityForResult(recIntent, SPEECH_RECOGNIZER_REQUEST_CODE);
@@ -127,18 +146,25 @@ public class MainActivity extends Activity implements
   }
   private void setMainView(final Runnable runThis) {
     setContentView(R.layout.activity_main);
+
     watchViewStub = (WatchViewStub) findViewById(R.id.watch_view_stub);
     watchViewStub.setRectLayout(R.layout.activity_main_rect);
     watchViewStub.setRoundLayout(R.layout.activity_main_round);
-//    watchViewStub.setOnLayoutInflatedListener(new WatchViewStub.OnLayoutInflatedListener() {
-//      @Override
-//      public void onLayoutInflated(WatchViewStub stub) {
-//        castingToTextView = (TextView) findViewById(R.id.casting_to);
-//        if (runThis != null)
-//          runThis.run();
-//        Logger.d("set castingToTextView to %s", castingToTextView);
-//      }
-//    });
+
+    watchViewStub.setOnLayoutInflatedListener(new WatchViewStub.OnLayoutInflatedListener() {
+      @Override
+      public void onLayoutInflated(WatchViewStub stub) {
+        ButterKnife.bind(MainActivity.this, stub);
+      }
+    });
+  }
+
+  @OnClick(R.id.mainMicButton)
+  public void onMicClick(View v) {
+    logger.d("onMicClick");
+    Intent recIntent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+    recIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+    startActivityForResult(recIntent, SPEECH_RECOGNIZER_REQUEST_CODE);
   }
 
   private void setInformationView(String info) {
@@ -146,8 +172,14 @@ public class MainActivity extends Activity implements
 
     watchViewStub.setRectLayout(R.layout.activity_information_rect);
     watchViewStub.setRoundLayout(R.layout.activity_information_round);
+    watchViewStub.setOnLayoutInflatedListener(new WatchViewStub.OnLayoutInflatedListener() {
+      @Override
+      public void onLayoutInflated(WatchViewStub watchViewStub) {
+
+      }
+    });
     TextView textView = (TextView)findViewById(R.id.textView);
-    Logger.d("[MainActivity] Setting Information View: %s", info);
+    logger.d("Setting Information View: %s", info);
     textView.setText(info);
   }
 
@@ -158,7 +190,7 @@ public class MainActivity extends Activity implements
 
   @Override
   protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-    Logger.d("[MainActivity] onActivityResult. requestCode: %d, resultCode: %d", requestCode, resultCode);
+    logger.d("onActivityResult. requestCode: %d, resultCode: %d", requestCode, resultCode);
     if (requestCode == SPEECH_RECOGNIZER_REQUEST_CODE) {
       // When the speech recognizer finishes its work, Android invokes this callback with requestCode equal to SPEECH_RECOGNIZER_REQUEST_CODE
       if (resultCode == RESULT_OK) {

@@ -122,7 +122,7 @@ public class PlexSearchService extends Service {
 	@Override
   @SuppressWarnings("unchecked")
 	public int onStartCommand(Intent intent, int flags, int startId) {
-		logger.d("[PlexSearchService]: onStartCommand: %s", intent.getAction());
+		logger.d("onStartCommand: %s", intent.getAction());
 
 		if(BuildConfig.USE_BUGSENSE)
 			Mint.initAndStartSession(PlexSearchService.this, MainActivity.BUGSENSE_APIKEY);
@@ -1327,7 +1327,7 @@ public class PlexSearchService extends Service {
         }
       }
     }
-    logger.d("After fetching images for first track, we will fetch %d more images", list.size());
+    logger.d("After fetching images for first media, we will fetch %d more images", list.size());
 
     final PlexMedia.IMAGE_KEY notificationImageKey = firstMedia.isMusic() ? PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB_MUSIC : PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB;
     final PlexMedia.IMAGE_KEY notificationImageKeyBig = firstMedia.isMusic() ? PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB_MUSIC_BIG : PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB_BIG;
@@ -1382,7 +1382,7 @@ public class PlexSearchService extends Service {
       if(firstMedia.isMusic())
         mainThumb = firstMedia.thumb != null ? firstMedia.thumb : firstMedia.grandparentThumb;
       else
-        mainThumb = firstMedia.isShow() ? firstMedia.thumb : firstMedia.grandparentThumb;
+        mainThumb = !firstMedia.isShow() ? firstMedia.thumb : firstMedia.grandparentThumb;
       new FetchMediaImageTask(firstMedia, posterWidth, posterHeight, mainThumb, firstMedia.getImageKey(mainImageKey), bitmapHandler).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
       new FetchMediaImageTask(firstMedia,
               PlexMedia.IMAGE_SIZES.get(notificationImageKey)[0],

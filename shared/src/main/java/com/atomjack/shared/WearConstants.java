@@ -42,9 +42,9 @@ public class WearConstants {
   public final static String INFORMATION = "com.atomjack.vcfp.information";
 
   // Playback manipulation
-  public static final String ACTION_PAUSE = "com.atomjack.vcfp.action_pause";
-  public static final String ACTION_PLAY = "com.atomjack.vcfp.action_play";
-  public static final String ACTION_STOP = "com.atomjack.vcfp.action_stop";
+  public static final String ACTION_PAUSE = "com.atomjack.vcfp.intent.action_pause";
+  public static final String ACTION_PLAY = "com.atomjack.vcfp.intent.action_play";
+  public static final String ACTION_STOP = "com.atomjack.vcfp.intent.action_stop";
 
   public static final String DISCONNECTED = "com.atomjack.vcfp.disconnected";
 

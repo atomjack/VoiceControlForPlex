@@ -109,13 +109,6 @@ public class WearApplication extends Application {
   public void showNowPlaying() {
     Logger.d("[WearApplication] showNowPlaying: %s", nowPlayingMedia.getString(WearConstants.MEDIA_TITLE));
     Logger.d("[WearApplication] Media: %s", nowPlayingMedia);
-    Intent notificationIntent = new Intent(this, NotificationActivity.class);
-    notificationIntent.putExtra(
-            WearConstants.MEDIA_TITLE, nowPlayingMedia.getString(WearConstants.MEDIA_TITLE));
-    notificationIntent.putExtra(
-            WearConstants.IMAGE, nowPlayingMedia.getAsset(WearConstants.IMAGE));
-
-
 
     NotificationCompat.WearableExtender extender;
     if(nowPlayingImage != null) {

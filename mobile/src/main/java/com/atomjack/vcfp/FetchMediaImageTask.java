@@ -39,9 +39,9 @@ public class FetchMediaImageTask extends AsyncTask<Void, Void, Void> {
   protected Void doInBackground(Void... params) {
     if (whichThumb == null)
       return null;
-    Logger.d("Fetching media thumb for %s at %dx%d with key %s", media.getTitle(), width, height, imageKey);
     final Bitmap bitmap = getCachedBitmap(imageKey);
     if (bitmap == null) {
+      Logger.d("Fetching media thumb for %s at %dx%d with key %s", media.getTitle(), width, height, imageKey);
       media.server.findServerConnection(new ActiveConnectionHandler() {
         @Override
         public void onSuccess(final Connection connection) {
@@ -72,7 +72,7 @@ public class FetchMediaImageTask extends AsyncTask<Void, Void, Void> {
         }
       });
     } else {
-      Logger.d("Found cached bitmap");
+      Logger.d("Found cached thumb for %s at %dx%d with key %s", media.getTitle(), width, height, imageKey);
       if (bitmapHandler != null)
         bitmapHandler.onSuccess(bitmap);
     }

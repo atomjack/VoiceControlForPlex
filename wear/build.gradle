@@ -43,5 +43,6 @@ dependencies {
     compile 'com.google.code.gson:gson:2.3.+'
     compile 'com.google.android.support:wearable:1.1.0'
     compile 'com.google.android.gms:play-services-wearable:8.4.0'
+    compile 'com.jakewharton:butterknife:7.0.1'
     compile project(':shared')
 }
