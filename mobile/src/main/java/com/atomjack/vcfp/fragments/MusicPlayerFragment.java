@@ -94,13 +94,12 @@ public class MusicPlayerFragment extends Fragment implements MusicServiceListene
   ImageButton previousButton;
 
   public MusicPlayerFragment() {
-    logger.d("");
+    logger = new NewLogger(this);
   }
 
   @Nullable
   @Override
   public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-    logger = new NewLogger(this);
     logger.d("onCreateView");
     if(savedInstanceState != null) {
       track = savedInstanceState.getParcelable(Intent.EXTRA_MEDIA);

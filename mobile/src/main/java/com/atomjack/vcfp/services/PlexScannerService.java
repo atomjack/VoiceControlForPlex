@@ -9,6 +9,7 @@ import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
 
 import com.atomjack.shared.Logger;
+import com.atomjack.shared.NewLogger;
 import com.atomjack.shared.Preferences;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.interfaces.ActiveConnectionHandler;
@@ -42,6 +43,8 @@ public class PlexScannerService extends Service {
   public static final String CLASS = "com.atomjack.vcfp.plexscannerservice.class";
   public static final String CONNECT_TO_CLIENT = "com.atomjack.vcfp.plexscannerservice.connect_to_client";
   public static final String CANCEL = "com.atomjack.vcfp.plexscannerservice.cancel";
+
+  private NewLogger logger;
 
   private Class callingClass;
 
@@ -120,7 +123,7 @@ public class PlexScannerService extends Service {
         new AsyncTask<Void, Void, Void>() {
           @Override
           protected Void doInBackground(Void... params) {
-            server.findServerConnection(new ActiveConnectionHandler() {
+            server.findServerConnection(true, new ActiveConnectionHandler() {
               @Override
               public void onSuccess(Connection connection) {
                 Logger.d("Found active connection for %s: %s", server.name, connection);
@@ -267,6 +270,7 @@ public class PlexScannerService extends Service {
   @Override
   public void onCreate() {
     super.onCreate();
+    logger = new NewLogger(this);
     gdmReceiver = new GDMReceiver();
     IntentFilter filters = new IntentFilter();
     filters.addAction(GDMService.MSG_RECEIVED);

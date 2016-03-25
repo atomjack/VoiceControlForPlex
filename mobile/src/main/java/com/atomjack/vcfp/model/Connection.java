@@ -3,12 +3,15 @@ package com.atomjack.vcfp.model;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import com.atomjack.vcfp.Utils;
+
 import org.simpleframework.xml.Attribute;
 import org.simpleframework.xml.Root;
 import org.simpleframework.xml.core.Commit;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.regex.Pattern;
 
 @Root(strict=false)
 public class Connection implements Parcelable {
@@ -86,4 +89,32 @@ public class Connection implements Parcelable {
 			return new Connection[size];
 		}
 	};
+
+  // Is the device's current IP address on the same subnet as this connection?
+  public boolean isOnSameNetwork() {
+    try {
+      byte[] a1 = InetAddress.getByName(address).getAddress();
+      byte[] a2 = InetAddress.getByName(Utils.getIPAddress(true)).getAddress();
+      byte[] m = InetAddress.getByName("255.255.255.0").getAddress();
+
+      for (int i = 0; i < a1.length; i++)
+        if ((a1[i] & m[i]) != (a2[i] & m[i]))
+          return false;
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+    return true;
+  }
+
+  /* Is this connection's address on a private network?
+  *  10.0.0.0        -   10.255.255.255
+  *  172.16.0.0      -   172.31.255.255
+  *  192.168.0.0     -   192.168.255.255
+  */
+  public boolean isPrivateV4Address() {
+    Pattern patternPrivate = Pattern.compile("^(10(\\.([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])){3})$|" +
+            "^((172\\.1[6-9])|(172\\.2[0-9])|(172\\.3[0-1]))(\\.([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])){2}$|" +
+            "^192\\.168(\\.([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])){2}$");
+    return patternPrivate.matcher(address).matches();
+  }
 }

@@ -57,6 +57,7 @@ public class PlexServer extends PlexDevice {
 	}
 
 	public PlexServer(String _name) {
+    super();
 		name = _name;
 		connections = new ArrayList<Connection>();
 	}
@@ -144,7 +145,6 @@ public class PlexServer extends PlexDevice {
 		parcel.writeString(accessToken);
     parcel.writeString(machineIdentifier);
 		parcel.writeTypedList(connections);
-//		parcel.writeParcelable(activeConnection, i);
     parcel.writeStringList(movieSections);
     parcel.writeStringList(tvSections);
     parcel.writeStringList(musicSections);
@@ -162,7 +162,6 @@ public class PlexServer extends PlexDevice {
 		accessToken = in.readString();
     machineIdentifier = in.readString();
 		in.readTypedList(connections, Connection.CREATOR);
-//		activeConnection = in.readParcelable(Connection.class.getClassLoader());
     in.readStringList(movieSections);
     in.readStringList(tvSections);
     in.readStringList(musicSections);
@@ -180,26 +179,37 @@ public class PlexServer extends PlexDevice {
 	};
 
   public void findServerConnection(final ActiveConnectionHandler activeConnectionHandler) {
+    findServerConnection(false, activeConnectionHandler);
+  }
+
+  // force == ignore active connection and scan for all connections. Defaults to false (use activeConnection, if it exists)
+  public void findServerConnection(boolean force, final ActiveConnectionHandler activeConnectionHandler) {
     Calendar activeConnectionExpires = null;
     Connection activeConnection = null;
-    try {
-      HashMap<String, Calendar> activeConnectionExpiresList = VoiceControlForPlexApplication.getInstance().getActiveConnectionExpiresList();
-      HashMap<String, Connection> activeConnectionList = VoiceControlForPlexApplication.getInstance().getActiveConnectionList();
+    if(!force) {
+      try {
+        HashMap<String, Calendar> activeConnectionExpiresList = VoiceControlForPlexApplication.getInstance().getActiveConnectionExpiresList();
+        HashMap<String, Connection> activeConnectionList = VoiceControlForPlexApplication.getInstance().getActiveConnectionList();
 
-      if (activeConnectionExpiresList.containsKey(machineIdentifier))
-        activeConnectionExpires = activeConnectionExpiresList.get(machineIdentifier);
+        if (activeConnectionExpiresList.containsKey(machineIdentifier))
+          activeConnectionExpires = activeConnectionExpiresList.get(machineIdentifier);
 
-      if(activeConnectionList.containsKey(machineIdentifier))
-        activeConnection = activeConnectionList.get(machineIdentifier);
-    } catch (Exception e) {
-      e.printStackTrace();
+        if (activeConnectionList.containsKey(machineIdentifier))
+          activeConnection = activeConnectionList.get(machineIdentifier);
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
     }
 
-    if(activeConnectionExpires != null && !activeConnectionExpires.before(Calendar.getInstance())) {
+    // If we have an active connection and it has not expired yet, AND (the active connection is on the same network OR it is an external IP),
+    // return the active connection. Otherwise, scan for them.
+    // If the active connection is an external IP, we obviously don't care if it's on a different network.
+    if(activeConnectionExpires != null && !activeConnectionExpires.before(Calendar.getInstance()) &&
+            (activeConnection.isOnSameNetwork() || !activeConnection.isPrivateV4Address())) {
       activeConnectionHandler.onSuccess(activeConnection);
     } else {
       SimpleDateFormat simpleDateFormat = new SimpleDateFormat("EEEE, MMMM d, yyyy 'at' h:mm:ss a");
-      Logger.d("[PlexServer] finding server connection for %s, current active connection expires: %s, now: %s",
+      logger.d("finding server connection for %s, current active connection expires: %s, now: %s",
               name,
               activeConnectionExpires != null ? simpleDateFormat.format(activeConnectionExpires.getTime()) : null,
               simpleDateFormat.format(Calendar.getInstance().getTime()));
@@ -209,6 +219,16 @@ public class PlexServer extends PlexDevice {
 
   private void findServerConnection(final int connectionIndex, final ActiveConnectionHandler activeConnectionHandler) {
     final Connection connection = connections.get(connectionIndex);
+    // If this connection is a lan IP address and is not on the same subnet as the device, skip testing this connection
+    if(connection.isPrivateV4Address() && !connection.isOnSameNetwork()) {
+      logger.d("Connection %s for server %s is private but not on the same network. Skipping.", connection.address, name);
+      int newConnectionIndex = connectionIndex + 1;
+      if (connections.size() <= newConnectionIndex) {
+        activeConnectionHandler.onFailure(0);
+      } else
+        findServerConnection(newConnectionIndex, activeConnectionHandler);
+      return;
+    }
     testServerConnection(connection, new ServerTestHandler() {
       @Override
       public void onFinish(int statusCode, boolean available) {
@@ -313,7 +333,7 @@ public class PlexServer extends PlexDevice {
         if(accessToken != null)
           qs.add(PlexHeaders.XPlexToken, accessToken);
         String url = String.format("http://127.0.0.1:32400/player/playback/playMedia?%s", qs);
-        Logger.d("[PlexServer] Playback url: %s ", url);
+        logger.d("Playback url: %s ", url);
         PlexHttpClient.get("http://127.0.0.1:32400", String.format("player/playback/playMedia?%s", qs), new PlexHttpResponseHandler()
         {
           @Override

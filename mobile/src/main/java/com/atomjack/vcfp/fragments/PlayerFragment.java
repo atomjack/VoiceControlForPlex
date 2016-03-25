@@ -27,7 +27,6 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.atomjack.shared.Intent;
-import com.atomjack.shared.Logger;
 import com.atomjack.shared.NewLogger;
 import com.atomjack.shared.PlayerState;
 import com.atomjack.shared.Preferences;

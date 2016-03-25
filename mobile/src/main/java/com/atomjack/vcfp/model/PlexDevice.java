@@ -2,6 +2,8 @@ package com.atomjack.vcfp.model;
 
 import android.os.Parcelable;
 
+import com.atomjack.shared.NewLogger;
+
 import org.simpleframework.xml.Attribute;
 import org.simpleframework.xml.ElementList;
 
@@ -30,8 +32,11 @@ public abstract class PlexDevice implements Parcelable {
   @Attribute(required=false)
   public Date lastUpdated;
 
+  protected NewLogger logger;
+
   public PlexDevice() {
     lastUpdated = new Date();
+    logger = new NewLogger(this);
   }
 
 
