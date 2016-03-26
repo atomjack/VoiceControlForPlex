@@ -107,6 +107,7 @@ import com.atomjack.vcfp.net.PlexPinResponseHandler;
 import com.atomjack.vcfp.services.LocalMusicService;
 import com.atomjack.vcfp.services.PlexScannerService;
 import com.cubeactive.martin.inscription.WhatsNewDialog;
+import com.github.aakira.expandablelayout.ExpandableRelativeLayout;
 import com.google.android.gms.cast.CastDevice;
 import com.google.android.gms.cast.CastMediaControlIntent;
 import com.google.android.gms.wearable.DataMap;
@@ -167,7 +168,6 @@ public class MainActivity extends AppCompatActivity
   private Toolbar toolbar;
   private NavigationView navigationViewMain;
   private ActionBarDrawerToggle drawerToggle;
-  private boolean mainNavigationItemsVisible = true;
 
   private LocalMusicService localMusicService;
   private VoiceControlForPlexApplication.LocalClientSubscription localClientSubscription = VoiceControlForPlexApplication.getInstance().localClientSubscription;
@@ -853,7 +853,7 @@ public class MainActivity extends AppCompatActivity
       refreshNavServers();
   }
 
-  public void logout(MenuItem item) {
+  public void logout(View v) {
     logger.d("logging out");
 
     prefs.remove(Preferences.AUTHENTICATION_TOKEN);
@@ -968,18 +968,12 @@ public class MainActivity extends AppCompatActivity
 
         // When the user clicks on their username, show the logout button
         final LinearLayout navHeaderUserRow = (LinearLayout)navHeader.findViewById(R.id.navHeaderUserRow);
+        final ExpandableRelativeLayout navHeaderLogoutFrame = (ExpandableRelativeLayout)navHeader.findViewById(R.id.navHeaderLogoutFrame);
         navHeaderUserRow.setOnClickListener(new View.OnClickListener() {
           @Override
           public void onClick(View v) {
-            int flip = R.animator.flip_down;
-            if(mainNavigationItemsVisible) {
-              setNavGroup(R.menu.nav_items_logged_in);
-              mainNavigationItemsVisible = false;
-              flip = R.animator.flip_up;
-            } else {
-              setNavGroup(R.menu.nav_items_main);
-              mainNavigationItemsVisible = true;
-            }
+            int flip = navHeaderLogoutFrame.isExpanded() ? R.animator.flip_down : R.animator.flip_up;
+            navHeaderLogoutFrame.toggle();
             // Flip the arrow that is to the right of the username
             ImageView image = (ImageView)navHeaderUserRow.findViewById(R.id.navHeaderUserArrow);
             AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(MainActivity.this, flip);
@@ -2693,7 +2687,6 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onServiceDisconnected(ComponentName name) {
-      // TODO: Something here?
       logger.d("onServiceDisconnected");
       musicPlayerIsBound = false;
     }

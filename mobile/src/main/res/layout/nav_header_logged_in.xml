@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:app="http://schemas.android.com/apk/res-auto"
               android:orientation="vertical"
               android:layout_width="match_parent"
               android:layout_height="wrap_content"
@@ -34,7 +35,8 @@
                 android:textColor="@color/white"
                 android:layout_weight="1"
                 android:layout_gravity="center_vertical"
-                android:text="username"/>
+                android:text="username"
+                android:textStyle="bold"/>
 
 
                 <ImageView
@@ -47,6 +49,29 @@
 
         </LinearLayout>
     </LinearLayout>
+
+    <com.github.aakira.expandablelayout.ExpandableRelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/navigation_drawer_background"
+        android:id="@+id/navHeaderLogoutFrame"
+        app:ael_expanded="false"
+        app:ael_interpolator="linear"
+        app:ael_duration="200"
+        app:ael_orientation="vertical"
+        android:paddingLeft="20dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/menu_logout"
+            android:id="@+id/navHeaderLogoutView"
+            android:onClick="logout"
+            android:clickable="true"
+            android:textColor="@color/white"
+            android:paddingTop="20dp"
+            android:paddingBottom="20dp"/>
+    </com.github.aakira.expandablelayout.ExpandableRelativeLayout>
 
     <LinearLayout
         android:orientation="horizontal"
