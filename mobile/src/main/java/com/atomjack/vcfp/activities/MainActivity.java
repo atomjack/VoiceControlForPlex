@@ -15,6 +15,7 @@ import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.graphics.drawable.AnimationDrawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -127,6 +128,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.lang.reflect.Field;
 import java.lang.reflect.Type;
 import java.net.SocketTimeoutException;
 import java.text.SimpleDateFormat;
@@ -141,6 +143,13 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+
+import tourguide.tourguide.ChainTourGuide;
+import tourguide.tourguide.Overlay;
+import tourguide.tourguide.Pointer;
+import tourguide.tourguide.Sequence;
+import tourguide.tourguide.ToolTip;
+import tourguide.tourguide.TourGuide;
 
 public class MainActivity extends AppCompatActivity
         implements VoiceControlForPlexApplication.NetworkChangeListener,
@@ -209,6 +218,8 @@ public class MainActivity extends AppCompatActivity
           .create();
 
   private boolean userIsInteracting;
+
+  private ChainTourGuide tourGuideHandler;
 
   // This will be set to true if wear support is purchased immediately upon launch before
   // initial setup has been done, to delay the wear purchase popup until after that has finished
@@ -494,14 +505,78 @@ public class MainActivity extends AppCompatActivity
         else
           fragment = getMainFragment();
 
-        // Only show the what's new dialog if this is not the first time the app is run
-        showWhatsNewDialog(false);
         switchToFragment(fragment);
+        if(prefs.get(Preferences.HAS_FINISHED_TUTORIAL1, false)) {
+          // Only show the what's new dialog if this is not the first time the app is run
+          showWhatsNewDialog(false);
+        } else
+          doTutorial();
       }
     } else {
       fragment = new SetupFragment();
       switchToFragment(fragment);
     }
+  }
+
+  private void doTutorial() {
+    logger.d("cast button: %s", toolbar.findViewById(R.id.action_cast));
+    if(toolbar.findViewById(R.id.action_cast) == null) {
+      handler.postDelayed(new Runnable() {
+        @Override
+        public void run() {
+          logger.d("doing tutorial again");
+          doTutorial();
+        }
+      }, 200);
+      return;
+    }
+    prefs.put(Preferences.HAS_FINISHED_TUTORIAL1, true);
+
+    ChainTourGuide castTour = ChainTourGuide.init(this)
+            .setToolTip(new ToolTip().setDescription(getString(R.string.tutorial1_cast_button)))
+            .playLater(toolbar.findViewById(R.id.action_cast));
+
+    ChainTourGuide navTour = ChainTourGuide.init(this)
+            .setToolTip(new ToolTip().setDescription(getString(R.string.tutorial1_nav_button)))
+            .playLater(getNavButtonView());
+
+    ChainTourGuide micTour = ChainTourGuide.init(this)
+            .setToolTip(new ToolTip().setDescription(getString(R.string.tutorial1_mic_button)))
+            .playLater(findViewById(R.id.mainMicButton));
+
+    Sequence sequence = new Sequence.SequenceBuilder()
+            .add(castTour, navTour, micTour)
+            .setDefaultOverlay(new Overlay()
+                    .setBackgroundColor(Color.parseColor("#aa000000"))
+                    .disableClick(true)
+                    .disableClickThroughHole(true)
+                    .setOnClickListener(new View.OnClickListener() {
+                      @Override
+                      public void onClick(View v) {
+                        tourGuideHandler.next();
+                      }
+                    })
+            ).setDefaultPointer(null)
+            .setContinueMethod(Sequence.ContinueMethod.OverlayListener)
+            .build();
+
+    tourGuideHandler = ChainTourGuide.init(this).playInSequence(sequence);
+  }
+
+  private ImageButton getNavButtonView() {
+    try {
+      Class<?> toolbarClass = Toolbar.class;
+      Field navButtonField = toolbarClass.getDeclaredField("mNavButtonView");
+      navButtonField.setAccessible(true);
+      ImageButton navButtonView = (ImageButton) navButtonField.get(toolbar);
+
+      return navButtonView;
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+    }
+
+    return null;
   }
 
   private void showWhatsNewDialog(boolean force) {

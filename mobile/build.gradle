@@ -5,6 +5,9 @@ repositories {
     maven {
         url "https://mint.splunk.com/gradle/"
     }
+    maven {
+        url "https://oss.sonatype.org/content/repositories/snapshots"
+    }
 }
 
 configurations {
@@ -149,4 +152,8 @@ dependencies {
 //    compile 'org.honorato.multistatetogglebutton:multistatetogglebutton:0.2.0'
     compile 'com.jakewharton:butterknife:7.0.1'
     compile 'com.google.android.libraries.cast.companionlibrary:ccl:2.8.2'
+    compile 'com.github.aakira:expandable-layout:1.4.3@aar'
+    compile ('com.github.worker8:tourguide:1.0.17-SNAPSHOT@aar'){
+        transitive=true
+    }
 }

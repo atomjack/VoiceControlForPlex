@@ -57,6 +57,8 @@ public class Preferences {
   public final static String ACTIVE_CONNECTION_EXPIRES = "pref.active_connection_expires";
   public final static String ACTIVE_CONNECTION = "pref.active_connection";
 
+  public final static String HAS_FINISHED_TUTORIAL1 = "pref.has_finished_tutorial1";
+
 
 
   public Preferences(Context context) {
