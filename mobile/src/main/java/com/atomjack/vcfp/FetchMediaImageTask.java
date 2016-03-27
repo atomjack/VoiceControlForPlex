@@ -13,7 +13,7 @@ import java.io.InputStream;
 
 import cz.fhucho.android.util.SimpleDiskCache;
 
-public class FetchMediaImageTask extends AsyncTask<Void, Void, Void> {
+public class FetchMediaImageTask extends LAsyncTask {
   PlexMedia media;
   int width, height;
   String whichThumb;
@@ -33,6 +33,11 @@ public class FetchMediaImageTask extends AsyncTask<Void, Void, Void> {
 
   public FetchMediaImageTask(PlexMedia media, int width, int height, String whichThumb, String imageKey) {
     this(media, width, height, whichThumb, imageKey, null);
+  }
+
+  @Override
+  protected void onPostExecute(Void aVoid) {
+    // Override and do nothing so that LAsyncTask's handler is not run until the fetch is completed.
   }
 
   @Override
@@ -61,6 +66,8 @@ public class FetchMediaImageTask extends AsyncTask<Void, Void, Void> {
                 if(bitmapHandler != null)
                   bitmapHandler.onSuccess(null);
               }
+              if(handler != null)
+                handler.onFinished();
               return null;
             }
           }.execute();
@@ -75,6 +82,8 @@ public class FetchMediaImageTask extends AsyncTask<Void, Void, Void> {
       Logger.d("Found cached thumb for %s at %dx%d with key %s", media.getTitle(), width, height, imageKey);
       if (bitmapHandler != null)
         bitmapHandler.onSuccess(bitmap);
+      if(handler != null)
+        handler.onFinished();
     }
     return null;
   }

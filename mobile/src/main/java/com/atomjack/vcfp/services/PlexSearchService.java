@@ -21,6 +21,7 @@ import com.atomjack.vcfp.BuildConfig;
 import com.atomjack.vcfp.CastPlayerManager;
 import com.atomjack.vcfp.Feedback;
 import com.atomjack.vcfp.FetchMediaImageTask;
+import com.atomjack.vcfp.LimitedAsyncTask;
 import com.atomjack.vcfp.PlexSubscription;
 import com.atomjack.vcfp.QueryString;
 import com.atomjack.vcfp.R;
@@ -1347,10 +1348,12 @@ public class PlexSearchService extends Service {
         if (mediaDone[0] == numMedia[0]) {
           if(onFinish != null)
             onFinish.run();
-        }
+        } else
+          return;
+
+        LimitedAsyncTask newTaskList = new LimitedAsyncTask();
 
         // Fetch the images for the rest of the tracks
-        List<FetchMediaImageTask> taskList = new ArrayList<>();
         for(final PlexMedia m : list) {
           if(m.thumb != null || m.grandparentThumb != null) {
             String mainThumb;
@@ -1358,22 +1361,20 @@ public class PlexSearchService extends Service {
               mainThumb = m.thumb != null ? m.thumb : m.grandparentThumb;
             else
               mainThumb = m.isShow() ? m.thumb : m.grandparentThumb;
-            taskList.add(new FetchMediaImageTask(m, posterWidth, posterHeight, mainThumb, m.getImageKey(mainImageKey)));
-            taskList.add(new FetchMediaImageTask(m,
+            newTaskList.addTask(new FetchMediaImageTask(m, posterWidth, posterHeight, mainThumb, m.getImageKey(mainImageKey)));
+            newTaskList.addTask(new FetchMediaImageTask(m,
                     PlexMedia.IMAGE_SIZES.get(notificationImageKey)[0],
                     PlexMedia.IMAGE_SIZES.get(notificationImageKey)[1],
                     m.getNotificationThumb(notificationImageKey),
                     m.getImageKey(notificationImageKey)));
-            taskList.add(new FetchMediaImageTask(m,
+            newTaskList.addTask(new FetchMediaImageTask(m,
                     PlexMedia.IMAGE_SIZES.get(notificationImageKeyBig)[0],
                     PlexMedia.IMAGE_SIZES.get(notificationImageKeyBig)[1],
                     m.getNotificationThumb(notificationImageKeyBig),
                     m.getImageKey(notificationImageKeyBig)));
           }
         }
-
-        for (FetchMediaImageTask task : taskList)
-          task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        newTaskList.run();
       }
     };
 
