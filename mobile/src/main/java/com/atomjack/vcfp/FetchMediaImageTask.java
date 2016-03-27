@@ -28,6 +28,7 @@ public class FetchMediaImageTask extends LAsyncTask {
     this.bitmapHandler = bitmapHandler;
     this.whichThumb = whichThumb;
     this.imageKey = imageKey;
+    this.label = imageKey;
     mSimpleDiskCache = VoiceControlForPlexApplication.getInstance().mSimpleDiskCache;
   }
 

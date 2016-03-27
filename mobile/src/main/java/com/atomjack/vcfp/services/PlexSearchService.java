@@ -1204,7 +1204,7 @@ public class PlexSearchService extends Service {
           theMedia = mediaContainer.tracks.get(0);
         if (theMedia != null) {
           theMedia.server = media.server;
-          logger.d("fetchAndPlayMedia, set server to %s", theMedia.server);
+          logger.d("fetchAndPlayMedia, set server to %s", theMedia.server.name);
           playMedia(theMedia);
           onActionFinished(WearConstants.SPEECH_QUERY_RESULT, false, theMedia);
         } else {
@@ -1295,7 +1295,6 @@ public class PlexSearchService extends Service {
   }
 
   private void preCachePlayerImages(PlexMedia firstMedia, ArrayList<? extends PlexMedia> playlist, final Runnable onFinish) {
-//    final PlexMedia firstMedia = playlist.get(0);
     if(playlist == null) {
       onFinish.run();
       return;
@@ -1314,22 +1313,6 @@ public class PlexSearchService extends Service {
         onFinish.run();
       return;
     }
-    final ArrayList<PlexMedia> list = new ArrayList<>();
-    List<String> keysToFetch = new ArrayList<>();
-    for(final PlexMedia m : playlist) {
-      if(m.isMusic()) {
-        if (!keysToFetch.contains(((PlexTrack)m).parentRatingKey) && !firstMedia.ratingKey.equals(m.ratingKey)) {
-          keysToFetch.add(((PlexTrack)m).parentRatingKey);
-          list.add(m);
-        }
-      } else {
-        if(!keysToFetch.contains(m.ratingKey) && !firstMedia.ratingKey.equals(m.ratingKey)) {
-          keysToFetch.add(m.ratingKey);
-          list.add(m);
-        }
-      }
-    }
-    logger.d("After fetching images for first media, we will fetch %d more images", list.size());
 
     final PlexMedia.IMAGE_KEY notificationImageKey = firstMedia.isMusic() ? PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB_MUSIC : PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB;
     final PlexMedia.IMAGE_KEY notificationImageKeyBig = firstMedia.isMusic() ? PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB_MUSIC_BIG : PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB_BIG;
@@ -1341,40 +1324,68 @@ public class PlexSearchService extends Service {
     else
       mainImageKey = PlexMedia.IMAGE_KEY.MOVIE_THUMB;
 
+    // compile list of albums/videos in the rest of the playlist (excluding first one, which is fetched below) that we should fetch images for
+    final ArrayList<PlexMedia> list = new ArrayList<>();
+    List<String> keysToFetch = new ArrayList<>();
+    for(final PlexMedia m : playlist) {
+      if(m.isMusic()) {
+        if (!keysToFetch.contains(((PlexTrack)m).parentRatingKey) && !firstMedia.ratingKey.equals(m.ratingKey)) {
+          if(VoiceControlForPlexApplication.getInstance().getCachedBitmap(m.getImageKey(notificationImageKey)) == null ||
+                  VoiceControlForPlexApplication.getInstance().getCachedBitmap(m.getImageKey(notificationImageKeyBig)) == null ||
+                  VoiceControlForPlexApplication.getInstance().getCachedBitmap(m.getImageKey(mainImageKey)) == null) {
+            keysToFetch.add(((PlexTrack) m).parentRatingKey);
+            list.add(m);
+          }
+        }
+      } else {
+        if(!keysToFetch.contains(m.ratingKey) && !firstMedia.ratingKey.equals(m.ratingKey)) {
+          if(VoiceControlForPlexApplication.getInstance().getCachedBitmap(m.getImageKey(notificationImageKey)) == null ||
+                  VoiceControlForPlexApplication.getInstance().getCachedBitmap(m.getImageKey(notificationImageKeyBig)) == null ||
+                  VoiceControlForPlexApplication.getInstance().getCachedBitmap(m.getImageKey(mainImageKey)) == null) {
+            keysToFetch.add(m.ratingKey);
+            list.add(m);
+          }
+        }
+      }
+    }
+    logger.d("After fetching images for first media, we will fetch %d more images", list.size()*3);
+
     BitmapHandler bitmapHandler = new BitmapHandler() {
       @Override
       public void onSuccess(Bitmap bitmap) {
         mediaDone[0]++;
-        if (mediaDone[0] == numMedia[0]) {
+        if (mediaDone[0] >= numMedia[0]) {
           if(onFinish != null)
             onFinish.run();
         } else
           return;
 
-        LimitedAsyncTask newTaskList = new LimitedAsyncTask();
+        if(list.size() > 0) {
+          LimitedAsyncTask newTaskList = new LimitedAsyncTask();
 
-        // Fetch the images for the rest of the tracks
-        for(final PlexMedia m : list) {
-          if(m.thumb != null || m.grandparentThumb != null) {
-            String mainThumb;
-            if(m.isMusic())
-              mainThumb = m.thumb != null ? m.thumb : m.grandparentThumb;
-            else
-              mainThumb = m.isShow() ? m.thumb : m.grandparentThumb;
-            newTaskList.addTask(new FetchMediaImageTask(m, posterWidth, posterHeight, mainThumb, m.getImageKey(mainImageKey)));
-            newTaskList.addTask(new FetchMediaImageTask(m,
-                    PlexMedia.IMAGE_SIZES.get(notificationImageKey)[0],
-                    PlexMedia.IMAGE_SIZES.get(notificationImageKey)[1],
-                    m.getNotificationThumb(notificationImageKey),
-                    m.getImageKey(notificationImageKey)));
-            newTaskList.addTask(new FetchMediaImageTask(m,
-                    PlexMedia.IMAGE_SIZES.get(notificationImageKeyBig)[0],
-                    PlexMedia.IMAGE_SIZES.get(notificationImageKeyBig)[1],
-                    m.getNotificationThumb(notificationImageKeyBig),
-                    m.getImageKey(notificationImageKeyBig)));
+          // Fetch the images for the rest of the tracks
+          for (final PlexMedia m : list) {
+            if (m.thumb != null || m.grandparentThumb != null) {
+              String mainThumb;
+              if (m.isMusic())
+                mainThumb = m.thumb != null ? m.thumb : m.grandparentThumb;
+              else
+                mainThumb = m.isShow() ? m.thumb : m.grandparentThumb;
+              newTaskList.addTask(new FetchMediaImageTask(m, posterWidth, posterHeight, mainThumb, m.getImageKey(mainImageKey)));
+              newTaskList.addTask(new FetchMediaImageTask(m,
+                      PlexMedia.IMAGE_SIZES.get(notificationImageKey)[0],
+                      PlexMedia.IMAGE_SIZES.get(notificationImageKey)[1],
+                      m.getNotificationThumb(notificationImageKey),
+                      m.getImageKey(notificationImageKey)));
+              newTaskList.addTask(new FetchMediaImageTask(m,
+                      PlexMedia.IMAGE_SIZES.get(notificationImageKeyBig)[0],
+                      PlexMedia.IMAGE_SIZES.get(notificationImageKeyBig)[1],
+                      m.getNotificationThumb(notificationImageKeyBig),
+                      m.getImageKey(notificationImageKeyBig)));
+            }
           }
+          newTaskList.run();
         }
-        newTaskList.run();
       }
     };
 
@@ -1385,7 +1396,12 @@ public class PlexSearchService extends Service {
         mainThumb = firstMedia.thumb != null ? firstMedia.thumb : firstMedia.grandparentThumb;
       else
         mainThumb = !firstMedia.isShow() ? firstMedia.thumb : firstMedia.grandparentThumb;
-      new FetchMediaImageTask(firstMedia, posterWidth, posterHeight, mainThumb, firstMedia.getImageKey(mainImageKey), bitmapHandler).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+      new FetchMediaImageTask(firstMedia,
+              posterWidth,
+              posterHeight,
+              mainThumb,
+              firstMedia.getImageKey(mainImageKey),
+              bitmapHandler).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
       new FetchMediaImageTask(firstMedia,
               PlexMedia.IMAGE_SIZES.get(notificationImageKey)[0],
               PlexMedia.IMAGE_SIZES.get(notificationImageKey)[1],
@@ -1411,7 +1427,7 @@ public class PlexSearchService extends Service {
         final int[] numMedia = new int[]{0}; // the total number
         final int[] mediaDone = new int[]{0};
         if(media.isMusic()) {
-          preCachePlayerImages(media, media.isMusic() ? mediaContainer.tracks : mediaContainer.videos, new Runnable() {
+          preCachePlayerImages(media, mediaContainer.tracks, new Runnable() {
             @Override
             public void run() {
               playLocalMedia(media, transientToken, mediaContainer);
