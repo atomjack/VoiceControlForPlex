@@ -37,8 +37,8 @@ public abstract class PlexMedia implements Parcelable {
 
   public final static Map<IMAGE_KEY, int[]> IMAGE_SIZES = new HashMap<IMAGE_KEY, int[]>() {
     {
-      put(IMAGE_KEY.NOTIFICATION_THUMB, new int[] {114, 64});
-      put(IMAGE_KEY.NOTIFICATION_THUMB_BIG, new int[] {87, 128});
+      put(IMAGE_KEY.NOTIFICATION_THUMB, new int[] {114*2, 64*2});
+      put(IMAGE_KEY.NOTIFICATION_THUMB_BIG, new int[] {87*2, 128*2});
       put(IMAGE_KEY.NOTIFICATION_THUMB_MUSIC, new int[] {128, 128});
       put(IMAGE_KEY.NOTIFICATION_THUMB_MUSIC_BIG, new int[] {256, 256});
       put(IMAGE_KEY.WEAR_BACKGROUND, new int[] {320, 320});
@@ -57,9 +57,7 @@ public abstract class PlexMedia implements Parcelable {
     return this instanceof PlexTrack;
   }
 
-  public boolean isShow() {
-    return false;
-  }
+  public abstract boolean isShow();
 
   public boolean isClip() { return false; }
 

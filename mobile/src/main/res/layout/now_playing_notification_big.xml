@@ -55,7 +55,8 @@
                     android:textSize="18sp"
                     android:singleLine="true"
                     android:text="Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. "
-                    android:textColor="@color/white"/>
+                    android:textColor="@color/white"
+                    android:layout_marginRight="30dp"/>
 
                 <ImageButton
                     android:layout_width="wrap_content"
@@ -65,7 +66,8 @@
                     android:layout_alignParentTop="true"
                     android:layout_alignParentRight="true"
                     android:layout_alignParentEnd="true"
-                    android:background="@null"/>
+                    android:background="@null"
+                    android:padding="5dp"/>
             </RelativeLayout>
 
 

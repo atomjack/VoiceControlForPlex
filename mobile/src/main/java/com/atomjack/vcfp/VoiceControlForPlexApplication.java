@@ -575,7 +575,7 @@ public class VoiceControlForPlexApplication extends Application
           }
         }));
       }
-      if(media.getNotificationThumb(key) != null) {
+      if(media.getNotificationThumb(keyBig) != null) {
         numBitmapsToFetch[0]++;
         taskList.add(new FetchMediaImageTask(media, PlexMedia.IMAGE_SIZES.get(keyBig)[0], PlexMedia.IMAGE_SIZES.get(keyBig)[1], media.getNotificationThumb(keyBig), media.getImageKey(keyBig), new BitmapHandler() {
           @Override

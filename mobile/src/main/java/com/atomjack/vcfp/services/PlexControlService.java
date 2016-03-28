@@ -149,7 +149,7 @@ public class PlexControlService extends IntentService {
       }
 
       Logger.d("[PlexControlService] state: %s", currentState);
-      if(currentState != PlayerState.STOPPED)
+      if(currentState != PlayerState.STOPPED && !intent.getAction().equals(com.atomjack.shared.Intent.ACTION_DISCONNECT))
         VoiceControlForPlexApplication.getInstance().setNotification(client, currentState, playingMedia, playlist);
     }
   }

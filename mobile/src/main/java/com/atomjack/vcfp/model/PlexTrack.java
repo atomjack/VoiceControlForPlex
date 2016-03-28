@@ -69,5 +69,9 @@ public class PlexTrack extends PlexMedia {
       return String.format("%s/%s/%s", server.machineIdentifier, parentRatingKey, imageKey);
 
   }
+
+  public boolean isShow() {
+    return false;
+  }
 }
 
