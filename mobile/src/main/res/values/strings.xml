@@ -196,7 +196,7 @@
     <string name="error_server_died">Sorry, the connection to the server was lost.</string>
     <string name="local_video_description">Choose video resolution and bitrate settings for Local Video playback. You may set separate settings for servers on the same wifi network (local) and for those on remote networks.</string>
     <string name="chromecast_video_description">Choose video resolution and bitrate settings for Chromecast playback. You may set separate settings for servers on the same wifi network (local) and for those on remote networks.</string>
-    <string name="localmedia_disclaimer">Playback to the local device is restricted to one minute. Purchasing local media playback (%s) via the Navigation Menu->Settings will remove this restriction.</string>
+    <string name="localmedia_purchase_from_menu">If you would like to unlock this feature in the future, you can purchase it via the Settings portion of the Navigation Menu.</string>
     <string name="localmedia_purchase_reminder">Playback to the local device is restricted to one minute. Would you like to unlock it(%s)?</string>
     <string name="purchase_localmedia">Purchase Local Media Playback</string>
 

@@ -640,6 +640,10 @@ public class MainActivity extends AppCompatActivity
   };
 
   public void showPurchaseLocalMedia(MenuItem item) {
+    showPurchaseLocalMedia(false);
+  }
+
+  public void showPurchaseLocalMedia(final boolean showPurchaseFromMenu) {
     AlertDialog.Builder builder = new AlertDialog.Builder(this);
     View view = getLayoutInflater().inflate(R.layout.popup_localmedia_purchase_reminder, null);
 
@@ -665,6 +669,26 @@ public class MainActivity extends AppCompatActivity
       @Override
       public void onClick(View v) {
         dialog.dismiss();
+        if(showPurchaseFromMenu) {
+          AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+          View view = getLayoutInflater().inflate(R.layout.popup_localmedia_purchase_from_menu, null);
+          builder.setView(view);
+
+          TextView localMediaDisclaimer = (TextView) view.findViewById(R.id.localMediaDisclaimer);
+          localMediaDisclaimer.setText(R.string.localmedia_purchase_from_menu);
+
+          final AlertDialog dialog = builder.create();
+
+          Button localMediaDisclaimerButton = (Button) view.findViewById(R.id.localMediaDisclaimerButton);
+          localMediaDisclaimerButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+              dialog.dismiss();
+              prefs.put(Preferences.HAS_SHOWN_INITIAL_LOCALMEDIA_PURCHASE, true);
+            }
+          });
+          dialog.show();
+        }
       }
     });
 
@@ -676,14 +700,6 @@ public class MainActivity extends AppCompatActivity
     super.onResume();
     logger.d("onResume, interacting: %s", userIsInteracting);
     VoiceControlForPlexApplication.applicationResumed();
-
-    if(!VoiceControlForPlexApplication.getInstance().hasLocalmedia()) {
-      int count = VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.LOCALMEDIA_PURCHASE_REMINDER_COUNT, 0);
-      if (count == 5) {
-        VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.LOCALMEDIA_PURCHASE_REMINDER_COUNT, ++count);
-        showPurchaseLocalMedia(null);
-      }
-    }
 
     plexSubscription.setListener(plexSubscriptionListener);
     castPlayerManager.setListener(plexSubscriptionListener);
@@ -1586,26 +1602,8 @@ public class MainActivity extends AppCompatActivity
         setClient(clientSelected);
 
         if(client.isLocalClient) {
-          if(!prefs.get(Preferences.HAS_SHOWN_LOCALMEDIA_DISCLAIMER, false) && !VoiceControlForPlexApplication.getInstance().hasLocalmedia()) {
-            AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-            View view = getLayoutInflater().inflate(R.layout.popup_localmedia_disclaimer, null);
-            builder.setView(view);
-
-            TextView localMediaDisclaimer = (TextView)view.findViewById(R.id.localMediaDisclaimer);
-            localMediaDisclaimer.setText(String.format(getString(R.string.localmedia_disclaimer), VoiceControlForPlexApplication.getLocalmediaPrice()));
-
-            final AlertDialog dialog = builder.create();
-
-            Button localMediaDisclaimerButton = (Button)view.findViewById(R.id.localMediaDisclaimerButton);
-            localMediaDisclaimerButton.setOnClickListener(new View.OnClickListener() {
-              @Override
-              public void onClick(View v) {
-                dialog.dismiss();
-                prefs.put(Preferences.HAS_SHOWN_LOCALMEDIA_DISCLAIMER, true);
-                localClientSelected(clientSelected);
-              }
-            });
-            dialog.show();
+          if(!prefs.get(Preferences.HAS_SHOWN_INITIAL_LOCALMEDIA_PURCHASE, false) && !VoiceControlForPlexApplication.getInstance().hasLocalmedia()) {
+            showPurchaseLocalMedia(true);
           } else {
             localClientSelected(clientSelected);
           }
@@ -2801,13 +2799,6 @@ public class MainActivity extends AppCompatActivity
                 getApplicationContext().unbindService(musicConnection);
               musicPlayerIsBound = false;
 
-              if(!VoiceControlForPlexApplication.getInstance().hasLocalmedia()) {
-                int count = VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.LOCALMEDIA_PURCHASE_REMINDER_COUNT, 0);
-                if (count == 5) {
-                  VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.LOCALMEDIA_PURCHASE_REMINDER_COUNT, ++count);
-                  showPurchaseLocalMedia(null);
-                }
-              }
             }
           });
         }

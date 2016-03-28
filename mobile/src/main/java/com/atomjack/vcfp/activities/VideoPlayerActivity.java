@@ -698,12 +698,6 @@ public class VideoPlayerActivity extends AppCompatActivity
     currentState = PlayerState.STOPPED;
     VoiceControlForPlexApplication.getInstance().sendWearPlaybackChange(currentState, currentVideo);
     handler.removeCallbacks(notPurchasedDisconnectTimer);
-    if(!VoiceControlForPlexApplication.getInstance().hasLocalmedia()) {
-      int count = VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.LOCALMEDIA_PURCHASE_REMINDER_COUNT, 0);
-      if (count < Preferences.LOCALMEDIA_PURCHASE_REMINDER_AT_COUNT) {
-        VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.LOCALMEDIA_PURCHASE_REMINDER_COUNT, ++count);
-      }
-    }
     finish();
   }
 
