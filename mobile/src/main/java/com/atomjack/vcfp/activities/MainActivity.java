@@ -676,10 +676,12 @@ public class MainActivity extends AppCompatActivity
     logger.d("onResume, interacting: %s", userIsInteracting);
     VoiceControlForPlexApplication.applicationResumed();
 
-    int count = VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.LOCALMEDIA_PURCHASE_REMINDER_COUNT, 0);
-    if(count == 5) {
-      VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.LOCALMEDIA_PURCHASE_REMINDER_COUNT, ++count);
-      showPurchaseLocalMedia(null);
+    if(!VoiceControlForPlexApplication.getInstance().hasLocalmedia()) {
+      int count = VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.LOCALMEDIA_PURCHASE_REMINDER_COUNT, 0);
+      if (count == 5) {
+        VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.LOCALMEDIA_PURCHASE_REMINDER_COUNT, ++count);
+        showPurchaseLocalMedia(null);
+      }
     }
 
     plexSubscription.setListener(plexSubscriptionListener);
@@ -2262,38 +2264,6 @@ public class MainActivity extends AppCompatActivity
 
 
     dialog.show();
-/*
-    new AlertDialog.Builder(MainActivity.this)
-            .setMessage(String.format(getString(stringResource), VoiceControlForPlexApplication.getWearPrice()))
-            .setCancelable(false)
-            .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
-              @Override
-              public void onClick(DialogInterface dialogInterface, int i) {
-                prefs.put(Preferences.HAS_SHOWN_WEAR_PURCHASE_POPUP, true);
-                dialogInterface.cancel();
-                VoiceControlForPlexApplication.getInstance().getIabHelper().launchPurchaseFlow(MainActivity.this,
-                        VoiceControlForPlexApplication.SKU_WEAR, 10001, mPurchaseFinishedListener,
-                        VoiceControlForPlexApplication.SKU_TEST_PURCHASED == VoiceControlForPlexApplication.SKU_WEAR ? VoiceControlForPlexApplication.getInstance().getEmailHash() : "");
-              }
-            })
-            .setNeutralButton(R.string.no_thanks, new DialogInterface.OnClickListener() {
-              public void onClick(DialogInterface dialog, int id) {
-                dialog.cancel();
-                prefs.put(Preferences.HAS_SHOWN_WEAR_PURCHASE_POPUP, true);
-                if(showPurchaseFromMenu) {
-                  new AlertDialog.Builder(MainActivity.this)
-                          .setMessage(R.string.wear_purchase_from_menu)
-                          .setCancelable(false)
-                          .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                              dialog.cancel();
-                            }
-                          }).create().show();
-                }
-              }
-            }).create().show();
-            */
   }
 
   IabHelper.OnIabPurchaseFinishedListener mPurchaseFinishedListener
@@ -2830,10 +2800,12 @@ public class MainActivity extends AppCompatActivity
                 getApplicationContext().unbindService(musicConnection);
               musicPlayerIsBound = false;
 
-              int count = VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.LOCALMEDIA_PURCHASE_REMINDER_COUNT, 0);
-              if(count == 5) {
-                VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.LOCALMEDIA_PURCHASE_REMINDER_COUNT, ++count);
-                showPurchaseLocalMedia(null);
+              if(!VoiceControlForPlexApplication.getInstance().hasLocalmedia()) {
+                int count = VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.LOCALMEDIA_PURCHASE_REMINDER_COUNT, 0);
+                if (count == 5) {
+                  VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.LOCALMEDIA_PURCHASE_REMINDER_COUNT, ++count);
+                  showPurchaseLocalMedia(null);
+                }
               }
             }
           });

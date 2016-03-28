@@ -62,8 +62,10 @@ android {
             buildConfigField "boolean", "AUTO_REFRESH_DEVICES", "true"
             buildConfigField "boolean", "CHROMECAST_REQUIRES_PURCHASE", "true"
             buildConfigField "boolean", "WEAR_REQUIRES_PURCHASE", "true"
+            buildConfigField "boolean", "LOCALMEDIA_REQUIRES_PURCHASE", "true"
             buildConfigField "String", "SKU_CHROMECAST", "\"chromecast\""
             buildConfigField "String", "SKU_WEAR", "\"wear\""
+            buildConfigField "String", "SKU_LOCALMEDIA", "\"localplayback\""
             buildConfigField "String", "CHROMECAST_APP_ID", "\"" + RELEASE_CHROMECAST_APP_ID + "\""
         }
         debug {
@@ -72,8 +74,10 @@ android {
             buildConfigField "boolean", "AUTO_REFRESH_DEVICES", "false"
             buildConfigField "boolean", "CHROMECAST_REQUIRES_PURCHASE", "false"
             buildConfigField "boolean", "WEAR_REQUIRES_PURCHASE", "false"
+            buildConfigField "boolean", "LOCALMEDIA_REQUIRES_PURCHASE", "false"
             buildConfigField "String", "SKU_CHROMECAST", "\"chromecast\""
             buildConfigField "String", "SKU_WEAR", "\"wear\""
+            buildConfigField "String", "SKU_LOCALMEDIA", "\"localplayback\""
             buildConfigField "String", "CHROMECAST_APP_ID", "\"" + DEBUG_CHROMECAST_APP_ID + "\""
         }
         chromecast {
