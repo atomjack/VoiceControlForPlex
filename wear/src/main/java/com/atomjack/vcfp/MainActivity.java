@@ -21,10 +21,6 @@ import com.google.android.gms.wearable.Wearable;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import butterknife.Bind;
-import butterknife.ButterKnife;
-import butterknife.OnClick;
-
 public class MainActivity extends Activity implements
         GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener {
@@ -38,9 +34,6 @@ public class MainActivity extends Activity implements
   GoogleApiClient googleApiClient;
   WatchViewStub watchViewStub;
 
-  @Bind(R.id.mainMicButton)
-  public ImageButton mainMicButton;
-  
   private NewLogger logger;
 
   @Override
@@ -149,21 +142,6 @@ public class MainActivity extends Activity implements
     watchViewStub = (WatchViewStub) findViewById(R.id.watch_view_stub);
     watchViewStub.setRectLayout(R.layout.activity_main_rect);
     watchViewStub.setRoundLayout(R.layout.activity_main_round);
-
-    watchViewStub.setOnLayoutInflatedListener(new WatchViewStub.OnLayoutInflatedListener() {
-      @Override
-      public void onLayoutInflated(WatchViewStub stub) {
-        ButterKnife.bind(MainActivity.this, stub);
-      }
-    });
-  }
-
-  @OnClick(R.id.mainMicButton)
-  public void onMicClick(View v) {
-    logger.d("onMicClick");
-    Intent recIntent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
-    recIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-    startActivityForResult(recIntent, SPEECH_RECOGNIZER_REQUEST_CODE);
   }
 
   private void setInformationView(String info) {
