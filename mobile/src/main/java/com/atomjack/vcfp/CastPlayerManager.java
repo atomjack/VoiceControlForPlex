@@ -378,6 +378,8 @@ public class CastPlayerManager {
             }
           } else if(obj.has("event") && obj.getString("event").equals(RECEIVER_EVENTS.TIME_UPDATE) && obj.has("currentTime")) {
             position = obj.getInt("currentTime");
+            if(obj.has("currentState"))
+              currentState = PlayerState.getState(obj.getString("currentState"));
             if(listener != null)
               listener.onTimeUpdate(currentState, obj.getInt("currentTime"));
           } else if(obj.has("event") && obj.getString("event").equals(RECEIVER_EVENTS.PLAYLIST_ADVANCE) && obj.has("media") && obj.has("type")) {
