@@ -146,10 +146,8 @@ import java.util.concurrent.TimeUnit;
 
 import tourguide.tourguide.ChainTourGuide;
 import tourguide.tourguide.Overlay;
-import tourguide.tourguide.Pointer;
 import tourguide.tourguide.Sequence;
 import tourguide.tourguide.ToolTip;
-import tourguide.tourguide.TourGuide;
 
 public class MainActivity extends AppCompatActivity
         implements VoiceControlForPlexApplication.NetworkChangeListener,
@@ -282,7 +280,6 @@ public class MainActivity extends AppCompatActivity
     super.onCreate(savedInstanceState);
     logger = new NewLogger(this);
     logger.d("onCreate");
-
 
     // This will enable the UI to be updated (Wear Support hidden/Wear Options shown)
     // once inventory is queried via Google, if wear support has been purchased
@@ -641,11 +638,49 @@ public class MainActivity extends AppCompatActivity
     }
   };
 
+  public void showPurchaseLocalMedia(MenuItem item) {
+    AlertDialog.Builder builder = new AlertDialog.Builder(this);
+    View view = getLayoutInflater().inflate(R.layout.popup_localmedia_purchase_reminder, null);
+
+    builder.setView(view);
+
+    final AlertDialog dialog = builder.create();
+    TextView localMediaPurchaseReminderMessage = (TextView)view.findViewById(R.id.localMediaPurchaseReminderMessage);
+    localMediaPurchaseReminderMessage.setText(String.format(getString(R.string.localmedia_purchase_reminder), VoiceControlForPlexApplication.getLocalmediaPrice()));
+    Button localMediaPurchaseReminderOKButton = (Button)view.findViewById(R.id.localMediaPurchaseReminderOKButton);
+    localMediaPurchaseReminderOKButton.setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View v) {
+        dialog.dismiss();
+        dialog.cancel();
+        VoiceControlForPlexApplication.getInstance().getIabHelper().flagEndAsync();
+        VoiceControlForPlexApplication.getInstance().getIabHelper().launchPurchaseFlow(MainActivity.this,
+                VoiceControlForPlexApplication.SKU_LOCALMEDIA, 10001, mPurchaseFinishedListener,
+                VoiceControlForPlexApplication.SKU_TEST_PURCHASED == VoiceControlForPlexApplication.SKU_LOCALMEDIA ? VoiceControlForPlexApplication.getInstance().getEmailHash() : "");
+      }
+    });
+    Button localMediaPurchaseReminderNoButton = (Button)view.findViewById(R.id.localMediaPurchaseReminderNoButton);
+    localMediaPurchaseReminderNoButton.setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View v) {
+        dialog.dismiss();
+      }
+    });
+
+    dialog.show();
+  }
+
   @Override
   protected void onResume() {
     super.onResume();
     logger.d("onResume, interacting: %s", userIsInteracting);
     VoiceControlForPlexApplication.applicationResumed();
+
+    int count = VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.LOCALMEDIA_PURCHASE_REMINDER_COUNT, 0);
+    if(count == 5) {
+      VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.LOCALMEDIA_PURCHASE_REMINDER_COUNT, ++count);
+      showPurchaseLocalMedia(null);
+    }
 
     plexSubscription.setListener(plexSubscriptionListener);
     castPlayerManager.setListener(plexSubscriptionListener);
@@ -1398,6 +1433,8 @@ public class MainActivity extends AppCompatActivity
         navigationFooter.setVisibility(View.GONE);
         if(VoiceControlForPlexApplication.getInstance().hasWear())
           hidePurchaseWearMenuItem();
+        if(VoiceControlForPlexApplication.getInstance().hasLocalmedia())
+          hidePurchaseLocalmediaMenuItem();
 
         if(VoiceControlForPlexApplication.getInstance().hasChromecast()) {
           MenuItem chromecastOptionsItem = menu.findItem(R.id.menu_chromecast_video);
@@ -1542,16 +1579,33 @@ public class MainActivity extends AppCompatActivity
     public void onDeviceSelected(PlexDevice device, boolean resume) {
       if(device != null) {
         subscribing = true;
-        PlexClient clientSelected = (PlexClient)device;
+        final PlexClient clientSelected = (PlexClient)device;
         setClient(clientSelected);
 
         if(client.isLocalClient) {
-          setCastIconActive();
-          subscribing = false;
-          subscribed = true;
-          VoiceControlForPlexApplication.getInstance().localClientSubscription.subscribed = true;
-          prefs.put(Preferences.SUBSCRIBED_CLIENT, gsonWrite.toJson(clientSelected));
-          client = clientSelected;
+          if(!prefs.get(Preferences.HAS_SHOWN_LOCALMEDIA_DISCLAIMER, false) && !VoiceControlForPlexApplication.getInstance().hasLocalmedia()) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+            View view = getLayoutInflater().inflate(R.layout.popup_localmedia_disclaimer, null);
+            builder.setView(view);
+
+            TextView localMediaDisclaimer = (TextView)view.findViewById(R.id.localMediaDisclaimer);
+            localMediaDisclaimer.setText(String.format(getString(R.string.localmedia_disclaimer), VoiceControlForPlexApplication.getLocalmediaPrice()));
+
+            final AlertDialog dialog = builder.create();
+
+            Button localMediaDisclaimerButton = (Button)view.findViewById(R.id.localMediaDisclaimerButton);
+            localMediaDisclaimerButton.setOnClickListener(new View.OnClickListener() {
+              @Override
+              public void onClick(View v) {
+                dialog.dismiss();
+                prefs.put(Preferences.HAS_SHOWN_LOCALMEDIA_DISCLAIMER, true);
+                localClientSelected(clientSelected);
+              }
+            });
+            dialog.show();
+          } else {
+            localClientSelected(clientSelected);
+          }
           return;
         }
         // Start animating the action bar icon
@@ -1580,6 +1634,15 @@ public class MainActivity extends AppCompatActivity
       }
     }
   };
+
+  private void localClientSelected(PlexClient clientSelected) {
+    setCastIconActive();
+    subscribing = false;
+    subscribed = true;
+    VoiceControlForPlexApplication.getInstance().localClientSubscription.subscribed = true;
+    prefs.put(Preferences.SUBSCRIBED_CLIENT, gsonWrite.toJson(clientSelected));
+    client = clientSelected;
+  }
 
   protected void setClient(PlexClient _client) {
     logger.d("setClient");
@@ -2260,6 +2323,10 @@ public class MainActivity extends AppCompatActivity
         hidePurchaseWearMenuItem();
         // Send a message to the wear device that wear support has been purchased
         new SendToDataLayerThread(WearConstants.WEAR_PURCHASED, MainActivity.this).start();
+      } else if(purchase.getSku().equals(VoiceControlForPlexApplication.SKU_LOCALMEDIA)) {
+        logger.d("Purchased Local Media Support!");
+        VoiceControlForPlexApplication.getInstance().setHasLocalmedia(true);
+        hidePurchaseLocalmediaMenuItem();
       }
     }
   };
@@ -2456,6 +2523,17 @@ public class MainActivity extends AppCompatActivity
       MenuItem wearOptionsItem = navigationViewMain.getMenu().findItem(R.id.menu_wear_options);
       if (wearOptionsItem != null)
         wearOptionsItem.setVisible(true);
+    }
+  }
+
+  public void hidePurchaseLocalmediaMenuItem() {
+    if(navigationViewMain != null) {
+      MenuItem localmediaItem = navigationViewMain.getMenu().findItem(R.id.menu_purchase_localmedia);
+      if (localmediaItem != null)
+        localmediaItem.setVisible(false);
+      MenuItem localVideoOptions = navigationViewMain.getMenu().findItem(R.id.menu_local_video);
+      if (localVideoOptions != null)
+        localVideoOptions.setVisible(true);
     }
   }
 
@@ -2751,6 +2829,12 @@ public class MainActivity extends AppCompatActivity
               if(musicPlayerIsBound)
                 getApplicationContext().unbindService(musicConnection);
               musicPlayerIsBound = false;
+
+              int count = VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.LOCALMEDIA_PURCHASE_REMINDER_COUNT, 0);
+              if(count == 5) {
+                VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.LOCALMEDIA_PURCHASE_REMINDER_COUNT, ++count);
+                showPurchaseLocalMedia(null);
+              }
             }
           });
         }

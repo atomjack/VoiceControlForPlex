@@ -35,6 +35,10 @@
               android:title="@string/cinema_trailers"
               android:icon="@drawable/menu_trailers"
               android:onClick="cinemaTrailers"/>
+        <item android:id="@+id/menu_purchase_localmedia"
+              android:title="@string/purchase_localmedia"
+              android:icon="@drawable/menu_local_video"
+              android:onClick="showPurchaseLocalMedia"/>
         <item android:id="@+id/menu_purchase_wear"
               android:title="@string/purchase_wear"
               android:icon="@drawable/menu_wear"
@@ -47,6 +51,7 @@
         <item android:id="@+id/menu_local_video"
               android:title="@string/menu_local_video"
               android:icon="@drawable/menu_local_video"
+              android:visible="false"
               android:onClick="showLocalVideoOptions"/>
         <item android:id="@+id/menu_chromecast_video"
               android:title="@string/menu_chromecast_video"

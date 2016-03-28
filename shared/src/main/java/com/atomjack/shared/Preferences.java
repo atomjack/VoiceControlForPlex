@@ -59,6 +59,10 @@ public class Preferences {
 
   public final static String HAS_FINISHED_TUTORIAL1 = "pref.has_finished_tutorial1";
 
+  public final static String HAS_SHOWN_LOCALMEDIA_DISCLAIMER = "pref.has_shown_localmedia_disclaimer";
+  public final static String LOCALMEDIA_PURCHASE_REMINDER_COUNT = "pref.localmedia_purchase_reminder_count"; // how many times local media has been played
+  public final static int LOCALMEDIA_PURCHASE_REMINDER_AT_COUNT = 5; // After 5 local plays, throw a popup (when playback is finished) asking if they'd like to purchase
+
 
 
   public Preferences(Context context) {

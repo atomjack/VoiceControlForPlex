@@ -374,7 +374,7 @@ public class PlexHttpClient
   public static void subscribe(PlexClient client, int subscriptionPort, int commandId, String uuid, String deviceName, final PlexHttpResponseHandler responseHandler) {
     String url = String.format("http://%s:%s", client.address, client.port);
     Logger.d("Subscribing at url %s", url);
-    PlexHttpService service = getService(url, true);
+    PlexHttpService service = getService(url);
 
     Call<PlexResponse> call = service.subscribe(uuid, deviceName, subscriptionPort, commandId);
     call.enqueue(new Callback<PlexResponse>() {
@@ -585,7 +585,7 @@ public class PlexHttpClient
 
   public static void getClientTimeline(PlexClient client, final int commandId, final PlexHttpMediaContainerHandler responseHandler) {
     String url = String.format("http://%s:%s", client.address, client.port);
-    PlexHttpService service = getService(url, true);
+    PlexHttpService service = getService(url);
     Logger.d("Polling timeline with uuid %s", VoiceControlForPlexApplication.getInstance().prefs.getUUID());
     Call<MediaContainer> call = service.pollTimeline(VoiceControlForPlexApplication.getInstance().prefs.getUUID(), commandId);
     call.enqueue(new Callback<MediaContainer>() {
@@ -964,7 +964,7 @@ public class PlexHttpClient
     media.server.findServerConnection(new ActiveConnectionHandler() {
       @Override
       public void onSuccess(Connection connection) {
-        PlexHttpService service = getService(connection, true);
+        PlexHttpService service = getService(connection);
         Call<PlexResponse> call = null;
         if(stream.streamType == Stream.SUBTITLE) {
           call = service.setSubtitleStreamActive(stream.partId, stream.id, media.server.accessToken);

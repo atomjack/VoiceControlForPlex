@@ -25,6 +25,7 @@ import android.view.KeyEvent;
 
 import com.atomjack.shared.NewLogger;
 import com.atomjack.shared.PlayerState;
+import com.atomjack.shared.Preferences;
 import com.atomjack.vcfp.FetchMediaImageTask;
 import com.atomjack.vcfp.PlexHeaders;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
@@ -95,7 +96,13 @@ public class LocalMusicService extends Service implements
     }
   }
 
-
+  private Runnable notPurchasedDisconnectTimer = new Runnable() {
+    @Override
+    public void run() {
+      logger.d("auto stopping");
+      doStop();
+    }
+  };
 
   @Override
   public int onStartCommand(Intent intent, int flags, int startId) {
@@ -240,6 +247,11 @@ public class LocalMusicService extends Service implements
     VoiceControlForPlexApplication.getInstance().localClientSubscription.media = null;
     if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
       mediaSession.setActive(false);
+    handler.removeCallbacks(notPurchasedDisconnectTimer);
+    int count = VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.LOCALMEDIA_PURCHASE_REMINDER_COUNT, 0);
+    if(count < Preferences.LOCALMEDIA_PURCHASE_REMINDER_AT_COUNT) {
+      VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.LOCALMEDIA_PURCHASE_REMINDER_COUNT, ++count);
+    }
     stopSelf();
   }
 
@@ -340,6 +352,10 @@ public class LocalMusicService extends Service implements
         logger.d("Audio is playing");
         currentState = PlayerState.PLAYING;
         handler.postDelayed(playerProgressUpdater, 1000);
+        if(!VoiceControlForPlexApplication.getInstance().hasLocalmedia()) {
+          handler.removeCallbacks(notPurchasedDisconnectTimer);
+          handler.postDelayed(notPurchasedDisconnectTimer, 1000*60); // disconnect in 60 seconds
+        }
       } else {
         handler.postDelayed(musicIsPlayingCheck, 100);
       }

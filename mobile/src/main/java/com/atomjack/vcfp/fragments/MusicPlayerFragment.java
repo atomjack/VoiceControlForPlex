@@ -323,7 +323,7 @@ public class MusicPlayerFragment extends Fragment implements MusicServiceListene
 
   @Override
   public void onFinished() {
-
+    logger.d("onFinished");
   }
 
   @Override

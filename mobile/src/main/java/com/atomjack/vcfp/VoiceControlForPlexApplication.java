@@ -146,12 +146,16 @@ public class VoiceControlForPlexApplication extends Application
   // This is the default value.
   private boolean mHasChromecast = !BuildConfig.CHROMECAST_REQUIRES_PURCHASE;
   private boolean mHasWear = !BuildConfig.WEAR_REQUIRES_PURCHASE;
+  private boolean mHasLocalMedia = !BuildConfig.LOCALMEDIA_REQUIRES_PURCHASE;
+
   // Only the release build will use the actual Chromecast/Wear SKU
   public static final String SKU_CHROMECAST = BuildConfig.SKU_CHROMECAST;
   public static final String SKU_WEAR = BuildConfig.SKU_WEAR;
+  public static final String SKU_LOCALMEDIA = BuildConfig.SKU_LOCALMEDIA;
   public static final String SKU_TEST_PURCHASED = "android.test.purchased";
-  private static String mChromecastPrice = "$0.99"; // Default price, just in case
+  private static String mChromecastPrice = "$3.00"; // Default price, just in case
   private static String mWearPrice = "$2.00"; // Default price, just in case
+  private static String mLocalMediaPrice = "$2.00";
 
   public static boolean hasDoneClientScan = false;
 
@@ -241,8 +245,12 @@ public class VoiceControlForPlexApplication extends Application
     return mHasWear;
   }
 
+  public boolean hasLocalmedia() {
+    return mHasLocalMedia;
+  }
+
   public boolean hasAnyInAppPurchase() {
-    return !hasChromecast() || !hasWear();
+    return !hasChromecast() || !hasWear() || !hasLocalmedia();
   }
 
   public static VoiceControlForPlexApplication getInstance() {
@@ -685,7 +693,7 @@ public class VoiceControlForPlexApplication extends Application
       Logger.d("Query inventory was successful.");
 
       // Get the price for chromecast & wear support
-      mIabHelper.queryInventoryAsync(true, new ArrayList<>(Arrays.asList(SKU_CHROMECAST, SKU_WEAR)), new IabHelper.QueryInventoryFinishedListener() {
+      mIabHelper.queryInventoryAsync(true, new ArrayList<>(Arrays.asList(SKU_CHROMECAST, SKU_WEAR, SKU_LOCALMEDIA)), new IabHelper.QueryInventoryFinishedListener() {
         @Override
         public void onQueryInventoryFinished(IabResult result, Inventory inv) {
           SkuDetails skuDetails = inv.getSkuDetails(SKU_CHROMECAST);
@@ -696,9 +704,12 @@ public class VoiceControlForPlexApplication extends Application
           if(skuDetails != null) {
             mWearPrice = skuDetails.getPrice();
           }
+          skuDetails = inv.getSkuDetails(SKU_LOCALMEDIA);
+          if(skuDetails != null)
+            mLocalMediaPrice = skuDetails.getPrice();
 
           // If the SKU being used is the test sku, consume it so that it has to be bought each time the app is run
-          if(SKU_CHROMECAST == SKU_TEST_PURCHASED || SKU_WEAR == SKU_TEST_PURCHASED) {
+          if(SKU_CHROMECAST == SKU_TEST_PURCHASED || SKU_WEAR == SKU_TEST_PURCHASED || SKU_LOCALMEDIA == SKU_TEST_PURCHASED) {
             if (inventory.hasPurchase(SKU_TEST_PURCHASED))
               mIabHelper.consumeAsync(inventory.getPurchase(SKU_TEST_PURCHASED),null);
           } else {
@@ -707,10 +718,14 @@ public class VoiceControlForPlexApplication extends Application
 
             Purchase wearPurchase = inventory.getPurchase(SKU_WEAR);
             mHasWear = (wearPurchase != null && verifyDeveloperPayload(wearPurchase));
+
+            Purchase localmediaPurchase = inventory.getPurchase(SKU_LOCALMEDIA);
+            mHasLocalMedia = (localmediaPurchase != null && verifyDeveloperPayload(localmediaPurchase));
           }
 
           Logger.d("Has Chromecast: %s", mHasChromecast);
           Logger.d("Has Wear: %s", mHasWear);
+          logger.d("Has Localmedia: %s", mHasLocalMedia);
           Logger.d("Initial inventory query finished.");
           inventoryQueried = true;
           onInventoryQueryFinished();
@@ -787,12 +802,20 @@ public class VoiceControlForPlexApplication extends Application
     mHasWear = hasWear;
   }
 
+  public void setHasLocalmedia(boolean hasLocalmedia) {
+    mHasLocalMedia = hasLocalmedia;
+  }
+
   public static String getChromecastPrice() {
     return mChromecastPrice;
   }
 
   public static String getWearPrice() {
     return mWearPrice;
+  }
+
+  public static String getLocalmediaPrice() {
+    return mLocalMediaPrice;
   }
 
   public static Map<String, PlexClient> getAllClients() {

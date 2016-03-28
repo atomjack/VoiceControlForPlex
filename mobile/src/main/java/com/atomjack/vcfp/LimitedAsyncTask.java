@@ -14,8 +14,10 @@ public class LimitedAsyncTask {
     if(tasks.size() > 0) {
       Logger.d("Will run first %d of %d tasks", numConcurrentTasks, tasks.size());
       for (int i = 0; i < numConcurrentTasks; i++) {
-        LAsyncTask task = tasks.remove(0);
-        task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        if(tasks.size() > 0) {
+          LAsyncTask task = tasks.remove(0);
+          task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        }
       }
     }
   }

@@ -196,9 +196,13 @@
     <string name="error_server_died">Sorry, the connection to the server was lost.</string>
     <string name="local_video_description">Choose video resolution and bitrate settings for Local Video playback. You may set separate settings for servers on the same wifi network (local) and for those on remote networks.</string>
     <string name="chromecast_video_description">Choose video resolution and bitrate settings for Chromecast playback. You may set separate settings for servers on the same wifi network (local) and for those on remote networks.</string>
+    <string name="localmedia_disclaimer">Playback to the local device is restricted to one minute. Purchasing local media playback (%s) via the Navigation Menu->Settings will remove this restriction.</string>
+    <string name="localmedia_purchase_reminder">Playback to the local device is restricted to one minute. Would you like to unlock it(%s)?</string>
+    <string name="purchase_localmedia">Purchase Local Media Playback</string>
 
     <!-- Tutorial time! -->
     <string name="tutorial1_cast_button">Tap the cast icon to select a Plex client.</string>
     <string name="tutorial1_nav_button">Tap the Navigation button to show the Navigation Menu, where you can choose a Plex server, and customize settings.</string>
     <string name="tutorial1_mic_button">Finally, tap the mic to tell Plex to play something!</string>
+
 </resources>

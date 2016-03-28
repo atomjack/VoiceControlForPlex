@@ -697,6 +697,11 @@ public class VideoPlayerActivity extends AppCompatActivity
   public void stop() {
     currentState = PlayerState.STOPPED;
     VoiceControlForPlexApplication.getInstance().sendWearPlaybackChange(currentState, currentVideo);
+    handler.removeCallbacks(notPurchasedDisconnectTimer);
+    int count = VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.LOCALMEDIA_PURCHASE_REMINDER_COUNT, 0);
+    if(count < Preferences.LOCALMEDIA_PURCHASE_REMINDER_AT_COUNT) {
+      VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.LOCALMEDIA_PURCHASE_REMINDER_COUNT, ++count);
+    }
     finish();
   }
 
@@ -710,6 +715,10 @@ public class VideoPlayerActivity extends AppCompatActivity
         currentState = PlayerState.PLAYING;
         VoiceControlForPlexApplication.getInstance().sendWearPlaybackChange(currentState, currentVideo);
         handler.postDelayed(playerProgressRunnable, 1000);
+        if(!VoiceControlForPlexApplication.getInstance().hasLocalmedia()) {
+          handler.removeCallbacks(notPurchasedDisconnectTimer);
+          handler.postDelayed(notPurchasedDisconnectTimer, 1000*60); // disconnect in 60 seconds
+        }
       } else {
         handler.postDelayed(videoIsPlayingCheck, 100);
       }
@@ -738,4 +747,12 @@ public class VideoPlayerActivity extends AppCompatActivity
                       | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
     }
   }
+
+  private Runnable notPurchasedDisconnectTimer = new Runnable() {
+    @Override
+    public void run() {
+      logger.d("auto stopping");
+      stop();
+    }
+  };
 }
