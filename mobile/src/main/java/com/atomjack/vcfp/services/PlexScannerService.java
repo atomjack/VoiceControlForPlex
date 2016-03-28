@@ -311,7 +311,7 @@ public class PlexScannerService extends Service {
     Logger.d("Fetching resources from plex.tv");
     cancel = false;
     VoiceControlForPlexApplication.hasDoneClientScan = true;
-    PlexHttpClient.PlexHttpService service = PlexHttpClient.getService("https://plex.tv", true);
+    PlexHttpClient.PlexHttpService service = PlexHttpClient.getService("https://plex.tv");
     Call<MediaContainer> call = service.getResources(authToken);
     call.enqueue(new Callback<MediaContainer>() {
       @Override

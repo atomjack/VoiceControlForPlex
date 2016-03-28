@@ -685,6 +685,7 @@ public class MainActivity extends AppCompatActivity
             public void onClick(View v) {
               dialog.dismiss();
               prefs.put(Preferences.HAS_SHOWN_INITIAL_LOCALMEDIA_PURCHASE, true);
+              localClientSelected(PlexClient.getLocalPlaybackClient());
             }
           });
           dialog.show();
