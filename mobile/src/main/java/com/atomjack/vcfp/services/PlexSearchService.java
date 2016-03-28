@@ -1248,15 +1248,25 @@ public class PlexSearchService extends Service {
       public void onSuccess(final Connection connection) {
         PlexHttpClient.createArtistPlayQueue(connection, artist, new PlexPlayQueueHandler() {
           @Override
-          public void onSuccess(MediaContainer mediaContainer) {
+          public void onSuccess(final MediaContainer mediaContainer) {
             logger.d("got play queue: %s", mediaContainer.playQueueID);
             tracks = mediaContainer.tracks;
             if (tracks.size() > 0) {
               for(PlexTrack track : mediaContainer.tracks) {
                 track.server = artist.server;
               }
-              PlexTrack media = tracks.get(0);
-              playMedia(media, connection, null, null, mediaContainer);
+              final PlexTrack media = tracks.get(0);
+              requestTransientAccessToken(media.server, new AfterTransientTokenRequest() {
+                @Override
+                public void success(String token) {
+                  playMedia(media, connection, null, token, mediaContainer);
+                }
+
+                @Override
+                public void failure() {
+                  playMedia(media, connection, null, null, mediaContainer);
+                }
+              });
             }
           }
         });

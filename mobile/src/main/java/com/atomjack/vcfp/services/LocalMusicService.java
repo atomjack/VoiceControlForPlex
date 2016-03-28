@@ -1,6 +1,5 @@
 package com.atomjack.vcfp.services;
 
-import android.annotation.TargetApi;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.ComponentName;
@@ -8,10 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.media.AudioManager;
-import android.media.MediaMetadata;
 import android.media.MediaPlayer;
-import android.media.session.MediaSession;
-import android.media.session.PlaybackState;
 import android.net.Uri;
 import android.os.Binder;
 import android.os.Build;
@@ -20,6 +16,8 @@ import android.os.IBinder;
 import android.os.PowerManager;
 import android.os.SystemClock;
 import android.support.annotation.Nullable;
+import android.support.v4.media.MediaMetadataCompat;
+import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
 import android.view.KeyEvent;
 
@@ -59,7 +57,7 @@ public class LocalMusicService extends Service implements
 
   AudioManager audioManager;
   ComponentName remoteControlReceiver;
-  private MediaSession mediaSession;
+  private MediaSessionCompat mediaSession;
 
   private long headsetDownTime = 0;
   private long headsetUpTime = 0;
@@ -76,24 +74,30 @@ public class LocalMusicService extends Service implements
     initMusicPlayer();
 
 
-    if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-      mediaSession = new MediaSession(this, "VCFPRemoteControlReceiver");
+    remoteControlReceiver = new ComponentName(getPackageName(), RemoteControlReceiver.class.getName());
 
-      PlaybackState state = new PlaybackState.Builder()
-              .setActions(PlaybackStateCompat.ACTION_FAST_FORWARD | PlaybackStateCompat.ACTION_PAUSE | PlaybackStateCompat.ACTION_PLAY | PlaybackStateCompat.ACTION_PLAY_PAUSE | PlaybackStateCompat.ACTION_SKIP_TO_NEXT | PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS | PlaybackStateCompat.ACTION_STOP)
-              .setState(PlaybackStateCompat.STATE_PLAYING, 0, 1, SystemClock.elapsedRealtime())
-              .build();
-      mediaSession.setPlaybackState(state);
+    mediaSession = new MediaSessionCompat(this, "VCFPRemoteControlReceiver", remoteControlReceiver, null);
+    mediaSession.setFlags(MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS | MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS);
+    PlaybackStateCompat state = new PlaybackStateCompat.Builder()
+            .setActions(PlaybackStateCompat.ACTION_FAST_FORWARD | PlaybackStateCompat.ACTION_PAUSE | PlaybackStateCompat.ACTION_PLAY | PlaybackStateCompat.ACTION_PLAY_PAUSE | PlaybackStateCompat.ACTION_SKIP_TO_NEXT | PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS | PlaybackStateCompat.ACTION_STOP)
+            .setState(PlaybackStateCompat.STATE_PLAYING, 0, 1, SystemClock.elapsedRealtime())
+            .build();
+    mediaSession.setPlaybackState(state);
 
-      Intent intent = new Intent(this, RemoteControlReceiver.class);
-      PendingIntent pintent = PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
-      mediaSession.setMediaButtonReceiver(pintent);
-      mediaSession.setActive(false);
-    } else {
-      remoteControlReceiver = new ComponentName(getPackageName(), RemoteControlReceiver.class.getName());
-      audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+    Intent intent = new Intent(this, RemoteControlReceiver.class);
+    PendingIntent pintent = PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+    mediaSession.setMediaButtonReceiver(pintent);
+    mediaSession.setActive(false);
+
+    audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+    audioManager.requestAudioFocus(new AudioManager.OnAudioFocusChangeListener() {
+      @Override
+      public void onAudioFocusChange(int focusChange) {
+        logger.d("audio focus changed");
+      }
+    }, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
+    if (android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP)
       audioManager.registerMediaButtonEventReceiver(remoteControlReceiver);
-    }
   }
 
   private Runnable notPurchasedDisconnectTimer = new Runnable() {
@@ -183,25 +187,21 @@ public class LocalMusicService extends Service implements
             new FetchMediaImageTask(track, 500, 500, track.getNotificationThumb(PlexMedia.IMAGE_KEY.WEAR_BACKGROUND), track.getImageKey(PlexMedia.IMAGE_KEY.WEAR_BACKGROUND), new BitmapHandler() {
               @Override
               public void onSuccess(Bitmap bitmap) {
-                if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                  mediaSession.setMetadata(new MediaMetadata.Builder()
-                          .putBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART, bitmap)
-                          .putString(MediaMetadata.METADATA_KEY_ARTIST, track.getArtist())
-                          .putString(MediaMetadata.METADATA_KEY_ALBUM, track.getAlbum())
-                          .putString(MediaMetadata.METADATA_KEY_TITLE, track.getTitle())
+                  mediaSession.setMetadata(new MediaMetadataCompat.Builder()
+                          .putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, bitmap)
+                          .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, track.getArtist())
+                          .putString(MediaMetadataCompat.METADATA_KEY_ALBUM, track.getAlbum())
+                          .putString(MediaMetadataCompat.METADATA_KEY_TITLE, track.getTitle())
                           .build()
                   );
-                  mediaSession.setFlags(MediaSession.FLAG_HANDLES_TRANSPORT_CONTROLS);
+                  mediaSession.setFlags(MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS);
                   handler.post(new Runnable() {
                     @Override
                     public void run() {
-                      if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                        registerMediaSessionCallback();
-                        mediaSession.setActive(true);
-                      }
+                    registerMediaSessionCallback();
+                    mediaSession.setActive(true);
                     }
                   });
-                }
               }
             }).execute();
           } catch (Exception e) {
@@ -378,9 +378,8 @@ public class LocalMusicService extends Service implements
   public void onDestroy() {
     super.onDestroy();
     logger.d("onDestroy");
-    if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-      mediaSession.release();
-    } else {
+    mediaSession.release();
+    if (android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
       audioManager.unregisterMediaButtonEventReceiver(remoteControlReceiver);
     }
   }
@@ -438,9 +437,8 @@ public class LocalMusicService extends Service implements
     }
   }
 
-  @TargetApi(Build.VERSION_CODES.LOLLIPOP)
   private void registerMediaSessionCallback() {
-    mediaSession.setCallback(new MediaSession.Callback() {
+    mediaSession.setCallback(new MediaSessionCompat.Callback() {
       @Override
       public void onPlay() {
         doPlay();
