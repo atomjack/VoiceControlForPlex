@@ -834,9 +834,9 @@ public class PlexSearchService extends Service {
           public void run() {
           logger.d("Service Subscribing to %s", theClient.name);
           if(theClient.isCastClient)
-            VoiceControlForPlexApplication.getInstance().castPlayerManager.subscribe(theClient);
+            VoiceControlForPlexApplication.getInstance().castPlayerManager.subscribe(theClient, true);
           else
-            VoiceControlForPlexApplication.getInstance().plexSubscription.subscribe(theClient);
+            VoiceControlForPlexApplication.getInstance().plexSubscription.subscribe(theClient, true);
           }
         };
       }
@@ -1534,7 +1534,7 @@ public class PlexSearchService extends Service {
       if(castPlayerManager.isSubscribed()) {
         sendCast.run();
       } else {
-        castPlayerManager.subscribe(client, sendCast);
+        castPlayerManager.subscribe(client, sendCast, true);
       }
 
     } else {

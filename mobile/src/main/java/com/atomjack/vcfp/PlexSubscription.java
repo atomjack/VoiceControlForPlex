@@ -232,7 +232,7 @@ public class PlexSubscription {
     }
   }
 
-  public synchronized void startSubscription(final PlexClient client) {
+  public synchronized void startSubscription(final PlexClient client, final boolean showFeedback) {
     Logger.d("startSubscription: %s", updateConversationHandler);
     if(updateConversationHandler == null) {
       updateConversationHandler = new Handler();
@@ -242,7 +242,7 @@ public class PlexSubscription {
       @Override
       public void run() {
       Logger.d("subscribing");
-      subscribe(client);
+      subscribe(client, showFeedback);
       }
     });
 
@@ -252,18 +252,18 @@ public class PlexSubscription {
 
   public void resubscribe() {
     if(mClient != null)
-      subscribe(mClient);
+      subscribe(mClient, true);
   }
 
-  public void subscribe(final PlexClient client) {
+  public void subscribe(final PlexClient client, boolean showFeedback) {
     Logger.d("PlexSubscription subscribe: %s, handler is null: %s", client, updateConversationHandler == null);
     if(updateConversationHandler == null)
-      startSubscription(client);
+      startSubscription(client, showFeedback);
     else
-      subscribe(client, false);
+      subscribe(client, showFeedback, false);
   }
 
-  public void subscribe(PlexClient client, final boolean isHeartbeat) {
+  public void subscribe(PlexClient client, final boolean isHeartbeat, final boolean showFeedback) {
     if(client == null)
       return;
     mClient = client;
@@ -294,7 +294,7 @@ public class PlexSubscription {
             // Start the heartbeat subscription (so the plex client knows we're still here)
             mHandler.removeCallbacks(subscriptionHeartbeat);
             mHandler.postDelayed(subscriptionHeartbeat, SUBSCRIBE_INTERVAL);
-            onSubscribed();
+            onSubscribed(showFeedback);
           } else {
             lastHeartbeatResponded = Calendar.getInstance();
           }
@@ -340,14 +340,14 @@ public class PlexSubscription {
 
   }
 
-  private void onSubscribed() {
+  private void onSubscribed(final boolean showFeedback) {
     mHandler.post(new Runnable() {
       @Override
       public void run() {
         Logger.d("PlexSubscription onSubscribed, client: %s, listener: %s", mClient, listener);
 
         if(listener != null)
-          listener.onSubscribed(mClient);
+          listener.onSubscribed(mClient, showFeedback);
       }
     });
   }
@@ -358,7 +358,7 @@ public class PlexSubscription {
       if(subscribed) {
         if(failedHeartbeats == 0) {
           Logger.d("Sending heartbeat");
-          subscribe(mClient, true);
+          subscribe(mClient, true, false);
           mHandler.postDelayed(subscriptionHeartbeat, SUBSCRIBE_INTERVAL);
         }
       } else {

@@ -134,11 +134,11 @@ public class CastPlayerManager {
 
 
 
-  public void subscribe(final PlexClient _client) {
-    subscribe(_client, null);
+  public void subscribe(final PlexClient _client, boolean showFeedback) {
+    subscribe(_client, null, showFeedback);
   }
 
-  public void subscribe(final PlexClient _client, final Runnable onFinished) {
+  public void subscribe(final PlexClient _client, final Runnable onFinished, final boolean showFeedback) {
     if(castManager == null) {
       Logger.d("creating castManager");
       castManager = getCastManager(mContext);
@@ -185,7 +185,7 @@ public class CastPlayerManager {
 
         subscribed = true;
         if(listener != null)
-          listener.onSubscribed(_client);
+          listener.onSubscribed(_client, showFeedback);
         else
           Logger.d("[CastPlayerManager] listener is null");
 

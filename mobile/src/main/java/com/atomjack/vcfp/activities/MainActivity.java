@@ -317,9 +317,9 @@ public class MainActivity extends AppCompatActivity
           subscribed = true;
           VoiceControlForPlexApplication.getInstance().localClientSubscription.subscribed = true;
         } else if (client.isCastClient) {
-          castPlayerManager.subscribe(client);
+          castPlayerManager.subscribe(client, !castPlayerManager.isSubscribed());
         } else {
-          plexSubscription.subscribe(client);
+          plexSubscription.subscribe(client, !plexSubscription.isSubscribed());
         }
       }
       prefs.put(Preferences.CRASHED, false);
@@ -360,7 +360,7 @@ public class MainActivity extends AppCompatActivity
 
   private PlexSubscriptionListener plexSubscriptionListener = new PlexSubscriptionListener() {
     @Override
-    public void onSubscribed(final PlexClient client) {
+    public void onSubscribed(final PlexClient client, boolean showFeedback) {
       logger.d("onSubscribed");
 
       prefs.put(Preferences.SUBSCRIBED_CLIENT, gsonWrite.toJson(client));
@@ -371,7 +371,8 @@ public class MainActivity extends AppCompatActivity
       } catch (Exception e) {
         e.printStackTrace();
       }
-      feedback.m(String.format(getString(R.string.connected_to2), client.name));
+      if(showFeedback)
+        feedback.m(String.format(getString(R.string.connected_to2), client.name));
     }
 
     @Override
@@ -1292,7 +1293,7 @@ public class MainActivity extends AppCompatActivity
         state = plexSubscription.getCurrentState();
         if(plexSubscription.isSubscribed() && plexSubscription.getNowPlayingMedia() != null)
           media = plexSubscription.getNowPlayingMedia();
-        plexSubscription.subscribe(client);
+        plexSubscription.subscribe(client, !plexSubscription.isSubscribed());
       }
 
       logger.d("show now playing: %s", media.getTitle());
@@ -1617,7 +1618,7 @@ public class MainActivity extends AppCompatActivity
           if(VoiceControlForPlexApplication.getInstance().hasChromecast()) {
             client = clientSelected;
             logger.d("subscribing to %s", client.name);
-            castPlayerManager.subscribe(client);
+            castPlayerManager.subscribe(client, !castPlayerManager.isSubscribed());
           } else {
             subscribing = false;
             setCastIconInactive();
@@ -1626,12 +1627,12 @@ public class MainActivity extends AppCompatActivity
               public void run() {
                 animateCastIcon();
                 subscribing = true;
-                castPlayerManager.subscribe(postChromecastPurchaseClient);
+                castPlayerManager.subscribe(postChromecastPurchaseClient, true);
               }
             });
           }
         } else {
-          plexSubscription.startSubscription(clientSelected);
+          plexSubscription.startSubscription(clientSelected, true);
         }
       }
     }
@@ -2631,7 +2632,7 @@ public class MainActivity extends AppCompatActivity
       // booted us off for being unreachable for 90 seconds.
       if(plexSubscription.timeLastHeardFromClient != null) {
         if((new Date().getTime() - plexSubscription.timeLastHeardFromClient.getTime()) / 1000 >= 30) {
-          plexSubscription.subscribe(plexSubscription.getClient());
+          plexSubscription.subscribe(plexSubscription.getClient(), true);
         }
       }
     }
