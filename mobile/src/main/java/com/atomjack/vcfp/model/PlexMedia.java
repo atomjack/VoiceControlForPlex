@@ -322,7 +322,19 @@ public abstract class PlexMedia implements Parcelable {
 
   @Override
   public boolean equals(Object o) {
-    return key.equals(((PlexMedia)o).key);
+    if(this == o)
+      return true;
+    if(o == null)
+      return false;
+    if(getClass() != o.getClass())
+      return false;
+    PlexMedia other = (PlexMedia)o;
+    if(key == null) {
+      if (other.key != null)
+        return false;
+    } else if(!key.equals(other.key))
+      return false;
+    return true;
   }
 
   @Override
