@@ -468,12 +468,7 @@ public class MainActivity extends AppCompatActivity
     Fragment fragment;
     if (!doingFirstTimeSetup) {
 
-      mMediaRouter = MediaRouter.getInstance(getApplicationContext());
-      mMediaRouteSelector = new MediaRouteSelector.Builder()
-              .addControlCategory(CastMediaControlIntent.categoryForCast(BuildConfig.CHROMECAST_APP_ID))
-              .build();
-      mMediaRouterCallback = new MediaRouterCallback();
-      mMediaRouter.addCallback(mMediaRouteSelector, mMediaRouterCallback, MediaRouter.CALLBACK_FLAG_PERFORM_ACTIVE_SCAN);
+      setupMediaRouter();
 
       server = gsonRead.fromJson(prefs.get(Preferences.SERVER, ""), PlexServer.class);
       if (server == null)
@@ -513,6 +508,17 @@ public class MainActivity extends AppCompatActivity
     } else {
       fragment = new SetupFragment();
       switchToFragment(fragment);
+    }
+  }
+
+  private void setupMediaRouter() {
+    if(mMediaRouter == null) {
+      mMediaRouter = MediaRouter.getInstance(getApplicationContext());
+      mMediaRouteSelector = new MediaRouteSelector.Builder()
+              .addControlCategory(CastMediaControlIntent.categoryForCast(BuildConfig.CHROMECAST_APP_ID))
+              .build();
+      mMediaRouterCallback = new MediaRouterCallback();
+      mMediaRouter.addCallback(mMediaRouteSelector, mMediaRouterCallback, MediaRouter.CALLBACK_FLAG_PERFORM_ACTIVE_SCAN);
     }
   }
 
@@ -869,6 +875,7 @@ public class MainActivity extends AppCompatActivity
                     setupNavigationDrawer();
                     refreshServers(null);
                   }
+                  setupMediaRouter();
                 }
 
                 @Override
@@ -960,6 +967,7 @@ public class MainActivity extends AppCompatActivity
               setupNavigationDrawer();
               refreshServers(null);
             }
+            setupMediaRouter();
             alertD.cancel();
           }
 
