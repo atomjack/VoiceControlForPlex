@@ -260,7 +260,7 @@ public class PlexSubscription {
     if(updateConversationHandler == null)
       startSubscription(client, showFeedback);
     else
-      subscribe(client, showFeedback, false);
+      subscribe(client, false, showFeedback);
   }
 
   public void subscribe(PlexClient client, final boolean isHeartbeat, final boolean showFeedback) {
