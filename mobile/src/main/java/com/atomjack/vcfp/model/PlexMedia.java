@@ -320,5 +320,17 @@ public abstract class PlexMedia implements Parcelable {
     }
   }
 
+  @Override
+  public boolean equals(Object o) {
+    return key.equals(((PlexMedia)o).key);
+  }
+
+  @Override
+  public int hashCode() {
+    final int prime = 37;
+    int result = 1;
+    result = prime * result + ((key == null) ? 0 : key.hashCode());
+    return result;
+  }
 }
 

@@ -4,6 +4,7 @@ import android.content.res.Resources;
 import android.os.Handler;
 
 import com.atomjack.shared.Logger;
+import com.atomjack.shared.NewLogger;
 import com.atomjack.shared.PlayerState;
 import com.atomjack.shared.model.Timeline;
 import com.atomjack.vcfp.interfaces.PlexMediaHandler;
@@ -41,6 +42,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class PlexSubscription {
+  private NewLogger logger;
   private static final int SUBSCRIBE_INTERVAL = 30000; // Send subscribe message every 30 seconds to keep us alive
 
   private static Serializer serial = new Persister();
@@ -74,6 +76,7 @@ public class PlexSubscription {
 
   public PlexSubscription() {
     mHandler = new Handler();
+    logger = new NewLogger(this);
   }
 
   public void setListener(PlexSubscriptionListener _listener) {
@@ -472,13 +475,15 @@ public class PlexSubscription {
                     if(media != null) {
                       if(nowPlayingMedia != null) // if we're already playing media, this new media we found is different, so notify the listener
                         listener.onMediaChanged(media, PlayerState.getState(timeline));
-                      else
+                      else if(currentState != PlayerState.STOPPED){ // edge case where we receive a new timeline with a state of stopped after this one, but before this one has finished processing
                         listener.onPlayStarted(media, nowPlayingPlaylist, PlayerState.getState(timeline));
+                      }
                     } else {
                       // TODO: Handle not finding any media?
                     }
                     nowPlayingMedia = media;
-                    VoiceControlForPlexApplication.getInstance().setNotification(mClient, currentState, nowPlayingMedia, nowPlayingPlaylist);
+                    if(currentState != PlayerState.STOPPED)
+                      VoiceControlForPlexApplication.getInstance().setNotification(mClient, currentState, nowPlayingMedia, nowPlayingPlaylist);
                   }
 
                   @Override

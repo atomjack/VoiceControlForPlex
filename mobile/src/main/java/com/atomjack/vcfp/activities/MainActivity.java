@@ -715,6 +715,13 @@ public class MainActivity extends AppCompatActivity
       }
     }
 
+    // If we get unsubscribed from the notification, and the app isn't visible, the next time we show up the app will think it's still subscribed, so we have to set the UI to be unsubbed
+    if(!isSubscribed()) {
+      switchToMainFragment();
+      setCastIconInactive();
+      prefs.remove(Preferences.SUBSCRIBED_CLIENT);
+    }
+
     if(musicPlayerIsBound)
       bindMusicPlayerService();
     if(musicPlayerFragment != null && musicPlayerFragment.isVisible())
