@@ -29,27 +29,43 @@
             android:gravity="top"
             android:paddingLeft="8dp"
             android:paddingTop="2dp">
-            <TextView
-                android:id="@+id/title"
-                android:layout_width="wrap_content"
-                android:layout_height="25dp"
-                android:layout_toRightOf="@+id/thumb"
-                android:layout_marginTop="5sp"
-                android:textSize="18sp"
-                android:singleLine="true"
-                android:text="Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. "
-                android:textColor="@color/white"/>
 
-            <TextView
-                android:id="@+id/playingOn"
-                android:layout_width="wrap_content"
-                android:layout_height="27dp"
-                android:layout_below="@+id/title"
-                android:layout_toRightOf="@+id/thumb"
-                android:text="Playing on Plex"
-                android:layout_marginTop="5sp"
-                android:singleLine="true"
-                android:textColor="@color/white"/>
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <TextView
+                    android:id="@+id/title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="25dp"
+                    android:layout_marginTop="5sp"
+                    android:textSize="18sp"
+                    android:singleLine="true"
+                    android:text="Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. "
+                    android:textColor="@color/white"
+                    android:layout_marginRight="30dp"/>
+
+                <TextView
+                    android:id="@+id/playingOn"
+                    android:layout_width="wrap_content"
+                    android:layout_height="27dp"
+                    android:layout_below="@+id/title"
+                    android:text="Playing on Plex"
+                    android:layout_marginTop="5sp"
+                    android:singleLine="true"
+                    android:textColor="@color/white"/>
+
+                <ImageButton
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/disconnectButton"
+                    android:src="@drawable/button_close"
+                    android:layout_alignParentTop="true"
+                    android:layout_alignParentRight="true"
+                    android:layout_alignParentEnd="true"
+                    android:background="@null"
+                    android:padding="5dp"/>
+            </RelativeLayout>
 
 
         </LinearLayout>

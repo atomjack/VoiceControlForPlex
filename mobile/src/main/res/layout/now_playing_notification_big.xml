@@ -35,18 +35,6 @@
                 android:layout_height="fill_parent">
 
                 <TextView
-                    android:id="@+id/playingOn"
-                    android:textAppearance="@style/NotificationText"
-                    android:layout_width="wrap_content"
-                    android:layout_height="27dp"
-                    android:layout_below="@+id/title"
-                    android:text="Playing on Plex"
-                    android:textSize="14sp"
-                    android:layout_marginTop="5sp"
-                    android:singleLine="true"
-                    android:textColor="@color/white"/>
-
-                <TextView
                     android:id="@+id/title"
                     android:textAppearance="@style/NotificationTitle"
                     android:layout_width="wrap_content"
@@ -58,6 +46,18 @@
                     android:textColor="@color/white"
                     android:layout_marginRight="30dp"/>
 
+                <TextView
+                    android:id="@+id/playingOn"
+                    android:textAppearance="@style/NotificationText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="27dp"
+                    android:layout_below="@+id/title"
+                    android:text="Playing on Plex"
+                    android:textSize="14sp"
+                    android:layout_marginTop="5sp"
+                    android:singleLine="true"
+                    android:textColor="@color/white"/>
+
                 <ImageButton
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -68,6 +68,7 @@
                     android:layout_alignParentEnd="true"
                     android:background="@null"
                     android:padding="5dp"/>
+
             </RelativeLayout>
 
 
