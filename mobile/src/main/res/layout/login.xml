@@ -74,4 +74,14 @@
             android:layout_alignParentEnd="true"/>
     </RelativeLayout>
 
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="@string/pin_popup_error"
+        android:id="@+id/loginPinError"
+        android:layout_marginTop="10dp"
+        android:textColor="@color/white"
+        android:visibility="gone"/>
+
 </LinearLayout>

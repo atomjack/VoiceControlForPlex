@@ -815,7 +815,7 @@ public class MainActivity extends AppCompatActivity
       @Override
       public void onFailure(Throwable error) {
         error.printStackTrace();
-        feedback.e(R.string.login_error);
+        showManualLogin(true);
       }
     });
   }
@@ -923,6 +923,10 @@ public class MainActivity extends AppCompatActivity
   }
 
   private void showManualLogin() {
+    showManualLogin(false);
+  }
+
+  private void showManualLogin(boolean showPinError) {
     LayoutInflater layoutInflater = LayoutInflater.from(MainActivity.this);
     View view = layoutInflater.inflate(R.layout.login, null);
     AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
@@ -930,6 +934,10 @@ public class MainActivity extends AppCompatActivity
     final EditText usernameInput = (EditText) view.findViewById(R.id.usernameInput);
     final EditText passwordInput = (EditText) view.findViewById(R.id.passwordInput);
 
+    if(showPinError) {
+      TextView loginPinError = (TextView) view.findViewById(R.id.loginPinError);
+      loginPinError.setVisibility(View.VISIBLE);
+    }
     final AlertDialog alertD = builder.create();
 
     Button popupManualLoginPinButton = (Button)view.findViewById(R.id.popupManualLoginPinButton);

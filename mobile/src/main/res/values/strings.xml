@@ -199,6 +199,7 @@
     <string name="localmedia_purchase_from_menu">If you would like to unlock this feature in the future, you can purchase it via the Settings portion of the Navigation Menu.</string>
     <string name="localmedia_purchase_reminder">Playback to the local device is restricted to one minute. Would you like to unlock it(%s)?</string>
     <string name="purchase_localmedia">Purchase Local Media Playback</string>
+    <string name="pin_popup_error">An error was encountered attempting to request a Pin code from plex.tv.</string>
 
     <!-- Tutorial time! -->
     <string name="tutorial1_cast_button">Tap the cast icon to select a Plex client.</string>

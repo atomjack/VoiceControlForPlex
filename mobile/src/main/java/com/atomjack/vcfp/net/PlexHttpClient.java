@@ -530,7 +530,10 @@ public class PlexHttpClient
     call.enqueue(new Callback<Pin>() {
       @Override
       public void onResponse(Response<Pin> response) {
-        responseHandler.onSuccess(response.body());
+        if(response.code() == 200 || response.code() == 201)
+          responseHandler.onSuccess(response.body());
+        else
+          responseHandler.onFailure(new Throwable());
       }
 
       @Override
