@@ -506,6 +506,8 @@ public class MainActivity extends AppCompatActivity
           doTutorial();
       }
     } else {
+      WhatsNewDialog whatsNewDialog = new WhatsNewDialog(this);
+      whatsNewDialog.updateLastShown();
       fragment = new SetupFragment();
       switchToFragment(fragment);
     }
@@ -721,7 +723,8 @@ public class MainActivity extends AppCompatActivity
       }
     }
 
-    // If we get unsubscribed from the notification, and the app isn't visible, the next time we show up the app will think it's still subscribed, so we have to set the UI to be unsubbed
+    // If we get unsubscribed from the notification, and the app isn't visible, the next time we show up the app will think
+    // it's still subscribed, so we have to set the UI to be unsubbed
     if(!isSubscribed() && !doingFirstTimeSetup) {
       switchToMainFragment();
       setCastIconInactive();

@@ -225,7 +225,6 @@ public class ChangeLogDialog {
         if(customView != null) {
           builder.setView(customView);
           final AlertDialog dialog = builder.create();
-//          customView.findViewWithTag()
           WebView whatsNewWebView = (WebView)customView.findViewById(mContext.getResources().getIdentifier("whatsNewWebView", "id", mContext.getPackageName()));
           whatsNewWebView.loadDataWithBaseURL(null, htmlChangelog, "text/html", "utf-8", null);
           Button whatsNewCloseButton = (Button)customView.findViewById(mContext.getResources().getIdentifier("whatsNewCloseButton", "id", mContext.getPackageName()));
