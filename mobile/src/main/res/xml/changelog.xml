@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog>
     <release version="2.1.4b3" versioncode="70">
-        <change>Added local media playback. This feature is locked to one minute at a time, and can be unlocked via Settings in the Navigation Menu.</change>
+        <change>Added local media playback. This feature is locked to one minute at a time, and can be unlocked via an in-app purchase (Navigation Menu->Settings).</change>
         <change>Fixed display of cinema trailers.</change>
         <change>Cinema Trailers setting is now used for PC, Roku, etc. Plex clients, to provide a more consistent experience.</change>
         <change>Clicking the mic on the now playing screen will pause playback, then resume once voice input is done.</change>
