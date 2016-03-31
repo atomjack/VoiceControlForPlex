@@ -55,6 +55,7 @@ public class PlexSubscription {
   private int commandId = 1;
   private int subscriptionPort = 59409;
   private boolean subscribed = false;
+  private boolean subscribing = false;
   private ServerSocket serverSocket;
   Thread serverThread = null;
   Handler updateConversationHandler;
@@ -103,6 +104,10 @@ public class PlexSubscription {
 
   public boolean isSubscribed() {
     return subscribed && mClient != null;
+  }
+
+  public boolean isSubscribing() {
+    return subscribing;
   }
 
   class ServerThread implements Runnable {
@@ -260,6 +265,7 @@ public class PlexSubscription {
 
   public void subscribe(final PlexClient client, boolean showFeedback) {
     Logger.d("PlexSubscription subscribe: %s, handler is null: %s", client, updateConversationHandler == null);
+    subscribing = true;
     if(updateConversationHandler == null)
       startSubscription(client, showFeedback);
     else
@@ -274,6 +280,7 @@ public class PlexSubscription {
     PlexHttpClient.subscribe(client, subscriptionPort, commandId, VoiceControlForPlexApplication.getInstance().getUUID(), VoiceControlForPlexApplication.getInstance().getString(R.string.app_name), new PlexHttpResponseHandler() {
       @Override
       public void onSuccess(PlexResponse response) {
+        subscribing = false;
         failedHeartbeats = 0;
         if(!isHeartbeat)
           Logger.d("PlexSubscription: Subscribed: %s, Code: %d", response != null ? response.status : "", response.code);
@@ -307,6 +314,7 @@ public class PlexSubscription {
       @Override
       public void onFailure(final Throwable error) {
         error.printStackTrace();
+        subscribing = false;
         if(isHeartbeat) {
           failedHeartbeats++;
           Logger.d("%d failed heartbeats", failedHeartbeats);

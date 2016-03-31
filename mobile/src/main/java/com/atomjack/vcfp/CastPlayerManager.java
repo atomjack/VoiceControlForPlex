@@ -119,6 +119,7 @@ public class CastPlayerManager {
 //  private CastListener listener;
 
   private boolean subscribed = false;
+  private boolean subscribing = false;
 
   public PlexClient mClient;
 
@@ -137,9 +138,8 @@ public class CastPlayerManager {
     mContext = context;
   }
 
-
-
   public void subscribe(final PlexClient _client, boolean showFeedback) {
+    subscribing = true;
     subscribe(_client, null, showFeedback);
   }
 
@@ -160,6 +160,7 @@ public class CastPlayerManager {
       @Override
       public void run() {
         mClient = _client;
+
 //        currentState = castManager.getPlaybackStatus();
         Logger.d("castConsumer connected to %s", mClient.name);
         getPlaybackState();
@@ -188,7 +189,7 @@ public class CastPlayerManager {
         } catch (Exception ex) {}
 
 
-
+        subscribing = false;
         subscribed = true;
         if(listener != null)
           listener.onSubscribed(_client, showFeedback);
@@ -204,6 +205,14 @@ public class CastPlayerManager {
   public boolean isSubscribed() {
 //    Logger.d("[CastPlayerManager] subscribed: %s, client: %s", subscribed, mClient);
     return subscribed && mClient != null;
+  }
+
+  public boolean isSubscribing() {
+    return subscribing;
+  }
+
+  public PlexClient getClient() {
+    return mClient;
   }
 
   public void unsubscribe() {

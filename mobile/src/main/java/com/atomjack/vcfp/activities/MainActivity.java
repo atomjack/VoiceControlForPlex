@@ -399,7 +399,6 @@ public class MainActivity extends AppCompatActivity
       logger.d("onPlayStarted: %s", media.getTitle());
       handler.removeCallbacks(autoDisconnectPlayerTimer);
       int layout = getLayoutForMedia(media, state);
-      logger.d("layout: %d", layout);
       if(layout != -1) {
         playerFragment.init(layout, client, media, playlist, false);
         switchToPlayerFragment();
@@ -416,6 +415,10 @@ public class MainActivity extends AppCompatActivity
           logger.d("onStopped");
           VoiceControlForPlexApplication.getInstance().cancelNotification();
           switchToMainFragment();
+          if(plexSubscription.isSubscribed() && plexSubscription.getClient() != gsonRead.fromJson(prefs.get(Preferences.CLIENT, ""), PlexClient.class))
+            plexSubscription.unsubscribe();
+          if(castPlayerManager.isSubscribed() && castPlayerManager.getClient() != gsonRead.fromJson(prefs.get(Preferences.CLIENT, ""), PlexClient.class))
+            castPlayerManager.unsubscribe();
         } else {
           playerFragment.setState(state);
         }
@@ -607,6 +610,8 @@ public class MainActivity extends AppCompatActivity
     super.onPause();
     logger.d("onPause");
     handler.removeCallbacks(autoDisconnectPlayerTimer);
+    plexSubscription.setListener(null);
+    castPlayerManager.setListener(null);
     VoiceControlForPlexApplication.applicationPaused();
     if (isFinishing() && mMediaRouter != null) {
       mMediaRouter.removeCallback(mMediaRouterCallback);
@@ -725,8 +730,10 @@ public class MainActivity extends AppCompatActivity
     }
 
     // If we get unsubscribed from the notification, and the app isn't visible, the next time we show up the app will think
-    // it's still subscribed, so we have to set the UI to be unsubbed
-    if(!isSubscribed() && !doingFirstTimeSetup) {
+    // it's still subscribed, so we have to set the UI to be unsubbed. Also, need to make sure we're not in the middle of subscribing,
+    // as that will happen when a voice search is done to play something - this activity will be launched before the subscribe
+    // process is done. If this isn't checked, we end up switching to the main fragment when we should stay with the player fragment, and crash.
+    if(!isSubscribed() && !isSubscribing() && !doingFirstTimeSetup) {
       switchToMainFragment();
       setCastIconInactive();
       prefs.remove(Preferences.SUBSCRIBED_CLIENT);
@@ -1683,6 +1690,10 @@ public class MainActivity extends AppCompatActivity
 
   private boolean isSubscribed() {
     return plexSubscription.isSubscribed() || castPlayerManager.isSubscribed() || VoiceControlForPlexApplication.getInstance().localClientSubscription.subscribed;
+  }
+
+  private boolean isSubscribing() {
+    return plexSubscription.isSubscribing() || castPlayerManager.isSubscribing();
   }
 
   private Runnable onClientRefreshFinished = null;

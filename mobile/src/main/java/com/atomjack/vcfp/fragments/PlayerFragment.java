@@ -173,7 +173,6 @@ public abstract class PlayerFragment extends Fragment
     this.client = client;
     nowPlayingMedia = media;
     nowPlayingPlaylist = playlist == null ? new ArrayList<PlexMedia>() : playlist;
-    logger.d("Got %d items in playlist", playlist.size());
     this.fromWear = fromWear;
     currentMediaIndex = 0;
   }
@@ -306,12 +305,12 @@ public abstract class PlayerFragment extends Fragment
 
   @Override
   public void onResume() {
+    super.onResume();
     logger.d("onResume");
     if(doingMic) {
       doPlay();
       doingMic = false;
     }
-    super.onResume();
   }
 
   private void setThumb(final byte[] bytes) {
@@ -651,27 +650,17 @@ public abstract class PlayerFragment extends Fragment
   }
 
   public void setState(PlayerState newState) {
-    if(currentState != newState) {
-      currentState = newState;
-      if (playPauseSpinner != null && playButton != null && pauseButton != null) {
-        playPauseSpinner.setVisibility(View.INVISIBLE);
-        playButton.setVisibility(View.INVISIBLE);
-        pauseButton.setVisibility(View.INVISIBLE);
-        if (currentState == PlayerState.PAUSED) {
-          playButton.setVisibility(View.VISIBLE);
-        } else if (currentState == PlayerState.PLAYING) {
-          pauseButton.setVisibility(View.VISIBLE);
-        } else {
-          playPauseSpinner.setVisibility(View.VISIBLE);
-        }
-      }
+//    logger.d("setState: %s, current state: %s", newState, currentState);
+    currentState = newState;
+    if (playPauseSpinner != null && playButton != null && pauseButton != null) {
+      playPauseSpinner.setVisibility(currentState == PlayerState.BUFFERING ? View.VISIBLE : View.INVISIBLE);
+      playButton.setVisibility(currentState == PlayerState.PAUSED ? View.VISIBLE : View.INVISIBLE);
+      pauseButton.setVisibility(currentState == PlayerState.PLAYING ? View.VISIBLE : View.INVISIBLE);
     }
   }
 
   public void setPosition(int position) {
     if(!isSeeking) {
-//      if(position != this.position)
-//        logger.d("setting position to %d", position);
       this.position = position;
       if (seekBar != null)
         seekBar.setProgress(position);
