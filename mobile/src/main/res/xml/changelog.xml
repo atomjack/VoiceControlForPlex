@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog>
-    <release version="2.1.4b3" versioncode="70">
+    <release version="2.1.4b4" versioncode="71">
         <change>Added local media playback. This feature is locked to one minute at a time, and can be unlocked via an in-app purchase (Navigation Menu->Settings).</change>
+        <change>Chromecast playback can now be previewed for one minute at a time, and can be unlocked via in-app purchase (Navigation Menu->Settings).</change>
         <change>Fixed display of cinema trailers.</change>
         <change>Cinema Trailers setting is now used for PC, Roku, etc. Plex clients, to provide a more consistent experience.</change>
         <change>Clicking the mic on the now playing screen will pause playback, then resume once voice input is done.</change>
@@ -9,6 +10,7 @@
         <change>Sped up server discovery, especially for servers that are external to the local network.</change>
         <change>Added tutorial overlay to main screen to point how how to start using the app.</change>
         <change>Fixed playback of music on Plex Media Player clients.</change>
+        <change>Squashed some bugs, might have introduced others.</change>
     </release>
     <release version="2.1.3" versioncode="67">
         <change>Added usage hints to main screen. Use Navigation Drawer->Settings->Usage Hints to disable.</change>
