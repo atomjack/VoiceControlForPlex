@@ -40,6 +40,29 @@ public abstract class PlexDevice implements Parcelable {
   }
 
 
+  @Override
+  public boolean equals(Object o) {
+    if(this == o)
+      return true;
+    if(o == null)
+      return false;
+    if(getClass() != o.getClass())
+      return false;
+    PlexDevice other = (PlexDevice)o;
+    if(machineIdentifier == null) {
+      if (other.machineIdentifier != null)
+        return false;
+    } else if(!machineIdentifier.equals(other.machineIdentifier))
+      return false;
+    return true;
+  }
 
+  @Override
+  public int hashCode() {
+    final int prime = 67;
+    int result = 1;
+    result = prime * result + ((machineIdentifier == null) ? 0 : machineIdentifier.hashCode());
+    return result;
+  }
 
 }

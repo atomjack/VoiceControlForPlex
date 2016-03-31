@@ -412,12 +412,13 @@ public class MainActivity extends AppCompatActivity
       handler.removeCallbacks(autoDisconnectPlayerTimer);
       if(playerFragment != null && playerFragment.isVisible()) {
         if(state == PlayerState.STOPPED) {
-          logger.d("onStopped");
           VoiceControlForPlexApplication.getInstance().cancelNotification();
           switchToMainFragment();
-          if(plexSubscription.isSubscribed() && plexSubscription.getClient() != gsonRead.fromJson(prefs.get(Preferences.CLIENT, ""), PlexClient.class))
+          // We've stopped, so if we're still subscribed and the client we stopped playing to is different from the default client, unsubscribe, since
+          // the main screen UI says it is ready to cast to the default client, not the client we just got finished playing to.
+          if(plexSubscription.isSubscribed() && !plexSubscription.getClient().equals(gsonRead.fromJson(prefs.get(Preferences.CLIENT, ""), PlexClient.class)))
             plexSubscription.unsubscribe();
-          if(castPlayerManager.isSubscribed() && castPlayerManager.getClient() != gsonRead.fromJson(prefs.get(Preferences.CLIENT, ""), PlexClient.class))
+          if(castPlayerManager.isSubscribed() && !castPlayerManager.getClient().equals(gsonRead.fromJson(prefs.get(Preferences.CLIENT, ""), PlexClient.class)))
             castPlayerManager.unsubscribe();
         } else {
           playerFragment.setState(state);
