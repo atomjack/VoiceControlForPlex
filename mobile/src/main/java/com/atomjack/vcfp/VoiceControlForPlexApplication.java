@@ -713,14 +713,20 @@ public class VoiceControlForPlexApplication extends Application
             if (inventory.hasPurchase(SKU_TEST_PURCHASED))
               mIabHelper.consumeAsync(inventory.getPurchase(SKU_TEST_PURCHASED),null);
           } else {
-            Purchase chromecastPurchase = inventory.getPurchase(SKU_CHROMECAST);
-            mHasChromecast = (chromecastPurchase != null && verifyDeveloperPayload(chromecastPurchase));
+            if(BuildConfig.CHROMECAST_REQUIRES_PURCHASE) {
+              Purchase chromecastPurchase = inventory.getPurchase(SKU_CHROMECAST);
+              mHasChromecast = (chromecastPurchase != null && verifyDeveloperPayload(chromecastPurchase));
+            }
 
-            Purchase wearPurchase = inventory.getPurchase(SKU_WEAR);
-            mHasWear = (wearPurchase != null && verifyDeveloperPayload(wearPurchase));
+            if(BuildConfig.WEAR_REQUIRES_PURCHASE) {
+              Purchase wearPurchase = inventory.getPurchase(SKU_WEAR);
+              mHasWear = (wearPurchase != null && verifyDeveloperPayload(wearPurchase));
+            }
 
-            Purchase localmediaPurchase = inventory.getPurchase(SKU_LOCALMEDIA);
-            mHasLocalMedia = (localmediaPurchase != null && verifyDeveloperPayload(localmediaPurchase));
+            if(BuildConfig.LOCALMEDIA_REQUIRES_PURCHASE) {
+              Purchase localmediaPurchase = inventory.getPurchase(SKU_LOCALMEDIA);
+              mHasLocalMedia = (localmediaPurchase != null && verifyDeveloperPayload(localmediaPurchase));
+            }
           }
 
           Logger.d("Has Chromecast: %s", mHasChromecast);

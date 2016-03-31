@@ -66,7 +66,7 @@ android {
             buildConfigField "String", "SKU_CHROMECAST", "\"chromecast\""
             buildConfigField "String", "SKU_WEAR", "\"wear\""
             buildConfigField "String", "SKU_LOCALMEDIA", "\"localplayback\""
-            buildConfigField "String", "CHROMECAST_APP_ID", "\"" + RELEASE_CHROMECAST_APP_ID + "\""
+            buildConfigField "String", "CHROMECAST_APP_ID", "\"328C6DAC\""
         }
         debug {
             debuggable true
@@ -79,37 +79,6 @@ android {
             buildConfigField "String", "SKU_WEAR", "\"wear\""
             buildConfigField "String", "SKU_LOCALMEDIA", "\"localplayback\""
             buildConfigField "String", "CHROMECAST_APP_ID", "\"" + DEBUG_CHROMECAST_APP_ID + "\""
-        }
-        chromecast {
-            signingConfig signingConfigs.release
-            debuggable true
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
-            buildConfigField "boolean", "USE_BUGSENSE", "false"
-            buildConfigField "boolean", "CHROMECAST_REQUIRES_PURCHASE", "true"
-            buildConfigField "String", "SKU_CHROMECAST", "\"chromecast\""
-            buildConfigField "String", "SKU_WEAR", "\"wear\""
-            buildConfigField "String", "CHROMECAST_APP_ID", "\"" + RELEASE_CHROMECAST_APP_ID + "\""
-        }
-        chromecastTest {
-            signingConfig signingConfigs.release
-            debuggable true
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
-            buildConfigField "boolean", "USE_BUGSENSE", "false"
-            buildConfigField "boolean", "CHROMECAST_REQUIRES_PURCHASE", "true"
-            buildConfigField "String", "SKU_CHROMECAST", "\"android.test.purchased\""
-            buildConfigField "String", "CHROMECAST_APP_ID", "\"" + RELEASE_CHROMECAST_APP_ID + "\""
-        }
-        beta {
-            debuggable true
-            signingConfig signingConfigs.debug
-            buildConfigField "boolean", "USE_BUGSENSE", "true"
-            buildConfigField "boolean", "CHROMECAST_REQUIRES_PURCHASE", "false"
-            buildConfigField "boolean", "WEAR_REQUIRES_PURCHASE", "false"
-            buildConfigField "String", "SKU_CHROMECAST", "\"android.test.purchased\""
-            buildConfigField "String", "SKU_WEAR", "\"android.test.purchased\""
-            buildConfigField "String", "CHROMECAST_APP_ID", "\"" + RELEASE_CHROMECAST_APP_ID + "\""
         }
     }
     lintOptions {
