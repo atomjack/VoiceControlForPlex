@@ -4,6 +4,7 @@ import android.content.Context;
 import android.support.v7.media.MediaRouter;
 
 import com.atomjack.shared.Logger;
+import com.atomjack.shared.NewLogger;
 import com.atomjack.shared.PlayerState;
 import com.atomjack.shared.Preferences;
 import com.atomjack.vcfp.interfaces.ActiveConnectionHandler;
@@ -30,6 +31,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class CastPlayerManager {
+  private NewLogger logger;
   private PlexMedia nowPlayingMedia;
   private ArrayList<? extends PlexMedia> nowPlayingPlaylist;
 
@@ -128,6 +130,7 @@ public class CastPlayerManager {
     mContext = context;
     plexSessionId = VoiceControlForPlexApplication.generateRandomString();
     setCastConsumer();
+    logger = new NewLogger(this);
   }
 
   public void setContext(Context context) {
@@ -384,7 +387,7 @@ public class CastPlayerManager {
             if(obj.has("currentState"))
               currentState = PlayerState.getState(obj.getString("currentState"));
             if(listener != null)
-              listener.onTimeUpdate(currentState, obj.getInt("currentTime"));
+              listener.onTimeUpdate(currentState, position);
           } else if(obj.has("event") && obj.getString("event").equals(RECEIVER_EVENTS.PLAYLIST_ADVANCE) && obj.has("media") && obj.has("type")) {
             Logger.d("[CastPlayerManager] playlistAdvance");
             if(obj.getString("type").equals(PARAMS.MEDIA_TYPE_VIDEO))
@@ -394,7 +397,6 @@ public class CastPlayerManager {
             if(listener != null)
               listener.onMediaChanged(nowPlayingMedia, PlayerState.PLAYING);
           } else if(obj.has("event") && obj.getString("event").equals(RECEIVER_EVENTS.GET_PLAYBACK_STATE) && obj.has("state")) {
-            Logger.d("Got playback state back: %s", obj.getString("state"));
             PlayerState oldState = currentState;
             currentState = PlayerState.getState(obj.getString("state"));
             if(obj.has("media") && obj.has("type") && obj.has("client")) {

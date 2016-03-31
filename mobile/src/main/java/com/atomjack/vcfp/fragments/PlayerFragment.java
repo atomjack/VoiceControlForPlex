@@ -651,17 +651,19 @@ public abstract class PlayerFragment extends Fragment
   }
 
   public void setState(PlayerState newState) {
-    currentState = newState;
-    if(playPauseSpinner != null && playButton != null && pauseButton != null) {
-      playPauseSpinner.setVisibility(View.INVISIBLE);
-      playButton.setVisibility(View.INVISIBLE);
-      pauseButton.setVisibility(View.INVISIBLE);
-      if (currentState == PlayerState.PAUSED) {
-        playButton.setVisibility(View.VISIBLE);
-      } else if (currentState == PlayerState.PLAYING) {
-        pauseButton.setVisibility(View.VISIBLE);
-      } else {
-        playPauseSpinner.setVisibility(View.VISIBLE);
+    if(currentState != newState) {
+      currentState = newState;
+      if (playPauseSpinner != null && playButton != null && pauseButton != null) {
+        playPauseSpinner.setVisibility(View.INVISIBLE);
+        playButton.setVisibility(View.INVISIBLE);
+        pauseButton.setVisibility(View.INVISIBLE);
+        if (currentState == PlayerState.PAUSED) {
+          playButton.setVisibility(View.VISIBLE);
+        } else if (currentState == PlayerState.PLAYING) {
+          pauseButton.setVisibility(View.VISIBLE);
+        } else {
+          playPauseSpinner.setVisibility(View.VISIBLE);
+        }
       }
     }
   }
