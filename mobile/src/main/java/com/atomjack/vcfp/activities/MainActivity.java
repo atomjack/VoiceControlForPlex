@@ -1482,10 +1482,10 @@ public class MainActivity extends AppCompatActivity
         if(VoiceControlForPlexApplication.getInstance().hasLocalmedia())
           hidePurchaseLocalmediaMenuItem();
 
-        if(VoiceControlForPlexApplication.getInstance().hasChromecast()) {
-          MenuItem chromecastOptionsItem = menu.findItem(R.id.menu_chromecast_video);
-          chromecastOptionsItem.setVisible(true);
-        }
+        MenuItem chromecastOptionsItem = menu.findItem(R.id.menu_chromecast_video);
+        MenuItem chromecastPurchaseItem = menu.findItem(R.id.menu_purchase_chromecast);
+        chromecastPurchaseItem.setVisible(!VoiceControlForPlexApplication.getInstance().hasChromecast());
+        chromecastOptionsItem.setVisible(VoiceControlForPlexApplication.getInstance().hasChromecast());
 
         SwitchCompat usageExamplesSwitch = (SwitchCompat)menu.findItem(R.id.menu_usage_hints_switch).getActionView();
         usageExamplesSwitch.setChecked(prefs.get(Preferences.SHOW_USAGE_HINTS, true));
@@ -1640,7 +1640,7 @@ public class MainActivity extends AppCompatActivity
         animateCastIcon();
 
         if (clientSelected.isCastClient) {
-          if(VoiceControlForPlexApplication.getInstance().hasChromecast()) {
+          if(VoiceControlForPlexApplication.getInstance().hasChromecast() || prefs.get(Preferences.HAS_SHOWN_INITIAL_CHROMECAST_PURCHASE, false)) {
             client = clientSelected;
             logger.d("subscribing to %s", client.name);
             castPlayerManager.subscribe(client, !castPlayerManager.isSubscribed());
@@ -2210,15 +2210,20 @@ public class MainActivity extends AppCompatActivity
 
   }
 
-  protected void showChromecastPurchase(PlexClient client, Runnable onSuccess) {
+  public void purchaseChromecast(MenuItem item) {
+    VoiceControlForPlexApplication.getInstance().getIabHelper().launchPurchaseFlow(MainActivity.this, VoiceControlForPlexApplication.SKU_CHROMECAST, 10001, mPurchaseFinishedListener, VoiceControlForPlexApplication.SKU_TEST_PURCHASED == VoiceControlForPlexApplication.SKU_CHROMECAST ? VoiceControlForPlexApplication.getInstance().getEmailHash() : "");
+  }
+
+  protected void showChromecastPurchase(PlexClient client, final Runnable onSuccess) {
     postChromecastPurchaseClient = client;
     postChromecastPurchaseAction = onSuccess;
+    prefs.put(Preferences.HAS_SHOWN_INITIAL_CHROMECAST_PURCHASE, true);
     AlertDialog.Builder builder = new AlertDialog.Builder(this);
     View view = getLayoutInflater().inflate(R.layout.popup_chromecast_purchase, null);
     builder.setView(view);
     final AlertDialog dialog = builder.setCancelable(false).create();
     TextView popupChromecastPurchaseMessage = (TextView)view.findViewById(R.id.popupChromecastPurchaseMessage);
-    popupChromecastPurchaseMessage.setText(String.format(getString(R.string.must_purchase_chromecast), VoiceControlForPlexApplication.getChromecastPrice()));
+    popupChromecastPurchaseMessage.setText(String.format(getString(R.string.must_purchase_chromecast2), VoiceControlForPlexApplication.getChromecastPrice()));
     Button popupChromecastPurchaseOKButton = (Button)view.findViewById(R.id.popupChromecastPurchaseOKButton);
     popupChromecastPurchaseOKButton.setOnClickListener(new View.OnClickListener() {
       @Override
@@ -2232,7 +2237,7 @@ public class MainActivity extends AppCompatActivity
       @Override
       public void onClick(View v) {
         dialog.cancel();
-        setCastIconInactive();
+        onSuccess.run();
       }
     });
     dialog.show();

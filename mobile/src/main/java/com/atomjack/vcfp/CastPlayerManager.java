@@ -99,6 +99,8 @@ public class CastPlayerManager {
     public static final String SERVERS = "servers";
     public static final String ACTIVE_CONNECTIONS = "active_connections";
 
+    public static final String PLAYBACK_LIMITED = "playback_limited"; // Whether or not playback should stop after 1 minute
+
   };
 
   public static final class RECEIVER_EVENTS {
@@ -163,7 +165,8 @@ public class CastPlayerManager {
         JSONObject obj = new JSONObject();
         try {
           obj.put(PARAMS.ACTION, PARAMS.RECEIVE_SERVERS);
-
+          if(!VoiceControlForPlexApplication.getInstance().hasChromecast())
+            obj.put(PARAMS.PLAYBACK_LIMITED, true);
           Type serverType = new TypeToken<ConcurrentHashMap<String, PlexServer>>(){}.getType();
           PlexServer server = VoiceControlForPlexApplication.gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.SERVER, ""), PlexServer.class);
           if(server.name.equals(mContext.getString(R.string.scan_all)))

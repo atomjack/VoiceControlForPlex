@@ -206,4 +206,6 @@
     <string name="tutorial1_nav_button">Tap the Navigation button to show the Navigation Menu, where you can choose a Plex server, and customize settings.</string>
     <string name="tutorial1_mic_button">Finally, tap the mic to tell Plex to play something!</string>
 
+    <string name="must_purchase_chromecast2">Playback to Chromecasts are restricted to one minute. Would you like to unlock it(%s)?</string>
+    <string name="purchase_chromecast">Purchase Chromecast Playback</string>
 </resources>

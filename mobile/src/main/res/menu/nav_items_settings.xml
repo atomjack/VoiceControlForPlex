@@ -35,6 +35,11 @@
               android:title="@string/cinema_trailers"
               android:icon="@drawable/menu_trailers"
               android:onClick="cinemaTrailers"/>
+        <item android:id="@+id/menu_purchase_chromecast"
+              android:title="@string/purchase_chromecast"
+              android:icon="@drawable/menu_chromecast"
+              android:visibility="gone"
+              android:onClick="purchaseChromecast" />
         <item android:id="@+id/menu_purchase_localmedia"
               android:title="@string/purchase_localmedia"
               android:icon="@drawable/menu_local_video"

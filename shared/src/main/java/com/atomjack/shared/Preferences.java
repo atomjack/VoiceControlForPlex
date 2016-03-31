@@ -60,6 +60,7 @@ public class Preferences {
   public final static String HAS_FINISHED_TUTORIAL1 = "pref.has_finished_tutorial1";
 
   public final static String HAS_SHOWN_INITIAL_LOCALMEDIA_PURCHASE = "pref.has_shown_initial_localmedia_purchase";
+  public final static String HAS_SHOWN_INITIAL_CHROMECAST_PURCHASE = "pref.has_shown_initial_chromecast_purchase";
 
 
 
