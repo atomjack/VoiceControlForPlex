@@ -1415,13 +1415,13 @@ public class PlexSearchService extends Service {
       new FetchMediaImageTask(firstMedia,
               PlexMedia.IMAGE_SIZES.get(notificationImageKey)[0],
               PlexMedia.IMAGE_SIZES.get(notificationImageKey)[1],
-              firstMedia.thumb != null ? firstMedia.thumb : firstMedia.grandparentThumb,
+              firstMedia.getNotificationThumb(notificationImageKey),
               firstMedia.getImageKey(notificationImageKey),
               bitmapHandler).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
       new FetchMediaImageTask(firstMedia,
               PlexMedia.IMAGE_SIZES.get(notificationImageKeyBig)[0],
               PlexMedia.IMAGE_SIZES.get(notificationImageKeyBig)[1],
-              firstMedia.thumb != null ? firstMedia.thumb : firstMedia.grandparentThumb,
+              firstMedia.getNotificationThumb(notificationImageKeyBig),
               firstMedia.getImageKey(notificationImageKeyBig),
               bitmapHandler).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
       numMedia[0] += 3;
