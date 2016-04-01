@@ -2433,7 +2433,7 @@ public class MainActivity extends AppCompatActivity
     chooserDialog.show();
   }
 
-  private void showVideoOptions(final boolean chromecast, final boolean local) {
+  private void showVideoOptions(final boolean chromecast, final boolean localNetwork) {
     HashMap<String, String[]> videoQualityOptions;
     if(chromecast)
       videoQualityOptions = VoiceControlForPlexApplication.chromecastVideoQualityOptions;
@@ -2447,24 +2447,26 @@ public class MainActivity extends AppCompatActivity
     TextView videoOptionsTitle = (TextView)view.findViewById(R.id.videoOptionsTitle);
     int title;
     if(chromecast) {
-      title = local ? R.string.chromecast_video_local_full : R.string.chromecast_video_remote_full;
+      title = localNetwork ? R.string.chromecast_video_local_full : R.string.chromecast_video_remote_full;
     } else {
-      title = local ? R.string.local_video_local_full : R.string.local_video_remote_full;
+      title = localNetwork ? R.string.local_video_local_full : R.string.local_video_remote_full;
     }
     videoOptionsTitle.setText(title);
 
     final String prefKey;
     if(chromecast) {
-      prefKey = local ? Preferences.CHROMECAST_VIDEO_QUALITY_LOCAL : Preferences.CHROMECAST_VIDEO_QUALITY_REMOTE;
+      prefKey = localNetwork ? Preferences.CHROMECAST_VIDEO_QUALITY_LOCAL : Preferences.CHROMECAST_VIDEO_QUALITY_REMOTE;
     } else {
-      prefKey = local ? Preferences.LOCAL_VIDEO_QUALITY_LOCAL : Preferences.LOCAL_VIDEO_QUALITY_REMOTE;
+      prefKey = localNetwork ? Preferences.LOCAL_VIDEO_QUALITY_LOCAL : Preferences.LOCAL_VIDEO_QUALITY_REMOTE;
     }
 
     RadioGroup videoOptionsRadioGroup = (RadioGroup)view.findViewById(R.id.videoOptionsRadioGroup);
     final CharSequence[] items = videoQualityOptions.keySet().toArray(new CharSequence[videoQualityOptions.size()]);
     int videoQuality = new ArrayList<>(videoQualityOptions.keySet()).indexOf(prefs.getString(prefKey));
-    if(videoQuality == -1)
-      videoQuality = new ArrayList<>(videoQualityOptions.keySet()).indexOf("8mbps 720p");
+    logger.d("videoQuality: %d", videoQuality);
+    logger.d("options: %s", videoQualityOptions);
+    if(videoQuality == -1 || !videoQualityOptions.containsKey(prefs.getString(prefKey)))
+      videoQuality = new ArrayList<>(videoQualityOptions.keySet()).indexOf(chromecast ? VoiceControlForPlexApplication.chromecastVideoQualityDefault : VoiceControlForPlexApplication.localVideoQualityDefault);
     LinearLayout.LayoutParams layoutParams = new RadioGroup.LayoutParams(
             RadioGroup.LayoutParams.WRAP_CONTENT,
             RadioGroup.LayoutParams.WRAP_CONTENT);
@@ -2480,7 +2482,12 @@ public class MainActivity extends AppCompatActivity
       public void onCheckedChanged(RadioGroup group, int checkedId) {
         logger.d("Checked %s", items[checkedId]);
         prefs.put(prefKey, (String)items[checkedId]);
-        dialog.dismiss();
+        handler.postDelayed(new Runnable() {
+          @Override
+          public void run() {
+            dialog.dismiss();
+          }
+        }, 500);
       }
     });
     dialog.show();
