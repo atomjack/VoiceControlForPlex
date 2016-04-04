@@ -73,9 +73,9 @@
         <FrameLayout
             android:layout_width="fill_parent"
             android:layout_height="1dp"
-            android:background="?android:attr/dividerVertical"
-            android:layout_marginLeft="4dp"
-            android:layout_marginRight="4dp">
+            android:background="@color/gray"
+            android:layout_marginLeft="5dp"
+            android:layout_marginRight="5dp">
         </FrameLayout>
 
         <LinearLayout
@@ -96,9 +96,9 @@
             <FrameLayout
                 android:layout_width="1dp"
                 android:layout_height="fill_parent"
-                android:layout_marginTop="4dp"
-                android:layout_marginBottom="4dp"
-                android:background="?android:attr/dividerHorizontal">
+                android:layout_marginTop="5dp"
+                android:layout_marginBottom="5dp"
+                android:background="@color/gray">
             </FrameLayout>
 
             <RelativeLayout
@@ -129,9 +129,9 @@
             <FrameLayout
                 android:layout_width="1dp"
                 android:layout_height="fill_parent"
-                android:layout_marginTop="4dp"
-                android:layout_marginBottom="4dp"
-                android:background="?android:attr/dividerHorizontal">
+                android:layout_marginTop="5dp"
+                android:layout_marginBottom="5dp"
+                android:background="@color/gray">
 
             </FrameLayout>
 
