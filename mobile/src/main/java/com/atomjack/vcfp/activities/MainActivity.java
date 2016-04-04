@@ -346,7 +346,7 @@ public class MainActivity extends AppCompatActivity
       VoiceControlForPlexApplication.getInstance().cancelNotification();
     }
 
-    init();
+    init(savedInstanceState != null);
     if(!doingFirstTimeSetup)
       doAutomaticDeviceScan();
   }
@@ -457,6 +457,14 @@ public class MainActivity extends AppCompatActivity
   }
 
   private void init() {
+    init(false);
+  }
+
+  // There is an edge case that happens when voice control is triggered when the app is not currently running. The intent passed to
+  // onCreate() directs the app to show the now playing media, however this intent will get sent again if an orientation change is
+  // done after stopping playback, which will cause the now playing screen to show up again, when it shouldn't. If init() is passed
+  // true for previouslyShutDown, we will skip showing the now playing screen.
+  private void init(boolean previouslyShutDown) {
     handler = new Handler();
 
     if(BuildConfig.USE_BUGSENSE) {
@@ -490,9 +498,9 @@ public class MainActivity extends AppCompatActivity
       }
       logger.d("(init) Intent action: %s", getIntent().getAction());
       Intent intent = getIntent();
-      if(intent.getAction() != null && getIntent().getAction().equals(ACTION_SHOW_NOW_PLAYING)) {
+      if(intent.getAction() != null && getIntent().getAction().equals(ACTION_SHOW_NOW_PLAYING) && !previouslyShutDown) {
         handleShowNowPlayingIntent(intent);
-      } else if(intent.getAction().equals(com.atomjack.shared.Intent.ACTION_PLAY_LOCAL)) { // this intent will only arrive when playing music. playing video will go to VideoPlayerActivity
+      } else if(intent.getAction().equals(com.atomjack.shared.Intent.ACTION_PLAY_LOCAL) && !previouslyShutDown) { // this intent will only arrive when playing music. playing video will go to VideoPlayerActivity
         handlePlayLocalIntent(intent);
       } else {
 
