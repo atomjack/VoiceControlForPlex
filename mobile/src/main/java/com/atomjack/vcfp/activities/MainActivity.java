@@ -488,10 +488,12 @@ public class MainActivity extends AppCompatActivity
         showWearPurchase = false;
         showWearPurchase();
       }
-      logger.d("Intent action: %s", getIntent().getAction());
+      logger.d("(init) Intent action: %s", getIntent().getAction());
       Intent intent = getIntent();
       if(intent.getAction() != null && getIntent().getAction().equals(ACTION_SHOW_NOW_PLAYING)) {
-        handleShowNowPlayingIntent(getIntent());
+        handleShowNowPlayingIntent(intent);
+      } else if(intent.getAction().equals(com.atomjack.shared.Intent.ACTION_PLAY_LOCAL)) { // this intent will only arrive when playing music. playing video will go to VideoPlayerActivity
+        handlePlayLocalIntent(intent);
       } else {
 
         logger.d("Loading main fragment");
@@ -1228,36 +1230,7 @@ public class MainActivity extends AppCompatActivity
       } else if(intent.getAction().equals(ACTION_SHOW_NOW_PLAYING)) {
         handleShowNowPlayingIntent(intent);
       } else if(intent.getAction().equals(com.atomjack.shared.Intent.ACTION_PLAY_LOCAL)) { // this intent will only arrive when playing music. playing video will go to VideoPlayerActivity
-        logger.d("Binding to LocalMusicService");
-        bindMusicPlayerService();
-        final PlexTrack track = intent.getParcelableExtra(com.atomjack.shared.Intent.EXTRA_MEDIA);
-        final ArrayList<? extends PlexMedia> playlist = intent.getParcelableArrayListExtra(com.atomjack.shared.Intent.EXTRA_PLAYLIST);
-        logger.d("Got track %s and media container with %d tracks", (track != null ? track.title : null), playlist.size());
-        if(musicPlayerFragment != null && musicPlayerFragment.isVisible()) {
-          localMusicService.setTrack(track);
-          localMusicService.setPlaylist(playlist);
-          localMusicService.reset();
-          localMusicService.playSong();
-        } else {
-          musicConnection.setOnConnected(new Runnable() {
-            @Override
-            public void run() {
-              localMusicService.setTrack(track);
-              localMusicService.setPlaylist(playlist);
-              localMusicService.reset();
-              localMusicService.playSong();
-
-              setCastIconActive();
-              if (musicPlayerFragment == null)
-                musicPlayerFragment = new MusicPlayerFragment();
-
-              musicPlayerFragment.init(localMusicService.getTrack(), localMusicService.getPlaylist());
-              logger.d("Switching to music");
-              switchToFragment(musicPlayerFragment);
-            }
-          });
-        }
-
+        handlePlayLocalIntent(intent);
       } else if(intent.getAction() != null && intent.getAction().equals(com.atomjack.shared.Intent.SHOW_WEAR_PURCHASE)) {
         // An Android Wear device was successfully pinged, so show popup alerting the
         // user that they can purchase wear support, but only if we've never shown the popup before.
@@ -1311,6 +1284,38 @@ public class MainActivity extends AppCompatActivity
     init();
     drawerToggle.syncState();
     doAutomaticDeviceScan();
+  }
+
+  private void handlePlayLocalIntent(Intent intent) {
+    logger.d("Binding to LocalMusicService");
+    bindMusicPlayerService();
+    final PlexTrack track = intent.getParcelableExtra(com.atomjack.shared.Intent.EXTRA_MEDIA);
+    final ArrayList<? extends PlexMedia> playlist = intent.getParcelableArrayListExtra(com.atomjack.shared.Intent.EXTRA_PLAYLIST);
+    logger.d("Got track %s and media container with %d tracks", (track != null ? track.title : null), playlist.size());
+    if(musicPlayerFragment != null && musicPlayerFragment.isVisible()) {
+      localMusicService.setTrack(track);
+      localMusicService.setPlaylist(playlist);
+      localMusicService.reset();
+      localMusicService.playSong();
+    } else {
+      musicConnection.setOnConnected(new Runnable() {
+        @Override
+        public void run() {
+          localMusicService.setTrack(track);
+          localMusicService.setPlaylist(playlist);
+          localMusicService.reset();
+          localMusicService.playSong();
+
+          setCastIconActive();
+          if (musicPlayerFragment == null)
+            musicPlayerFragment = new MusicPlayerFragment();
+
+          musicPlayerFragment.init(localMusicService.getTrack(), localMusicService.getPlaylist());
+          logger.d("Switching to music");
+          switchToFragment(musicPlayerFragment);
+        }
+      });
+    }
   }
 
   private void handleShowNowPlayingIntent(Intent intent) {
