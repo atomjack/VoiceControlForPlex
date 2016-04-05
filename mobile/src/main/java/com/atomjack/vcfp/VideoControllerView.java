@@ -18,8 +18,10 @@ package com.atomjack.vcfp;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.PorterDuff;
 import android.os.Handler;
 import android.os.Message;
+import android.support.v4.content.ContextCompat;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.Gravity;
@@ -30,6 +32,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -38,7 +42,10 @@ import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
 
+import com.atomjack.shared.Logger;
+
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.Formatter;
 import java.util.Locale;
 
@@ -104,6 +111,11 @@ public class VideoControllerView extends FrameLayout {
   private ImageView           mPoster;
   private Bitmap              mPosterBitmap;
   private ViewGroup           mMediaControllerPosterContainer;
+  private CustomSpinner       mBitrateSpinner;
+  private boolean             mBitrateSpinnerIsOpen = false;
+  private String              mCurrentVideoQuality;
+
+  private BitrateChangeListener mBitrateChangeListener;
 
   public VideoControllerView(Context context, AttributeSet attrs) {
     super(context, attrs);
@@ -125,7 +137,6 @@ public class VideoControllerView extends FrameLayout {
 
   public VideoControllerView(Context context) {
     this(context, true);
-
     Log.i(TAG, TAG);
   }
 
@@ -242,6 +253,69 @@ public class VideoControllerView extends FrameLayout {
     if(mPosterBitmap != null)
       mPoster.setImageBitmap(mPosterBitmap);
 
+    mBitrateSpinner = (CustomSpinner) v.findViewById(R.id.bitrateSpinner);
+    if(mBitrateSpinner != null) {
+
+      mBitrateSpinner.getBackground().setColorFilter(ContextCompat.getColor(mContext, R.color.white), PorterDuff.Mode.SRC_ATOP);
+
+      final ArrayList<String> list = new ArrayList<>(VoiceControlForPlexApplication.localVideoQualityOptions.keySet());
+      ArrayAdapter<String> adapter = new ArrayAdapter<String>(mContext, R.layout.bitrate_dropdown_item, list) {
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+          TextView textView = (TextView)super.getView(position, convertView, parent);
+          textView.setTextColor(ContextCompat.getColor(mContext, R.color.white));
+          return textView;
+        }
+
+        @Override
+        public View getDropDownView(int position, View convertView, ViewGroup parent) {
+          TextView textView = (TextView)super.getDropDownView(position, convertView, parent);
+          textView.setTextColor(ContextCompat.getColor(mContext, textView.getText().equals(mCurrentVideoQuality) ? R.color.black : R.color.white));
+          textView.setBackgroundColor(ContextCompat.getColor(mContext, textView.getText().equals(mCurrentVideoQuality) ? R.color.white : R.color.mediaControllerBackground));
+          return textView;
+        }
+      };
+      mBitrateSpinner.setAdapter(adapter);
+
+      mBitrateSpinner.setSelection(list.indexOf(mCurrentVideoQuality), false);
+
+      mBitrateSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+        @Override
+        public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+          String item = list.get(position);
+          // Only notify the activity if the bitrate clicked on is not the current one
+          if(mBitrateChangeListener != null && !item.equals(mCurrentVideoQuality)) {
+            hide();
+            mBitrateChangeListener.onBitrateChange(item);
+          }
+        }
+
+        @Override
+        public void onNothingSelected(AdapterView<?> parent) {
+
+        }
+      });
+
+
+      mBitrateSpinner.setSpinnerEventsListener(new CustomSpinner.OnSpinnerEventsListener() {
+        @Override
+        public void onSpinnerOpened() {
+          mBitrateSpinnerIsOpen = true;
+        }
+
+        @Override
+        public void onSpinnerClosed() {
+          mBitrateSpinnerIsOpen = false;
+          // hide the controller after 3 seconds
+          Message msg = mHandler.obtainMessage(FADE_OUT);
+          mHandler.removeMessages(FADE_OUT);
+          mHandler.sendMessageDelayed(msg, sDefaultTimeout);
+        }
+      });
+
+
+    }
+
     mProgress = (SeekBar) v.findViewById(R.id.mediacontroller_progress);
     if (mProgress != null) {
       if (mProgress instanceof SeekBar) {
@@ -326,7 +400,7 @@ public class VideoControllerView extends FrameLayout {
     mHandler.sendEmptyMessage(SHOW_PROGRESS);
 
     Message msg = mHandler.obtainMessage(FADE_OUT);
-    if (timeout != 0) {
+    if (timeout != 0 ) {
       mHandler.removeMessages(FADE_OUT);
       mHandler.sendMessageDelayed(msg, timeout);
     }
@@ -738,7 +812,8 @@ public class VideoControllerView extends FrameLayout {
       int pos;
       switch (msg.what) {
         case FADE_OUT:
-          view.hide();
+          if(!view.mBitrateSpinnerIsOpen)
+            view.hide();
           break;
         case SHOW_PROGRESS:
           pos = view.setProgress();
@@ -755,5 +830,17 @@ public class VideoControllerView extends FrameLayout {
     mPosterBitmap = bitmap;
     if(mPoster != null)
       mPoster.setImageBitmap(bitmap);
+  }
+
+  public void setCurrentVideoQuality(String videoQuality) {
+    mCurrentVideoQuality = videoQuality;
+  }
+
+  public void setBitrateChangeListener(BitrateChangeListener listener) {
+    mBitrateChangeListener = listener;
+  }
+
+  public interface BitrateChangeListener {
+    void onBitrateChange(String bitrate);
   }
 }

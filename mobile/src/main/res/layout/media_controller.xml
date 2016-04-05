@@ -37,13 +37,27 @@
             android:layout_alignParentRight="true"
             android:layout_alignParentEnd="true"/>
 
+        <FrameLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@color/mediaControllerBackground"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true">
+
+            <com.atomjack.vcfp.CustomSpinner
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/bitrateSpinner"/>
+        </FrameLayout>
+
     </RelativeLayout>
 
     <LinearLayout
         android:orientation="vertical"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="#CC000000"
+        android:background="@color/mediaControllerBackground"
         android:paddingTop="20dp"
         android:paddingBottom="20dp">
 
@@ -60,7 +74,8 @@
                 android:layout_height="wrap_content"
                 android:id="@+id/mic"
                 android:src="@drawable/button_microphone"
-                android:background="@android:color/transparent"/>
+                android:background="@android:color/transparent"
+                android:layout_gravity="center_vertical"/>
 
             <SeekBar
                 android:id="@+id/mediacontroller_progress"

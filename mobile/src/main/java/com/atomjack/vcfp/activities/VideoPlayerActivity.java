@@ -54,7 +54,8 @@ public class VideoPlayerActivity extends AppCompatActivity
         MediaPlayer.OnPreparedListener,
         MediaPlayer.OnErrorListener,
         SurfaceHolder.Callback,
-        VideoControllerView.MediaPlayerControl {
+        VideoControllerView.MediaPlayerControl,
+        VideoControllerView.BitrateChangeListener {
 
   private NewLogger logger;
 
@@ -83,6 +84,8 @@ public class VideoPlayerActivity extends AppCompatActivity
   // want to finish the activity when the player stops, since we'll have to stop it, then set the new
   // data source, then start playback again
   private Runnable finishOnPlayerStop = null;
+
+  private String currentBitrate = null;
 
   SurfaceView videoSurface;
   VideoControllerView controller;
@@ -251,8 +254,10 @@ public class VideoPlayerActivity extends AppCompatActivity
 
             player.setOnErrorListener(VideoPlayerActivity.this);
             player.setOnCompletionListener(VideoPlayerActivity.this);
-            if(controller == null)
+            if(controller == null) {
               controller = new VideoControllerView(VideoPlayerActivity.this);
+              controller.setBitrateChangeListener(VideoPlayerActivity.this);
+            }
             logger.d("Have %d videos", playlist.size());
             if(playlist.size() > 1) // Only show the prev/next buttons when there is more than one video to play
               controller.setPrevNextListeners(currentVideoIndex > 0 ? onPrevious : null, currentVideoIndex+1 < playlist.size() ? onNext : null);
@@ -367,8 +372,13 @@ public class VideoPlayerActivity extends AppCompatActivity
     qs.add("directPlay", "0");
     qs.add("directStream", "1");
     qs.add("videoQuality", "60");
-    qs.add("maxVideoBitrate", VoiceControlForPlexApplication.localVideoQualityOptions.get(VoiceControlForPlexApplication.getInstance().prefs.getString(connection.local ? Preferences.LOCAL_VIDEO_QUALITY_LOCAL : Preferences.LOCAL_VIDEO_QUALITY_REMOTE))[0]);
-    qs.add("videoResolution", VoiceControlForPlexApplication.localVideoQualityOptions.get(VoiceControlForPlexApplication.getInstance().prefs.getString(connection.local ? Preferences.LOCAL_VIDEO_QUALITY_LOCAL : Preferences.LOCAL_VIDEO_QUALITY_REMOTE))[1]);
+
+    if(currentBitrate == null) {
+      currentBitrate = VoiceControlForPlexApplication.getInstance().prefs.getString(connection.local ? Preferences.LOCAL_VIDEO_QUALITY_LOCAL : Preferences.LOCAL_VIDEO_QUALITY_REMOTE);
+    }
+
+    qs.add("maxVideoBitrate", VoiceControlForPlexApplication.localVideoQualityOptions.get(currentBitrate)[0]);
+    qs.add("videoResolution", VoiceControlForPlexApplication.localVideoQualityOptions.get(currentBitrate)[1]);
     qs.add("audioBoost", "100");
     qs.add("session", session);
     qs.add(PlexHeaders.XPlexClientIdentifier, VoiceControlForPlexApplication.getInstance().prefs.getUUID());
@@ -417,6 +427,8 @@ public class VideoPlayerActivity extends AppCompatActivity
   public void onPrepared(MediaPlayer mp) {
     logger.d("onPrepared");
     currentState = PlayerState.BUFFERING;
+
+    controller.setCurrentVideoQuality(currentBitrate);
 
     controller.setMediaPlayer(this);
     controller.setAnchorView((FrameLayout) findViewById(R.id.videoSurfaceContainer));
@@ -751,4 +763,16 @@ public class VideoPlayerActivity extends AppCompatActivity
       stop();
     }
   };
+
+  // Implement BitrateChangeListener
+
+  @Override
+  public void onBitrateChange(String bitrate) {
+    currentBitrate = bitrate;
+    playNewVideo();
+  }
+
+  // End Implement BitrateChangeListener
+
+
 }

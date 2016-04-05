@@ -23,4 +23,5 @@
     <color name="primary_600">#1E88E5</color>
     <color name="primary">#ffffff</color>
     <color name="primaryDark">#0000ff</color>
+    <color name="mediaControllerBackground">#CC000000</color>
 </resources>
