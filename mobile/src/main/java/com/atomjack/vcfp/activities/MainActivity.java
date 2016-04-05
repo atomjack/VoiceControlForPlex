@@ -1646,10 +1646,8 @@ public class MainActivity extends AppCompatActivity
     @Override
     public void onDeviceSelected(PlexDevice device, boolean resume) {
       if(device != null) {
-        subscribing = true;
-        final PlexClient clientSelected = (PlexClient)device;
-        setClient(clientSelected);
 
+        final PlexClient clientSelected = (PlexClient)device;
         if(client.isLocalClient) {
           if(!prefs.get(Preferences.HAS_SHOWN_INITIAL_LOCALMEDIA_PURCHASE, false) && !VoiceControlForPlexApplication.getInstance().hasLocalmedia()) {
             showPurchaseLocalMedia(true);
@@ -1658,6 +1656,8 @@ public class MainActivity extends AppCompatActivity
           }
           return;
         }
+        subscribing = true;
+        setClient(clientSelected);
         // Start animating the action bar icon
         animateCastIcon();
 
@@ -1686,6 +1686,7 @@ public class MainActivity extends AppCompatActivity
   };
 
   private void localClientSelected(PlexClient clientSelected) {
+    setClient(clientSelected);
     setCastIconActive();
     subscribing = false;
     subscribed = true;
