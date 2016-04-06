@@ -1,4 +1,12 @@
-apply plugin: 'com.android.application'
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath 'me.tatarka:gradle-retrolambda:3.2.5'
+    }
+}
 
 repositories {
     jcenter()
@@ -9,6 +17,9 @@ repositories {
         url "https://oss.sonatype.org/content/repositories/snapshots"
     }
 }
+
+apply plugin: 'com.android.application'
+apply plugin: 'me.tatarka.retrolambda'
 
 configurations {
     compile.exclude group: 'stax'
@@ -24,6 +35,13 @@ android {
         minSdkVersion 15
         targetSdkVersion 19
         multiDexEnabled false
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    retrolambda {
+        jdk "/Library/Java/JavaVirtualMachines/jdk1.8.0_77.jdk/Contents/Home"
     }
     dexOptions {
         preDexLibraries = false
@@ -129,4 +147,5 @@ dependencies {
     compile ('com.github.worker8:tourguide:1.0.17-SNAPSHOT@aar'){
         transitive=true
     }
+    compile 'io.reactivex:rxjava:1.1.2'
 }
