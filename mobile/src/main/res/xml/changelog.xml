@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog>
+    <release version="2.1.4b5" versioncode="72">
+        <change>Changed higher end bitrates to 1080p for local video playback.</change>
+        <change>Fixed display of dividers in big notifications.</change>
+        <change>Added bitrate selector to local video player controller.</change>
+        <change>Fixed specifying "on this device" when triggering playback.</change>
+        <change>Squashed some more bugs.</change>
+    </release>
     <release version="2.1.4b4" versioncode="71">
         <change>Added local media playback. This feature is locked to one minute at a time, and can be unlocked via an in-app purchase (Navigation Menu->Settings).</change>
         <change>Chromecast playback can now be previewed for one minute at a time, and can be unlocked via in-app purchase (Navigation Menu->Settings).</change>
