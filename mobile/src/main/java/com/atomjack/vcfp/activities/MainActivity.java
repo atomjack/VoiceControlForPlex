@@ -7,7 +7,6 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.ComponentName;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.pm.PackageInfo;
@@ -46,12 +45,10 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CheckedTextView;
-import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -118,7 +115,6 @@ import com.google.gson.reflect.TypeToken;
 import com.splunk.mint.Mint;
 
 import org.honorato.multistatetogglebutton.MultiStateToggleButton;
-import org.honorato.multistatetogglebutton.ToggleButton;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -542,12 +538,9 @@ public class MainActivity extends AppCompatActivity
   private void doTutorial() {
     logger.d("cast button: %s", toolbar.findViewById(R.id.action_cast));
     if(toolbar.findViewById(R.id.action_cast) == null) {
-      handler.postDelayed(new Runnable() {
-        @Override
-        public void run() {
-          logger.d("doing tutorial again");
-          doTutorial();
-        }
+      handler.postDelayed(() -> {
+        logger.d("doing tutorial again");
+        doTutorial();
       }, 200);
       return;
     }
@@ -571,12 +564,7 @@ public class MainActivity extends AppCompatActivity
                     .setBackgroundColor(Color.parseColor("#aa000000"))
                     .disableClick(true)
                     .disableClickThroughHole(true)
-                    .setOnClickListener(new View.OnClickListener() {
-                      @Override
-                      public void onClick(View v) {
-                        tourGuideHandler.next();
-                      }
-                    })
+                    .setOnClickListener(v -> tourGuideHandler.next())
             ).setDefaultPointer(null)
             .setContinueMethod(Sequence.ContinueMethod.OverlayListener)
             .build();
@@ -853,21 +841,15 @@ public class MainActivity extends AppCompatActivity
     TextView popupPlexPinMessage = (TextView)view.findViewById(R.id.popupPlexPinMessage);
     popupPlexPinMessage.setText(String.format(getString(R.string.pin_message), pin.code));
     Button popupPlexPinManualButton = (Button)view.findViewById(R.id.popupPlexPinManualButton);
-    popupPlexPinManualButton.setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(View v) {
-        pinAlert.dismiss();
-        fetchPinTask.getFuture().cancel(false);
-        showManualLogin();
-      }
+    popupPlexPinManualButton.setOnClickListener(v -> {
+      pinAlert.dismiss();
+      fetchPinTask.getFuture().cancel(false);
+      showManualLogin();
     });
     Button popupPlexPinCancelButton = (Button)view.findViewById(R.id.popupPlexPinCancelButton);
-    popupPlexPinCancelButton.setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(View v) {
-        pinAlert.cancel();
-        fetchPinTask.getFuture().cancel(false);
-      }
+    popupPlexPinCancelButton.setOnClickListener(v -> {
+      pinAlert.cancel();
+      fetchPinTask.getFuture().cancel(false);
     });
 
     // Now set up a task to hit the below url (based on the "id" field returned in the above http POST)
@@ -907,12 +889,7 @@ public class MainActivity extends AppCompatActivity
               });
               pinAlert.cancel();
               Handler mainHandler = new Handler(context.getMainLooper());
-              mainHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                  feedback.m(R.string.logged_in);
-                }
-              });
+              mainHandler.post(() -> feedback.m(R.string.logged_in));
               // We got the auth token, so cancel this task
               getFuture().cancel(false);
             }
@@ -963,57 +940,44 @@ public class MainActivity extends AppCompatActivity
     final AlertDialog alertD = builder.create();
 
     Button popupManualLoginPinButton = (Button)view.findViewById(R.id.popupManualLoginPinButton);
-    popupManualLoginPinButton.setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(View v) {
-        alertD.dismiss();
-        showLogin();
-      }
+    popupManualLoginPinButton.setOnClickListener(v -> {
+      alertD.dismiss();
+      showLogin();
     });
     Button popupManualLoginCancelButton = (Button)view.findViewById(R.id.popupManualLoginCancelButton);
-    popupManualLoginCancelButton.setOnClickListener(new View.OnClickListener() {
+    popupManualLoginCancelButton.setOnClickListener(v -> alertD.cancel());
+    Button popupManualLoginOKButton = (Button)view.findViewById(R.id.popupManualLoginOKButton);
+    popupManualLoginOKButton.setOnClickListener(v -> PlexHttpClient.signin(usernameInput.getText().toString(), passwordInput.getText().toString(), new PlexHttpUserHandler() {
       @Override
-      public void onClick(View v) {
+      public void onSuccess(PlexUser user) {
+        prefs.put(Preferences.AUTHENTICATION_TOKEN, user.authenticationToken);
+        authToken = user.authenticationToken;
+        prefs.put(Preferences.PLEX_USERNAME, user.username);
+        prefs.put(Preferences.PLEX_EMAIL, user.email);
+        feedback.m(R.string.logged_in);
+        if(doingFirstTimeSetup) {
+          showFindingPlexClientsAndServers();
+          refreshServers.run();
+          refreshClients.run();
+        } else {
+          setupNavigationDrawer();
+          refreshServers(null);
+        }
+        setupMediaRouter();
         alertD.cancel();
       }
-    });
-    Button popupManualLoginOKButton = (Button)view.findViewById(R.id.popupManualLoginOKButton);
-    popupManualLoginOKButton.setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(View v) {
-        PlexHttpClient.signin(usernameInput.getText().toString(), passwordInput.getText().toString(), new PlexHttpUserHandler() {
-          @Override
-          public void onSuccess(PlexUser user) {
-            prefs.put(Preferences.AUTHENTICATION_TOKEN, user.authenticationToken);
-            authToken = user.authenticationToken;
-            prefs.put(Preferences.PLEX_USERNAME, user.username);
-            prefs.put(Preferences.PLEX_EMAIL, user.email);
-            feedback.m(R.string.logged_in);
-            if(doingFirstTimeSetup) {
-              showFindingPlexClientsAndServers();
-              refreshServers.run();
-              refreshClients.run();
-            } else {
-              setupNavigationDrawer();
-              refreshServers(null);
-            }
-            setupMediaRouter();
-            alertD.cancel();
-          }
 
-          @Override
-          public void onFailure(int statusCode) {
-            logger.d("Failure logging in");
-            String err = getString(R.string.login_error);
-            if(statusCode == 401) {
-              err = getString(R.string.login_incorrect);
-            }
-            feedback.e(err);
-            alertD.cancel();
-          }
-        });
+      @Override
+      public void onFailure(int statusCode) {
+        logger.d("Failure logging in");
+        String err = getString(R.string.login_error);
+        if(statusCode == 401) {
+          err = getString(R.string.login_incorrect);
+        }
+        feedback.e(err);
+        alertD.cancel();
       }
-    });
+    }));
     builder
             .setCancelable(true);
     alertD.show();
@@ -1083,44 +1047,38 @@ public class MainActivity extends AppCompatActivity
     navigationFooter = (LinearLayout) findViewById(R.id.navigationViewFooter);
 
     final LinearLayout navigationFooterHelpButton = (LinearLayout)navigationFooter.findViewById(R.id.navigationFooterHelpButton);
-    navigationFooterHelpButton.setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(View v) {
-        navigationFooterHelpButton.setBackgroundColor(ContextCompat.getColor(MainActivity.this, R.color.primary_600));
-        handler.postDelayed(new Runnable() {
-          @Override
-          public void run() {
-            navigationFooterHelpButton.setBackgroundColor(ContextCompat.getColor(MainActivity.this, R.color.navigation_drawer_background));
-          }
-        }, 200);
-        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-        View view = getLayoutInflater().inflate(R.layout.help_dialog, null);
-        builder.setView(view);
-        final AlertDialog usageDialog = builder.create();
-        Button button = (Button)view.findViewById(R.id.helpCloseButton);
-        button.setOnClickListener(new View.OnClickListener() {
-          @Override
-          public void onClick(View v) {
-            usageDialog.dismiss();
-          }
-        });
-        usageDialog.show();
-      }
+    navigationFooterHelpButton.setOnClickListener(v -> {
+      navigationFooterHelpButton.setBackgroundColor(ContextCompat.getColor(MainActivity.this, R.color.primary_600));
+      handler.postDelayed(new Runnable() {
+        @Override
+        public void run() {
+          navigationFooterHelpButton.setBackgroundColor(ContextCompat.getColor(MainActivity.this, R.color.navigation_drawer_background));
+        }
+      }, 200);
+      AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+      View view = getLayoutInflater().inflate(R.layout.help_dialog, null);
+      builder.setView(view);
+      final AlertDialog usageDialog = builder.create();
+      Button button = (Button)view.findViewById(R.id.helpCloseButton);
+      button.setOnClickListener(new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+          usageDialog.dismiss();
+        }
+      });
+      usageDialog.show();
     });
 
     final LinearLayout navigationFooterSettingsButton = (LinearLayout)navigationFooter.findViewById(R.id.navigationFooterSettingsButton);
-    navigationFooterSettingsButton.setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(View v) {
-        navigationFooterSettingsButton.setBackgroundColor(ContextCompat.getColor(MainActivity.this, R.color.primary_600));
-        handler.postDelayed(new Runnable() {
-          @Override
-          public void run() {
-            navigationFooterSettingsButton.setBackgroundColor(ContextCompat.getColor(MainActivity.this, R.color.navigation_drawer_background));
-            setNavGroup(R.menu.nav_items_settings);
-          }
-        }, 200);
-      }
+    navigationFooterSettingsButton.setOnClickListener(v -> {
+      navigationFooterSettingsButton.setBackgroundColor(ContextCompat.getColor(MainActivity.this, R.color.primary_600));
+      handler.postDelayed(new Runnable() {
+        @Override
+        public void run() {
+          navigationFooterSettingsButton.setBackgroundColor(ContextCompat.getColor(MainActivity.this, R.color.navigation_drawer_background));
+          setNavGroup(R.menu.nav_items_settings);
+        }
+      }, 200);
     });
 
     if(navigationViewMain.getHeaderView(0) != null)
@@ -1144,17 +1102,14 @@ public class MainActivity extends AppCompatActivity
         // When the user clicks on their username, show the logout button
         final LinearLayout navHeaderUserRow = (LinearLayout)navHeader.findViewById(R.id.navHeaderUserRow);
         final ExpandableRelativeLayout navHeaderLogoutFrame = (ExpandableRelativeLayout)navHeader.findViewById(R.id.navHeaderLogoutFrame);
-        navHeaderUserRow.setOnClickListener(new View.OnClickListener() {
-          @Override
-          public void onClick(View v) {
-            int flip = navHeaderLogoutFrame.isExpanded() ? R.animator.flip_down : R.animator.flip_up;
-            navHeaderLogoutFrame.toggle();
-            // Flip the arrow that is to the right of the username
-            ImageView image = (ImageView)navHeaderUserRow.findViewById(R.id.navHeaderUserArrow);
-            AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(MainActivity.this, flip);
-            set.setTarget(image);
-            set.start();
-          }
+        navHeaderUserRow.setOnClickListener(v -> {
+          int flip = navHeaderLogoutFrame.isExpanded() ? R.animator.flip_down : R.animator.flip_up;
+          navHeaderLogoutFrame.toggle();
+          // Flip the arrow that is to the right of the username
+          ImageView image = (ImageView)navHeaderUserRow.findViewById(R.id.navHeaderUserArrow);
+          AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(MainActivity.this, flip);
+          set.setTarget(image);
+          set.start();
         });
       }
     } else {
@@ -1163,12 +1118,7 @@ public class MainActivity extends AppCompatActivity
       serverListRefreshSpinner = (ProgressBar)navHeader.findViewById(R.id.serverListRefreshSpinner);
       serverListRefreshButton = (ImageView)navHeader.findViewById(R.id.serverListRefreshButton);
       final LinearLayout navHeaderUserRow = (LinearLayout)navHeader.findViewById(R.id.navHeaderUserRow);
-      navHeaderUserRow.setOnClickListener(new View.OnClickListener() {
-        @Override
-        public void onClick(View v) {
-          showLogin();
-        }
-      });
+      navHeaderUserRow.setOnClickListener(v -> showLogin());
     }
   }
 
@@ -1306,22 +1256,19 @@ public class MainActivity extends AppCompatActivity
       localMusicService.reset();
       localMusicService.playSong();
     } else {
-      musicConnection.setOnConnected(new Runnable() {
-        @Override
-        public void run() {
-          localMusicService.setTrack(track);
-          localMusicService.setPlaylist(playlist);
-          localMusicService.reset();
-          localMusicService.playSong();
+      musicConnection.setOnConnected(() -> {
+        localMusicService.setTrack(track);
+        localMusicService.setPlaylist(playlist);
+        localMusicService.reset();
+        localMusicService.playSong();
 
-          setCastIconActive();
-          if (musicPlayerFragment == null)
-            musicPlayerFragment = new MusicPlayerFragment();
+        setCastIconActive();
+        if (musicPlayerFragment == null)
+          musicPlayerFragment = new MusicPlayerFragment();
 
-          musicPlayerFragment.init(localMusicService.getTrack(), localMusicService.getPlaylist());
-          logger.d("Switching to music");
-          switchToFragment(musicPlayerFragment);
-        }
+        musicPlayerFragment.init(localMusicService.getTrack(), localMusicService.getPlaylist());
+        logger.d("Switching to music");
+        switchToFragment(musicPlayerFragment);
       });
     }
   }
@@ -1336,17 +1283,14 @@ public class MainActivity extends AppCompatActivity
     if(client.isLocalClient && media instanceof PlexTrack) {
       logger.d("Binding to LocalMusicService");
       bindMusicPlayerService();
-      musicConnection.setOnConnected(new Runnable() {
-        @Override
-        public void run() {
-          musicPlayerFragment = new MusicPlayerFragment();
-          try {
-            musicPlayerFragment.init(localMusicService.getTrack(), localMusicService.getPlaylist());
+      musicConnection.setOnConnected(() -> {
+        musicPlayerFragment = new MusicPlayerFragment();
+        try {
+          musicPlayerFragment.init(localMusicService.getTrack(), localMusicService.getPlaylist());
 
-            switchToFragment(musicPlayerFragment);
-          } catch (Exception e) {
-            e.printStackTrace();
-          }
+          switchToFragment(musicPlayerFragment);
+        } catch (Exception e) {
+          e.printStackTrace();
         }
       });
     } else {
@@ -1429,13 +1373,10 @@ public class MainActivity extends AppCompatActivity
   private void refreshNavServers() {
     final HashMap<Integer, PlexServer> menuItemServerMap = new HashMap<>();
 
-    MenuItem.OnMenuItemClickListener serverItemClickListener = new MenuItem.OnMenuItemClickListener() {
-      @Override
-      public boolean onMenuItemClick(MenuItem item) {
-        PlexServer s = menuItemServerMap.get(item.getItemId());
-        setServer(s);
-        return true;
-      }
+    MenuItem.OnMenuItemClickListener serverItemClickListener = item -> {
+      PlexServer s = menuItemServerMap.get(item.getItemId());
+      setServer(s);
+      return true;
     };
 
 
@@ -1488,12 +1429,7 @@ public class MainActivity extends AppCompatActivity
         navHeaderPlexServersTitle.setVisibility(View.VISIBLE);
       navigationViewMain.setItemBackground(ContextCompat.getDrawable(this, R.drawable.nav_drawer_server_item));
       navigationFooter.setVisibility(View.VISIBLE);
-      handler.postDelayed(new Runnable() {
-        @Override
-        public void run() {
-          refreshNavServers();
-        }
-      }, 1);
+      handler.postDelayed(() -> refreshNavServers(), 1);
     } else {
       navHeaderPlexServersTitle.setVisibility(View.GONE);
       if(group == R.menu.nav_items_settings) {
@@ -1511,13 +1447,10 @@ public class MainActivity extends AppCompatActivity
 
         SwitchCompat usageExamplesSwitch = (SwitchCompat)menu.findItem(R.id.menu_usage_hints_switch).getActionView();
         usageExamplesSwitch.setChecked(prefs.get(Preferences.SHOW_USAGE_HINTS, true));
-        usageExamplesSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-          @Override
-          public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-            prefs.put(Preferences.SHOW_USAGE_HINTS, isChecked);
-            if(getMainFragment().isVisible()) {
-              getMainFragment().setUsageHintsActive(isChecked);
-            }
+        usageExamplesSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+          prefs.put(Preferences.SHOW_USAGE_HINTS, isChecked);
+          if(getMainFragment().isVisible()) {
+            getMainFragment().setUsageHintsActive(isChecked);
           }
         });
 
@@ -1540,14 +1473,11 @@ public class MainActivity extends AppCompatActivity
   public void refreshServers(View v) {
     serverListRefreshButton.setVisibility(View.GONE);
     serverListRefreshSpinner.setVisibility(View.VISIBLE);
-    onServerRefreshFinished = new Runnable() {
-      @Override
-      public void run() {
-        serverListRefreshButton.setVisibility(View.VISIBLE);
-        serverListRefreshSpinner.setVisibility(View.GONE);
-        refreshNavServers();
-        onServerRefreshFinished = null;
-      }
+    onServerRefreshFinished = () -> {
+      serverListRefreshButton.setVisibility(View.VISIBLE);
+      serverListRefreshSpinner.setVisibility(View.GONE);
+      refreshNavServers();
+      onServerRefreshFinished = null;
     };
 
     refreshServers.run();
@@ -1562,16 +1492,13 @@ public class MainActivity extends AppCompatActivity
     if(bitmap == null && !skipThumb) {
       fetchUserThumb();
     } else {
-      runOnUiThread(new Runnable() {
-        @Override
-        public void run() {
-          View navHeader = navigationViewMain.getHeaderView(0);
-          ImageView imageView = (ImageView) navHeader.findViewById(R.id.navHeaderUserIcon);
-          if(bitmap == null)
-            imageView.setImageResource(R.drawable.nav_default_user);
-          else
-            imageView.setImageBitmap(bitmap);
-        }
+      runOnUiThread(() -> {
+        View navHeader = navigationViewMain.getHeaderView(0);
+        ImageView imageView = (ImageView) navHeader.findViewById(R.id.navHeaderUserIcon);
+        if(bitmap == null)
+          imageView.setImageResource(R.drawable.nav_default_user);
+        else
+          imageView.setImageBitmap(bitmap);
       });
     }
   }
@@ -1648,7 +1575,7 @@ public class MainActivity extends AppCompatActivity
       if(device != null) {
 
         final PlexClient clientSelected = (PlexClient)device;
-        if(client.isLocalClient) {
+        if(clientSelected.isLocalClient) {
           if(!prefs.get(Preferences.HAS_SHOWN_INITIAL_LOCALMEDIA_PURCHASE, false) && !VoiceControlForPlexApplication.getInstance().hasLocalmedia()) {
             showPurchaseLocalMedia(true);
           } else {
@@ -1726,40 +1653,32 @@ public class MainActivity extends AppCompatActivity
       final ImageButton button = (ImageButton)layout.findViewById(R.id.deviceListRefreshButton);
       final ProgressBar spinnerImage = (ProgressBar) layout.findViewById(R.id.deviceListRefreshSpinner);
 
-      button.setOnClickListener(new View.OnClickListener() {
-        @Override
-        public void onClick(View v) {
-          onClientRefreshFinished = new Runnable() {
-            @Override
-            public void run() {
-              logger.d("Changing buttons");
-              button.setVisibility(View.VISIBLE);
-              spinnerImage.setVisibility(View.GONE);
-              logger.d("Setting %d clients", VoiceControlForPlexApplication.getAllClients().size());
-              adapter.setClients(VoiceControlForPlexApplication.getAllClients());
+      button.setOnClickListener(v -> {
+        onClientRefreshFinished = new Runnable() {
+          @Override
+          public void run() {
+            logger.d("Changing buttons");
+            button.setVisibility(View.VISIBLE);
+            spinnerImage.setVisibility(View.GONE);
+            logger.d("Setting %d clients", VoiceControlForPlexApplication.getAllClients().size());
+            adapter.setClients(VoiceControlForPlexApplication.getAllClients());
 
-              adapter.notifyDataSetChanged();
-              onClientRefreshFinished = null;
-            }
-          };
-          logger.d("Refreshing");
-          button.setVisibility(View.GONE);
-          spinnerImage.setVisibility(View.VISIBLE);
-          handler.removeCallbacks(refreshClients);
-          refreshClients.run();
+            adapter.notifyDataSetChanged();
+            onClientRefreshFinished = null;
+          }
+        };
+        logger.d("Refreshing");
+        button.setVisibility(View.GONE);
+        spinnerImage.setVisibility(View.VISIBLE);
+        handler.removeCallbacks(refreshClients);
+        refreshClients.run();
 
-        }
       });
 
       deviceListResume = (CheckBox) layout.findViewById(R.id.deviceListResume);
       deviceListResume.setVisibility(View.VISIBLE);
       deviceListResume.setChecked(prefs.get(Preferences.RESUME, false));
-      deviceListResume.setOnClickListener(new View.OnClickListener() {
-        @Override
-        public void onClick(View v) {
-          prefs.put(Preferences.RESUME, ((CheckBox) v).isChecked());
-        }
-      });
+      deviceListResume.setOnClickListener(v -> prefs.put(Preferences.RESUME, ((CheckBox) v).isChecked()));
       deviceSelectNoDevicesFound = (TextView)layout.findViewById(R.id.deviceSelectNoDevicesFound);
 
 
@@ -1779,18 +1698,12 @@ public class MainActivity extends AppCompatActivity
 
       adapter.setClients(VoiceControlForPlexApplication.getAllClients());
       clientListView.setAdapter(adapter);
-      clientListView.setOnItemClickListener(new ListView.OnItemClickListener() {
-
-        @Override
-        public void onItemClick(AdapterView<?> parentAdapter, View view, int position,
-                                long id) {
-          PlexClient s = (PlexClient) parentAdapter.getItemAtPosition(position);
-          logger.d("client clicked: %s", s.name);
-          deviceSelectDialog.dismiss();
-          if (onFinish != null)
-            onFinish.onDeviceSelected(s, deviceListResume.isChecked());
-        }
-
+      clientListView.setOnItemClickListener((parentAdapter, view, position, id) -> {
+        PlexClient s = (PlexClient) parentAdapter.getItemAtPosition(position);
+        logger.d("client clicked: %s", s.name);
+        deviceSelectDialog.dismiss();
+        if (onFinish != null)
+          onFinish.onDeviceSelected(s, deviceListResume.isChecked());
       });
 
     } else if(!subscribing) {
@@ -1810,27 +1723,19 @@ public class MainActivity extends AppCompatActivity
 
         CheckBox resumeCheckbox = (CheckBox)view.findViewById(R.id.resumeCheckbox);
         resumeCheckbox.setChecked(prefs.get(Preferences.RESUME, false));
-        resumeCheckbox.setOnClickListener(new View.OnClickListener() {
-          @Override
-          public void onClick(View v) {
-            prefs.put(Preferences.RESUME, ((CheckBox) v).isChecked());
-          }
-        });
+        resumeCheckbox.setOnClickListener(v -> prefs.put(Preferences.RESUME, ((CheckBox) v).isChecked()));
         TextView clientName = (TextView)view.findViewById(R.id.popupConnectedToClientName);
         clientName.setText(client.name);
         Button disconnectButton = (Button)view.findViewById(R.id.popupConnectedToClientCancelButton);
-        disconnectButton.setOnClickListener(new View.OnClickListener() {
-          @Override
-          public void onClick(View v) {
-            if(client.isLocalClient) {
-              VoiceControlForPlexApplication.getInstance().localClientSubscription.subscribed = false;
-              setCastIconInactive();
-            } else if (client.isCastClient)
-              castPlayerManager.unsubscribe();
-            else
-              plexSubscription.unsubscribe();
-            subscribeDialog.dismiss();
-          }
+        disconnectButton.setOnClickListener(v -> {
+          if(client.isLocalClient) {
+            VoiceControlForPlexApplication.getInstance().localClientSubscription.subscribed = false;
+            setCastIconInactive();
+          } else if (client.isCastClient)
+            castPlayerManager.unsubscribe();
+          else
+            plexSubscription.unsubscribe();
+          subscribeDialog.dismiss();
         });
         if(client.isCastClient) {
           final SeekBar volumeSeekBar = (SeekBar)view.findViewById(R.id.volumeSeekBar);
@@ -1855,13 +1760,10 @@ public class MainActivity extends AppCompatActivity
             }
           });
           // React to volume button controls while this dialog is open
-          subscribeDialog.setOnKeyListener(new DialogInterface.OnKeyListener() {
-            @Override
-            public boolean onKey(DialogInterface dialog, int keyCode, KeyEvent event) {
-              boolean ret = MainActivity.this.dispatchKeyEvent(event);
-              volumeSeekBar.setProgress((int)(castPlayerManager.getVolume()*100));
-              return ret;
-            }
+          subscribeDialog.setOnKeyListener((dialog, keyCode, event) -> {
+            boolean ret = MainActivity.this.dispatchKeyEvent(event);
+            volumeSeekBar.setProgress((int)(castPlayerManager.getVolume()*100));
+            return ret;
           });
         }
         subscribeDialog.show();
@@ -1948,12 +1850,7 @@ public class MainActivity extends AppCompatActivity
     View layout = inflater.inflate(R.layout.popup_about, null);
     alertDialog.setView(layout);
     alertDialog.show();
-    handler.postDelayed(new Runnable() {
-      @Override
-      public void run() {
-        item.setChecked(false);
-      }
-    }, 500);
+    handler.postDelayed(() -> item.setChecked(false), 500);
 
   }
 
@@ -1977,45 +1874,31 @@ public class MainActivity extends AppCompatActivity
     boolean[] v = new boolean[2];
     v[prefs.get(Preferences.FEEDBACK, 1) == 0 ? 0 : 1] = true;
     feedbackToggleButton.setStates(v);
-    feedbackToggleButton.setOnValueChangedListener(new ToggleButton.OnValueChangedListener() {
-      @Override
-      public void onValueChanged(int value) {
-        prefs.put(Preferences.FEEDBACK, value);
-        if(value == 0) {
-          onVoiceFeedbackSelected(false);
-        }
+    feedbackToggleButton.setOnValueChangedListener(value -> {
+      prefs.put(Preferences.FEEDBACK, value);
+      if(value == 0) {
+        onVoiceFeedbackSelected(false);
       }
     });
     MultiStateToggleButton errorsToggleButton = (MultiStateToggleButton)view.findViewById(R.id.errorsToggleButton);
     v = new boolean[2];
     v[prefs.get(Preferences.ERRORS, 1) == 0 ? 0 : 1] = true;
     errorsToggleButton.setStates(v);
-    errorsToggleButton.setOnValueChangedListener(new ToggleButton.OnValueChangedListener() {
-      @Override
-      public void onValueChanged(int value) {
-        prefs.put(Preferences.ERRORS, value);
-        if(value == 0) {
-          onVoiceFeedbackSelected(true);
-        }
+    errorsToggleButton.setOnValueChangedListener(value -> {
+      prefs.put(Preferences.ERRORS, value);
+      if(value == 0) {
+        onVoiceFeedbackSelected(true);
       }
     });
     Button popupFeedbackOKButton = (Button)view.findViewById(R.id.popupFeedbackOKButton);
-    popupFeedbackOKButton.setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(View v) {
-        dialog.dismiss();
-      }
-    });
+    popupFeedbackOKButton.setOnClickListener(v1 -> dialog.dismiss());
     dialog.show();
   }
 
   private void onVoiceFeedbackSelected(boolean errors) {
     Intent checkIntent = new Intent();
     checkIntent.setAction(TextToSpeech.Engine.ACTION_CHECK_TTS_DATA);
-    tts = new TextToSpeech(this, new TextToSpeech.OnInitListener() {
-      @Override
-      public void onInit(int i) {}
-    });
+    tts = new TextToSpeech(this, i -> {});
     String engine = tts.getDefaultEngine();
     if (engine != null)
       checkIntent.setPackage(engine);
@@ -2050,12 +1933,9 @@ public class MainActivity extends AppCompatActivity
       logger.d("requesting device logs from wear device");
       // Now start a 5 second timer. If receivedWearLogsResponse is not true, go ahead and email just the mobile device's log
       final Handler handler = new Handler();
-      handler.postDelayed(new Runnable() {
-        @Override
-        public void run() {
-          if(receivedWearLogsResponse == false)
-            emailDeviceLogs("");
-        }
+      handler.postDelayed(() -> {
+        if(receivedWearLogsResponse == false)
+          emailDeviceLogs("");
       }, 2000);
     } else {
       emailDeviceLogs("");
@@ -2142,12 +2022,7 @@ public class MainActivity extends AppCompatActivity
           }
         } catch (final Exception ex) {
           logger.d("Exception emailing device logs: %s", ex);
-          runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-              feedback.e("Error emailing device logs: %s", ex.getMessage());
-            }
-          });
+          runOnUiThread(() -> feedback.e("Error emailing device logs: %s", ex.getMessage()));
         }
         return null;
       }
@@ -2181,19 +2056,9 @@ public class MainActivity extends AppCompatActivity
       prefs.put(Preferences.GOOGLE_NOW_LAUNCH_NOW_PLAYING, true);
     }
     feedbackToggleButton.setStates(v);
-    feedbackToggleButton.setOnValueChangedListener(new ToggleButton.OnValueChangedListener() {
-      @Override
-      public void onValueChanged(int value) {
-        prefs.put(Preferences.GOOGLE_NOW_LAUNCH_NOW_PLAYING, value == 0);
-      }
-    });
+    feedbackToggleButton.setOnValueChangedListener(value -> prefs.put(Preferences.GOOGLE_NOW_LAUNCH_NOW_PLAYING, value == 0));
     Button okButton = (Button)layout.findViewById(R.id.googleNowOptionsOKButton);
-    okButton.setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(View v) {
-        dialog.dismiss();
-      }
-    });
+    okButton.setOnClickListener(v1 -> dialog.dismiss());
     dialog.show();
   }
 
@@ -2219,19 +2084,16 @@ public class MainActivity extends AppCompatActivity
     builder.setView(layout);
 
     final AlertDialog dialog = builder.create();
-    listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-      @Override
-      public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-        CheckedTextView item = (CheckedTextView)view;
-        item.setChecked(true);
-        prefs.put(Preferences.NUM_CINEMA_TRAILERS, position);
-        handler.postDelayed(new Runnable() {
-          @Override
-          public void run() {
-            dialog.dismiss();
-          }
-        }, 500);
-      }
+    listView.setOnItemClickListener((parent, view, position, id) -> {
+      CheckedTextView item1 = (CheckedTextView)view;
+      item1.setChecked(true);
+      prefs.put(Preferences.NUM_CINEMA_TRAILERS, position);
+      handler.postDelayed(new Runnable() {
+        @Override
+        public void run() {
+          dialog.dismiss();
+        }
+      }, 500);
     });
     dialog.show();
 
@@ -2252,20 +2114,14 @@ public class MainActivity extends AppCompatActivity
     TextView popupChromecastPurchaseMessage = (TextView)view.findViewById(R.id.popupChromecastPurchaseMessage);
     popupChromecastPurchaseMessage.setText(String.format(getString(R.string.must_purchase_chromecast2), VoiceControlForPlexApplication.getChromecastPrice()));
     Button popupChromecastPurchaseOKButton = (Button)view.findViewById(R.id.popupChromecastPurchaseOKButton);
-    popupChromecastPurchaseOKButton.setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(View v) {
-        dialog.cancel();
-        VoiceControlForPlexApplication.getInstance().getIabHelper().launchPurchaseFlow(MainActivity.this, VoiceControlForPlexApplication.SKU_CHROMECAST, 10001, mPurchaseFinishedListener, VoiceControlForPlexApplication.SKU_TEST_PURCHASED == VoiceControlForPlexApplication.SKU_CHROMECAST ? VoiceControlForPlexApplication.getInstance().getEmailHash() : "");
-      }
+    popupChromecastPurchaseOKButton.setOnClickListener(v -> {
+      dialog.cancel();
+      VoiceControlForPlexApplication.getInstance().getIabHelper().launchPurchaseFlow(MainActivity.this, VoiceControlForPlexApplication.SKU_CHROMECAST, 10001, mPurchaseFinishedListener, VoiceControlForPlexApplication.SKU_TEST_PURCHASED == VoiceControlForPlexApplication.SKU_CHROMECAST ? VoiceControlForPlexApplication.getInstance().getEmailHash() : "");
     });
     Button popupChromecastPurchaseNoButton = (Button)view.findViewById(R.id.popupChromecastPurchaseNoButton);
-    popupChromecastPurchaseNoButton.setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(View v) {
-        dialog.cancel();
-        onSuccess.run();
-      }
+    popupChromecastPurchaseNoButton.setOnClickListener(v -> {
+      dialog.cancel();
+      onSuccess.run();
     });
     dialog.show();
   }
@@ -2286,38 +2142,32 @@ public class MainActivity extends AppCompatActivity
     TextView wearPurchaseRequiredTitle = (TextView)view.findViewById(R.id.wearPurchaseRequiredTitle);
     wearPurchaseRequiredTitle.setText(String.format(getString(stringResource), VoiceControlForPlexApplication.getWearPrice()));
     Button wearPurchaseRequiredNoThanksButton = (Button)view.findViewById(R.id.wearPurchaseRequiredNoThanksButton);
-    wearPurchaseRequiredNoThanksButton.setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(View v) {
-        dialog.cancel();
-        prefs.put(Preferences.HAS_SHOWN_WEAR_PURCHASE_POPUP, true);
-        if(showPurchaseFromMenu) {
-          AlertDialog.Builder builder2 = new AlertDialog.Builder(MainActivity.this);
-          View view = getLayoutInflater().inflate(R.layout.popup_wear_purchase_menu, null);
-          builder2.setView(view).setCancelable(false);
-          final AlertDialog dialog = builder2.create();
-          Button popupWearPurchaseMenuOKButton = (Button)view.findViewById(R.id.popupWearPurchaseMenuOKButton);
-          popupWearPurchaseMenuOKButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-              dialog.cancel();
-            }
-          });
-          dialog.show();
-        }
+    wearPurchaseRequiredNoThanksButton.setOnClickListener(v -> {
+      dialog.cancel();
+      prefs.put(Preferences.HAS_SHOWN_WEAR_PURCHASE_POPUP, true);
+      if(showPurchaseFromMenu) {
+        AlertDialog.Builder builder2 = new AlertDialog.Builder(MainActivity.this);
+        View view1 = getLayoutInflater().inflate(R.layout.popup_wear_purchase_menu, null);
+        builder2.setView(view1).setCancelable(false);
+        final AlertDialog dialog1 = builder2.create();
+        Button popupWearPurchaseMenuOKButton = (Button) view1.findViewById(R.id.popupWearPurchaseMenuOKButton);
+        popupWearPurchaseMenuOKButton.setOnClickListener(new View.OnClickListener() {
+          @Override
+          public void onClick(View v) {
+            dialog1.cancel();
+          }
+        });
+        dialog1.show();
       }
     });
     Button wearPurchaseRequiredOKButton = (Button)view.findViewById(R.id.wearPurchaseRequiredOKButton);
-    wearPurchaseRequiredOKButton.setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(View v) {
-        prefs.put(Preferences.HAS_SHOWN_WEAR_PURCHASE_POPUP, true);
-        dialog.cancel();
-        VoiceControlForPlexApplication.getInstance().getIabHelper().flagEndAsync();
-        VoiceControlForPlexApplication.getInstance().getIabHelper().launchPurchaseFlow(MainActivity.this,
-                VoiceControlForPlexApplication.SKU_WEAR, 10001, mPurchaseFinishedListener,
-                VoiceControlForPlexApplication.SKU_TEST_PURCHASED == VoiceControlForPlexApplication.SKU_WEAR ? VoiceControlForPlexApplication.getInstance().getEmailHash() : "");
-      }
+    wearPurchaseRequiredOKButton.setOnClickListener(v -> {
+      prefs.put(Preferences.HAS_SHOWN_WEAR_PURCHASE_POPUP, true);
+      dialog.cancel();
+      VoiceControlForPlexApplication.getInstance().getIabHelper().flagEndAsync();
+      VoiceControlForPlexApplication.getInstance().getIabHelper().launchPurchaseFlow(MainActivity.this,
+              VoiceControlForPlexApplication.SKU_WEAR, 10001, mPurchaseFinishedListener,
+              VoiceControlForPlexApplication.SKU_TEST_PURCHASED == VoiceControlForPlexApplication.SKU_WEAR ? VoiceControlForPlexApplication.getInstance().getEmailHash() : "");
     });
 
 
@@ -2366,24 +2216,18 @@ public class MainActivity extends AppCompatActivity
     builder.setView(layout);
     final AlertDialog chooserDialog = builder.create();
     Button playPauseButton = (Button)layout.findViewById(R.id.wearOptionsPlayPauseButton);
-    playPauseButton.setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(View v) {
-        DataMap dataMap = new DataMap();
-        dataMap.putBoolean(WearConstants.PRIMARY_FUNCTION_VOICE_INPUT, true);
-        new SendToDataLayerThread(WearConstants.SET_WEAR_OPTIONS, dataMap, MainActivity.this).start();
-        chooserDialog.dismiss();
-      }
+    playPauseButton.setOnClickListener(v -> {
+      DataMap dataMap = new DataMap();
+      dataMap.putBoolean(WearConstants.PRIMARY_FUNCTION_VOICE_INPUT, true);
+      new SendToDataLayerThread(WearConstants.SET_WEAR_OPTIONS, dataMap, MainActivity.this).start();
+      chooserDialog.dismiss();
     });
     Button voiceInputButton = (Button)layout.findViewById(R.id.wearOptionsVoiceInputButton);
-    voiceInputButton.setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(View v) {
-        DataMap dataMap = new DataMap();
-        dataMap.putBoolean(WearConstants.PRIMARY_FUNCTION_VOICE_INPUT, false);
-        new SendToDataLayerThread(WearConstants.SET_WEAR_OPTIONS, dataMap, MainActivity.this).start();
-        chooserDialog.dismiss();
-      }
+    voiceInputButton.setOnClickListener(v -> {
+      DataMap dataMap = new DataMap();
+      dataMap.putBoolean(WearConstants.PRIMARY_FUNCTION_VOICE_INPUT, false);
+      new SendToDataLayerThread(WearConstants.SET_WEAR_OPTIONS, dataMap, MainActivity.this).start();
+      chooserDialog.dismiss();
     });
     chooserDialog.show();
   }
@@ -2397,20 +2241,14 @@ public class MainActivity extends AppCompatActivity
     final AlertDialog chooserDialog = builder.create();
 
     Button popupChromecastOptionsRemoteButton = (Button)layout.findViewById(R.id.popupVideoOptionsRemoteButton);
-    popupChromecastOptionsRemoteButton.setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(View v) {
-        chooserDialog.dismiss();
-        showVideoOptions(true, false);
-      }
+    popupChromecastOptionsRemoteButton.setOnClickListener(v -> {
+      chooserDialog.dismiss();
+      showVideoOptions(true, false);
     });
     Button popupChromecastOptionsLocalButton = (Button)layout.findViewById(R.id.popupVideoOptionsLocalButton);
-    popupChromecastOptionsLocalButton.setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(View v) {
-        chooserDialog.dismiss();
-        showVideoOptions(true, true);
-      }
+    popupChromecastOptionsLocalButton.setOnClickListener(v -> {
+      chooserDialog.dismiss();
+      showVideoOptions(true, true);
     });
     chooserDialog.show();
   }
@@ -2429,20 +2267,14 @@ public class MainActivity extends AppCompatActivity
     final AlertDialog chooserDialog = builder.create();
 
     Button popupVideoOptionsRemoteButton = (Button)layout.findViewById(R.id.popupVideoOptionsRemoteButton);
-    popupVideoOptionsRemoteButton.setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(View v) {
-        chooserDialog.dismiss();
-        showVideoOptions(false, false);
-      }
+    popupVideoOptionsRemoteButton.setOnClickListener(v -> {
+      chooserDialog.dismiss();
+      showVideoOptions(false, false);
     });
     Button popupVideoOptionsLocalButton = (Button)layout.findViewById(R.id.popupVideoOptionsLocalButton);
-    popupVideoOptionsLocalButton.setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(View v) {
-        chooserDialog.dismiss();
-        showVideoOptions(false, true);
-      }
+    popupVideoOptionsLocalButton.setOnClickListener(v -> {
+      chooserDialog.dismiss();
+      showVideoOptions(false, true);
     });
     chooserDialog.show();
   }
@@ -2491,18 +2323,15 @@ public class MainActivity extends AppCompatActivity
       videoOptionsRadioGroup.addView(button, layoutParams);
     }
     videoOptionsRadioGroup.check(videoQuality);
-    videoOptionsRadioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
-      @Override
-      public void onCheckedChanged(RadioGroup group, int checkedId) {
-        logger.d("Checked %s", items[checkedId]);
-        prefs.put(prefKey, (String)items[checkedId]);
-        handler.postDelayed(new Runnable() {
-          @Override
-          public void run() {
-            dialog.dismiss();
-          }
-        }, 500);
-      }
+    videoOptionsRadioGroup.setOnCheckedChangeListener((group, checkedId) -> {
+      logger.d("Checked %s", items[checkedId]);
+      prefs.put(prefKey, (String)items[checkedId]);
+      handler.postDelayed(new Runnable() {
+        @Override
+        public void run() {
+          dialog.dismiss();
+        }
+      }, 500);
     });
     dialog.show();
   }
@@ -2796,12 +2625,7 @@ public class MainActivity extends AppCompatActivity
 
         final AlertDialog dialog = adb.create();
         Button languageSelectorCancelButton = (Button)view.findViewById(R.id.languageSelectorCancelButton);
-        languageSelectorCancelButton.setOnClickListener(new View.OnClickListener() {
-          @Override
-          public void onClick(View v) {
-            dialog.cancel();
-          }
-        });
+        languageSelectorCancelButton.setOnClickListener(v1 -> dialog.cancel());
 
         RadioGroup languageSelectorRadioGroup = (RadioGroup)view.findViewById(R.id.languageSelectorRadioGroup);
         LinearLayout.LayoutParams layoutParams = new RadioGroup.LayoutParams(
@@ -2814,12 +2638,9 @@ public class MainActivity extends AppCompatActivity
           languageSelectorRadioGroup.addView(button, layoutParams);
         }
         languageSelectorRadioGroup.check(selectedVoice);
-        languageSelectorRadioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
-          @Override
-          public void onCheckedChanged(RadioGroup group, int checkedId) {
-            VoiceControlForPlexApplication.getInstance().prefs.put(pref, items[checkedId].toString());
-            dialog.dismiss();
-          }
+        languageSelectorRadioGroup.setOnCheckedChangeListener((group, checkedId) -> {
+          VoiceControlForPlexApplication.getInstance().prefs.put(pref, items[checkedId].toString());
+          dialog.dismiss();
         });
         dialog.show();
       } else {
@@ -2855,17 +2676,14 @@ public class MainActivity extends AppCompatActivity
         @Override
         public void onFinished() {
           logger.d("MusicConnection onFinished");
-          handler.post(new Runnable() {
-            @Override
-            public void run() {
-              switchToMainFragment();
-              musicPlayerFragment = null;
-              getApplicationContext().stopService(musicServiceIntent);
-              if(musicPlayerIsBound)
-                getApplicationContext().unbindService(musicConnection);
-              musicPlayerIsBound = false;
+          handler.post(() -> {
+            switchToMainFragment();
+            musicPlayerFragment = null;
+            getApplicationContext().stopService(musicServiceIntent);
+            if(musicPlayerIsBound)
+              getApplicationContext().unbindService(musicConnection);
+            musicPlayerIsBound = false;
 
-            }
           });
         }
       });

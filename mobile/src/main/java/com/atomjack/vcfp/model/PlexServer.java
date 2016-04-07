@@ -25,11 +25,13 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
 import retrofit.Call;
 import retrofit.Callback;
 import retrofit.Response;
+import retrofit.Retrofit;
 
 @Root(strict=false)
 public class PlexServer extends PlexDevice {
@@ -261,7 +263,7 @@ public class PlexServer extends PlexDevice {
     Call<MediaContainer> call = service.getMediaContainer("", accessToken);
     call.enqueue(new Callback<MediaContainer>() {
       @Override
-      public void onResponse(Response<MediaContainer> response) {
+      public void onResponse(Response<MediaContainer> response, Retrofit retrofit) {
         Logger.d("Testing connection %s got code: %d", connection, response.code());
         if(response.code() == 200) {
           Logger.d("%s success", connection.uri);
@@ -353,5 +355,17 @@ public class PlexServer extends PlexDevice {
 
       }
     });
+  }
+
+  public String getRandomMusicSection() {
+    return musicSections.get(new Random().nextInt(musicSections.size()));
+  }
+
+  public String getRandomTvSection() {
+    return tvSections.get(new Random().nextInt(tvSections.size()));
+  }
+
+  public String getRandomMovieSection() {
+    return movieSections.get(new Random().nextInt(movieSections.size()));
   }
 }

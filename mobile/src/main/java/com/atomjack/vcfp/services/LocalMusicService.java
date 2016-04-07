@@ -23,7 +23,6 @@ import android.view.KeyEvent;
 
 import com.atomjack.shared.NewLogger;
 import com.atomjack.shared.PlayerState;
-import com.atomjack.shared.Preferences;
 import com.atomjack.vcfp.FetchMediaImageTask;
 import com.atomjack.vcfp.PlexHeaders;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;

@@ -387,8 +387,10 @@ public class PlexSubscription {
   }
 
   public void unsubscribe(final boolean notify, final Runnable onFinish) {
-    if(mClient == null)
+    if(mClient == null) {
+      onUnsubscribed();
       return;
+    }
     PlexHttpClient.unsubscribe(mClient, commandId, VoiceControlForPlexApplication.getInstance().prefs.getUUID(), VoiceControlForPlexApplication.getInstance().getString(R.string.app_name), new PlexHttpResponseHandler() {
       @Override
       public void onSuccess(PlexResponse response) {

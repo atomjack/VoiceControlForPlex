@@ -20,6 +20,7 @@ import java.util.HashMap;
 import retrofit.Call;
 import retrofit.Callback;
 import retrofit.Response;
+import retrofit.Retrofit;
 
 @Root(name="Server", strict=false)
 public class PlexClient extends PlexDevice {
@@ -192,7 +193,7 @@ public class PlexClient extends PlexDevice {
       Call<PlexResponse> call = service.setStreams(qs, "0", VoiceControlForPlexApplication.getInstance().getUUID());
       call.enqueue(new Callback<PlexResponse>() {
         @Override
-        public void onResponse(Response<PlexResponse> response) {
+        public void onResponse(Response<PlexResponse> response, Retrofit retrofit) {
           if(response.body() != null)
             Logger.d("setStream response: %s", response.body().status);
         }

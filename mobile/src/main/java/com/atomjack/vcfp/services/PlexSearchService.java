@@ -173,8 +173,9 @@ public class PlexSearchService extends Service {
           for (PlexClient c : cs) {
             VoiceControlForPlexApplication.clients.put(c.name, c);
           }
-          clients = VoiceControlForPlexApplication.clients;
-          clients.putAll(VoiceControlForPlexApplication.castClients);
+          clients = VoiceControlForPlexApplication.getAllClients();
+//          clients = VoiceControlForPlexApplication.clients;
+//          clients.putAll(VoiceControlForPlexApplication.castClients);
         }
         startup();
       }
@@ -215,8 +216,7 @@ public class PlexSearchService extends Service {
 			};
 
 			queries = new ArrayList<>();
-			clients = VoiceControlForPlexApplication.clients;
-      clients.putAll(VoiceControlForPlexApplication.castClients);
+			clients = VoiceControlForPlexApplication.getAllClients();
 			resumePlayback = false;
 
 			specifiedServer = VoiceControlForPlexApplication.gsonRead.fromJson(intent.getStringExtra(com.atomjack.shared.Intent.EXTRA_SERVER), PlexServer.class);
@@ -428,14 +428,10 @@ public class PlexSearchService extends Service {
 				logger.d("Clients: %d", clients.size());
 				logger.d("Specified client: %s", specifiedClient);
 				for(PlexClient c : clients.values()) {
+          logger.d("comparing %s to %s", c.name.toLowerCase(), specifiedClient);
 					if (c.name.toLowerCase().equals(specifiedClient)) {
             if(c.isCastClient && !VoiceControlForPlexApplication.getInstance().hasChromecast()) {
-              return new StopRunnable() {
-                @Override
-                public void run() {
-                  feedback.e(R.string.must_purchase_chromecast_error);
-                }
-              };
+              return () -> feedback.e(R.string.must_purchase_chromecast_error);
             } else {
               client = c;
               queryText = queryText.replaceAll(getString(R.string.pattern_on_client), "$1");
@@ -474,12 +470,7 @@ public class PlexSearchService extends Service {
 		matcher = p.matcher(queryText);
 		if(matcher.find()) {
 			final String queryTerm = matcher.group(2);
-			return new myRunnable() {
-				@Override
-				public void run() {
-					doMovieSearch(queryTerm);
-				}
-			};
+			return () -> doMovieSearch(queryTerm);
 		}
 
 		p = Pattern.compile(getString(R.string.pattern_watch_season_episode_of_show));
@@ -568,12 +559,8 @@ public class PlexSearchService extends Service {
 
 		if(matcher.find()) {
 			final String queryTerm = matcher.group(2);
-			return new myRunnable() {
-				@Override
-				public void run() {
-					doMovieSearch(queryTerm);
-				}
-			};
+      logger.d("queryTerm: %s", queryTerm);
+			return () -> doMovieSearch(queryTerm);
 		}
 
 		p = Pattern.compile(getString(R.string.pattern_listen_to_album_by_artist));
@@ -1193,8 +1180,8 @@ public class PlexSearchService extends Service {
   // fetch the specific media element by its key. This prevents the need to add new missing fields to the media
   //
   private void fetchAndPlayMedia(final PlexMedia media) {
-    logger.d("fetchAndPlayMedia: %s", media.title);
-    PlexHttpClient.get(media.server, media.key, new PlexHttpMediaContainerHandler() {
+    logger.d("fetchAndPlayMedia: %s (%s)", media.title, media.key);
+    PlexHttpClient.get(media.server, media.key, true, new PlexHttpMediaContainerHandler() {
       @Override
       public void onSuccess(MediaContainer mediaContainer) {
         PlexMedia theMedia = null;

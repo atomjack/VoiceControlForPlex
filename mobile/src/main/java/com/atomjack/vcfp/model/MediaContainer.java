@@ -11,6 +11,7 @@ import org.simpleframework.xml.Root;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 @Root(strict=false)
 public class MediaContainer implements Parcelable {
@@ -129,4 +130,16 @@ public class MediaContainer implements Parcelable {
       return new MediaContainer[size];
     }
   };
+
+  public PlexDirectory getRandomDirectory() {
+    return directories.get(new Random().nextInt(directories.size()));
+  }
+
+  public PlexTrack getRandomTrack() {
+    return tracks.get(new Random().nextInt(tracks.size()));
+  }
+
+  public PlexVideo getRandomVideo() {
+    return videos.get(new Random().nextInt(videos.size()));
+  }
 }

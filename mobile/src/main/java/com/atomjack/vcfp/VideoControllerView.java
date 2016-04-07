@@ -42,8 +42,6 @@ import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
 
-import com.atomjack.shared.Logger;
-
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Formatter;

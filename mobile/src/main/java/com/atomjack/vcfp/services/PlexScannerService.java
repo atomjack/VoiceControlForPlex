@@ -28,6 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import retrofit.Call;
 import retrofit.Callback;
 import retrofit.Response;
+import retrofit.Retrofit;
 import us.nineworlds.serenity.GDMReceiver;
 
 public class PlexScannerService extends Service {
@@ -132,7 +133,7 @@ public class PlexScannerService extends Service {
                 Call<MediaContainer> call = service.getLibrarySections(server.accessToken);
                 call.enqueue(new Callback<MediaContainer>() {
                   @Override
-                  public void onResponse(Response<MediaContainer> response) {
+                  public void onResponse(Response<MediaContainer> response, Retrofit retrofit) {
                     MediaContainer mc = response.body();
                     server.movieSections = new ArrayList<>();
                     server.tvSections = new ArrayList<>();
@@ -315,7 +316,7 @@ public class PlexScannerService extends Service {
     Call<MediaContainer> call = service.getResources(authToken);
     call.enqueue(new Callback<MediaContainer>() {
       @Override
-      public void onResponse(Response<MediaContainer> response) {
+      public void onResponse(Response<MediaContainer> response, Retrofit retrofit) {
         try {
           if(cancel) {
             cancel = false;

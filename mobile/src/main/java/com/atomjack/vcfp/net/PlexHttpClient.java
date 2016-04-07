@@ -40,6 +40,7 @@ import retrofit.Call;
 import retrofit.Callback;
 import retrofit.Response;
 import retrofit.Retrofit;
+import retrofit.RxJavaCallAdapterFactory;
 import retrofit.SimpleXmlConverterFactory;
 import retrofit.http.GET;
 import retrofit.http.Headers;
@@ -48,6 +49,10 @@ import retrofit.http.PUT;
 import retrofit.http.Path;
 import retrofit.http.Query;
 import retrofit.http.QueryMap;
+import retrofit.http.Url;
+import rx.Observable;
+import rx.android.schedulers.AndroidSchedulers;
+import rx.schedulers.Schedulers;
 
 
 public class PlexHttpClient
@@ -58,15 +63,15 @@ public class PlexHttpClient
     @GET("/library/sections/{section}/search")
     Call<MediaContainer> searchSection(@Path("section") String section, @Query("type") String type, @Query("query") String query, @Query(PlexHeaders.XPlexToken) String token);
 
-    @GET("/library/metadata/{key}")
-    Call<MediaContainer> getKey(@Path("key") String key, @Query(PlexHeaders.XPlexToken) String token);
+    @GET
+    Call<MediaContainer> getMediaContainer(@Url String path, @Query(PlexHeaders.XPlexToken) String token);
 
-    @GET("/{path}")
-    Call<MediaContainer> getMediaContainer(@Path(value="path", encoded = true) String path, @Query(PlexHeaders.XPlexToken) String token);
+    @GET
+    Observable<MediaContainer> newGetMediaContainer(@Url String path, @Query(PlexHeaders.XPlexToken) String token);
 
-    @GET("/{path}")
+    @GET
     Call<PlexResponse> getPlexResponse(@retrofit.http.Header(PlexHeaders.XPlexClientIdentifier) String clientId,
-                                       @Path(value="path", encoded=true) String path);
+                                       @Url String path);
 
     @GET("/player/timeline/subscribe?protocol=http")
     Call<PlexResponse> subscribe(@retrofit.http.Header(PlexHeaders.XPlexClientIdentifier) String clientId,
@@ -87,6 +92,9 @@ public class PlexHttpClient
     @GET("/pins/{pinID}.xml")
     Call<Pin> fetchPin(@Path(value="pinID", encoded = true) int pinID, @retrofit.http.Header(PlexHeaders.XPlexClientIdentifier) String clientId);
 
+    @GET("/pins/{pinID}.xml")
+    Observable<Pin> newFetchPin(@Path(value="pinID", encoded = true) int pinID, @retrofit.http.Header(PlexHeaders.XPlexClientIdentifier) String clientId);
+
     @Headers("Accept: text/xml")
     @POST("/users/sign_in.xml")
     Call<PlexUser> signin(@retrofit.http.Header(PlexHeaders.XPlexClientPlatform) String clientPlatform,
@@ -95,6 +103,9 @@ public class PlexHttpClient
 
     @POST("/pins.xml")
     Call<Pin> getPinCode(@retrofit.http.Header(PlexHeaders.XPlexClientIdentifier) String clientId);
+
+    @POST("/pins.xml")
+    Observable<Pin> newGetPinCode(@retrofit.http.Header(PlexHeaders.XPlexClientIdentifier) String clientId);
 
     @POST("/playQueues")
     Call<MediaContainer> createPlayQueue(@QueryMap Map<String, String> options, @retrofit.http.Header(PlexHeaders.XPlexClientIdentifier) String clientId);
@@ -124,18 +135,26 @@ public class PlexHttpClient
     Call<PlexUser> getPlexAccount(@retrofit.http.Header(PlexHeaders.XPlexToken) String authToken);
 
     @GET("/library/sections/{section}/all")
-    Call<MediaContainer> getRandomMovie(@Path(value="section", encoded=true) String section,
+    Observable<MediaContainer> getRandomMovie(@Path(value="section", encoded=true) String section,
                                         @Query(PlexHeaders.XPlexToken) String accessToken);
 
     @GET("/library/onDeck/all")
-    Call<MediaContainer> getRandomOnDeck(@Query(PlexHeaders.XPlexToken) String accessToken);
+    Observable<MediaContainer> getRandomOnDeck(@Query(PlexHeaders.XPlexToken) String accessToken);
 
     @GET("/library/sections/{section}/all")
     Call<MediaContainer> getRandomDirectory(@Path(value="section", encoded=true) String section,
                                             @Query(PlexHeaders.XPlexToken) String accessToken);
 
+    @GET("/library/sections/{section}/all")
+    Observable<MediaContainer> newGetRandomDirectory(@Path(value="section", encoded=true) String section,
+                                            @Query(PlexHeaders.XPlexToken) String accessToken);
+
     @GET("/library/metadata/{ratingKey}/allLeaves")
     Call<MediaContainer> getRandomEpisode(@Path(value="ratingKey", encoded=true) String ratingKey,
+                                          @Query(PlexHeaders.XPlexToken) String accessToken);
+
+    @GET("/library/metadata/{ratingKey}/allLeaves")
+    Observable<MediaContainer> newGetRandomEpisode(@Path(value="ratingKey", encoded=true) String ratingKey,
                                           @Query(PlexHeaders.XPlexToken) String accessToken);
 
     @GET("/{type}/:/transcode/universal/stop")
@@ -225,6 +244,7 @@ public class PlexHttpClient
     Retrofit.Builder builder = new Retrofit.Builder()
             .baseUrl(url)
             .client(client)
+            .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
             .addConverterFactory(SimpleXmlConverterFactory.create());
 
     if(username != null && password != null) {
@@ -297,7 +317,7 @@ public class PlexHttpClient
         Call<MediaContainer> call = service.searchSection(section, "1", queryTerm, server.accessToken);
         call.enqueue(new Callback<MediaContainer>() {
           @Override
-          public void onResponse(Response<MediaContainer> response) {
+          public void onResponse(Response<MediaContainer> response, Retrofit retrofit) {
             responseHandler.onSuccess(response.body());
           }
 
@@ -331,11 +351,11 @@ public class PlexHttpClient
       public void onSuccess(Connection connection) {
 
         PlexHttpService service = getService(connection.uri, debug);
-//        Logger.d("using path %s %s", connection.uri, path.substring(1));
+        Logger.d("using path %s %s", connection.uri, path.substring(1));
         Call<MediaContainer> call = service.getMediaContainer(path.substring(1), server.accessToken);
         call.enqueue(new Callback<MediaContainer>() {
           @Override
-          public void onResponse(Response<MediaContainer> response) {
+          public void onResponse(Response<MediaContainer> response, Retrofit retrofit) {
             try {
               // Add this server to each of this media container's media objects
               MediaContainer mediaContainer = response.body();
@@ -379,7 +399,7 @@ public class PlexHttpClient
     Call<PlexResponse> call = service.subscribe(uuid, deviceName, subscriptionPort, commandId);
     call.enqueue(new Callback<PlexResponse>() {
       @Override
-      public void onResponse(Response<PlexResponse> response) {
+      public void onResponse(Response<PlexResponse> response, Retrofit retrofit) {
         Logger.d("Subscribe code: %d", response.code());
         if (responseHandler != null) {
           if(response.code() == 200)
@@ -409,7 +429,7 @@ public class PlexHttpClient
     Call<PlexResponse> call = service.unsubscribe(uuid, deviceName, client.machineIdentifier);
     call.enqueue(new Callback<PlexResponse>() {
       @Override
-      public void onResponse(Response<PlexResponse> response) {
+      public void onResponse(Response<PlexResponse> response, Retrofit retrofit) {
         responseHandler.onSuccess(response.body());
       }
 
@@ -436,7 +456,7 @@ public class PlexHttpClient
     Call<MediaContainer> call = service.createPlayQueue(qs, VoiceControlForPlexApplication.getUUID());
     call.enqueue(new Callback<MediaContainer>() {
       @Override
-      public void onResponse(Response<MediaContainer> response) {
+      public void onResponse(Response<MediaContainer> response, Retrofit retrofit) {
         if (responseHandler != null)
           responseHandler.onSuccess(response.body());
       }
@@ -474,7 +494,7 @@ public class PlexHttpClient
     Call<MediaContainer> call = service.createPlayQueue(qs, VoiceControlForPlexApplication.getUUID());
     call.enqueue(new Callback<MediaContainer>() {
       @Override
-      public void onResponse(Response<MediaContainer> response) {
+      public void onResponse(Response<MediaContainer> response, Retrofit retrofit) {
         if (responseHandler != null) {
           MediaContainer mc = response.body();
           for(int i=0;i<mc.tracks.size();i++) {
@@ -511,7 +531,7 @@ public class PlexHttpClient
             path.replaceFirst("^/", ""));
     call.enqueue(new Callback<PlexResponse>() {
       @Override
-      public void onResponse(Response<PlexResponse> response) {
+      public void onResponse(Response<PlexResponse> response, Retrofit retrofit) {
         if (responseHandler != null)
           responseHandler.onSuccess(response.body());
       }
@@ -526,21 +546,10 @@ public class PlexHttpClient
 
 	public static void getPinCode(final PlexPinResponseHandler responseHandler) {
     PlexHttpService service = getService("https://plex.tv:443");
-    Call<Pin> call = service.getPinCode(VoiceControlForPlexApplication.getUUID());
-    call.enqueue(new Callback<Pin>() {
-      @Override
-      public void onResponse(Response<Pin> response) {
-        if(response.code() == 200 || response.code() == 201)
-          responseHandler.onSuccess(response.body());
-        else
-          responseHandler.onFailure(new Throwable());
-      }
-
-      @Override
-      public void onFailure(Throwable t) {
-        responseHandler.onFailure(t);
-      }
-    });
+    service.newGetPinCode(VoiceControlForPlexApplication.getUUID())
+            .subscribeOn(Schedulers.newThread())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe(pin -> responseHandler.onSuccess(pin), t -> responseHandler.onFailure(t));
 	}
 
   public static void signin(String authToken, final PlexHttpUserHandler responseHandler) {
@@ -556,7 +565,7 @@ public class PlexHttpClient
     Call<PlexUser> call = service.signin("Android", VoiceControlForPlexApplication.getUUID(), authToken);
     call.enqueue(new Callback<PlexUser>() {
       @Override
-      public void onResponse(Response<PlexUser> response) {
+      public void onResponse(Response<PlexUser> response, Retrofit retrofit) {
         if(response.code() == 200 || response.code() == 201)
           responseHandler.onSuccess(response.body());
         else {
@@ -593,7 +602,7 @@ public class PlexHttpClient
     Call<MediaContainer> call = service.pollTimeline(VoiceControlForPlexApplication.getInstance().prefs.getUUID(), commandId);
     call.enqueue(new Callback<MediaContainer>() {
       @Override
-      public void onResponse(Response<MediaContainer> response) {
+      public void onResponse(Response<MediaContainer> response, Retrofit retrofit) {
         responseHandler.onSuccess(response.body());
       }
 
@@ -607,18 +616,10 @@ public class PlexHttpClient
   public static void fetchPin(int pinID, final PlexPinResponseHandler responseHandler) {
     String url = "https://plex.tv:443";
     PlexHttpService service = getService(url);
-    Call<Pin> call = service.fetchPin(pinID, VoiceControlForPlexApplication.getInstance().prefs.getUUID());
-    call.enqueue(new Callback<Pin>() {
-      @Override
-      public void onResponse(Response<Pin> response) {
-        responseHandler.onSuccess(response.body());
-      }
-
-      @Override
-      public void onFailure(Throwable t) {
-        responseHandler.onFailure(t);
-      }
-    });
+    service.newFetchPin(pinID, VoiceControlForPlexApplication.getInstance().prefs.getUUID())
+            .subscribeOn(Schedulers.newThread())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe(s -> responseHandler.onSuccess(s), s -> responseHandler.onFailure(new Throwable()));
   }
 
   public static void getPlexAccount(String authToken, final PlexHttpUserHandler responseHandler) {
@@ -627,7 +628,7 @@ public class PlexHttpClient
     Call<PlexUser> call = service.getPlexAccount(authToken);
     call.enqueue(new Callback<PlexUser>() {
       @Override
-      public void onResponse(Response<PlexUser> response) {
+      public void onResponse(Response<PlexUser> response, Retrofit retrofit) {
         if(responseHandler != null)
           responseHandler.onSuccess(response.body());
       }
@@ -643,24 +644,12 @@ public class PlexHttpClient
     server.findServerConnection(new ActiveConnectionHandler() {
       @Override
       public void onSuccess(Connection connection) {
-        String section = server.movieSections.get(new Random().nextInt(server.movieSections.size()));
         PlexHttpService service = getService(connection);
-        Call<MediaContainer> call = service.getRandomMovie(section, server.accessToken);
-        call.enqueue(new Callback<MediaContainer>() {
-          @Override
-          public void onResponse(Response<MediaContainer> response) {
-            MediaContainer mc = response.body();
-            if(onFinish != null)
-              onFinish.onFinish(mc.videos.get(new Random().nextInt(mc.videos.size())));
-          }
-
-          @Override
-          public void onFailure(Throwable t) {
-            t.printStackTrace();
-            if(onFinish != null)
-              onFinish.onFinish(null);
-          }
-        });
+        service.getRandomMovie(server.getRandomMovieSection(), server.accessToken)
+                .subscribeOn(Schedulers.io())
+                .map(mc -> mc.getRandomVideo())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(video -> onFinish.onFinish(video), e -> onFinish.onFinish(null));
       }
 
       @Override
@@ -676,21 +665,11 @@ public class PlexHttpClient
       @Override
       public void onSuccess(Connection connection) {
         PlexHttpService service = getService(connection);
-        Call<MediaContainer> call = service.getRandomOnDeck(server.accessToken);
-        call.enqueue(new Callback<MediaContainer>() {
-          @Override
-          public void onResponse(Response<MediaContainer> response) {
-            MediaContainer mc = response.body();
-            if(onFinish != null)
-              onFinish.onFinish(mc.videos.get(new Random().nextInt(mc.videos.size())));
-          }
-
-          @Override
-          public void onFailure(Throwable t) {
-            if(onFinish != null)
-              onFinish.onFinish(null);
-          }
-        });
+        service.getRandomOnDeck(server.accessToken)
+                .subscribeOn(Schedulers.io())
+                .map(mc -> mc.getRandomVideo())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(video -> onFinish.onFinish(video), e -> onFinish.onFinish(null));
       }
 
       @Override
@@ -706,37 +685,13 @@ public class PlexHttpClient
       @Override
       public void onSuccess(final Connection connection) {
         final PlexHttpService service = getService(connection);
-        String section = server.tvSections.get(new Random().nextInt(server.tvSections.size()));
-        Call<MediaContainer> call = service.getRandomDirectory(section, server.accessToken);
-        call.enqueue(new Callback<MediaContainer>() {
-          @Override
-          public void onResponse(Response<MediaContainer> response) {
-            MediaContainer mc = response.body();
-            PlexDirectory directory = mc.directories.get(new Random().nextInt(mc.directories.size()));
-            // Got show, now get season
-            Call<MediaContainer> call2 = service.getRandomEpisode(directory.ratingKey, server.accessToken);
-            call2.enqueue(new Callback<MediaContainer>() {
-              @Override
-              public void onResponse(Response<MediaContainer> response) {
-                MediaContainer mc = response.body();
-                if(onFinish != null)
-                  onFinish.onFinish(mc.videos.get(new Random().nextInt(mc.videos.size())));
-              }
-
-              @Override
-              public void onFailure(Throwable t) {
-                if(onFinish != null)
-                  onFinish.onFinish(null);
-              }
-            });
-          }
-
-          @Override
-          public void onFailure(Throwable t) {
-            if(onFinish != null)
-              onFinish.onFinish(null);
-          }
-        });
+        service.newGetRandomDirectory(server.getRandomTvSection(), server.accessToken)
+                .subscribeOn(Schedulers.io())
+                .map(shows -> shows.getRandomDirectory())
+                .flatMap(show -> service.newGetRandomEpisode(show.ratingKey, server.accessToken))
+                .map(episodes -> episodes.getRandomVideo())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(video -> onFinish.onFinish(video), e -> onFinish.onFinish(null));
       }
 
       @Override
@@ -753,52 +708,16 @@ public class PlexHttpClient
       public void onSuccess(Connection connection) {
         final PlexHttpService service = getService(connection);
         String section = server.musicSections.get(new Random().nextInt(server.musicSections.size()));
-        Call<MediaContainer> call = service.getRandomDirectory(section, server.accessToken);
-        call.enqueue(new Callback<MediaContainer>() {
-          @Override
-          public void onResponse(Response<MediaContainer> response) {
-            MediaContainer artists = response.body();
-            PlexDirectory artist = artists.directories.get(new Random().nextInt(artists.directories.size()));
-            Call<MediaContainer> call2 = service.getMediaContainer(artist.key.replaceFirst("^/", ""), server.accessToken);
-            call2.enqueue(new Callback<MediaContainer>() {
-              @Override
-              public void onResponse(Response<MediaContainer> response) {
-                MediaContainer albums = response.body();
-                PlexDirectory album = albums.directories.get(new Random().nextInt(albums.directories.size()));
-                Call<MediaContainer> call3 = service.getMediaContainer(album.key.replaceFirst("^/", ""), server.accessToken);
-                call3.enqueue(new Callback<MediaContainer>() {
-                  @Override
-                  public void onResponse(Response<MediaContainer> response) {
-                    MediaContainer tracks = response.body();
-                    if(onFinish != null)
-                      onFinish.onFinish(tracks.tracks.get(new Random().nextInt(tracks.tracks.size())));
-                  }
 
-                  @Override
-                  public void onFailure(Throwable t) {
-                    t.printStackTrace();
-                    if(onFinish != null)
-                      onFinish.onFinish(null);
-                  }
-                });
-              }
-
-              @Override
-              public void onFailure(Throwable t) {
-                t.printStackTrace();
-                if(onFinish != null)
-                  onFinish.onFinish(null);
-              }
-            });
-          }
-
-          @Override
-          public void onFailure(Throwable t) {
-            t.printStackTrace();
-            if(onFinish != null)
-              onFinish.onFinish(null);
-          }
-        });
+        service.newGetRandomDirectory(section, server.accessToken)
+                .subscribeOn(Schedulers.io())
+                .map(artists -> artists.getRandomDirectory())
+                .flatMap(artist -> service.newGetMediaContainer(artist.key, server.accessToken))
+                .map(albums -> albums.getRandomDirectory())
+                .flatMap(album -> service.newGetMediaContainer(album.key, server.accessToken))
+                .map(songs -> songs.getRandomTrack())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(track -> onFinish.onFinish(track), e -> onFinish.onFinish(null));
       }
 
       @Override
@@ -814,39 +733,13 @@ public class PlexHttpClient
       @Override
       public void onSuccess(Connection connection) {
         final PlexHttpService service = getService(connection);
-        String section = server.musicSections.get(new Random().nextInt(server.musicSections.size()));
-        Call<MediaContainer> call = service.getRandomDirectory(section, server.accessToken);
-        call.enqueue(new Callback<MediaContainer>() {
-          @Override
-          public void onResponse(Response<MediaContainer> response) {
-            MediaContainer artists = response.body();
-            PlexDirectory artist = artists.directories.get(new Random().nextInt(artists.directories.size()));
-            Call<MediaContainer> call2 = service.getMediaContainer(artist.key.replaceFirst("^/", ""), server.accessToken);
-            call2.enqueue(new Callback<MediaContainer>() {
-              @Override
-              public void onResponse(Response<MediaContainer> response) {
-                MediaContainer albums = response.body();
-                PlexDirectory album = albums.directories.get(new Random().nextInt(albums.directories.size()));
-                if(onFinish != null)
-                  onFinish.onFinish(album);
-              }
-
-              @Override
-              public void onFailure(Throwable t) {
-                t.printStackTrace();
-                if(onFinish != null)
-                  onFinish.onFinish(null);
-              }
-            });
-          }
-
-          @Override
-          public void onFailure(Throwable t) {
-            t.printStackTrace();
-            if(onFinish != null)
-              onFinish.onFinish(null);
-          }
-        });
+        service.newGetRandomDirectory(server.getRandomMusicSection(), server.accessToken)
+                .subscribeOn(Schedulers.io())
+                .map(artists -> artists.getRandomDirectory())
+                .flatMap(artist -> service.newGetMediaContainer(artist.key, server.accessToken))
+                .map(albums -> albums.getRandomDirectory())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(album -> onFinish.onFinish(album), e -> onFinish.onFinish(null));
       }
 
       @Override
@@ -862,25 +755,11 @@ public class PlexHttpClient
       @Override
       public void onSuccess(Connection connection) {
         final PlexHttpService service = getService(connection);
-        String section = server.musicSections.get(new Random().nextInt(server.musicSections.size()));
-        Call<MediaContainer> call = service.getRandomDirectory(section, server.accessToken);
-        call.enqueue(new Callback<MediaContainer>() {
-          @Override
-          public void onResponse(Response<MediaContainer> response) {
-            MediaContainer artists = response.body();
-            PlexDirectory artist = artists.directories.get(new Random().nextInt(artists.directories.size()));
-            if(onFinish != null)
-              onFinish.onFinish(artist);
-
-          }
-
-          @Override
-          public void onFailure(Throwable t) {
-            t.printStackTrace();
-            if(onFinish != null)
-              onFinish.onFinish(null);
-          }
-        });
+        service.newGetRandomDirectory(server.getRandomMusicSection(), server.accessToken)
+                .subscribeOn(Schedulers.io())
+                .map(artists -> artists.getRandomDirectory())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(artist -> onFinish.onFinish(artist), e -> onFinish.onFinish(null));
       }
 
       @Override
@@ -903,7 +782,7 @@ public class PlexHttpClient
         Call<PlexResponse> call = service.stopTranscoder(type, server.accessToken, session, VoiceControlForPlexApplication.getInstance().prefs.getUUID());
         call.enqueue(new Callback<PlexResponse>() {
           @Override
-          public void onResponse(Response<PlexResponse> response) {
+          public void onResponse(Response<PlexResponse> response, Retrofit retrofit) {
             Logger.d("Stopped transcoder");
             if(handler != null)
               handler.onSuccess();
@@ -945,7 +824,7 @@ public class PlexHttpClient
         );
         call.enqueue(new Callback<PlexResponse>() {
           @Override
-          public void onResponse(Response<PlexResponse> response) {
+          public void onResponse(Response<PlexResponse> response, Retrofit retrofit) {
 //            Logger.d("Done reporting");
           }
 
@@ -977,7 +856,7 @@ public class PlexHttpClient
         if(call != null) {
           call.enqueue(new Callback<PlexResponse>() {
             @Override
-            public void onResponse(Response<PlexResponse> response) {
+            public void onResponse(Response<PlexResponse> response, Retrofit retrofit) {
               Logger.d("set stream done");
               if(onFinish != null && response.body().code == 200)
                 onFinish.run();
@@ -1007,7 +886,7 @@ public class PlexHttpClient
         Call<MediaContainer> call = service.getChildren(directory.ratingKey, server.accessToken);
         call.enqueue(new Callback<MediaContainer>() {
           @Override
-          public void onResponse(Response<MediaContainer> response) {
+          public void onResponse(Response<MediaContainer> response, Retrofit retrofit) {
             MediaContainer mc = response.body();
             if(handler != null)
               handler.onSuccess(mc);
