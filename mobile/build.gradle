@@ -6,6 +6,9 @@ buildscript {
     dependencies {
         classpath 'me.tatarka:gradle-retrolambda:3.2.5'
     }
+
+    // Exclude the version that the android plugin depends on.
+    configurations.classpath.exclude group: 'com.android.tools.external.lombok'
 }
 
 repositories {
@@ -110,6 +113,9 @@ android {
         tasks.withType(JavaCompile) {
             options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
         }
+    }
+    task printBuildScriptClasspath << {
+        println project.buildscript.configurations.classpath.asPath
     }
 }
 
