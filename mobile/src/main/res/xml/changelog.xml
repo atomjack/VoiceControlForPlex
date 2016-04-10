@@ -1,23 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog>
-    <release version="2.1.4b5" versioncode="72">
-        <change>Changed higher end bitrates to 1080p for local video playback.</change>
-        <change>Fixed display of dividers in big notifications.</change>
-        <change>Added bitrate selector to local video player controller.</change>
-        <change>Fixed specifying "on this device" when triggering playback.</change>
-        <change>Squashed some more bugs.</change>
-    </release>
-    <release version="2.1.4b4" versioncode="71">
+    <release version="2.1.4b" versioncode="73">
         <change>Added local media playback. This feature is locked to one minute at a time, and can be unlocked via an in-app purchase (Navigation Menu->Settings).</change>
         <change>Chromecast playback can now be previewed for one minute at a time, and can be unlocked via in-app purchase (Navigation Menu->Settings).</change>
+        <change>Squashed some more bugs.</change>
         <change>Fixed display of cinema trailers.</change>
         <change>Cinema Trailers setting is now used for PC, Roku, etc. Plex clients, to provide a more consistent experience.</change>
-        <change>Clicking the mic on the now playing screen will pause playback, then resume once voice input is done.</change>
+        <change>Clicking the mic on the now playing screen will pause playback, then resume once voice input is done (if media wasn't already paused).</change>
         <change>Redesigned the layout of some now playing screens to get rid of superfluous information.</change>
         <change>Sped up server discovery, especially for servers that are external to the local network.</change>
         <change>Added tutorial overlay to main screen to point how how to start using the app.</change>
         <change>Fixed playback of music on Plex Media Player clients.</change>
-        <change>Squashed some bugs, might have introduced others.</change>
+        <change>Changed higher end bitrates to 1080p for local video playback.</change>
+        <change>Fixed display of dividers in big notifications.</change>
+        <change>Added bitrate selector to local video player controller.</change>
+        <change>Fixed specifying "on this device" when triggering playback.</change>
+        <change>Squashed various other bugs.</change>
     </release>
     <release version="2.1.3" versioncode="67">
         <change>Added usage hints to main screen. Use Navigation Drawer->Settings->Usage Hints to disable.</change>
