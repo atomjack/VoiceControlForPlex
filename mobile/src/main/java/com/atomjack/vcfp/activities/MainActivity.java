@@ -2510,7 +2510,7 @@ public class MainActivity extends AppCompatActivity
   public void onConnected(int connectionType) {
     logger.d("Connected with type %d", connectionType);
     // Only show the cast button if the previous state was disconnected.
-    if(currentNetworkState == NetworkState.DISCONNECTED) {
+    if(currentNetworkState == NetworkState.DISCONNECTED && castIconMenuItem != null) {
       castIconMenuItem.setVisible(true);
     }
 
