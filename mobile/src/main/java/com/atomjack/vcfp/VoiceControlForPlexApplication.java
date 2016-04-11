@@ -705,6 +705,8 @@ public class VoiceControlForPlexApplication extends Application
 
       Logger.d("Query inventory was successful.");
 
+      if(mIabHelper != null)
+        mIabHelper.flagEndAsync();
       // Get the price for chromecast & wear support
       mIabHelper.queryInventoryAsync(true, new ArrayList<>(Arrays.asList(SKU_CHROMECAST, SKU_WEAR, SKU_LOCALMEDIA)), new IabHelper.QueryInventoryFinishedListener() {
         @Override
