@@ -208,4 +208,6 @@
 
     <string name="must_purchase_chromecast2">Playback to Chromecasts are restricted to one minute. Would you like to unlock it(%s)?</string>
     <string name="purchase_chromecast">Purchase Chromecast Playback</string>
+
+    <string name="searching_for_random_episode">Searching for a random episode of %s.</string>
 </resources>

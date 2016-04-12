@@ -97,7 +97,7 @@ public class VCFPHint {
 
   public void doHint() {
     if(active) {
-      int a = Utils.getRandomInt(0, 9);
+      int a = Utils.getRandomInt(0, 10);
       if (a == 0) {
         hintWatchMovie();
       } else if (a == 1) {
@@ -116,6 +116,8 @@ public class VCFPHint {
         hintListenToAlbum();
       } else if (a == 8) {
         hintListenToArtist();
+      } else if (a == 8) {
+        hintWatchRandomEpisode();
       }
     }
   }
@@ -142,6 +144,17 @@ public class VCFPHint {
     PlexHttpClient.getRandomOnDeck(server, media -> {
       if(media != null) {
         setText(String.format(context.getString(R.string.hint_watch_movie), media.getTitle()));
+        handler.post(onFinishSuccess);
+      } else {
+        handler.post(onFinishFailure);
+      }
+    });
+  }
+
+  private void hintWatchRandomEpisode() {
+    PlexHttpClient.getRandomShow(server, show -> {
+      if(show != null) {
+        setText(String.format(context.getString(R.string.hint_watch_random_episode), show.title));
         handler.post(onFinishSuccess);
       } else {
         handler.post(onFinishFailure);

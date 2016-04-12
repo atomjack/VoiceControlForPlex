@@ -132,7 +132,7 @@ public class MediaContainer implements Parcelable {
   };
 
   public PlexDirectory getRandomDirectory() {
-    return directories.get(new Random().nextInt(directories.size()));
+    return directories.size() == 0 ? null : directories.get(new Random().nextInt(directories.size()));
   }
 
   public PlexTrack getRandomTrack() {

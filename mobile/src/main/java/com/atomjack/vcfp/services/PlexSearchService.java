@@ -32,6 +32,7 @@ import com.atomjack.vcfp.activities.VideoPlayerActivity;
 import com.atomjack.vcfp.interfaces.ActiveConnectionHandler;
 import com.atomjack.vcfp.interfaces.AfterTransientTokenRequest;
 import com.atomjack.vcfp.interfaces.BitmapHandler;
+import com.atomjack.vcfp.interfaces.PlexMediaHandler;
 import com.atomjack.vcfp.interfaces.PlexPlayQueueHandler;
 import com.atomjack.vcfp.model.Connection;
 import com.atomjack.vcfp.model.MediaContainer;
@@ -71,18 +72,18 @@ public class PlexSearchService extends Service {
 	private String queryText;
 	private SearchFeedback feedback;
 
-	private ConcurrentHashMap<String, PlexServer> plexmediaServers = new ConcurrentHashMap<String, PlexServer>();
+	private ConcurrentHashMap<String, PlexServer> plexmediaServers = new ConcurrentHashMap<>();
 	private Map<String, PlexClient> clients;
 
 	private PlexClient client = null;
 	private PlexServer specifiedServer = null;
 	private int serversSearched = 0;
-	private List<PlexVideo> videos = new ArrayList<PlexVideo>();
+	private List<PlexVideo> videos = new ArrayList<>();
 	private Boolean videoPlayed = false;
-	private List<PlexDirectory> shows = new ArrayList<PlexDirectory>();
+	private List<PlexDirectory> shows = new ArrayList<>();
 	private Boolean resumePlayback = false;
-	private List<PlexTrack> tracks = new ArrayList<PlexTrack>();
-	private List<PlexDirectory> albums = new ArrayList<PlexDirectory>();
+	private List<PlexTrack> tracks = new ArrayList<>();
+	private List<PlexDirectory> albums = new ArrayList<>();
 
 	private boolean didClientScan = false;
 
@@ -144,7 +145,7 @@ public class PlexSearchService extends Service {
       logger.d("CAST MANAGER IS SUBSCRIBED");
     }
 
-    if(intent.getBooleanExtra(WearConstants.FROM_WEAR, false) == true && VoiceControlForPlexApplication.getInstance().hasWear()) {
+    if(intent.getBooleanExtra(WearConstants.FROM_WEAR, false) && VoiceControlForPlexApplication.getInstance().hasWear()) {
       fromWear = true;
     }
     fromGoogleNow = intent.getBooleanExtra(com.atomjack.shared.Intent.EXTRA_FROM_GOOGLE_NOW, false);
@@ -541,6 +542,18 @@ public class PlexSearchService extends Service {
 			};
 		}
 
+    p = Pattern.compile(getString(R.string.pattern_random_episode));
+    matcher = p.matcher(queryText);
+    if(matcher.find()) {
+      final String showSpecified = matcher.group(3);
+      return new myRunnable() {
+        @Override
+        public void run() {
+          playRandomEpisode(showSpecified);
+        }
+      };
+    }
+
 		p = Pattern.compile(getString(R.string.pattern_watch_show_episode_named));
 		matcher = p.matcher(queryText);
 		if(matcher.find()) {
@@ -549,14 +562,13 @@ public class PlexSearchService extends Service {
 			return new myRunnable() {
 				@Override
 				public void run() {
-						doShowSearch(episodeSpecified, showSpecified);
+          doShowSearch(episodeSpecified, showSpecified);
 				}
 			};
 		}
 
 		p = Pattern.compile(getString(R.string.pattern_watch2));
 		matcher = p.matcher(queryText);
-
 		if(matcher.find()) {
 			final String queryTerm = matcher.group(2);
       logger.d("queryTerm: %s", queryTerm);
@@ -810,8 +822,8 @@ public class PlexSearchService extends Service {
           return new StopRunnable() {
             @Override
             public void run() {
-            queries.add(0, queryText);
-            sendClientScanIntent();
+              queries.add(0, queryText);
+              sendClientScanIntent();
             }
           };
         }
@@ -1910,6 +1922,59 @@ public class PlexSearchService extends Service {
 
 		}
 	}
+
+  private void playRandomEpisode(String showSpecified) {
+    if(client.isCastClient && client.isAudioOnly) {
+      videoAttemptedOnAudioOnlyDevice();
+      return;
+    }
+    feedback.m(getString(R.string.searching_for_random_episode), showSpecified);
+    serversSearched = 0;
+    for(final PlexServer server : plexmediaServers.values()) {
+      server.findServerConnection(new ActiveConnectionHandler() {
+        @Override
+        public void onSuccess(Connection connection) {
+          server.showSectionsSearched = 0;
+          if (server.tvSections.size() == 0) {
+            serversSearched++;
+            if (serversSearched == plexmediaServers.size()) {
+              playSpecificEpisode(showSpecified);
+            }
+          }
+          for (int i = 0; i < server.tvSections.size(); i++) {
+            String section = server.tvSections.get(i);
+            PlexHttpClient.getRandomEpisode(server, connection, showSpecified, section, media -> {
+              server.showSectionsSearched++;
+              if(media != null) {
+                PlexVideo video = (PlexVideo)media;
+                video.server = server;
+                video.thumb = video.grandparentThumb;
+                video.showTitle = video.grandparentTitle;
+                logger.d("Adding %s - %s.", video.showTitle, video.title);
+                videos.add(video);
+              }
+
+              if (server.tvSections.size() == server.showSectionsSearched) {
+                serversSearched++;
+                if (serversSearched == plexmediaServers.size()) {
+                  playSpecificEpisode(showSpecified);
+                }
+              }
+            });
+          }
+
+        }
+
+        @Override
+        public void onFailure(int statusCode) {
+          serversSearched++;
+          if (serversSearched == plexmediaServers.size()) {
+            playSpecificEpisode(showSpecified);
+          }
+        }
+      });
+    }
+  }
 
 	private void playSpecificEpisode(String showSpecified) {
     if(client.isCastClient && client.isAudioOnly) {

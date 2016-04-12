@@ -61,7 +61,10 @@ public class PlexHttpClient
 
   public interface PlexHttpService {
     @GET("/library/sections/{section}/search")
-    Call<MediaContainer> searchSection(@Path("section") String section, @Query("type") String type, @Query("query") String query, @Query(PlexHeaders.XPlexToken) String token);
+    Call<MediaContainer> searchSection(@Path("section") String section,
+                                       @Query("type") String type,
+                                       @Query("query") String query,
+                                       @Query(PlexHeaders.XPlexToken) String token);
 
     @GET
     Call<MediaContainer> getMediaContainer(@Url String path, @Query(PlexHeaders.XPlexToken) String token);
@@ -136,7 +139,11 @@ public class PlexHttpClient
 
     @GET("/library/sections/{section}/all")
     Observable<MediaContainer> getRandomMovie(@Path(value="section", encoded=true) String section,
-                                        @Query(PlexHeaders.XPlexToken) String accessToken);
+                                              @Query(PlexHeaders.XPlexToken) String accessToken);
+
+    @GET("/library/sections/{section}/all")
+    Observable<MediaContainer> getRandomShow(@Path(value="section", encoded=true) String section,
+                                              @Query(PlexHeaders.XPlexToken) String accessToken);
 
     @GET("/library/onDeck/all")
     Observable<MediaContainer> getRandomOnDeck(@Query(PlexHeaders.XPlexToken) String accessToken);
@@ -189,6 +196,11 @@ public class PlexHttpClient
     @GET("/library/metadata/{key}/children")
     Call<MediaContainer> getChildren(@Path(value="key", encoded = true) String key,
                                      @Query(PlexHeaders.XPlexToken) String token);
+
+    @GET("/library/sections/{section}/search?type=2")
+    Observable<MediaContainer> searchForShow(@Path(value="section", encoded = true) String section,
+                                             @Query("query") String query,
+                                             @Query(PlexHeaders.XPlexToken) String token);
   }
 
   public static void getThumb(String url, final InputStreamHandler inputStreamHandler) {
@@ -660,6 +672,25 @@ public class PlexHttpClient
     });
   }
 
+  public static void getRandomShow(final PlexServer server, final PlexDirectoryHandler handler) {
+    server.findServerConnection(new ActiveConnectionHandler() {
+      @Override
+      public void onSuccess(Connection connection) {
+        PlexHttpService service = getService(connection);
+        service.getRandomShow(server.getRandomTvSection(), server.accessToken)
+                .subscribeOn(Schedulers.io())
+                .map(mc -> mc.getRandomDirectory())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(show -> handler.onFinish(show), e -> handler.onFinish(null));
+      }
+
+      @Override
+      public void onFailure(int statusCode) {
+
+      }
+    });
+  }
+
   public static void getRandomOnDeck(final PlexServer server, final PlexMediaHandler onFinish) {
     server.findServerConnection(new ActiveConnectionHandler() {
       @Override
@@ -678,6 +709,22 @@ public class PlexHttpClient
           onFinish.onFinish(null);
       }
     });
+  }
+
+  public static void getRandomEpisode(final PlexServer server,
+                                      final Connection connection,
+                                      final String showSpecified,
+                                      final String section,
+                                      final PlexMediaHandler handler) {
+    final PlexHttpService service = getService(connection);
+    service.searchForShow(section, showSpecified, server.accessToken)
+            .subscribeOn(Schedulers.io())
+            .filter(shows -> shows != null)
+            .map(shows -> shows.getRandomDirectory())
+            .flatMap(show -> service.newGetRandomEpisode(show.ratingKey, server.accessToken))
+            .map(episodes -> episodes.getRandomVideo())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe(video -> handler.onFinish(video), e -> handler.onFinish(null));
   }
 
   public static void getRandomEpisode(final PlexServer server, final PlexMediaHandler onFinish) {

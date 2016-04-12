@@ -92,4 +92,5 @@ Also, you don't need to translate these comments.
     <item name="hint_listen_to_album" type="string">Listen to the album %1$s</item>
     <item name="hint_listen_to_artist" type="string">Listen to %1$s</item>
 
+    <item name="pattern_random_episode" type="string">(watch|play) a random episode of (.+)</item>
 </resources>
