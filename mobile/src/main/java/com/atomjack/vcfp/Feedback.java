@@ -26,6 +26,12 @@ public class Feedback implements TextToSpeech.OnInitListener {
 
 	public Feedback(Context ctx) {
 		context = ctx;
+    errorsTts = new TextToSpeech(context, this);
+//      errorsQueue = filterText(text);
+    errorsTts.setOnUtteranceProgressListener(utteranceProgressListener);
+    feedbackTts = new TextToSpeech(context, this);
+//      feedbackQueue = filterText(text);
+    feedbackTts.setOnUtteranceProgressListener(utteranceProgressListener);
 	}
   private HashMap<String, String> map = new HashMap<String, String>();
   private int utteranceId = 0;
@@ -34,9 +40,9 @@ public class Feedback implements TextToSpeech.OnInitListener {
 	public void onInit(int i) {
 		Logger.d("Feedback onInit");
 		if(errorsTts != null)
-			errorsTts.setLanguage(VoiceControlForPlexApplication.getVoiceLocale(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.ERRORS_VOICE, "Locale.US")));
+			errorsTts.setLanguage(VoiceControlForPlexApplication.getVoiceLocale(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.ERRORS_VOICE, null)));
 		if(feedbackTts != null)
-			feedbackTts.setLanguage(VoiceControlForPlexApplication.getVoiceLocale(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.FEEDBACK_VOICE, "Locale.US")));
+			feedbackTts.setLanguage(VoiceControlForPlexApplication.getVoiceLocale(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.FEEDBACK_VOICE, null)));
 
 		if(errorsQueue != null) {
 			feedback(errorsQueue, true);
@@ -93,47 +99,65 @@ public class Feedback implements TextToSpeech.OnInitListener {
 	}
 
 	public void t(int id) {
-		feedback(context.getString(id), true, true);
+		feedback(context.getString(id), false, true);
 	}
+
+  public void v(int id) { feedback(context.getString(id), false, false, true); }
+
+  public void v(String text) { feedback(text, false, false, true); }
 
 	protected void feedback(String text, boolean errors) {
 		feedback(text, errors, false);
 	}
 
   protected void feedback(String text, boolean errors, boolean forceToast) {
+    feedback(text, errors, forceToast, false);
+  }
 
-		if(!forceToast && VoiceControlForPlexApplication.getInstance().prefs.get(errors ? Preferences.ERRORS : Preferences.FEEDBACK, FEEDBACK_TOAST) == FEEDBACK_VOICE) {
-			TextToSpeech tts = errors ? errorsTts : feedbackTts;
-			if (tts == null) {
-				// This tts not set up yet, so initiate it and add the text to be spoken to the appropriate queue.
-				// The text will be spoken when the tts is finished setting up (in onInit)
-				if (errors) {
-					errorsTts = new TextToSpeech(context, this);
-					errorsQueue = filterText(text);
-          errorsTts.setOnUtteranceProgressListener(utteranceProgressListener);
-				} else {
-					feedbackTts = new TextToSpeech(context, this);
-					feedbackQueue = filterText(text);
-          feedbackTts.setOnUtteranceProgressListener(utteranceProgressListener);
-				}
-			} else {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-          ttsGreater21(tts, text);
-        } else {
-          ttsUnder20(tts, text);
-        }
-				if (errors)
-					errorsQueue = null;
-				else
-					feedbackQueue = null;
-			}
+  protected void feedback(String text, boolean errors, boolean forceToast, boolean forceVoice) {
+
+		if(forceVoice || (!forceToast &&
+            VoiceControlForPlexApplication.getInstance().prefs.get(errors ?
+                    Preferences.ERRORS : Preferences.FEEDBACK, FEEDBACK_TOAST) == FEEDBACK_VOICE)) {
+      doVoice(text, errors);
 		} else {
-			Toast.makeText(context, text, Toast.LENGTH_SHORT).show();
-      if(onFinish != null)
-        onFinish.run();
-      onFinish = null;
+      doToast(text);
 		}
 	}
+
+  private void doToast(String text) {
+    Toast.makeText(context, text, Toast.LENGTH_SHORT).show();
+    if(onFinish != null)
+      onFinish.run();
+    onFinish = null;
+  }
+
+  private void doVoice(String text, boolean errors) {
+    TextToSpeech tts = errors ? errorsTts : feedbackTts;
+    if (tts == null) {
+      // This tts not set up yet, so initiate it and add the text to be spoken to the appropriate queue.
+      // The text will be spoken when the tts is finished setting up (in onInit)
+      if (errors) {
+        errorsTts = new TextToSpeech(context, this);
+        errorsQueue = filterText(text);
+        errorsTts.setOnUtteranceProgressListener(utteranceProgressListener);
+      } else {
+        feedbackTts = new TextToSpeech(context, this);
+        feedbackQueue = filterText(text);
+        feedbackTts.setOnUtteranceProgressListener(utteranceProgressListener);
+      }
+    } else {
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+        ttsGreater21(tts, text);
+      } else {
+        ttsUnder20(tts, text);
+      }
+      if (errors)
+        errorsQueue = null;
+      else
+        feedbackQueue = null;
+    }
+  }
 
   @SuppressWarnings("deprecation")
   private void ttsUnder20(TextToSpeech tts, String text) {

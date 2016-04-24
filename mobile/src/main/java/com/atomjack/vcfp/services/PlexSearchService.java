@@ -32,7 +32,6 @@ import com.atomjack.vcfp.activities.VideoPlayerActivity;
 import com.atomjack.vcfp.interfaces.ActiveConnectionHandler;
 import com.atomjack.vcfp.interfaces.AfterTransientTokenRequest;
 import com.atomjack.vcfp.interfaces.BitmapHandler;
-import com.atomjack.vcfp.interfaces.PlexMediaHandler;
 import com.atomjack.vcfp.interfaces.PlexPlayQueueHandler;
 import com.atomjack.vcfp.model.Connection;
 import com.atomjack.vcfp.model.MediaContainer;
@@ -118,13 +117,19 @@ public class PlexSearchService extends Service {
 	private interface myRunnable {
 		void run();
 	}
-	// An instance of this interface will be returned by handleVoiceSearch when no server discovery is needed (e.g. pause/resume/stop playback or offset)
+	// An instance of this interface will be returned by handleVoiceSearch when no server discovery is
+  // needed (e.g. pause/resume/stop playback or offset)
 	private interface StopRunnable extends myRunnable {}
 
 	@Override
   @SuppressWarnings("unchecked")
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		logger.d("onStartCommand: %s", intent.getAction());
+
+    // Reset whether we've scanned for clients, but only if we're getting here from a new voice search (we can
+    // get here from scanning for clients)
+    if(intent.getAction() == null)
+      didClientScan = false;
 
 		if(BuildConfig.USE_BUGSENSE)
 			Mint.initAndStartSession(PlexSearchService.this, MainActivity.BUGSENSE_APIKEY);
@@ -327,15 +332,28 @@ public class PlexSearchService extends Service {
       queries.add(queryText.replaceAll("-", ""));
     }
 
-		if(!didClientScan) {
-			if(queryText.matches(getString(R.string.pattern_on_client))) {
-				// A client was specified in the query, so let's scan for clients before proceeding.
-				// First, insert the query text back into the queries array, so we can use it after the scan is done.
-				queries.add(0, queryText);
+    if(queryText.matches(getString(R.string.pattern_on_client)) && !queryText.matches(getString(R.string.pattern_whats_on_deck))) {
+      Pattern p = Pattern.compile(getString(R.string.pattern_on_client), Pattern.DOTALL);
+      Matcher matcher = p.matcher(queryText);
+
+      matcher.find();
+      String specifiedClient = matcher.group(2).toLowerCase();
+      boolean found = false;
+      for(PlexClient client : VoiceControlForPlexApplication.getInstance().getAllClients().values()) {
+        if(client.name.toLowerCase().equals(specifiedClient)) {
+          found = true;
+          break;
+        }
+      }
+      // Only scan for clients if we're not already aware of the client specified
+      if(!found && !didClientScan) {
+        // A client was specified in the query, so let's scan for clients before proceeding.
+        // First, insert the query text back into the queries array, so we can use it after the scan is done.
+        queries.add(0, queryText);
         sendClientScanIntent();
-				return;
-			}
-		}
+        return;
+      }
+    }
 
 
 		logger.d("Starting up with query string: %s", queryText);
@@ -384,7 +402,7 @@ public class PlexSearchService extends Service {
 			if(actionToDo == null) {
 				startup();
 			} else {
-				if (actionToDo instanceof StopRunnable && !queryText.matches(getString(R.string.pattern_on_client))) {
+				if (actionToDo instanceof StopRunnable && (queryText.matches(getString(R.string.pattern_whats_on_deck)) || !queryText.matches(getString(R.string.pattern_on_client)))) {
 					actionToDo.run();
 					return;
 				}
@@ -927,6 +945,39 @@ public class PlexSearchService extends Service {
       };
     }
 
+    p = Pattern.compile(getString(R.string.pattern_whats_new_movies), Pattern.DOTALL);
+    matcher = p.matcher(queryText);
+    if(matcher.find()) {
+      return new StopRunnable() {
+        @Override
+        public void run() {
+          whatsNewMovies();
+        }
+      };
+    }
+
+    p = Pattern.compile(getString(R.string.pattern_whats_new), Pattern.DOTALL);
+    matcher = p.matcher(queryText);
+    if(matcher.find()) {
+      return new StopRunnable() {
+        @Override
+        public void run() {
+          whatsNew();
+        }
+      };
+    }
+
+    p = Pattern.compile(getString(R.string.pattern_whats_on_deck), Pattern.DOTALL);
+    matcher = p.matcher(queryText);
+    if(matcher.find()) {
+      return new StopRunnable() {
+        @Override
+        public void run() {
+          whatsOnDeck();
+        }
+      };
+    }
+
     if(queries.size() > 0)
 			return null;
 		else {
@@ -1008,6 +1059,170 @@ public class PlexSearchService extends Service {
 	private void stopPlayback() {
 		adjustPlayback(com.atomjack.shared.Intent.ACTION_STOP, getResources().getString(R.string.playback_stopped));
 	}
+
+  private void whatsNewMovies() {
+    serversSearched = 0;
+    for(final PlexServer server : plexmediaServers.values()) {
+      server.movieSectionsSearched = 0;
+      if(server.movieSections.size() == 0) {
+        serversSearched++;
+        if(serversSearched == plexmediaServers.size()) {
+          whatsNewMoviesFinished();
+        }
+      } else {
+        for(int i=0;i<server.movieSections.size();i++) {
+          PlexHttpClient.getRecentlyAdded(server, server.movieSections.get(i), new PlexHttpMediaContainerHandler() {
+            @Override
+            public void onSuccess(MediaContainer mediaContainer) {
+              server.movieSectionsSearched++;
+              videos.addAll(mediaContainer.videos);
+              if (server.movieSections.size() == server.movieSectionsSearched) {
+                serversSearched++;
+                if (serversSearched == plexmediaServers.size()) {
+                  whatsNewMoviesFinished();
+                }
+              }
+
+            }
+
+            @Override
+            public void onFailure(Throwable error) {
+              server.movieSectionsSearched++;
+              if (server.movieSections.size() == server.movieSectionsSearched) {
+                serversSearched++;
+                if (serversSearched == plexmediaServers.size()) {
+                  whatsNewMoviesFinished();
+                }
+              }
+            }
+          });
+        }
+      }
+    }
+  }
+
+  private void whatsNewMoviesFinished() {
+    if(videos.size() == 0) {
+      feedback.v(R.string.no_new_movies);
+    } else {
+      videos = videos.subList(0, 5);
+      List<String> titlesArr = new ArrayList<>();
+      for (PlexVideo video : videos)
+        titlesArr.add(video.getTitle());
+      String titles = Utils.implode(", ", ", and ", titlesArr.toArray(new String[titlesArr.size()]));
+      feedback.v(String.format(getString(R.string.whats_new_movies_return), titles));
+    }
+  }
+
+  private void whatsNew() {
+    serversSearched = 0;
+    for(final PlexServer server : plexmediaServers.values()) {
+      server.tvSectionsSearched = 0;
+      if(server.tvSections.size() == 0) {
+        serversSearched++;
+        if(serversSearched == plexmediaServers.size()) {
+          whatsNewFinished();
+        }
+      } else {
+        for(int i=0;i<server.tvSections.size();i++) {
+          PlexHttpClient.getRecentlyAdded(server, server.tvSections.get(i), new PlexHttpMediaContainerHandler() {
+            @Override
+            public void onSuccess(MediaContainer mediaContainer) {
+              server.tvSectionsSearched++;
+              videos.addAll(mediaContainer.videos);
+              if (server.tvSections.size() == server.tvSectionsSearched) {
+                serversSearched++;
+                if (serversSearched == plexmediaServers.size()) {
+                  whatsNewFinished();
+                }
+              }
+
+            }
+
+            @Override
+            public void onFailure(Throwable error) {
+              server.tvSectionsSearched++;
+              if (server.tvSections.size() == server.tvSectionsSearched) {
+                serversSearched++;
+                if (serversSearched == plexmediaServers.size()) {
+                  whatsNewFinished();
+                }
+              }
+            }
+          });
+        }
+      }
+    }
+  }
+
+  private void whatsNewFinished() {
+    if(videos.size() == 0) {
+      feedback.v(R.string.nothing_new);
+    } else {
+      videos = videos.subList(0, 5);
+      List<String> titlesArr = new ArrayList<>();
+      for (PlexVideo video : videos)
+        titlesArr.add(video.getTitle());
+      String titles = Utils.implode(", ", ", and ", titlesArr.toArray(new String[titlesArr.size()]));
+      feedback.v(String.format(getString(R.string.whats_new_return), titles));
+    }
+  }
+
+  private void whatsOnDeck() {
+    serversSearched = 0;
+    for(final PlexServer server : plexmediaServers.values()) {
+      server.tvSectionsSearched = 0;
+      if(server.tvSections.size() == 0) {
+        serversSearched++;
+        if(serversSearched == plexmediaServers.size()) {
+          onDeckFinished();
+        }
+      } else {
+        for(int i=0;i<server.tvSections.size();i++) {
+          PlexHttpClient.getOnDeck(server, server.tvSections.get(i), new PlexHttpMediaContainerHandler() {
+            @Override
+            public void onSuccess(MediaContainer mediaContainer) {
+              server.tvSectionsSearched++;
+              videos.addAll(mediaContainer.videos);
+              if (server.tvSections.size() == server.tvSectionsSearched) {
+                serversSearched++;
+                if (serversSearched == plexmediaServers.size()) {
+                  onDeckFinished();
+                }
+              }
+
+            }
+
+            @Override
+            public void onFailure(Throwable error) {
+              server.tvSectionsSearched++;
+              if (server.tvSections.size() == server.tvSectionsSearched) {
+                serversSearched++;
+                if (serversSearched == plexmediaServers.size()) {
+                  onDeckFinished();
+                }
+              }
+            }
+          });
+        }
+      }
+
+
+    }
+  }
+
+  private void onDeckFinished() {
+    if(videos.size() == 0) {
+      feedback.v(R.string.nothing_on_deck);
+    } else {
+      videos = videos.subList(0, 5);
+      List<String> titlesArr = new ArrayList<>();
+      for (PlexVideo video : videos)
+        titlesArr.add(video.getTitle());
+      String titles = Utils.implode(", ", ", and ", titlesArr.toArray(new String[titlesArr.size()]));
+      feedback.v(String.format(getString(R.string.on_deck_return), titles));
+    }
+  }
 
 	private void seekTo(int hours, int minutes, int seconds) {
 		logger.d("Seeking to %d hours, %d minutes, %d seconds", hours, minutes, seconds);
@@ -1640,7 +1855,7 @@ public class PlexSearchService extends Service {
 			server.findServerConnection(new ActiveConnectionHandler() {
 				@Override
 				public void onSuccess(Connection connection) {
-					server.showSectionsSearched = 0;
+					server.tvSectionsSearched = 0;
 					if (server.tvSections.size() == 0) {
 						serversSearched++;
 						if (serversSearched == plexmediaServers.size()) {
@@ -1653,7 +1868,7 @@ public class PlexSearchService extends Service {
 						PlexHttpClient.get(server, path, new PlexHttpMediaContainerHandler() {
 							@Override
 							public void onSuccess(MediaContainer mc) {
-								server.showSectionsSearched++;
+								server.tvSectionsSearched++;
 								for (int j = 0; j < mc.videos.size(); j++) {
 									PlexVideo video = mc.videos.get(j);
 									if (compareTitle(video.grandparentTitle, queryTerm)) {
@@ -1666,7 +1881,7 @@ public class PlexSearchService extends Service {
 									}
 								}
 
-								if (server.tvSections.size() == server.showSectionsSearched) {
+								if (server.tvSections.size() == server.tvSectionsSearched) {
 									serversSearched++;
 									if (serversSearched == plexmediaServers.size()) {
 										onFinishedNextEpisodeSearch(queryTerm, fallback);
@@ -1737,7 +1952,7 @@ public class PlexSearchService extends Service {
 			server.findServerConnection(new ActiveConnectionHandler() {
 				@Override
 				public void onSuccess(Connection connection) {
-					server.showSectionsSearched = 0;
+					server.tvSectionsSearched = 0;
 					logger.d("Searching server %s", server.name);
 					if (server.tvSections.size() == 0) {
 						logger.d(server.name + " has no tv sections");
@@ -1752,7 +1967,7 @@ public class PlexSearchService extends Service {
 						PlexHttpClient.get(server, path, new PlexHttpMediaContainerHandler() {
 							@Override
 							public void onSuccess(MediaContainer mc) {
-								server.showSectionsSearched++;
+								server.tvSectionsSearched++;
 								for (int j = 0; j < mc.directories.size(); j++) {
 									PlexDirectory show = mc.directories.get(j);
 									if (compareTitle(show.title, queryTerm)) {
@@ -1762,7 +1977,7 @@ public class PlexSearchService extends Service {
 									}
 								}
 
-								if (server.tvSections.size() == server.showSectionsSearched) {
+								if (server.tvSections.size() == server.tvSectionsSearched) {
 									serversSearched++;
 									if (serversSearched == plexmediaServers.size()) {
 										doLatestEpisode(queryTerm);
@@ -1866,7 +2081,7 @@ public class PlexSearchService extends Service {
 			server.findServerConnection(new ActiveConnectionHandler() {
 				@Override
 				public void onSuccess(Connection connection) {
-					server.showSectionsSearched = 0;
+					server.tvSectionsSearched = 0;
 					if (server.tvSections.size() == 0) {
 						serversSearched++;
 						if (serversSearched == plexmediaServers.size()) {
@@ -1879,7 +2094,7 @@ public class PlexSearchService extends Service {
 						PlexHttpClient.get(server, path, new PlexHttpMediaContainerHandler() {
 							@Override
 							public void onSuccess(MediaContainer mc) {
-								server.showSectionsSearched++;
+								server.tvSectionsSearched++;
 								for (int j = 0; j < mc.videos.size(); j++) {
 									logger.d("Show: %s", mc.videos.get(j).grandparentTitle);
 									PlexVideo video = mc.videos.get(j);
@@ -1893,7 +2108,7 @@ public class PlexSearchService extends Service {
 									}
 								}
 
-								if (server.tvSections.size() == server.showSectionsSearched) {
+								if (server.tvSections.size() == server.tvSectionsSearched) {
 									serversSearched++;
 									if (serversSearched == plexmediaServers.size()) {
 										playSpecificEpisode(showSpecified);
@@ -1934,7 +2149,7 @@ public class PlexSearchService extends Service {
       server.findServerConnection(new ActiveConnectionHandler() {
         @Override
         public void onSuccess(Connection connection) {
-          server.showSectionsSearched = 0;
+          server.tvSectionsSearched = 0;
           if (server.tvSections.size() == 0) {
             serversSearched++;
             if (serversSearched == plexmediaServers.size()) {
@@ -1944,7 +2159,7 @@ public class PlexSearchService extends Service {
           for (int i = 0; i < server.tvSections.size(); i++) {
             String section = server.tvSections.get(i);
             PlexHttpClient.getRandomEpisode(server, connection, showSpecified, section, media -> {
-              server.showSectionsSearched++;
+              server.tvSectionsSearched++;
               if(media != null) {
                 PlexVideo video = (PlexVideo)media;
                 video.server = server;
@@ -1954,7 +2169,7 @@ public class PlexSearchService extends Service {
                 videos.add(video);
               }
 
-              if (server.tvSections.size() == server.showSectionsSearched) {
+              if (server.tvSections.size() == server.tvSectionsSearched) {
                 serversSearched++;
                 if (serversSearched == plexmediaServers.size()) {
                   playSpecificEpisode(showSpecified);
@@ -2018,7 +2233,7 @@ public class PlexSearchService extends Service {
 			server.findServerConnection(new ActiveConnectionHandler() {
 				@Override
 				public void onSuccess(Connection connection) {
-					server.showSectionsSearched = 0;
+					server.tvSectionsSearched = 0;
 					logger.d("Searching server %s", server.name);
 					if (server.tvSections.size() == 0) {
 						logger.d("%s has no tv sections", server.name);
@@ -2033,12 +2248,12 @@ public class PlexSearchService extends Service {
 						PlexHttpClient.get(server, path, new PlexHttpMediaContainerHandler() {
 							@Override
 							public void onSuccess(MediaContainer mc) {
-								server.showSectionsSearched++;
+								server.tvSectionsSearched++;
 								for (int j = 0; j < mc.directories.size(); j++) {
 									shows.add(mc.directories.get(j));
 								}
 
-								if (server.tvSections.size() == server.showSectionsSearched) {
+								if (server.tvSections.size() == server.tvSectionsSearched) {
 									serversSearched++;
 									if (serversSearched == plexmediaServers.size()) {
 										doEpisodeSearch(queryTerm, season, episode);

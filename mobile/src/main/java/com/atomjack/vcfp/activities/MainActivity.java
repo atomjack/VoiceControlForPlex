@@ -2503,7 +2503,8 @@ public class MainActivity extends AppCompatActivity
     currentNetworkState = NetworkState.DISCONNECTED;
 
     // We have no network connection, so hide the cast button
-    castIconMenuItem.setVisible(false);
+    if(castIconMenuItem != null)
+      castIconMenuItem.setVisible(false);
   }
 
   @Override

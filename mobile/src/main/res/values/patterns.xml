@@ -11,7 +11,7 @@ Also, you don't need to translate these comments.
     a quite complicated regular expression. Plugging it into https://www.debuggex.com/ should help you figure out how
     it is constructed.
     -->
-    <item name="pattern_recognition" type="string">^(((watch|play|resume watching|resume playing|listen to|watch movie|play movie) (.+)( on (.+))?( on shuffle)?)|((offset|timecode) (.+)( on (.+))?)|((forward|rewind|back) (.+)( on (.+))?)|((pause|stop|resume)( playback)?( on (.+))?))|(connect to (.+)|disconnect)|(cycle (subtitles|audio))|(.*subtitle.*(off|on))$</item>
+    <item name="pattern_recognition" type="string">^(((watch|play|resume watching|resume playing|listen to|watch movie|play movie) (.+)( on (.+))?( on shuffle)?)|((offset|timecode) (.+)( on (.+))?)|((forward|rewind|back) (.+)( on (.+))?)|((pause|stop|resume)( playback)?( on (.+))?))|(connect to (.+)|disconnect)|(cycle (subtitles|audio))|(.*subtitle.*(off|on))|(what.*)$</item>
 
     <item name="pattern_on_client" type="string">(.+) on (.+)$</item>
     <item name="pattern_resume_watching" type="string">^resume (watching|playing) (.+)</item>
@@ -87,10 +87,15 @@ Also, you don't need to translate these comments.
     <item name="hint_watch_season_episode" type="string">Watch Season %1$s Episode %2$s of %3$s</item>
     <item name="hint_watch_season_episode2" type="string">Watch %1$s Season %2$s Episode %3$s</item>
     <item name="hint_watch_episode" type="string">Watch episode %1$s of %2$s</item>
+    <item name="hint_watch_random_episode" type="string">Watch a random episode of %s</item>
     <item name="hint_listen_to_song" type="string">Listen to %1$s by %2$s</item>
     <item name="hint_listen_to_album_by_artist" type="string">Listen to the album %1$s by %2$s</item>
     <item name="hint_listen_to_album" type="string">Listen to the album %1$s</item>
     <item name="hint_listen_to_artist" type="string">Listen to %1$s</item>
 
-    <item name="pattern_random_episode" type="string">(watch|play) a random episode of (.+)</item>
+    <item name="pattern_random_episode" type="string">(watch|play) (.+)random episode of (.+)</item>
+
+    <item name="pattern_whats_new" type="string">^what\'s new$</item>
+    <item name="pattern_whats_new_movies" type="string">^what.*new.*movie.*</item>
+    <item name="pattern_whats_on_deck" type="string">^what\'s on deck$</item>
 </resources>

@@ -201,6 +201,14 @@ public class PlexHttpClient
     Observable<MediaContainer> searchForShow(@Path(value="section", encoded = true) String section,
                                              @Query("query") String query,
                                              @Query(PlexHeaders.XPlexToken) String token);
+
+    @GET("/library/sections/{section}/onDeck")
+    Observable<MediaContainer> getOnDeck(@Path(value="section", encoded=true) String section,
+                                         @Query(PlexHeaders.XPlexToken) String token);
+
+    @GET("/library/sections/{section}/recentlyAdded")
+    Observable<MediaContainer> getRecentlyAdded(@Path(value="section", encoded=true) String section,
+                                         @Query(PlexHeaders.XPlexToken) String token);
   }
 
   public static void getThumb(String url, final InputStreamHandler inputStreamHandler) {
@@ -954,5 +962,45 @@ public class PlexHttpClient
       }
     });
   }
+
+  public static void getOnDeck(final PlexServer server, final String section, final PlexHttpMediaContainerHandler handler) {
+    server.findServerConnection(new ActiveConnectionHandler() {
+      @Override
+      public void onSuccess(Connection connection) {
+        PlexHttpService service = getService(connection);
+        service.getOnDeck(section, server.accessToken)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(mc -> handler.onSuccess(mc), e -> handler.onFailure(new Throwable()));
+      }
+
+      @Override
+      public void onFailure(int statusCode) {
+        if(handler != null)
+          handler.onFailure(new Throwable());
+      }
+    });
+  }
+
+  public static void getRecentlyAdded(final PlexServer server, final String section, final PlexHttpMediaContainerHandler handler) {
+    server.findServerConnection(new ActiveConnectionHandler() {
+      @Override
+      public void onSuccess(Connection connection) {
+        PlexHttpService service = getService(connection);
+        service.getRecentlyAdded(section, server.accessToken)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(mc -> handler.onSuccess(mc), e -> handler.onFailure(new Throwable()));
+      }
+
+      @Override
+      public void onFailure(int statusCode) {
+        if(handler != null)
+          handler.onFailure(new Throwable());
+      }
+    });
+  }
+
+
 }
 

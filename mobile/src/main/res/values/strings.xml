@@ -210,4 +210,10 @@
     <string name="purchase_chromecast">Purchase Chromecast Playback</string>
 
     <string name="searching_for_random_episode">Searching for a random episode of %s.</string>
+    <string name="on_deck_return">on deck you\'ve got %s</string>
+    <string name="whats_new_return">you\'ve got new episodes of %s</string>
+    <string name="whats_new_movies_return">your new movies are %s</string>
+    <string name="nothing_on_deck">sorry, you\'ve got nothing on deck.</string>
+    <string name="nothing_new">sorry, you\'ve got no new episodes</string>
+    <string name="no_new_movies">sorry, you\'ve got no new movies.</string>
 </resources>

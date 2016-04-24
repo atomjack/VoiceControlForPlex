@@ -102,7 +102,7 @@ public class VideoPlayerActivity extends AppCompatActivity
     session = VoiceControlForPlexApplication.generateRandomString();
     localClientSubscription = VoiceControlForPlexApplication.getInstance().localClientSubscription;
 
-    feedback = new Feedback(this);
+    feedback = VoiceControlForPlexApplication.getInstance().feedback;
     player = new MediaPlayer();
     handler = new Handler();
 

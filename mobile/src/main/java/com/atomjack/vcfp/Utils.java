@@ -218,4 +218,25 @@ public class Utils {
     float px = dp * ((float)metrics.densityDpi / DisplayMetrics.DENSITY_DEFAULT);
     return px;
   }
+
+  public static String implode(String glue, String[] strArray)
+  {
+    String ret = "";
+    for(int i=0;i<strArray.length;i++)
+    {
+      if (strArray[i].trim() != "")
+        ret += (i == strArray.length - 1) ? strArray[i] : strArray[i] + glue;
+    }
+    return ret;
+  }
+
+  public static String implode(String glue, String finalGlue, String[] strArray) {
+    String ret = "";
+    for(int i=0;i<strArray.length;i++)
+    {
+      if (strArray[i].trim() != "")
+        ret += (i == strArray.length - 1) ? strArray[i] : strArray[i] + (i == strArray.length - 2 ? finalGlue: glue);
+    }
+    return ret;
+  }
 }

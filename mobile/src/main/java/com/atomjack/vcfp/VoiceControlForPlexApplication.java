@@ -50,6 +50,7 @@ import com.atomjack.vcfp.model.PlexDirectory;
 import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexServer;
 import com.atomjack.vcfp.model.PlexTrack;
+import com.atomjack.vcfp.model.PlexVideo;
 import com.atomjack.vcfp.services.LocalMusicService;
 import com.atomjack.vcfp.services.PlexControlService;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -161,6 +162,8 @@ public class VoiceControlForPlexApplication extends Application
 
   public static boolean hasDoneClientScan = false;
 
+  public Feedback feedback;
+
   GoogleApiClient googleApiClient;
 
   // This is needed so that we can let the main activity know that wear support is enabled, after querying the inventory from Google
@@ -171,6 +174,8 @@ public class VoiceControlForPlexApplication extends Application
     super.onCreate();
     instance = this;
     logger = new NewLogger(this);
+
+    feedback = new Feedback(this);
 
     googleApiClient = new GoogleApiClient.Builder(this)
             .addApi(Wearable.API)
@@ -271,6 +276,8 @@ public class VoiceControlForPlexApplication extends Application
   }
 
 	public static Locale getVoiceLocale(String loc) {
+    if(loc == null)
+      return new Locale(Locale.getDefault().getISO3Language());
 		String[] voice = loc.split("-");
 
 		Locale l = null;
@@ -622,9 +629,9 @@ public class VoiceControlForPlexApplication extends Application
     remoteViews.setImageViewBitmap(R.id.thumb, thumb);
     String title = media.title; // Movie title
     if(media.isMusic())
-      title = String.format("%s - %s", media.grandparentTitle, media.title);
+      title = String.format("%s - %s", ((PlexTrack)media).getArtist(), media.title);
     else if(media.isShow())
-      title = String.format("%s - %s", media.grandparentTitle, media.title);
+      title = String.format("%s - %s", media.getTitle(), media.title);
     remoteViews.setTextViewText(R.id.title, title);
     remoteViews.setTextViewText(R.id.playingOn, String.format(getString(R.string.playing_on), client.name));
 

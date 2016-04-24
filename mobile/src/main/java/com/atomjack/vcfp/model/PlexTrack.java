@@ -73,5 +73,9 @@ public class PlexTrack extends PlexMedia {
   public boolean isShow() {
     return false;
   }
+
+  public String getTitle() {
+    return title;
+  }
 }
 

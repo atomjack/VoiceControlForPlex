@@ -63,7 +63,7 @@ public class PlexVideo extends PlexMedia {
 
   @Override
 	public String getTitle() {
-		return type.equals("movie") || type.equals("clip") ? title : grandparentTitle;
+		return type.equals("movie") || type.equals("clip") ? title : grandparentTitle.replaceAll("\\([0-9]{4}\\)", "").trim();
 	}
 
 	@Override

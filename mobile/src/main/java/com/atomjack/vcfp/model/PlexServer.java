@@ -43,7 +43,7 @@ public class PlexServer extends PlexDevice {
 	public List<String> musicSections = new ArrayList<String>();
 
   public int movieSectionsSearched = 0;
-  public int showSectionsSearched = 0;
+  public int tvSectionsSearched = 0;
   public int musicSectionsSearched = 0;
 
 	public boolean owned = true;

@@ -206,7 +206,7 @@ public class VCFPHint {
     PlexHttpClient.getRandomSong(server, media -> {
       if(media != null) {
         PlexTrack track = (PlexTrack) media;
-        setText(String.format(context.getString(R.string.hint_listen_to_song), track.title, track.grandparentTitle));
+        setText(String.format(context.getString(R.string.hint_listen_to_song), track.title, track.getArtist()));
         handler.post(onFinishSuccess);
       } else {
         handler.post(onFinishFailure);
