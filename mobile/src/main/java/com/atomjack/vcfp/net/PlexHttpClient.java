@@ -371,7 +371,6 @@ public class PlexHttpClient
       public void onSuccess(Connection connection) {
 
         PlexHttpService service = getService(connection.uri, debug);
-        Logger.d("using path %s %s", connection.uri, path.substring(1));
         Call<MediaContainer> call = service.getMediaContainer(path.substring(1), server.accessToken);
         call.enqueue(new Callback<MediaContainer>() {
           @Override
@@ -413,14 +412,12 @@ public class PlexHttpClient
 
   public static void subscribe(PlexClient client, int subscriptionPort, int commandId, String uuid, String deviceName, final PlexHttpResponseHandler responseHandler) {
     String url = String.format("http://%s:%s", client.address, client.port);
-    Logger.d("Subscribing at url %s", url);
     PlexHttpService service = getService(url);
 
     Call<PlexResponse> call = service.subscribe(uuid, deviceName, subscriptionPort, commandId);
     call.enqueue(new Callback<PlexResponse>() {
       @Override
       public void onResponse(Response<PlexResponse> response, Retrofit retrofit) {
-        Logger.d("Subscribe code: %d", response.code());
         if (responseHandler != null) {
           if(response.code() == 200)
             responseHandler.onSuccess(response.body());

@@ -130,42 +130,59 @@ public class PlexClient extends PlexDevice {
 		}
 	}
 
-	// synchronous
-  private PlexResponse adjustPlayback(String which) {
+  private void adjustPlayback(String which) {
 		Logger.d("Adjusting playback with %s", which);
     try {
       PlexHttpClient.PlexHttpService service = PlexHttpClient.getService(String.format("http://%s:%s", address, port));
       Logger.d("Seeking with uuid %s", VoiceControlForPlexApplication.getInstance().getUUID());
       Call<PlexResponse> call = service.adjustPlayback(which, "0", VoiceControlForPlexApplication.getInstance().getUUID());
-      return call.execute().body();
+      call.enqueue(new Callback<PlexResponse>() {
+        @Override
+        public void onResponse(Response<PlexResponse> response, Retrofit retrofit) {
+
+        }
+
+        @Override
+        public void onFailure(Throwable t) {
+
+        }
+      });
     } catch (Exception e) {
       e.printStackTrace();
     }
-    return null;
   }
 
-  public PlexResponse pause() {
-    return adjustPlayback("pause");
+  public void pause() {
+    adjustPlayback("pause");
   }
 
-  public PlexResponse stop() {
-    return adjustPlayback("stop");
+  public void stop() {
+    adjustPlayback("stop");
   }
 
-  public PlexResponse play() {
-    return adjustPlayback("play");
+  public void play() {
+    adjustPlayback("play");
   }
 
-  public PlexResponse seekTo(int offset) {
+  public void seekTo(int offset) {
     try {
       PlexHttpClient.PlexHttpService service = PlexHttpClient.getService(String.format("http://%s:%s", address, port));
 			Logger.d("Seeking with uuid %s", VoiceControlForPlexApplication.getInstance().getUUID());
       Call<PlexResponse> call = service.seekTo(offset, "0", VoiceControlForPlexApplication.getInstance().getUUID());
-      return call.execute().body();
+      call.enqueue(new Callback<PlexResponse>() {
+        @Override
+        public void onResponse(Response<PlexResponse> response, Retrofit retrofit) {
+
+        }
+
+        @Override
+        public void onFailure(Throwable t) {
+
+        }
+      });
     } catch (Exception e) {
       e.printStackTrace();
     }
-    return null;
   }
 
   public boolean isLocalDevice() {

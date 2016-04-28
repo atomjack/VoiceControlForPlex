@@ -1,8 +1,10 @@
 package com.atomjack.vcfp.services;
 
 import android.app.Service;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.graphics.Bitmap;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -22,7 +24,6 @@ import com.atomjack.vcfp.CastPlayerManager;
 import com.atomjack.vcfp.Feedback;
 import com.atomjack.vcfp.FetchMediaImageTask;
 import com.atomjack.vcfp.LimitedAsyncTask;
-import com.atomjack.vcfp.PlexSubscription;
 import com.atomjack.vcfp.QueryString;
 import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.Utils;
@@ -65,7 +66,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class PlexSearchService extends Service {
+public class PlexSearchService extends Service implements ServiceConnection {
 
   private NewLogger logger;
 	private String queryText;
@@ -95,8 +96,6 @@ public class PlexSearchService extends Service {
 	// Will be set to true after we scan for servers, so we don't have to do it again on the next query
 	private boolean didServerScan = false;
 
-  private PlexSubscription plexSubscription;
-
   private MainActivity.NetworkState currentNetworkState;
 
   private boolean fromWear = false;
@@ -112,6 +111,10 @@ public class PlexSearchService extends Service {
 	ConnectionCallbacks mConnectionCallbacks;
   private CastPlayerManager castPlayerManager;
 
+  private SubscriptionService subscriptionService;
+  private boolean subscriptionServiceIsBound = false;
+  private Runnable subscriptionServiceOnConnected = () -> {};
+
 	// Callbacks for when we figure out what action the user wishes to take.
 	private myRunnable actionToDo;
 	private interface myRunnable {
@@ -120,6 +123,18 @@ public class PlexSearchService extends Service {
 	// An instance of this interface will be returned by handleVoiceSearch when no server discovery is
   // needed (e.g. pause/resume/stop playback or offset)
 	private interface StopRunnable extends myRunnable {}
+
+
+  @Override
+  public void onCreate() {
+    logger = new NewLogger(this);
+    logger.d("onCreate");
+    queryText = null;
+    feedback = new SearchFeedback(this);
+    Intent subscriptionServiceIntent = new Intent(getApplicationContext(), SubscriptionService.class);
+    getApplicationContext().bindService(subscriptionServiceIntent, this, Context.BIND_AUTO_CREATE);
+    getApplicationContext().startService(subscriptionServiceIntent);
+  }
 
 	@Override
   @SuppressWarnings("unchecked")
@@ -138,10 +153,6 @@ public class PlexSearchService extends Service {
     shuffle = false;
 
     whichLocalPlayer = intent.getIntExtra(com.atomjack.shared.Intent.PLAYER, -1);
-
-    if(plexSubscription == null) {
-      plexSubscription = VoiceControlForPlexApplication.getInstance().plexSubscription;
-    }
 
     if(castPlayerManager == null)
       castPlayerManager = VoiceControlForPlexApplication.getInstance().castPlayerManager;
@@ -283,19 +294,14 @@ public class PlexSearchService extends Service {
 				return Service.START_NOT_STICKY;
 			}
 
-			if(castPlayerManager.isSubscribed()) {
-				if(client != null && castPlayerManager.mClient != null && !client.machineIdentifier.equals(castPlayerManager.mClient.machineIdentifier)) {
-					logger.d("Subscribed to a chromecast but need to play on a different client.");
-					castPlayerManager.unsubscribe();
-				}
-			} else if(plexSubscription.isSubscribed()) {
-				// Chromecast clients don't have a machine identifier, so if the selected client doesn't have one, it's
-				// a Chromecast, and we're already subscribed to a non-chromecast, so unsubscribe.
-				if(client.machineIdentifier == null || !client.machineIdentifier.equals(plexSubscription.getClient().machineIdentifier)) {
-					logger.d("Subscribed to non-chromecast client but need to play on a different client.");
-					plexSubscription.unsubscribe();
-				}
-			}
+      doOnSubscriptionService(() -> {
+        if(subscriptionService.isSubscribed()) {
+          if(client != null && subscriptionService.getClient() != null && !client.machineIdentifier.equals(subscriptionService.getClient().machineIdentifier)) {
+            logger.d("subscribed to a client but need to play on a different client");
+            subscriptionService.unsubscribe();
+          }
+        }
+      });
 
 			if (queries.size() > 0) {
 				logger.d("Starting up, with queries: %s", queries);
@@ -310,14 +316,6 @@ public class PlexSearchService extends Service {
 	public void onDestroy() {
 		feedback.destroy();
 		super.onDestroy();
-	}
-
-	@Override
-	public void onCreate() {
-    logger = new NewLogger(this);
-    logger.d("onCreate");
-    queryText = null;
-    feedback = new SearchFeedback(this);
 	}
 
 	@Override
@@ -849,11 +847,8 @@ public class PlexSearchService extends Service {
         return new StopRunnable() {
           @Override
           public void run() {
-          logger.d("Service Subscribing to %s", theClient.name);
-          if(theClient.isCastClient)
-            VoiceControlForPlexApplication.getInstance().castPlayerManager.subscribe(theClient, true);
-          else
-            VoiceControlForPlexApplication.getInstance().plexSubscription.subscribe(theClient, true);
+            logger.d("Service Subscribing to %s", theClient.name);
+            doOnSubscriptionService(() -> { subscriptionService.subscribe(theClient, true); });
           }
         };
       }
@@ -865,11 +860,7 @@ public class PlexSearchService extends Service {
       return new StopRunnable() {
         @Override
         public void run() {
-        if(client.isCastClient) {
-          VoiceControlForPlexApplication.getInstance().castPlayerManager.unsubscribe();
-        } else {
-          VoiceControlForPlexApplication.getInstance().plexSubscription.unsubscribe();
-        }
+          doOnSubscriptionService(() -> { subscriptionService.unsubscribe(); });
         }
       };
     }
@@ -881,15 +872,7 @@ public class PlexSearchService extends Service {
       return new StopRunnable() {
         @Override
         public void run() {
-          if(client.isCastClient) {
-            if(VoiceControlForPlexApplication.getInstance().castPlayerManager != null) {
-              VoiceControlForPlexApplication.getInstance().castPlayerManager.cycleStreams(Stream.SUBTITLE);
-            }
-          } else {
-            if (VoiceControlForPlexApplication.getInstance().plexSubscription != null) {
-              VoiceControlForPlexApplication.getInstance().plexSubscription.cycleStreams(Stream.SUBTITLE);
-            }
-          }
+          doOnSubscriptionService(() -> { subscriptionService.cycleStreams(Stream.SUBTITLE); });
         }
       };
     }
@@ -900,13 +883,7 @@ public class PlexSearchService extends Service {
       return new StopRunnable() {
         @Override
         public void run() {
-          if(client.isCastClient) {
-            VoiceControlForPlexApplication.getInstance().castPlayerManager.cycleStreams(Stream.AUDIO);
-          } else {
-            if (VoiceControlForPlexApplication.getInstance().plexSubscription != null) {
-              VoiceControlForPlexApplication.getInstance().plexSubscription.cycleStreams(Stream.AUDIO);
-            }
-          }
+          doOnSubscriptionService(() -> { subscriptionService.cycleStreams(Stream.AUDIO); });
         }
       };
     }
@@ -917,13 +894,7 @@ public class PlexSearchService extends Service {
       return new StopRunnable() {
         @Override
         public void run() {
-          if(client.isCastClient) {
-            VoiceControlForPlexApplication.getInstance().castPlayerManager.subtitlesOff();
-          } else {
-            if (VoiceControlForPlexApplication.getInstance().plexSubscription != null) {
-              VoiceControlForPlexApplication.getInstance().plexSubscription.subtitlesOff();
-            }
-          }
+          doOnSubscriptionService(() -> { subscriptionService.subtitlesOff(); });
         }
       };
     }
@@ -934,13 +905,7 @@ public class PlexSearchService extends Service {
       return new StopRunnable() {
         @Override
         public void run() {
-          if(client.isCastClient) {
-            VoiceControlForPlexApplication.getInstance().castPlayerManager.subtitlesOn();
-          } else {
-            if (VoiceControlForPlexApplication.getInstance().plexSubscription != null) {
-              VoiceControlForPlexApplication.getInstance().plexSubscription.subtitlesOn();
-            }
-          }
+          doOnSubscriptionService(() -> { subscriptionService.subtitlesOn(); });
         }
       };
     }
@@ -1234,6 +1199,8 @@ public class PlexSearchService extends Service {
 
   private void seekTo(int offset) {
     logger.d("Seeking to %d", offset);
+    doOnSubscriptionService(() -> { subscriptionService.seekTo(offset / 1000); });
+    /*
     if(client.isCastClient) {
       castPlayerManager.seekTo(offset / 1000);
     } else {
@@ -1256,6 +1223,7 @@ public class PlexSearchService extends Service {
         }
       });
     }
+    */
   }
 
 	private void videoAttemptedOnAudioOnlyDevice() {
@@ -2800,5 +2768,27 @@ public class PlexSearchService extends Service {
         new SendToDataLayerThread(WearConstants.SET_INFO, dataMap, PlexSearchService.this).start();
       }
     }
+  }
+
+  @Override
+  public void onServiceConnected(ComponentName name, IBinder service) {
+    SubscriptionService.SubscriptionBinder binder = (SubscriptionService.SubscriptionBinder)service;
+    subscriptionService = binder.getService();
+    logger.d("got subscription service");
+    subscriptionServiceIsBound = true;
+    if(subscriptionServiceOnConnected != null)
+      subscriptionServiceOnConnected.run();
+  }
+
+  @Override
+  public void onServiceDisconnected(ComponentName name) {
+    subscriptionServiceIsBound = false;
+  }
+
+  private void doOnSubscriptionService(Runnable r) {
+    if(subscriptionServiceIsBound)
+      r.run();
+    else
+      subscriptionServiceOnConnected = r;
   }
 }
