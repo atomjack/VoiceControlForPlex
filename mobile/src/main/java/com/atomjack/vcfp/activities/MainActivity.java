@@ -71,9 +71,9 @@ import com.atomjack.shared.UriDeserializer;
 import com.atomjack.shared.UriSerializer;
 import com.atomjack.shared.WearConstants;
 import com.atomjack.vcfp.BuildConfig;
-import com.atomjack.vcfp.CastPlayerManager;
 import com.atomjack.vcfp.Feedback;
 import com.atomjack.vcfp.FutureRunnable;
+import com.atomjack.vcfp.MediaOptionsDialog;
 import com.atomjack.vcfp.NetworkMonitor;
 import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.Utils;
@@ -147,7 +147,9 @@ public class MainActivity extends AppCompatActivity
         implements VoiceControlForPlexApplication.NetworkChangeListener,
         ActivityListener,
         TextToSpeech.OnInitListener,
-        MusicPlayerListener {
+        MusicPlayerListener,
+        CastPlayerFragment.CastPlayerFragmentListener,
+        MediaOptionsDialog.StreamChangeListener {
 
   public final static int RESULT_VOICE_FEEDBACK_SELECTED = 0;
   public final static int RESULT_TASKER_PROJECT_IMPORTED = 1;
@@ -238,8 +240,6 @@ public class MainActivity extends AppCompatActivity
   private ProgressBar serverListRefreshSpinner;
   private ImageView serverListRefreshButton;
 
-  protected CastPlayerManager castPlayerManager;
-
   private PlayerFragment playerFragment;
   private MainFragment mainFragment;
   private MusicPlayerFragment musicPlayerFragment;
@@ -304,8 +304,6 @@ public class MainActivity extends AppCompatActivity
 
     currentNetworkState = NetworkState.getCurrentNetworkState(this);
 
-    castPlayerManager = VoiceControlForPlexApplication.getInstance().castPlayerManager;
-
     doingFirstTimeSetup = !prefs.get(Preferences.FIRST_TIME_SETUP_COMPLETED, false);
     // If auth token has already been set even though first time setup isn't complete, assume user
     // has upgraded
@@ -323,16 +321,6 @@ public class MainActivity extends AppCompatActivity
     init(savedInstanceState != null);
     if(!doingFirstTimeSetup)
       doAutomaticDeviceScan();
-  }
-
-  private void subscribe(PlexClient client) {
-    if(!subscriptionServiceIsBound) {
-      bindSubscriptionService(() -> {
-        subscriptionService.subscribe(client, !subscriptionService.isSubscribed());
-      });
-    } else {
-      subscriptionService.subscribe(client, !subscriptionService.isSubscribed());
-    }
   }
 
   @Override
@@ -593,8 +581,6 @@ public class MainActivity extends AppCompatActivity
     super.onPause();
     logger.d("onPause");
     handler.removeCallbacks(autoDisconnectPlayerTimer);
-//    plexSubscription.setListener(null);
-//    castPlayerManager.setListener(null);
     VoiceControlForPlexApplication.applicationPaused();
     if (isFinishing() && mMediaRouter != null) {
       mMediaRouter.removeCallback(mMediaRouterCallback);
@@ -680,13 +666,10 @@ public class MainActivity extends AppCompatActivity
         final AlertDialog dialog1 = builder1.create();
 
         Button localMediaDisclaimerButton = (Button) view1.findViewById(R.id.localMediaDisclaimerButton);
-        localMediaDisclaimerButton.setOnClickListener(new View.OnClickListener() {
-          @Override
-          public void onClick(View v) {
-            dialog1.dismiss();
-            prefs.put(Preferences.HAS_SHOWN_INITIAL_LOCALMEDIA_PURCHASE, true);
-            localClientSelected(PlexClient.getLocalPlaybackClient());
-          }
+        localMediaDisclaimerButton.setOnClickListener(v1 -> {
+          dialog1.dismiss();
+          prefs.put(Preferences.HAS_SHOWN_INITIAL_LOCALMEDIA_PURCHASE, true);
+          localClientSelected(PlexClient.getLocalPlaybackClient());
         });
         dialog1.show();
       }
@@ -701,8 +684,6 @@ public class MainActivity extends AppCompatActivity
     logger.d("onResume, interacting: %s", userIsInteracting);
     VoiceControlForPlexApplication.applicationResumed();
 
-//    plexSubscription.setListener(plexSubscriptionListener);
-//    castPlayerManager.setListener(plexSubscriptionListener);
     if(subscriptionServiceIsBound)
       subscriptionService.checkLastHeartbeat();
     else if(!subscriptionConnection.binding) {
@@ -1177,15 +1158,6 @@ public class MainActivity extends AppCompatActivity
         emailDeviceLogs(wearLog);
       } else if(intent.getAction().equals(com.atomjack.shared.Intent.GET_PLAYING_MEDIA)) {
         PlexMedia media = subscriptionService.getNowPlayingMedia();
-        /*
-        if(VoiceControlForPlexApplication.getInstance().localClientSubscription.subscribed) {
-          media = localClientSubscription.media;
-//          media = VoiceControlForPlexApplication.getInstance().localClientMedia;
-        } else if(plexSubscription.isSubscribed())
-          media = plexSubscription.getNowPlayingMedia();
-        else if(castPlayerManager.isSubscribed())
-          media = castPlayerManager.getNowPlayingMedia();
-          */
         if(media != null) {
           // Send information on the currently playing media to the wear device
           DataMap data = new DataMap();
@@ -1239,7 +1211,7 @@ public class MainActivity extends AppCompatActivity
   }
 
   private void handleShowNowPlayingIntent(Intent intent) {
-     client = intent.getParcelableExtra(com.atomjack.shared.Intent.EXTRA_CLIENT);
+    client = intent.getParcelableExtra(com.atomjack.shared.Intent.EXTRA_CLIENT);
     PlexMedia media = intent.getParcelableExtra(com.atomjack.shared.Intent.EXTRA_MEDIA);
     ArrayList<? extends PlexMedia> playlist = intent.getParcelableArrayListExtra(com.atomjack.shared.Intent.EXTRA_PLAYLIST);
     boolean fromWear = intent.getBooleanExtra(WearConstants.FROM_WEAR, false);
@@ -1258,10 +1230,11 @@ public class MainActivity extends AppCompatActivity
         }
       });
     } else {
-      bindSubscriptionService(() -> {
+      Runnable r = () -> {
         PlayerState state = subscriptionService.getCurrentState();
         PlexMedia media2 = subscriptionService.getNowPlayingMedia();
-        subscriptionService.subscribe(client, !subscriptionService.isSubscribed());
+        if(!subscriptionService.isSubscribed() && !subscriptionService.isSubscribing())
+          subscriptionService.subscribe(client, !subscriptionService.isSubscribed());
         if(media2 != null)
           logger.d("show now playing: %s", media2.getTitle());
 
@@ -1276,7 +1249,11 @@ public class MainActivity extends AppCompatActivity
           logger.d("Setting auto disconnect for %d seconds", seconds);
           handler.postDelayed(autoDisconnectPlayerTimer, seconds*1000);
         }
-      });
+      };
+      if(subscriptionServiceIsBound)
+        r.run();
+      else
+        bindSubscriptionService(r);
 
     }
 
@@ -1544,6 +1521,33 @@ public class MainActivity extends AppCompatActivity
         // Start animating the action bar icon
         animateCastIcon();
 
+        Runnable r = () -> {
+          if(clientSelected.isCastClient) {
+            if(VoiceControlForPlexApplication.getInstance().hasChromecast() || prefs.get(Preferences.HAS_SHOWN_INITIAL_CHROMECAST_PURCHASE, false)) {
+              client = clientSelected;
+              logger.d("subscribing to %s", client.name);
+              subscriptionService.subscribe(client, !subscriptionService.isSubscribed());
+            } else {
+              setCastIconInactive();
+              showChromecastPurchase(clientSelected, new Runnable() {
+                @Override
+                public void run() {
+                  animateCastIcon();
+                  subscriptionService.subscribe(postChromecastPurchaseClient, true);
+                }
+              });
+            }
+          } else
+            subscriptionService.subscribe(clientSelected, true);
+        };
+        if(subscriptionServiceIsBound) {
+          r.run();
+        } else {
+          subscriptionConnection.setOnConnected(r);
+          bindSubscriptionService();
+        }
+
+        /*
         if (clientSelected.isCastClient) {
           if(VoiceControlForPlexApplication.getInstance().hasChromecast() || prefs.get(Preferences.HAS_SHOWN_INITIAL_CHROMECAST_PURCHASE, false)) {
             client = clientSelected;
@@ -1570,6 +1574,9 @@ public class MainActivity extends AppCompatActivity
             bindSubscriptionService();
           }
         }
+*/
+
+
       }
     }
   };
@@ -1667,7 +1674,7 @@ public class MainActivity extends AppCompatActivity
           onFinish.onDeviceSelected(s, deviceListResume.isChecked());
       });
 
-    } else if(!isSubscribed()) {
+    } else if(!isSubscribing()) {
       client = subscriptionService.getClient();
       if(client == null) {
         logger.d("Lost subscribed client.");
@@ -1693,12 +1700,12 @@ public class MainActivity extends AppCompatActivity
           final SeekBar volumeSeekBar = (SeekBar)view.findViewById(R.id.volumeSeekBar);
           volumeSeekBar.setVisibility(View.VISIBLE);
           volumeSeekBar.setMax(100);
-          volumeSeekBar.setProgress((int)(castPlayerManager.getVolume()*100));
+          volumeSeekBar.setProgress((int)(subscriptionService.getVolume()*100));
           volumeSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
               double v = ((double)progress) / 100;
-              castPlayerManager.setVolume(v);
+              subscriptionService.setVolume(v);
             }
 
             @Override
@@ -1714,7 +1721,7 @@ public class MainActivity extends AppCompatActivity
           // React to volume button controls while this dialog is open
           subscribeDialog.setOnKeyListener((dialog, keyCode, event) -> {
             boolean ret = MainActivity.this.dispatchKeyEvent(event);
-            volumeSeekBar.setProgress((int)(castPlayerManager.getVolume()*100));
+            volumeSeekBar.setProgress((int)(subscriptionService.getVolume()*100));
             return ret;
           });
         }
@@ -2418,11 +2425,11 @@ public class MainActivity extends AppCompatActivity
   protected void onDestroy() {
     super.onDestroy();
     networkMonitor.unregister();
-//    plexSubscription.removeListener((PlexPlayerFragment)playerFragment);
   }
 
+  @Override
   public void setStream(Stream stream) {
-    client.setStream(stream);
+    subscriptionService.setStream(stream);
   }
 
   @Override
@@ -2540,22 +2547,22 @@ public class MainActivity extends AppCompatActivity
   @Override
   public boolean dispatchKeyEvent(KeyEvent event) {
     double VOLUME_INCREMENT = 0.05;
-    if(castPlayerManager.isSubscribed()) {
+    if(subscriptionService.isSubscribed()) {
       int action = event.getAction();
       int keyCode = event.getKeyCode();
       if(keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
         if(action == KeyEvent.ACTION_DOWN) {
-          double currentVolume = castPlayerManager.getVolume();
+          double currentVolume = subscriptionService.getVolume();
           if(currentVolume < 1.0) {
-            castPlayerManager.setVolume(Math.min(currentVolume + VOLUME_INCREMENT, 1.0));
+            subscriptionService.setVolume(Math.min(currentVolume + VOLUME_INCREMENT, 1.0));
           }
         }
         return true;
       } else if(keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
         if(action == KeyEvent.ACTION_DOWN) {
-          double currentVolume = castPlayerManager.getVolume();
+          double currentVolume = subscriptionService.getVolume();
           if(currentVolume > 0.0) {
-            castPlayerManager.setVolume(Math.max(currentVolume - VOLUME_INCREMENT, 0.0));
+            subscriptionService.setVolume(Math.max(currentVolume - VOLUME_INCREMENT, 0.0));
           }
         }
         return true;
@@ -2744,7 +2751,7 @@ public class MainActivity extends AppCompatActivity
         // it's still subscribed, so we have to set the UI to be unsubbed. Also, need to make sure we're not in the middle of subscribing,
         // as that will happen when a voice search is done to play something - this activity will be launched before the subscribe
         // process is done. If this isn't checked, we end up switching to the main fragment when we should stay with the player fragment, and crash.
-        if (!isSubscribing() && !doingFirstTimeSetup) {
+        if (!isSubscribing() && !doingFirstTimeSetup && !mainFragment.isVisible()) {
           switchToMainFragment();
           logger.d("issubbed: %s, bound: %s", isSubscribed(), subscriptionServiceIsBound);
           setCastIconInactive();
@@ -2780,5 +2787,10 @@ public class MainActivity extends AppCompatActivity
     subscriptionServiceIntent = new Intent(getApplicationContext(), SubscriptionService.class);
     getApplicationContext().bindService(subscriptionServiceIntent, subscriptionConnection, Context.BIND_AUTO_CREATE);
     getApplicationContext().startService(subscriptionServiceIntent);
+  }
+
+  @Override
+  public SubscriptionService getSubscriptionService() {
+    return subscriptionService;
   }
 }

@@ -195,32 +195,4 @@ public class PlexClient extends PlexDevice {
 
 		return output;
 	}
-
-  public void setStream(Stream stream) {
-    if(isCastClient) {
-      VoiceControlForPlexApplication.getInstance().castPlayerManager.setActiveStream(stream);
-    } else if(!isLocalClient) {
-      PlexHttpClient.PlexHttpService service = PlexHttpClient.getService(String.format("http://%s:%s", address, port));
-      HashMap<String, String> qs = new HashMap<>();
-      if (stream.streamType == Stream.AUDIO) {
-        qs.put("audioStreamID", stream.id);
-      } else if (stream.streamType == Stream.SUBTITLE) {
-        qs.put("subtitleStreamID", stream.id);
-      }
-      Call<PlexResponse> call = service.setStreams(qs, "0", VoiceControlForPlexApplication.getInstance().getUUID());
-      call.enqueue(new Callback<PlexResponse>() {
-        @Override
-        public void onResponse(Response<PlexResponse> response, Retrofit retrofit) {
-          if(response.body() != null)
-            Logger.d("setStream response: %s", response.body().status);
-        }
-
-        @Override
-        public void onFailure(Throwable t) {
-
-        }
-      });
-
-    }
-  }
 }

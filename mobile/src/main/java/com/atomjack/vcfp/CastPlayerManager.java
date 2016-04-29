@@ -673,22 +673,6 @@ public class CastPlayerManager {
 
   }
 
-  public void cycleStreams(int streamType) {
-    Stream newStream = nowPlayingMedia.getNextStream(streamType);
-    mClient.setStream(newStream);
-    nowPlayingMedia.setActiveStream(newStream);
-  }
-
-  public void subtitlesOn() {
-    mClient.setStream(nowPlayingMedia.getStreams(Stream.SUBTITLE).get(1));
-    nowPlayingMedia.setActiveStream(nowPlayingMedia.getStreams(Stream.SUBTITLE).get(1));
-  }
-
-  public void subtitlesOff() {
-    mClient.setStream(nowPlayingMedia.getStreams(Stream.SUBTITLE).get(0));
-    nowPlayingMedia.setActiveStream(nowPlayingMedia.getStreams(Stream.SUBTITLE).get(0));
-  }
-
   public int getPosition() {
     return position;
   }

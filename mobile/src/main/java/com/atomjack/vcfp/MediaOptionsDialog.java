@@ -19,7 +19,7 @@ import java.util.List;
 
 public class MediaOptionsDialog extends AlertDialog.Builder {
   private AppCompatActivity activity;
-  private LocalStreamChangeListener localStreamChangeListener;
+  private StreamChangeListener streamChangeListener;
 
   public MediaOptionsDialog(final Context context, final PlexMedia media, final PlexClient client) {
     super(context);
@@ -44,10 +44,8 @@ public class MediaOptionsDialog extends AlertDialog.Builder {
 
           Stream stream = subtitleStreams.get(position);
           if (!stream.isActive()) {
-            if(localStreamChangeListener != null)
-              localStreamChangeListener.setStream(stream);
-            else
-              client.setStream(stream);
+            if(streamChangeListener != null)
+              streamChangeListener.setStream(stream);
             media.setActiveStream(stream);
           }
         }
@@ -75,11 +73,8 @@ public class MediaOptionsDialog extends AlertDialog.Builder {
 
           Stream stream = audioStreams.get(position);
           if (!stream.isActive()) {
-            if(localStreamChangeListener != null) {
-              localStreamChangeListener.setStream(stream);
-            }
-            else {
-              client.setStream(stream);
+            if(streamChangeListener != null) {
+              streamChangeListener.setStream(stream);
             }
             media.setActiveStream(stream);
           }
@@ -98,11 +93,11 @@ public class MediaOptionsDialog extends AlertDialog.Builder {
     setView(layout);
   }
 
-  public void setLocalStreamChangeListener(LocalStreamChangeListener listener) {
-    localStreamChangeListener = listener;
+  public void setStreamChangeListener(StreamChangeListener listener) {
+    streamChangeListener = listener;
   }
 
-  public interface LocalStreamChangeListener {
+  public interface StreamChangeListener {
     void setStream(Stream stream);
   }
 

@@ -205,37 +205,6 @@ public abstract class PlayerFragment extends Fragment
     return nowPlayingMedia;
   }
 
-  public void subtitlesOn() {
-    if(nowPlayingMedia.getStreams(Stream.SUBTITLE).size() > 0) {
-      client.setStream(nowPlayingMedia.getStreams(Stream.SUBTITLE).get(1));
-      nowPlayingMedia.setActiveStream(nowPlayingMedia.getStreams(Stream.SUBTITLE).get(1));
-      feedback.m(String.format(getString(R.string.subtitle_active), nowPlayingMedia.getStreams(Stream.SUBTITLE).get(1).getTitle()));
-    }
-  }
-
-  public void subtitlesOff() {
-    if(nowPlayingMedia.getStreams(Stream.SUBTITLE).size() > 0) {
-      client.setStream(nowPlayingMedia.getStreams(Stream.SUBTITLE).get(0));
-      nowPlayingMedia.setActiveStream(nowPlayingMedia.getStreams(Stream.SUBTITLE).get(0));
-      feedback.m(R.string.subtitles_off);
-    }
-  }
-
-  public void cycleStreams(final int streamType) {
-    Stream newStream = nowPlayingMedia.getNextStream(streamType);
-    client.setStream(newStream);
-    nowPlayingMedia.setActiveStream(newStream);
-    if(streamType == Stream.SUBTITLE) {
-      if(newStream.id.equals("0")) {
-        feedback.m(R.string.subtitles_off);
-      } else {
-        feedback.m(String.format(getString(R.string.subtitle_active), newStream.getTitle()));
-      }
-    } else {
-      feedback.m(String.format(getString(R.string.audio_track_active), newStream.getTitle()));
-    }
-  }
-
   public void showNowPlaying() {
     if(mainView == null)
       return;
@@ -612,11 +581,6 @@ public abstract class PlayerFragment extends Fragment
     }
   }
 
-
-  protected void setStream(Stream stream) {
-    client.setStream(stream);
-  }
-
   protected void doMediaOptions() {
     logger.d("doMediaOptions!!!");
 
@@ -624,6 +588,7 @@ public abstract class PlayerFragment extends Fragment
       return;
     }
     mediaOptionsDialog = new MediaOptionsDialog(getActivity(), nowPlayingMedia, client);
+    mediaOptionsDialog.setStreamChangeListener(stream -> activityListener.setStream(stream));
     mediaOptionsDialog.show();
   }
 

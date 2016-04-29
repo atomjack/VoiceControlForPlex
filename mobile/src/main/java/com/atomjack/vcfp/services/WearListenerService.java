@@ -14,7 +14,6 @@ import com.atomjack.shared.NewLogger;
 import com.atomjack.shared.PlayerState;
 import com.atomjack.shared.SendToDataLayerThread;
 import com.atomjack.shared.WearConstants;
-import com.atomjack.vcfp.CastPlayerManager;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.activities.MainActivity;
 import com.atomjack.vcfp.interfaces.BitmapHandler;
@@ -55,6 +54,15 @@ public class WearListenerService extends WearableListenerService implements Serv
     Intent subscriptionServiceIntent = new Intent(getApplicationContext(), SubscriptionService.class);
     getApplicationContext().bindService(subscriptionServiceIntent, this, Context.BIND_AUTO_CREATE);
     getApplicationContext().startService(subscriptionServiceIntent);
+  }
+
+  @Override
+  public void onDestroy() {
+    super.onDestroy();
+    if(subscriptionServiceIsBound) {
+      getApplicationContext().unbindService(this);
+      subscriptionServiceIsBound = false;
+    }
   }
 
   @Override
@@ -99,8 +107,6 @@ public class WearListenerService extends WearableListenerService implements Serv
     if(messageEvent.getPath() != null) {
       final DataMap dataMap = new DataMap();
       final DataMap receivedDataMap = DataMap.fromByteArray(messageEvent.getData());
-
-      CastPlayerManager castPlayerManager = VoiceControlForPlexApplication.getInstance().castPlayerManager;
 
       PlexClient client = subscriptionService.getClient();
 

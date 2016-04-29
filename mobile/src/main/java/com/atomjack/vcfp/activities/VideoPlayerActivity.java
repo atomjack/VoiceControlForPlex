@@ -37,7 +37,6 @@ import com.atomjack.vcfp.model.Connection;
 import com.atomjack.vcfp.model.PlexClient;
 import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexVideo;
-import com.atomjack.vcfp.model.Stream;
 import com.atomjack.vcfp.net.PlexHttpClient;
 import com.atomjack.vcfp.services.PlexSearchService;
 import com.google.android.libraries.cast.companionlibrary.utils.Utils;
@@ -655,48 +654,38 @@ public class VideoPlayerActivity extends AppCompatActivity
   @Override
   public void doMediaOptions() {
     MediaOptionsDialog mediaOptionsDialog = new MediaOptionsDialog(this, currentVideo, PlexClient.getLocalPlaybackClient());
-    mediaOptionsDialog.setLocalStreamChangeListener(new MediaOptionsDialog.LocalStreamChangeListener() {
+    mediaOptionsDialog.setStreamChangeListener(stream -> PlexHttpClient.setStreamActive(currentVideo, stream, (Runnable) () -> currentVideo.server.findServerConnection(new ActiveConnectionHandler() {
       @Override
-      public void setStream(final Stream stream) {
-        PlexHttpClient.setStreamActive(currentVideo, stream, new Runnable() {
+      public void onSuccess(final Connection connection) {
+        currentVideo.setActiveStream(stream);
+        handler.removeCallbacks(playerProgressRunnable);
+        player.stop();
+        PlexHttpClient.stopTranscoder(currentVideo.server, session, "video", new GenericHandler() {
           @Override
-          public void run() {
-            currentVideo.server.findServerConnection(new ActiveConnectionHandler() {
-              @Override
-              public void onSuccess(final Connection connection) {
-                currentVideo.setActiveStream(stream);
-                handler.removeCallbacks(playerProgressRunnable);
-                player.stop();
-                PlexHttpClient.stopTranscoder(currentVideo.server, session, "video", new GenericHandler() {
-                  @Override
-                  public void onSuccess() {
-                    String url = getTranscodeUrl(currentVideo, connection, transientToken);
-                    try {
-                      player.reset();
-                      player.setDataSource(VideoPlayerActivity.this, Uri.parse(url));
-                      player.setOnPreparedListener(VideoPlayerActivity.this);
-                      player.prepareAsync();
-                    } catch (Exception e) {
-                      e.printStackTrace();
-                    }
-                  }
+          public void onSuccess() {
+            String url = getTranscodeUrl(currentVideo, connection, transientToken);
+            try {
+              player.reset();
+              player.setDataSource(VideoPlayerActivity.this, Uri.parse(url));
+              player.setOnPreparedListener(VideoPlayerActivity.this);
+              player.prepareAsync();
+            } catch (Exception e) {
+              e.printStackTrace();
+            }
+          }
 
-                  @Override
-                  public void onFailure() {
+          @Override
+          public void onFailure() {
 
-                  }
-                });
-              }
-
-              @Override
-              public void onFailure(int statusCode) {
-
-              }
-            });
           }
         });
       }
-    });
+
+      @Override
+      public void onFailure(int statusCode) {
+
+      }
+    })));
     mediaOptionsDialog.show();
   }
 

@@ -131,7 +131,6 @@ public class VoiceControlForPlexApplication extends Application
 
 	private static Serializer serial = new Persister();
 
-  public CastPlayerManager castPlayerManager;
   public SimpleDiskCache mSimpleDiskCache;
   private int currentImageCacheVersion = 1;
 
@@ -182,7 +181,6 @@ public class VoiceControlForPlexApplication extends Application
 
     prefs = new Preferences(getApplicationContext());
 
-    castPlayerManager = new CastPlayerManager(getApplicationContext());
     localClientSubscription = new LocalClientSubscription();
 
 //    chromecastVideoQualityOptions.put(getString(R.string.original), new String[]{"12000", "1920x1080", "1"}); // Disabled for now. Don't know how to get PMS to direct play to chromecast

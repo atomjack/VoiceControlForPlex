@@ -14,13 +14,10 @@ import android.support.v7.media.MediaRouteSelector;
 import android.support.v7.media.MediaRouter;
 
 import com.atomjack.shared.NewLogger;
-import com.atomjack.shared.PlayerState;
 import com.atomjack.shared.Preferences;
 import com.atomjack.shared.SendToDataLayerThread;
 import com.atomjack.shared.WearConstants;
-import com.atomjack.shared.model.Timeline;
 import com.atomjack.vcfp.BuildConfig;
-import com.atomjack.vcfp.CastPlayerManager;
 import com.atomjack.vcfp.Feedback;
 import com.atomjack.vcfp.FetchMediaImageTask;
 import com.atomjack.vcfp.LimitedAsyncTask;
@@ -109,7 +106,6 @@ public class PlexSearchService extends Service implements ServiceConnection {
 	boolean mWaitingForReconnect = false;
 	Cast.Listener mCastClientListener;
 	ConnectionCallbacks mConnectionCallbacks;
-  private CastPlayerManager castPlayerManager;
 
   private SubscriptionService subscriptionService;
   private boolean subscriptionServiceIsBound = false;
@@ -141,6 +137,12 @@ public class PlexSearchService extends Service implements ServiceConnection {
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		logger.d("onStartCommand: %s", intent.getAction());
 
+    if(!subscriptionServiceIsBound) {
+      subscriptionServiceOnConnected = () -> {
+        onStartCommand(intent, flags, startId);
+      };
+      return Service.START_NOT_STICKY;
+    }
     // Reset whether we've scanned for clients, but only if we're getting here from a new voice search (we can
     // get here from scanning for clients)
     if(intent.getAction() == null)
@@ -153,13 +155,6 @@ public class PlexSearchService extends Service implements ServiceConnection {
     shuffle = false;
 
     whichLocalPlayer = intent.getIntExtra(com.atomjack.shared.Intent.PLAYER, -1);
-
-    if(castPlayerManager == null)
-      castPlayerManager = VoiceControlForPlexApplication.getInstance().castPlayerManager;
-    castPlayerManager.setContext(this);
-    if(castPlayerManager.isSubscribed()) {
-      logger.d("CAST MANAGER IS SUBSCRIBED");
-    }
 
     if(intent.getBooleanExtra(WearConstants.FROM_WEAR, false) && VoiceControlForPlexApplication.getInstance().hasWear()) {
       fromWear = true;
@@ -285,7 +280,7 @@ public class PlexSearchService extends Service implements ServiceConnection {
 
 			if(client == null) {
         client = VoiceControlForPlexApplication.gsonRead.fromJson(VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.CLIENT, ""), PlexClient.class);
-        logger.d("[PlexSearchService] set client to %s", client);
+        logger.d("set client to %s", client);
       }
 
 			if(client == null && didClientScan) {
@@ -294,14 +289,12 @@ public class PlexSearchService extends Service implements ServiceConnection {
 				return Service.START_NOT_STICKY;
 			}
 
-      doOnSubscriptionService(() -> {
-        if(subscriptionService.isSubscribed()) {
-          if(client != null && subscriptionService.getClient() != null && !client.machineIdentifier.equals(subscriptionService.getClient().machineIdentifier)) {
-            logger.d("subscribed to a client but need to play on a different client");
-            subscriptionService.unsubscribe();
-          }
+      if(subscriptionService.isSubscribed()) {
+        if(client != null && subscriptionService.getClient() != null && !client.machineIdentifier.equals(subscriptionService.getClient().machineIdentifier)) {
+          logger.d("subscribed to a client but need to play on a different client");
+          subscriptionService.unsubscribe();
         }
-      });
+      }
 
 			if (queries.size() > 0) {
 				logger.d("Starting up, with queries: %s", queries);
@@ -314,8 +307,12 @@ public class PlexSearchService extends Service implements ServiceConnection {
 
 	@Override
 	public void onDestroy() {
-		feedback.destroy();
-		super.onDestroy();
+    super.onDestroy();
+    feedback.destroy();
+    if(subscriptionServiceIsBound) {
+      getApplicationContext().unbindService(this);
+      subscriptionServiceIsBound = false;
+    }
 	}
 
 	@Override
@@ -726,8 +723,11 @@ public class PlexSearchService extends Service implements ServiceConnection {
         @Override
         public void run() {
           logger.d("[ffr] Skipping ahead %d seconds", seconds);
+          int currentOffset = subscriptionService.getPosition();
+          subscriptionService.seekTo(currentOffset + seconds);
+          /*
           if(client.isCastClient) {
-            int currentOffset = Integer.parseInt(castPlayerManager.getNowPlayingMedia().viewOffset);
+            int currentOffset = Integer.parseInt(subscriptionService.getNowPlayingMedia().viewOffset);
             logger.d("[ffr] currentOffset: %d", currentOffset);
             seekTo(currentOffset + (seconds * 1000));
           } else {
@@ -757,6 +757,7 @@ public class PlexSearchService extends Service implements ServiceConnection {
               }
             });
           }
+          */
 
         }
       };
@@ -778,9 +779,11 @@ public class PlexSearchService extends Service implements ServiceConnection {
         @Override
         public void run() {
           logger.d("[ffr] Rewinding %d seconds", seconds);
-					int currentOffset;
+					int currentOffset = subscriptionService.getPosition();
+          subscriptionService.seekTo(currentOffset - seconds);
+          /*
           if(client.isCastClient) {
-            currentOffset = Integer.parseInt(castPlayerManager.getNowPlayingMedia().viewOffset);
+            currentOffset = Integer.parseInt(subscriptionService.getNowPlayingMedia().viewOffset);
             logger.d("[ffr] currentOffset: %d", currentOffset);
             seekTo(currentOffset - (seconds * 1000));
           } else {
@@ -810,6 +813,9 @@ public class PlexSearchService extends Service implements ServiceConnection {
               }
             });
           }
+          */
+
+
         }
       };
     }
@@ -848,7 +854,7 @@ public class PlexSearchService extends Service implements ServiceConnection {
           @Override
           public void run() {
             logger.d("Service Subscribing to %s", theClient.name);
-            doOnSubscriptionService(() -> { subscriptionService.subscribe(theClient, true); });
+            subscriptionService.subscribe(theClient, true);
           }
         };
       }
@@ -860,7 +866,7 @@ public class PlexSearchService extends Service implements ServiceConnection {
       return new StopRunnable() {
         @Override
         public void run() {
-          doOnSubscriptionService(() -> { subscriptionService.unsubscribe(); });
+          subscriptionService.unsubscribe();
         }
       };
     }
@@ -872,7 +878,7 @@ public class PlexSearchService extends Service implements ServiceConnection {
       return new StopRunnable() {
         @Override
         public void run() {
-          doOnSubscriptionService(() -> { subscriptionService.cycleStreams(Stream.SUBTITLE); });
+          subscriptionService.cycleStreams(Stream.SUBTITLE);
         }
       };
     }
@@ -883,7 +889,7 @@ public class PlexSearchService extends Service implements ServiceConnection {
       return new StopRunnable() {
         @Override
         public void run() {
-          doOnSubscriptionService(() -> { subscriptionService.cycleStreams(Stream.AUDIO); });
+          subscriptionService.cycleStreams(Stream.AUDIO);
         }
       };
     }
@@ -894,7 +900,7 @@ public class PlexSearchService extends Service implements ServiceConnection {
       return new StopRunnable() {
         @Override
         public void run() {
-          doOnSubscriptionService(() -> { subscriptionService.subtitlesOff(); });
+          subscriptionService.subtitlesOff();
         }
       };
     }
@@ -905,7 +911,7 @@ public class PlexSearchService extends Service implements ServiceConnection {
       return new StopRunnable() {
         @Override
         public void run() {
-          doOnSubscriptionService(() -> { subscriptionService.subtitlesOn(); });
+          subscriptionService.subtitlesOn();
         }
       };
     }
@@ -973,11 +979,21 @@ public class PlexSearchService extends Service implements ServiceConnection {
       //whichLocalPlayer
       sendCommandToLocalPlayer(which);
       return;
+    } else {
+      if(which.equals(com.atomjack.shared.Intent.ACTION_PAUSE))
+        subscriptionService.pause();
+      else if(which.equals(com.atomjack.shared.Intent.ACTION_PLAY))
+        subscriptionService.play();
+      else if(which.equals(com.atomjack.shared.Intent.ACTION_STOP))
+        subscriptionService.stop();
+      return;
+    }
+    /*
     } else if(client.isCastClient) {
       if(which.equals(com.atomjack.shared.Intent.ACTION_PAUSE))
-        castPlayerManager.pause();
+        subscriptionService.pause();
       else if(which.equals(com.atomjack.shared.Intent.ACTION_PLAY))
-        castPlayerManager.play();
+        subscriptionService.play();
       else if(which.equals(com.atomjack.shared.Intent.ACTION_STOP))
         castPlayerManager.stop();
       return;
@@ -1011,6 +1027,7 @@ public class PlexSearchService extends Service implements ServiceConnection {
 			client.play(responseHandler);
 		else if(which.equals(com.atomjack.shared.Intent.ACTION_STOP))
 			client.stop(responseHandler);
+			*/
 	}
 
 	private void pausePlayback() {
@@ -1199,7 +1216,7 @@ public class PlexSearchService extends Service implements ServiceConnection {
 
   private void seekTo(int offset) {
     logger.d("Seeking to %d", offset);
-    doOnSubscriptionService(() -> { subscriptionService.seekTo(offset / 1000); });
+    subscriptionService.seekTo(offset / 1000);
     /*
     if(client.isCastClient) {
       castPlayerManager.seekTo(offset / 1000);
@@ -1376,7 +1393,7 @@ public class PlexSearchService extends Service implements ServiceConnection {
   //
   private void fetchAndPlayMedia(final PlexMedia media) {
     logger.d("fetchAndPlayMedia: %s (%s)", media.title, media.key);
-    PlexHttpClient.get(media.server, media.key, true, new PlexHttpMediaContainerHandler() {
+    PlexHttpClient.get(media.server, media.key, new PlexHttpMediaContainerHandler() {
       @Override
       public void onSuccess(MediaContainer mediaContainer) {
         PlexMedia theMedia = null;
@@ -1702,21 +1719,18 @@ public class PlexSearchService extends Service implements ServiceConnection {
         playLocalMedia(media, transientToken, mediaContainer);
     } else if(client.isCastClient) {
       logger.d("num videos/tracks: %d", media instanceof PlexTrack ? mediaContainer.tracks.size() : mediaContainer.videos.size());
-      Runnable sendCast = new Runnable() {
-        @Override
-        public void run() {
-          castPlayerManager.loadMedia(media instanceof PlexTrack ? mediaContainer.tracks.get(0) : mediaContainer.videos.get(0),
-                  media instanceof PlexTrack ? (ArrayList)mediaContainer.tracks : (ArrayList)mediaContainer.videos,
-                  getOffset(media instanceof PlexTrack ? mediaContainer.tracks.get(0) : mediaContainer.videos.get(0)));
-          if(!fromGoogleNow || VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.GOOGLE_NOW_LAUNCH_NOW_PLAYING, true))
-            showPlayingMedia(media, mediaContainer);
-        }
+      Runnable sendCast = () -> {
+        subscriptionService.loadMedia(media instanceof PlexTrack ? mediaContainer.tracks.get(0) : mediaContainer.videos.get(0),
+                media instanceof PlexTrack ? (ArrayList)mediaContainer.tracks : (ArrayList)mediaContainer.videos,
+                getOffset(media instanceof PlexTrack ? mediaContainer.tracks.get(0) : mediaContainer.videos.get(0)));
+        if(!fromGoogleNow || VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.GOOGLE_NOW_LAUNCH_NOW_PLAYING, true))
+          showPlayingMedia(media, mediaContainer);
       };
 
-      if(castPlayerManager.isSubscribed()) {
+      if(subscriptionService.isSubscribed()) {
         sendCast.run();
       } else {
-        castPlayerManager.subscribe(client, sendCast, true);
+        subscriptionService.subscribeToChromecast(client, sendCast, true);
       }
 
     } else {
@@ -1793,21 +1807,18 @@ public class PlexSearchService extends Service implements ServiceConnection {
 	}
 
 	private void showPlayingMedia(final PlexMedia media, final MediaContainer mediaContainer) {
-    logger.d("[PlexSearchService] nowPlayingMedia: %s", media.title);
+    logger.d("nowPlayingMedia: %s", media.title);
 
-    preCachePlayerImages(media, mediaContainer.tracks, new Runnable() {
-      @Override
-      public void run() {
-        Intent nowPlayingIntent = new Intent(PlexSearchService.this, MainActivity.class);
-        nowPlayingIntent.setAction(MainActivity.ACTION_SHOW_NOW_PLAYING);
-        nowPlayingIntent.putExtra(WearConstants.FROM_WEAR, fromWear);
-        nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_STARTING_PLAYBACK, true);
-        nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_MEDIA, media);
-        nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_CLIENT, client);
-        nowPlayingIntent.putParcelableArrayListExtra(com.atomjack.shared.Intent.EXTRA_PLAYLIST, media.isMusic() ? mediaContainer.tracks : mediaContainer.videos);
-        nowPlayingIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        startActivity(nowPlayingIntent);
-      }
+    preCachePlayerImages(media, mediaContainer.tracks, () -> {
+      Intent nowPlayingIntent = new Intent(PlexSearchService.this, MainActivity.class);
+      nowPlayingIntent.setAction(MainActivity.ACTION_SHOW_NOW_PLAYING);
+      nowPlayingIntent.putExtra(WearConstants.FROM_WEAR, fromWear);
+      nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_STARTING_PLAYBACK, true);
+      nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_MEDIA, media);
+      nowPlayingIntent.putExtra(com.atomjack.shared.Intent.EXTRA_CLIENT, client);
+      nowPlayingIntent.putParcelableArrayListExtra(com.atomjack.shared.Intent.EXTRA_PLAYLIST, media.isMusic() ? mediaContainer.tracks : mediaContainer.videos);
+      nowPlayingIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+      startActivity(nowPlayingIntent);
     });
 	}
 
@@ -2623,7 +2634,7 @@ public class PlexSearchService extends Service implements ServiceConnection {
 	}
 
 	private void playAlbum(final PlexDirectory album) {
-    logger.d("[PlexSearchService] playing album %s", album.key);
+    logger.d("playing album %s", album.key);
 		PlexHttpClient.get(album.server, album.key, new PlexHttpMediaContainerHandler()
 		{
 			@Override
@@ -2699,6 +2710,7 @@ public class PlexSearchService extends Service implements ServiceConnection {
 			if (mWaitingForReconnect) {
 				mWaitingForReconnect = false;
 			} else {
+        /*
 				try {
 
 					Cast.CastApi.launchApplication(mApiClient, BuildConfig.CHROMECAST_APP_ID, false)
@@ -2723,6 +2735,7 @@ public class PlexSearchService extends Service implements ServiceConnection {
 				} catch (Exception e) {
 					logger.d("Failed to launch application", e);
 				}
+				*/
 			}
 		}
 
@@ -2743,7 +2756,7 @@ public class PlexSearchService extends Service implements ServiceConnection {
 
   private void onActionFinished(String action, boolean error, PlexMedia media) {
     if(fromWear) {
-      logger.d("[PlexSearchService] onActionFinished: %s", action);
+      logger.d("onActionFinished: %s", action);
 
       DataMap dataMap = new DataMap();
       dataMap.putBoolean(WearConstants.SPEECH_QUERY_RESULT, !error);
@@ -2783,12 +2796,5 @@ public class PlexSearchService extends Service implements ServiceConnection {
   @Override
   public void onServiceDisconnected(ComponentName name) {
     subscriptionServiceIsBound = false;
-  }
-
-  private void doOnSubscriptionService(Runnable r) {
-    if(subscriptionServiceIsBound)
-      r.run();
-    else
-      subscriptionServiceOnConnected = r;
   }
 }
