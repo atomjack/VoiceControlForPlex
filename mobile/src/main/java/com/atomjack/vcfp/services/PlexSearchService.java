@@ -44,12 +44,9 @@ import com.atomjack.vcfp.model.Stream;
 import com.atomjack.vcfp.net.PlexHttpClient;
 import com.atomjack.vcfp.net.PlexHttpMediaContainerHandler;
 import com.atomjack.vcfp.net.PlexHttpResponseHandler;
-import com.google.android.gms.cast.ApplicationMetadata;
 import com.google.android.gms.cast.Cast;
 import com.google.android.gms.cast.CastMediaControlIntent;
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.ResultCallback;
-import com.google.android.gms.common.api.Status;
 import com.google.android.gms.wearable.DataMap;
 import com.splunk.mint.Mint;
 
@@ -1487,8 +1484,7 @@ public class PlexSearchService extends Service implements ServiceConnection {
   }
 
   private void playLocalMedia(PlexMedia media, String transientToken, MediaContainer mediaContainer) {
-    VoiceControlForPlexApplication.getInstance().localClientSubscription.subscribed = true;
-    VoiceControlForPlexApplication.getInstance().localClientSubscription.media = media;
+    subscriptionService.subscribe(PlexClient.getLocalPlaybackClient(), false);
     final Intent nowPlayingIntent = new Intent(this, media instanceof PlexVideo ? VideoPlayerActivity.class : MainActivity.class);
     nowPlayingIntent.setAction(com.atomjack.shared.Intent.ACTION_PLAY_LOCAL);
     nowPlayingIntent.putExtra(WearConstants.FROM_WEAR, fromWear);

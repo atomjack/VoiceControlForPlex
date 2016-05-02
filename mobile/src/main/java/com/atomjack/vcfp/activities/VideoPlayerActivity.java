@@ -1,7 +1,10 @@
 package com.atomjack.vcfp.activities;
 
 import android.app.PendingIntent;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.media.AudioManager;
@@ -9,6 +12,7 @@ import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.IBinder;
 import android.speech.RecognizerIntent;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
@@ -39,6 +43,7 @@ import com.atomjack.vcfp.model.PlexMedia;
 import com.atomjack.vcfp.model.PlexVideo;
 import com.atomjack.vcfp.net.PlexHttpClient;
 import com.atomjack.vcfp.services.PlexSearchService;
+import com.atomjack.vcfp.services.SubscriptionService;
 import com.google.android.libraries.cast.companionlibrary.utils.Utils;
 
 import java.lang.reflect.InvocationTargetException;
@@ -60,7 +65,8 @@ public class VideoPlayerActivity extends AppCompatActivity
 
   protected PlexVideo currentVideo;
   protected ArrayList<PlexVideo> playlist;
-  private VoiceControlForPlexApplication.LocalClientSubscription localClientSubscription;
+  private SubscriptionService subscriptionService;
+  private boolean subscriptionServiceIsBound = false;
   private int duration;
   private int currentVideoIndex = 0; // Index of currently playing video from mediaContainer
   protected boolean resume = false;
@@ -99,7 +105,7 @@ public class VideoPlayerActivity extends AppCompatActivity
     logger = new NewLogger(this);
     logger.d("onCreate");
     session = VoiceControlForPlexApplication.generateRandomString();
-    localClientSubscription = VoiceControlForPlexApplication.getInstance().localClientSubscription;
+    bindSubscriptionService();
 
     feedback = VoiceControlForPlexApplication.getInstance().feedback;
     player = new MediaPlayer();
@@ -165,7 +171,7 @@ public class VideoPlayerActivity extends AppCompatActivity
     }
     currentVideoIndex = 0;
     currentVideo = playlist.get(currentVideoIndex);
-    localClientSubscription.media = currentVideo;
+//    subscriptionService.setMedia(currentVideo);
 
     resume = intent.getBooleanExtra(com.atomjack.shared.Intent.EXTRA_RESUME, false);
 
@@ -179,7 +185,7 @@ public class VideoPlayerActivity extends AppCompatActivity
       controller.hide();
       currentVideoIndex--;
       currentVideo = playlist.get(currentVideoIndex);
-      localClientSubscription.media = currentVideo;
+//      subscriptionService.setMedia(currentVideo);
       playNewVideo();
     }
   };
@@ -190,7 +196,7 @@ public class VideoPlayerActivity extends AppCompatActivity
       controller.hide();
       currentVideoIndex++;
       currentVideo = playlist.get(currentVideoIndex);
-      localClientSubscription.media = currentVideo;
+//      subscriptionService.setMedia(currentVideo);
       playNewVideo();
     }
   };
@@ -763,5 +769,46 @@ public class VideoPlayerActivity extends AppCompatActivity
 
   // End Implement BitrateChangeListener
 
+  private void bindSubscriptionService() {
+    bindSubscriptionService(null);
+  }
 
+  private void bindSubscriptionService(Runnable onConnected) {
+    subscriptionConnection.binding = true;
+    subscriptionConnection.setOnConnected(onConnected);
+    Intent subscriptionServiceIntent = new Intent(getApplicationContext(), SubscriptionService.class);
+    getApplicationContext().bindService(subscriptionServiceIntent, subscriptionConnection, Context.BIND_AUTO_CREATE);
+    getApplicationContext().startService(subscriptionServiceIntent);
+  }
+
+  private SubscriptionConnection subscriptionConnection = new SubscriptionConnection();
+
+  class SubscriptionConnection implements ServiceConnection {
+    private Runnable runnable;
+    private boolean binding = false;
+
+    @Override
+    public void onServiceConnected(ComponentName name, IBinder service) {
+      binding = false;
+      SubscriptionService.SubscriptionBinder binder = (SubscriptionService.SubscriptionBinder)service;
+      subscriptionService = binder.getService();
+      subscriptionServiceIsBound = true;
+      logger.d("Got subscription service, subscribed: %s", subscriptionService.isSubscribed());
+
+      if(runnable != null)
+        runnable.run();
+      runnable = null;
+    }
+
+    @Override
+    public void onServiceDisconnected(ComponentName name) {
+      logger.d("onServiceDisconnected");
+      subscriptionServiceIsBound = false;
+    }
+
+    public void setOnConnected(Runnable runnable) {
+      this.runnable = runnable;
+    }
+
+  }
 }

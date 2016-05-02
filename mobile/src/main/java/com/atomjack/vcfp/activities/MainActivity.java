@@ -173,7 +173,6 @@ public class MainActivity extends AppCompatActivity
   private ActionBarDrawerToggle drawerToggle;
 
   private LocalMusicService localMusicService;
-  private VoiceControlForPlexApplication.LocalClientSubscription localClientSubscription = VoiceControlForPlexApplication.getInstance().localClientSubscription;
   private boolean musicPlayerIsBound = false;
   private Intent musicServiceIntent;
 
@@ -410,7 +409,6 @@ public class MainActivity extends AppCompatActivity
       logger.d("unsubscribed");
       setCastIconInactive();
       VoiceControlForPlexApplication.getInstance().cancelNotification();
-      VoiceControlForPlexApplication.getInstance().localClientSubscription.subscribed = false;
       prefs.remove(Preferences.SUBSCRIBED_CLIENT);
       switchToMainFragment();
       if(VoiceControlForPlexApplication.getInstance().hasWear()) {
@@ -1584,7 +1582,7 @@ public class MainActivity extends AppCompatActivity
   private void localClientSelected(PlexClient clientSelected) {
     setClient(clientSelected);
     setCastIconActive();
-    VoiceControlForPlexApplication.getInstance().localClientSubscription.subscribed = true;
+    subscriptionService.subscribe(clientSelected, !subscriptionService.isSubscribed());
     prefs.put(Preferences.SUBSCRIBED_CLIENT, gsonWrite.toJson(clientSelected));
     client = clientSelected;
   }

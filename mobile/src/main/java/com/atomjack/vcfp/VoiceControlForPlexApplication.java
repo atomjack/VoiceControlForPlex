@@ -111,8 +111,6 @@ public class VoiceControlForPlexApplication extends Application
   // alert the user that one or more servers like this were found.
   public List<String> unauthorizedLocalServersFound = new ArrayList<>();
 
-  public LocalClientSubscription localClientSubscription;
-
   private IabBroadcastReceiver promoReceiver;
 
   public static HashMap<String, String[]> chromecastVideoQualityOptions = new LinkedHashMap<String, String[]>();
@@ -180,8 +178,6 @@ public class VoiceControlForPlexApplication extends Application
     googleApiClient.connect();
 
     prefs = new Preferences(getApplicationContext());
-
-    localClientSubscription = new LocalClientSubscription();
 
 //    chromecastVideoQualityOptions.put(getString(R.string.original), new String[]{"12000", "1920x1080", "1"}); // Disabled for now. Don't know how to get PMS to direct play to chromecast
     chromecastVideoQualityDefault = "8mbps 720p";
@@ -1114,11 +1110,5 @@ public class VoiceControlForPlexApplication extends Application
         new SendToDataLayerThread(msg, data, this).start();
       }
     }
-  }
-
-  public class LocalClientSubscription {
-    public PlexMedia media;
-    public PlayerState currentState;
-    public boolean subscribed = false;
   }
 }

@@ -10,7 +10,6 @@ import android.os.IBinder;
 import android.support.annotation.Nullable;
 import android.support.v7.media.MediaRouter;
 
-import com.atomjack.shared.Logger;
 import com.atomjack.shared.NewLogger;
 import com.atomjack.shared.PlayerState;
 import com.atomjack.shared.Preferences;
@@ -422,7 +421,8 @@ public class SubscriptionService extends Service {
       return;
     }
     if(client.isLocalClient) {
-
+      subscribed = false;
+      onUnsubscribed();
     } else if(client.isCastClient) {
       try {
         logger.d("is connected: %s", castManager.isConnected());
@@ -498,7 +498,12 @@ public class SubscriptionService extends Service {
 
   public void subscribe(final PlexClient client, boolean showFeedback) {
     subscribing = true;
-    if(client.isCastClient) {
+    if(client.isLocalClient) {
+      subscribed = true;
+      subscribing = false;
+      this.client = client;
+      onSubscribed(showFeedback);
+    } else if(client.isCastClient) {
       subscribeToChromecast(client, null, showFeedback);
     } else {
       logger.d("PlexSubscription subscribe: %s, handler is null: %s", client, updateConversationHandler == null);
@@ -1242,4 +1247,11 @@ public class SubscriptionService extends Service {
   }
 
   // End Chromecast client specific methods
+
+  // Local client specific methods
+  public void setMedia(PlexMedia m) {
+    if(client.isLocalClient)
+      nowPlayingMedia = m;
+  }
+  // End local client specific methods
 }

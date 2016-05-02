@@ -15,7 +15,6 @@ import org.simpleframework.xml.Root;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 
 import retrofit.Call;
 import retrofit.Callback;

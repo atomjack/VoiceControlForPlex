@@ -42,7 +42,6 @@ public class LocalMusicService extends Service implements
         MediaPlayer.OnPreparedListener, MediaPlayer.OnErrorListener,
         MediaPlayer.OnCompletionListener {
   private NewLogger logger;
-  public static final int MSG_TIME_UPDATE = 0;
 
   private MediaPlayer player;
   private PlexTrack track;
@@ -148,7 +147,6 @@ public class LocalMusicService extends Service implements
   public void setTrack(PlexTrack t) {
     playlist = null;
     track = t;
-    VoiceControlForPlexApplication.getInstance().localClientSubscription.media = track;
   }
 
   public class MusicBinder extends Binder {
@@ -169,10 +167,8 @@ public class LocalMusicService extends Service implements
     player.reset();
     if(playlist != null)
       track = playlist.get(currentSongIdx);
-    VoiceControlForPlexApplication.getInstance().localClientSubscription.media = track;
     logger.d("Playing Track: %s", track.getTitle());
     if(track != null) {
-      VoiceControlForPlexApplication.getInstance().setNotification(PlexClient.getLocalPlaybackClient(), currentState, track, playlist);
       track.server.findServerConnection(new ActiveConnectionHandler() {
         @Override
         public void onSuccess(Connection connection) {
@@ -243,7 +239,6 @@ public class LocalMusicService extends Service implements
     PlexHttpClient.reportProgressToServer(track, player.getCurrentPosition(), PlayerState.STOPPED);
     VoiceControlForPlexApplication.getInstance().cancelNotification();
     musicServiceListener.onFinished();
-    VoiceControlForPlexApplication.getInstance().localClientSubscription.media = null;
     if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
       mediaSession.setActive(false);
     handler.removeCallbacks(notPurchasedDisconnectTimer);
@@ -346,6 +341,7 @@ public class LocalMusicService extends Service implements
       if(player.getDuration() > 0) {
         logger.d("Audio is playing");
         currentState = PlayerState.PLAYING;
+        VoiceControlForPlexApplication.getInstance().setNotification(PlexClient.getLocalPlaybackClient(), currentState, track, playlist);
         handler.postDelayed(playerProgressUpdater, 1000);
         if(!VoiceControlForPlexApplication.getInstance().hasLocalmedia()) {
           handler.removeCallbacks(notPurchasedDisconnectTimer);
