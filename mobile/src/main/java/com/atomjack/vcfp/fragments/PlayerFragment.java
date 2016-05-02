@@ -388,21 +388,11 @@ public abstract class PlayerFragment extends Fragment
 
     ImageButton rewindButton = (ImageButton)mainView.findViewById(R.id.rewindButton);
     if(rewindButton != null)
-      rewindButton.setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(View v) {
-        doRewind();
-      }
-    });
+      rewindButton.setOnClickListener(v -> doRewind());
 
     ImageButton forwardButton = (ImageButton)mainView.findViewById(R.id.forwardButton);
     if(forwardButton != null)
-      forwardButton.setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(View v) {
-        doForward();
-      }
-    });
+      forwardButton.setOnClickListener(v -> doForward());
 
     ImageButton previousButton = (ImageButton)mainView.findViewById(R.id.previousButton);
     if(previousButton != null) {
@@ -410,12 +400,7 @@ public abstract class PlayerFragment extends Fragment
         previousButton.setVisibility(View.GONE);
       } else {
         previousButton.setAlpha(1.0f);
-        previousButton.setOnClickListener(new View.OnClickListener() {
-          @Override
-          public void onClick(View v) {
-            doPrevious();
-          }
-        });
+        previousButton.setOnClickListener(v -> doPrevious());
       }
     }
 

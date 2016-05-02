@@ -2751,15 +2751,19 @@ public class MainActivity extends AppCompatActivity
         // it's still subscribed, so we have to set the UI to be unsubbed. Also, need to make sure we're not in the middle of subscribing,
         // as that will happen when a voice search is done to play something - this activity will be launched before the subscribe
         // process is done. If this isn't checked, we end up switching to the main fragment when we should stay with the player fragment, and crash.
-        if (!isSubscribing() && !doingFirstTimeSetup && !mainFragment.isVisible()) {
+        if (!isSubscribing() && !doingFirstTimeSetup && mainFragment != null && (mainFragment == null || !mainFragment.isVisible())) {
           switchToMainFragment();
           logger.d("issubbed: %s, bound: %s", isSubscribed(), subscriptionServiceIsBound);
           setCastIconInactive();
           prefs.remove(Preferences.SUBSCRIBED_CLIENT);
         }
+      } else {
+        // If the screen is turned off, and playback on the subscribed client stops, when the app launches the next time, switch to the main screen
+        if(subscriptionService.getCurrentState().equals(PlayerState.STOPPED) && (mainFragment == null || !mainFragment.isVisible())) {
+          switchToMainFragment();
+        }
       }
 
-      logger.d("runnable: %s", runnable);
       if(runnable != null)
         runnable.run();
       runnable = null;

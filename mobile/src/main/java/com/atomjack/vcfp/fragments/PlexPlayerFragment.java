@@ -33,14 +33,34 @@ public class PlexPlayerFragment extends PlayerFragment {
   @Override
   protected void doRewind() {
     if(position > -1) {
-      client.seekTo((position * 1000) - 15000, nowPlayingMedia.isMusic() ? "music" : "video", null);
+      client.seekTo((position * 1000) - 15000, nowPlayingMedia.isMusic() ? "music" : "video", new PlexHttpResponseHandler() {
+        @Override
+        public void onSuccess(PlexResponse response) {
+          position -= 15;
+        }
+
+        @Override
+        public void onFailure(Throwable error) {
+
+        }
+      });
     }
   }
 
   @Override
   protected void doForward() {
     if(position > -1) {
-      client.seekTo((position * 1000) + 30000, nowPlayingMedia.isMusic() ? "music" : "video", null);
+      client.seekTo((position * 1000) + 30000, nowPlayingMedia.isMusic() ? "music" : "video", new PlexHttpResponseHandler() {
+        @Override
+        public void onSuccess(PlexResponse response) {
+          position += 30;
+        }
+
+        @Override
+        public void onFailure(Throwable error) {
+
+        }
+      });
     }
   }
 
