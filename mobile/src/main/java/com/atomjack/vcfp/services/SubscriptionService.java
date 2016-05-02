@@ -445,6 +445,7 @@ public class SubscriptionService extends Service {
           VoiceControlForPlexApplication.getInstance().prefs.remove(Preferences.SUBSCRIBED_CLIENT);
           commandId++;
           client = null;
+          mHandler.removeCallbacks(subscriptionHeartbeat);
 
           try {
             serverSocket.close();
