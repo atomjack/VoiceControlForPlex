@@ -24,7 +24,6 @@ import com.atomjack.vcfp.model.PlexResponse;
 import com.atomjack.vcfp.model.PlexServer;
 import com.atomjack.vcfp.model.PlexUser;
 import com.atomjack.vcfp.model.Stream;
-import com.squareup.okhttp.Interceptor;
 import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
 import com.squareup.okhttp.ResponseBody;
@@ -230,15 +229,15 @@ public class PlexHttpClient
   }
 
   public static PlexHttpService getService(Connection connection) {
-    return getService(String.format(connection.uri));
+    return getService(connection.uri);
   }
 
   public static PlexHttpService getService(Connection connection, int timeout) {
-    return getService(String.format(connection.uri), null, null, false, timeout);
+    return getService(connection.uri, null, null, false, timeout);
   }
 
   public static PlexHttpService getService(Connection connection, boolean debug) {
-    return getService(String.format(connection.uri), debug);
+    return getService(connection.uri, debug);
   }
 
   public static PlexHttpService getService(String url) {
@@ -270,59 +269,48 @@ public class PlexHttpClient
     if(username != null && password != null) {
       String creds = username + ":" + password;
       final String basic = "Basic " + Base64.encodeToString(creds.getBytes(), Base64.NO_WRAP);
-      client.interceptors().add(new Interceptor() {
-        @Override
-        public com.squareup.okhttp.Response intercept(Chain chain) throws IOException {
-          Request original = chain.request();
+      client.interceptors().add(chain -> {
+        Request original = chain.request();
 
-          Request.Builder requestBuilder = original.newBuilder()
-                  .header("Authorization", basic)
-          .header("Accept", "text/xml")
-          .method(original.method(), original.body());
+        Request.Builder requestBuilder = original.newBuilder()
+                .header("Authorization", basic)
+        .header("Accept", "text/xml")
+        .method(original.method(), original.body());
 
-          Request request = requestBuilder.build();
-          return chain.proceed(request);
-        }
+        Request request = requestBuilder.build();
+        return chain.proceed(request);
       });
     }
     if(debug) {
-      client.interceptors().add(new Interceptor() {
-        @Override
-        public com.squareup.okhttp.Response intercept(Chain chain) throws IOException {
-          try {
-            com.squareup.okhttp.Response response = chain.proceed(chain.request());
-            ResponseBody responseBody = response.body();
-            String body = response.body().string();
-            Logger.d("Retrofit@Response: (%d) %s", response.code(), body);
-            com.squareup.okhttp.Response newResponse = response.newBuilder().body(ResponseBody.create(responseBody.contentType(), body.getBytes())).build();
-            return newResponse;
-          } catch (Exception e) {
-          }
-          return null;
+      client.interceptors().add(chain -> {
+        try {
+          com.squareup.okhttp.Response response = chain.proceed(chain.request());
+          ResponseBody responseBody = response.body();
+          String body = response.body().string();
+          Logger.d("Retrofit@Response: (%d) %s", response.code(), body);
+          return response.newBuilder().body(ResponseBody.create(responseBody.contentType(), body.getBytes())).build();
+        } catch (Exception e) {
         }
+        return null;
       });
     }
 
     // Plex Media Player currently returns an empty body instead of valid XML for many calls, so we must detect an empty body
     // and write our own valid XML in place of it
-    client.interceptors().add(new Interceptor() {
-      @Override
-      public com.squareup.okhttp.Response intercept(Chain chain) throws IOException {
-        try {
-          com.squareup.okhttp.Response response = chain.proceed(chain.request());
-          ResponseBody responseBody = response.body();
-          String body = response.body().string();
-          if(body.equals("")) {
-            body = String.format("<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
-                    "<Response code=\"%d\" status=\"%s\" />", response.code(), response.code() == 200 ? "OK" : "Error");
-          }
-          com.squareup.okhttp.Response newResponse = response.newBuilder().body(ResponseBody.create(responseBody.contentType(), body.getBytes())).build();
-          return newResponse;
-        } catch (Exception e) {}
+    client.interceptors().add(chain -> {
+      try {
+        com.squareup.okhttp.Response response = chain.proceed(chain.request());
+        ResponseBody responseBody = response.body();
+        String body = response.body().string();
+        if(body.equals("")) {
+          body = String.format("<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
+                  "<Response code=\"%d\" status=\"%s\" />", response.code(), response.code() == 200 ? "OK" : "Error");
+        }
+        return response.newBuilder().body(ResponseBody.create(responseBody.contentType(), body.getBytes())).build();
+      } catch (Exception e) {}
 
 
-        return null;
-      }
+      return null;
     });
 
     Retrofit retrofit = builder.client(client).build();

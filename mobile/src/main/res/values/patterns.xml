@@ -92,6 +92,9 @@ Also, you don't need to translate these comments.
     <item name="hint_listen_to_album_by_artist" type="string">Listen to the album %1$s by %2$s</item>
     <item name="hint_listen_to_album" type="string">Listen to the album %1$s</item>
     <item name="hint_listen_to_artist" type="string">Listen to %1$s</item>
+    <item name="hint_whats_new" type="string">What\'s new?</item>
+    <item name="hint_whats_new_movies" type="string">What new movies do I have?</item>
+    <item name="hint_whats_on_deck" type="string">What\'s on deck?</item>
 
     <item name="pattern_random_episode" type="string">(watch|play) (.+)random episode of (.+)</item>
 

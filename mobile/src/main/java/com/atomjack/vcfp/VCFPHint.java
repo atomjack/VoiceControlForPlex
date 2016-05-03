@@ -97,7 +97,7 @@ public class VCFPHint {
 
   public void doHint() {
     if(active) {
-      int a = Utils.getRandomInt(0, 10);
+      int a = Utils.getRandomInt(0, 13);
       if (a == 0) {
         hintWatchMovie();
       } else if (a == 1) {
@@ -116,8 +116,14 @@ public class VCFPHint {
         hintListenToAlbum();
       } else if (a == 8) {
         hintListenToArtist();
-      } else if (a == 8) {
+      } else if (a == 9) {
         hintWatchRandomEpisode();
+      } else if (a == 10) {
+        hintWhatsNew();
+      } else if (a == 11) {
+        hintWhatsNewMovies();
+      } else if (a == 12) {
+        hintWhatsOnDeck();
       }
     }
   }
@@ -248,5 +254,17 @@ public class VCFPHint {
         handler.post(onFinishFailure);
       }
     });
+  }
+
+  private void hintWhatsNew() {
+    setText(context.getString(R.string.hint_whats_new));
+  }
+
+  private void hintWhatsNewMovies() {
+    setText(context.getString(R.string.hint_whats_new_movies));
+  }
+
+  private void hintWhatsOnDeck() {
+    setText(context.getString(R.string.hint_whats_on_deck));
   }
 }
