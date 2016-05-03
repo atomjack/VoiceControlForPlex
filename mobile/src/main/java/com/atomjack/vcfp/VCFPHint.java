@@ -13,6 +13,9 @@ import com.atomjack.vcfp.model.PlexTrack;
 import com.atomjack.vcfp.model.PlexVideo;
 import com.atomjack.vcfp.net.PlexHttpClient;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class VCFPHint {
   private TextView hintTextView;
   private PlexServer server;
@@ -23,6 +26,7 @@ public class VCFPHint {
   private boolean active = false;
   final Animation in = new AlphaAnimation(0.0f, 1.0f);
   final Animation out = new AlphaAnimation(1.0f, 0.0f);
+  private List<Runnable> hints;
 
 
   public VCFPHint(TextView textView) {
@@ -49,6 +53,20 @@ public class VCFPHint {
 
       }
     });
+    hints = new ArrayList<>();
+    hints.add(() -> { hintWatchMovie(); });
+    hints.add(() -> { hintWatchOnDeckEpisode(); });
+    hints.add(() -> { hintWatchSeasonEpisode(); });
+    hints.add(() -> { hintWatchSeasonEpisodeAlternate(); });
+    hints.add(() -> { hintWatchEpisode(); });
+    hints.add(() -> { hintListenToSong(); });
+    hints.add(() -> { hintListenToAlbumByArtist(); });
+    hints.add(() -> { hintListenToAlbum(); });
+    hints.add(() -> { hintListenToArtist(); });
+    hints.add(() -> { hintWatchRandomEpisode(); });
+    hints.add(() -> { hintWhatsNew(); });
+    hints.add(() -> { hintWhatsNewMovies(); });
+    hints.add(() -> { hintWhatsOnDeck(); });
   }
 
   public void start() {
@@ -97,34 +115,7 @@ public class VCFPHint {
 
   public void doHint() {
     if(active) {
-      int a = Utils.getRandomInt(0, 13);
-      if (a == 0) {
-        hintWatchMovie();
-      } else if (a == 1) {
-        hintWatchOnDeckEpisode();
-      } else if (a == 2) {
-        hintWatchSeasonEpisode();
-      } else if (a == 3) {
-        hintWatchSeasonEpisodeAlternate();
-      } else if (a == 4) {
-        hintWatchEpisode();
-      } else if (a == 5) {
-        hintListenToSong();
-      } else if (a == 6) {
-        hintListenToAlbumByArtist();
-      } else if (a == 7) {
-        hintListenToAlbum();
-      } else if (a == 8) {
-        hintListenToArtist();
-      } else if (a == 9) {
-        hintWatchRandomEpisode();
-      } else if (a == 10) {
-        hintWhatsNew();
-      } else if (a == 11) {
-        hintWhatsNewMovies();
-      } else if (a == 12) {
-        hintWhatsOnDeck();
-      }
+      hints.get(Utils.getRandomInt(0, hints.size())).run();
     }
   }
 
@@ -258,13 +249,16 @@ public class VCFPHint {
 
   private void hintWhatsNew() {
     setText(context.getString(R.string.hint_whats_new));
+    handler.post(onFinishSuccess);
   }
 
   private void hintWhatsNewMovies() {
     setText(context.getString(R.string.hint_whats_new_movies));
+    handler.post(onFinishSuccess);
   }
 
   private void hintWhatsOnDeck() {
     setText(context.getString(R.string.hint_whats_on_deck));
+    handler.post(onFinishSuccess);
   }
 }
