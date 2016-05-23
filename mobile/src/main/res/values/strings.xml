@@ -216,4 +216,5 @@
     <string name="nothing_on_deck">sorry, you\'ve got nothing on deck.</string>
     <string name="nothing_new">sorry, you\'ve got no new episodes</string>
     <string name="no_new_movies">sorry, you\'ve got no new movies.</string>
+    <string name="server_unauthorized">Access denied to %s. Perhaps you need to logout and login back in again?s</string>
 </resources>

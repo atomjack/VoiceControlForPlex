@@ -4,6 +4,8 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
 import android.util.DisplayMetrics;
 
 import java.io.BufferedInputStream;
@@ -114,6 +116,12 @@ public class Utils {
 	 * @return  address or empty string
 	 */
 	public static String getIPAddress(boolean useIPv4) {
+    WifiManager wifiMan = (WifiManager) VoiceControlForPlexApplication.getInstance().getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+    WifiInfo wifiInf = wifiMan.getConnectionInfo();
+    int ipAddress = wifiInf.getIpAddress();
+    String ip = String.format("%d.%d.%d.%d", (ipAddress & 0xff),(ipAddress >> 8 & 0xff),(ipAddress >> 16 & 0xff),(ipAddress >> 24 & 0xff));
+    return ip;
+    /*
 		try {
 			List<NetworkInterface> interfaces = Collections.list(NetworkInterface.getNetworkInterfaces());
 			for (NetworkInterface intf : interfaces) {
@@ -136,6 +144,7 @@ public class Utils {
 			}
 		} catch (Exception ex) { } // for now eat exceptions
 		return "";
+		*/
 	}
 
   public static String generateRandomString() {

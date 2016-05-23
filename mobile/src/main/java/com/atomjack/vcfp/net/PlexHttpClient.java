@@ -8,6 +8,7 @@ import com.atomjack.shared.Preferences;
 import com.atomjack.vcfp.PlexHeaders;
 import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
+import com.atomjack.vcfp.exceptions.UnauthorizedException;
 import com.atomjack.vcfp.interfaces.ActiveConnectionHandler;
 import com.atomjack.vcfp.interfaces.GenericHandler;
 import com.atomjack.vcfp.interfaces.InputStreamHandler;
@@ -393,7 +394,7 @@ public class PlexHttpClient
       @Override
       public void onFailure(int statusCode) {
         if (responseHandler != null)
-          responseHandler.onFailure(new Throwable());
+          responseHandler.onFailure(statusCode == 401 ? new UnauthorizedException() : new Throwable());
       }
     });
   }

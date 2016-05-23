@@ -20,6 +20,7 @@ import com.atomjack.vcfp.QueryString;
 import com.atomjack.vcfp.R;
 import com.atomjack.vcfp.VCFPCastConsumer;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
+import com.atomjack.vcfp.exceptions.UnauthorizedException;
 import com.atomjack.vcfp.interfaces.ActiveConnectionHandler;
 import com.atomjack.vcfp.interfaces.PlexSubscriptionListener;
 import com.atomjack.vcfp.model.Capabilities;
@@ -784,6 +785,14 @@ public class SubscriptionService extends Service {
               }
             }
 
+            if(server == null) {
+              unsubscribe(() -> {
+                if(plexSubscriptionListener != null)
+                  plexSubscriptionListener.onSubscribeError(null);
+              });
+            }
+            final String serverName = server.name;
+
             PlayerState oldState = currentState;
             currentState = PlayerState.getState(timeline);
             position = timeline.time/1000;
@@ -831,7 +840,10 @@ public class SubscriptionService extends Service {
 
                 @Override
                 public void onFailure(Throwable error) {
-
+                  unsubscribe(() -> {
+                    if(plexSubscriptionListener != null)
+                      plexSubscriptionListener.onSubscribeError(error instanceof UnauthorizedException ? String.format(getString(R.string.server_unauthorized), serverName) : null);
+                  });
                 }
               });
             } else {
