@@ -1780,12 +1780,9 @@ public class PlexSearchService extends Service implements ServiceConnection {
         @Override
         public void onSuccess(final Connection connection) {
           try {
-            PlexHttpClient.createPlayQueue(connection, media, resumePlayback, album != null ? album.ratingKey : media.ratingKey, transientToken, new PlexPlayQueueHandler() {
-              @Override
-              public void onSuccess(MediaContainer mediaContainer) {
-                logger.d("Play queue id: %s", mediaContainer.playQueueID);
-                playMedia(media, connection, album, transientToken, mediaContainer);
-              }
+            PlexHttpClient.createPlayQueue(connection, media, resumePlayback, album != null ? album.ratingKey : media.ratingKey, transientToken, mediaContainer -> {
+              logger.d("Play queue id: %s", mediaContainer.playQueueID);
+              playMedia(media, connection, album, transientToken, mediaContainer);
             });
           } catch (Exception e) {
             feedback.e(getResources().getString(R.string.got_error), e.getMessage());

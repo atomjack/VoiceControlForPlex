@@ -2422,6 +2422,7 @@ public class MainActivity extends AppCompatActivity
   @Override
   protected void onDestroy() {
     super.onDestroy();
+    logger.d("onDestroy");
     networkMonitor.unregister();
   }
 

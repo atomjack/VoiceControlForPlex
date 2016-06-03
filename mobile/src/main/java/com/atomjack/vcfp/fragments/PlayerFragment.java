@@ -218,7 +218,11 @@ public abstract class PlayerFragment extends Fragment
         showTitle.setText(video.grandparentTitle);
         showTitle.setSelected(true);
         TextView episodeTitle = (TextView)mainView.findViewById(R.id.nowPlayingEpisodeTitle);
-        episodeTitle.setText(String.format("%s (s%02de%02d)", video.title, Integer.parseInt(video.parentIndex), Integer.parseInt(video.index)));
+        if(video.parentIndex != null && video.index != null) {
+          episodeTitle.setText(String.format("%s (s%02de%02d)", video.title, Integer.parseInt(video.parentIndex), Integer.parseInt(video.index)));
+        } else {
+          episodeTitle.setText(video.title);
+        }
         episodeTitle.setSelected(true);
       }
 

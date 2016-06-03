@@ -437,7 +437,7 @@ public class VoiceControlForPlexApplication extends Application
 
   public void setNotification(final PlexClient client, final PlayerState currentState, final PlexMedia media, final ArrayList<? extends PlexMedia> playlist) {
     if(client == null) {
-      Logger.d("Client is null for some reason");
+      logger.d("Client is null for some reason");
       return;
     }
     if(client.isLocalDevice())

@@ -8,6 +8,7 @@ import com.atomjack.shared.Preferences;
 import com.atomjack.vcfp.PlexHeaders;
 import com.atomjack.vcfp.QueryString;
 import com.atomjack.vcfp.R;
+import com.atomjack.vcfp.Utils;
 import com.atomjack.vcfp.VoiceControlForPlexApplication;
 import com.atomjack.vcfp.interfaces.ActiveConnectionHandler;
 import com.atomjack.vcfp.interfaces.AfterTransientTokenRequest;
@@ -222,6 +223,7 @@ public class PlexServer extends PlexDevice {
   private void findServerConnection(final int connectionIndex, final ActiveConnectionHandler activeConnectionHandler) {
     final Connection connection = connections.get(connectionIndex);
     // If this connection is a lan IP address and is not on the same subnet as the device, skip testing this connection
+    logger.d("this ip address: %s, connection ip: %s", Utils.getIPAddress(true), connection.address);
     if(connection.isPrivateV4Address() && !connection.isOnSameNetwork()) {
       logger.d("Connection %s for server %s is private but not on the same network. Skipping.", connection.address, name);
       int newConnectionIndex = connectionIndex + 1;
@@ -231,29 +233,26 @@ public class PlexServer extends PlexDevice {
         findServerConnection(newConnectionIndex, activeConnectionHandler);
       return;
     }
-    testServerConnection(connection, new ServerTestHandler() {
-      @Override
-      public void onFinish(int statusCode, boolean available) {
-        if (available) {
-          // This connection replied, so let's use it
-          Connection activeConnection = connections.get(connectionIndex);
-          Logger.d("Found connection for %s: %s", name, activeConnection);
-          Calendar activeConnectionExpires = Calendar.getInstance();
-          activeConnectionExpires.add(Calendar.HOUR_OF_DAY, 1);
-          // Now save this connection and expiration
-          VoiceControlForPlexApplication.getInstance().saveActiveConnection(PlexServer.this, activeConnection, activeConnectionExpires);
-          VoiceControlForPlexApplication.servers.put(name, PlexServer.this);
-          Type serverType = new TypeToken<ConcurrentHashMap<String, PlexServer>>(){}.getType();
-          VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.SAVED_SERVERS, VoiceControlForPlexApplication.gsonWrite.toJson(VoiceControlForPlexApplication.servers, serverType));
-          activeConnectionHandler.onSuccess(activeConnection);
-        } else {
-          int newConnectionIndex = connectionIndex + 1;
-          Logger.d("Not available, new connection index: %d", newConnectionIndex);
-          if (connections.size() <= newConnectionIndex) {
-            activeConnectionHandler.onFailure(statusCode);
-          } else
-            findServerConnection(newConnectionIndex, activeConnectionHandler);
-        }
+    testServerConnection(connection, (statusCode, available) -> {
+      if (available) {
+        // This connection replied, so let's use it
+        Connection activeConnection = connections.get(connectionIndex);
+        Logger.d("Found connection for %s: %s", name, activeConnection);
+        Calendar activeConnectionExpires = Calendar.getInstance();
+        activeConnectionExpires.add(Calendar.HOUR_OF_DAY, 1);
+        // Now save this connection and expiration
+        VoiceControlForPlexApplication.getInstance().saveActiveConnection(PlexServer.this, activeConnection, activeConnectionExpires);
+        VoiceControlForPlexApplication.servers.put(name, PlexServer.this);
+        Type serverType = new TypeToken<ConcurrentHashMap<String, PlexServer>>(){}.getType();
+        VoiceControlForPlexApplication.getInstance().prefs.put(Preferences.SAVED_SERVERS, VoiceControlForPlexApplication.gsonWrite.toJson(VoiceControlForPlexApplication.servers, serverType));
+        activeConnectionHandler.onSuccess(activeConnection);
+      } else {
+        int newConnectionIndex = connectionIndex + 1;
+        Logger.d("Not available, new connection index: %d", newConnectionIndex);
+        if (connections.size() <= newConnectionIndex) {
+          activeConnectionHandler.onFailure(statusCode);
+        } else
+          findServerConnection(newConnectionIndex, activeConnectionHandler);
       }
     });
   }
