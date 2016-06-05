@@ -97,33 +97,33 @@ public class PlexClient extends PlexDevice {
 		PlexHttpClient.get(String.format("http://%s:%s", address, port), String.format("player/playback/seekTo?commandID=0&type=%s&offset=%s", type, offset), responseHandler);
 	}
 
-  public void pause(PlexHttpResponseHandler responseHandler) {
-    adjustPlayback("pause", responseHandler);
+  public void pause(String mediaType, PlexHttpResponseHandler responseHandler) {
+    adjustPlayback("pause", mediaType, responseHandler);
   }
 
-  public void stop(PlexHttpResponseHandler responseHandler) {
-    adjustPlayback("stop", responseHandler);
+  public void stop(String mediaType, PlexHttpResponseHandler responseHandler) {
+    adjustPlayback("stop", mediaType, responseHandler);
   }
 
-  public void play(PlexHttpResponseHandler responseHandler) {
-    adjustPlayback("play", responseHandler);
+  public void play(String mediaType, PlexHttpResponseHandler responseHandler) {
+    adjustPlayback("play", mediaType, responseHandler);
   }
 
-  public void next(PlexHttpResponseHandler responseHandler) {
-    adjustPlayback("skipNext", responseHandler);
+  public void next(String mediaType, PlexHttpResponseHandler responseHandler) {
+    adjustPlayback("skipNext", mediaType, responseHandler);
   }
 
-  public void previous(PlexHttpResponseHandler responseHandler) {
-    adjustPlayback("skipPrevious", responseHandler);
+  public void previous(String mediaType, PlexHttpResponseHandler responseHandler) {
+    adjustPlayback("skipPrevious", mediaType, responseHandler);
   }
 
 	// asynchronous
-	private void adjustPlayback(String which, PlexHttpResponseHandler responseHandler) {
+	private void adjustPlayback(String which, String mediaType, PlexHttpResponseHandler responseHandler) {
 		ArrayList<String> validModes = new ArrayList<String>(Arrays.asList("pause", "play", "stop", "skipNext", "skipPrevious"));
 		if(validModes.indexOf(which) == -1)
 			return;
 		try {
-			PlexHttpClient.get(String.format("http://%s:%s", address, port), String.format("player/playback/%s?commandID=0", which), responseHandler);
+			PlexHttpClient.getDebug(String.format("http://%s:%s", address, port), String.format("player/playback/%s?commandID=0&type=%s", which, mediaType), responseHandler);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

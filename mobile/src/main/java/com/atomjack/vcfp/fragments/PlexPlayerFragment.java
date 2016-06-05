@@ -66,26 +66,26 @@ public class PlexPlayerFragment extends PlayerFragment {
 
   @Override
   protected void doPlay() {
-    client.play(null);
+    client.play(nowPlayingMedia.isMusic() ? "audio" : "video", null);
   }
 
   @Override
   protected void doPause() {
-    client.pause(null);
+    client.pause(nowPlayingMedia.isMusic() ? "audio" : "video", null);
   }
 
   @Override
   protected void doStop() {
-    client.stop(null);
+    client.stop(nowPlayingMedia.isMusic() ? "audio" : "video", null);
   }
 
   @Override
   protected void doNext() {
-    client.next(null);
+    client.next(nowPlayingMedia.isMusic() ? "audio" : "video", null);
   }
 
   @Override
-  protected void doPrevious() { client.previous(null); }
+  protected void doPrevious() { client.previous(nowPlayingMedia.isMusic() ? "audio" : "video", null); }
 
   @Override
   public void onStopTrackingTouch(SeekBar _seekBar) {
@@ -98,7 +98,8 @@ public class PlexPlayerFragment extends PlayerFragment {
       @Override
       public void onFailure(Throwable error) {
         isSeeking = false;
-        feedback.e(String.format(getString(R.string.error_seeking), error.getMessage()));
+        if(!error.getMessage().matches(".*Failure: 200 OK\n.*")) // Some plex clients don't return valid xml, instead returning "Failure: 200 OK" even though the request succeeded
+          feedback.e(String.format(getString(R.string.error_seeking), error.getMessage()));
       }
     });
 

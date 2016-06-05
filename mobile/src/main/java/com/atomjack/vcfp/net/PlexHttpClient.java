@@ -291,24 +291,27 @@ public class PlexHttpClient
           Logger.d("Retrofit@Response: (%d) %s", response.code(), body);
           return response.newBuilder().body(ResponseBody.create(responseBody.contentType(), body.getBytes())).build();
         } catch (Exception e) {
+          e.printStackTrace();
         }
         return null;
       });
     }
 
-    // Plex Media Player currently returns an empty body instead of valid XML for many calls, so we must detect an empty body
+    // Plex Media Player currently returns an empty body or "Failure: 200 OK" instead of valid XML for many calls, so we must detect an empty body
     // and write our own valid XML in place of it
     client.interceptors().add(chain -> {
       try {
         com.squareup.okhttp.Response response = chain.proceed(chain.request());
         ResponseBody responseBody = response.body();
         String body = response.body().string();
-        if(body.equals("")) {
+        if(body.equals("") || body.matches(".*Failure: 200 OK\r\n.*")) {
           body = String.format("<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
                   "<Response code=\"%d\" status=\"%s\" />", response.code(), response.code() == 200 ? "OK" : "Error");
         }
         return response.newBuilder().body(ResponseBody.create(responseBody.contentType(), body.getBytes())).build();
-      } catch (Exception e) {}
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
 
 
       return null;
@@ -408,6 +411,7 @@ public class PlexHttpClient
       @Override
       public void onResponse(Response<PlexResponse> response, Retrofit retrofit) {
         if (responseHandler != null) {
+          Logger.d("Response code: %d", response.code());
           if(response.code() == 200)
             responseHandler.onSuccess(response.body());
           else
@@ -417,14 +421,23 @@ public class PlexHttpClient
 
       @Override
       public void onFailure(Throwable t) {
-        Logger.d("subscribe onFailure:");
-        PlexResponse response = new PlexResponse();
-        response.status = "ok";
-        if (responseHandler != null)
-          responseHandler.onSuccess(response);
-        t.printStackTrace();
-        if (responseHandler != null)
-          responseHandler.onFailure(t);
+        if(t.getMessage().matches(".*Failure: 200 OK\n.*")) {
+          if (responseHandler != null) {
+            PlexResponse response = new PlexResponse();
+            response.code = 200;
+            response.status = "ok";
+            responseHandler.onSuccess(response);
+          }
+        } else {
+          Logger.d("subscribe onFailure: %s", t.getMessage());
+
+          PlexResponse response = new PlexResponse();
+          response.status = "ok";
+
+          t.printStackTrace();
+          if (responseHandler != null)
+            responseHandler.onFailure(t);
+        }
       }
     });
   }
@@ -458,7 +471,7 @@ public class PlexHttpClient
       qs.put(PlexHeaders.XPlexToken, artist.server.accessToken);
     qs.put("continuous", "0");
     qs.put("includeRelated", "1");
-    PlexHttpService service = getService(String.format("http://%s:%s", connection.address, connection.port));
+    PlexHttpService service = getService(String.format("http://%s:%s", connection.address, connection.port), true);
     Call<MediaContainer> call = service.createPlayQueue(qs, VoiceControlForPlexApplication.getUUID());
     call.enqueue(new Callback<MediaContainer>() {
       @Override

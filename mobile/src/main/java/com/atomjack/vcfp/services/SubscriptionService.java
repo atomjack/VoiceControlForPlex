@@ -205,6 +205,12 @@ public class SubscriptionService extends Service {
     if(intent == null) {
       // Service was restarted after being destroyed by the system
     } else {
+      if(intent.getParcelableExtra(CLIENT) != null) {
+        client = intent.getParcelableExtra(CLIENT);
+      }
+      if(intent.getParcelableExtra(MEDIA) != null) {
+        nowPlayingMedia = intent.getParcelableExtra(MEDIA);
+      }
       String action = intent.getAction();
       if(action != null) {
         if (intent.getAction().equals(com.atomjack.shared.Intent.ACTION_PLAY)) {
@@ -322,7 +328,7 @@ public class SubscriptionService extends Service {
     if (client.isCastClient) {
       sendMessage(PARAMS.ACTION_PREV);
     } else {
-      client.previous(null);
+      client.previous(nowPlayingMedia.isMusic() ? "audio" : "video", null);
     }
   }
 
@@ -330,7 +336,7 @@ public class SubscriptionService extends Service {
     if (client.isCastClient) {
       sendMessage(PARAMS.ACTION_NEXT);
     } else {
-      client.next(null);
+      client.next(nowPlayingMedia.isMusic() ? "audio" : "video", null);
     }
   }
 
@@ -364,6 +370,7 @@ public class SubscriptionService extends Service {
   }
 
   public void setStream(Stream stream) {
+    logger.d("setStream: %s", stream.getTitle());
     if(client.isCastClient) {
       setActiveStream(stream);
     } else if(!client.isLocalClient) {
@@ -374,6 +381,7 @@ public class SubscriptionService extends Service {
       } else if (stream.streamType == Stream.SUBTITLE) {
         qs.put("subtitleStreamID", stream.id);
       }
+      qs.put("type", nowPlayingMedia.isMusic() ? "audio" : "video");
       Call<PlexResponse> call = service.setStreams(qs, "0", VoiceControlForPlexApplication.getInstance().getUUID());
       call.enqueue(new Callback<PlexResponse>() {
         @Override
@@ -771,15 +779,17 @@ public class SubscriptionService extends Service {
     mHandler.post(() -> {
       List<Timeline> timelines = mediaContainer.timelines;
       if(timelines != null) {
+        boolean foundTimeline = false;
         for (final Timeline timeline : timelines) {
           if (timeline.key != null) {
+            foundTimeline = true;
             currentTimeline = timeline;
             if(timeline.state == null)
               timeline.state = "stopped";
 
             PlexServer server = null;
             for(PlexServer s : VoiceControlForPlexApplication.servers.values()) {
-              if(s.machineIdentifier.equals(timeline.machineIdentifier)) {
+              if(s.machineIdentifier.equals(timeline.machineIdentifier) || timeline.machineIdentifier.equals(String.format("transient-%s", s.machineIdentifier))) {
                 server = s;
                 break;
               }
@@ -790,6 +800,7 @@ public class SubscriptionService extends Service {
                 if(plexSubscriptionListener != null)
                   plexSubscriptionListener.onSubscribeError(null);
               });
+              return;
             }
             final String serverName = server.name;
 
@@ -863,6 +874,19 @@ public class SubscriptionService extends Service {
                   plexSubscriptionListener.onTimeUpdate(currentState, timeline.time/1000); // timecode in Timeline is in ms
               }
             }
+          }
+        }
+
+        if(!foundTimeline) {
+          // No timeline was found
+          if(nowPlayingMedia != null) {
+            // There was media playing, but now none can be found on the timeline. Amazon Fire TV Plex Client (and maybe others?) goes from a timeline with
+            // state=playing to 3 timelines with no key, state, etc (music, video, photos). So, alert listener that playback has stopped.
+            nowPlayingMedia = null;
+            currentState = PlayerState.STOPPED;
+            VoiceControlForPlexApplication.getInstance().cancelNotification();
+            if(plexSubscriptionListener != null)
+              plexSubscriptionListener.onStateChanged(nowPlayingMedia, currentState);
           }
         }
       }

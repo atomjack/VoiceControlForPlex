@@ -2,6 +2,8 @@
 <changelog>
     <release version="2.1.5b1" versioncode="74">
         <change>Added new voice commands:What\'s New, What\'s on deck, and What new movies do I have.</change>
+        <change>Fixed playback on Amazon Fire TV.</change>
+        <change>Internal refactoring.</change>
     </release>
     <release version="2.1.4" versioncode="73">
         <change>Added local media playback. This feature is locked to one minute at a time, and can be unlocked via an in-app purchase (Navigation Menu->Settings).</change>

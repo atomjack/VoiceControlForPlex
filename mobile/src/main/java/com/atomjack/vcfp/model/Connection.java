@@ -38,6 +38,10 @@ public class Connection implements Parcelable {
 		}
 	}
 
+  public Connection(String address, String port) {
+    this("http", address, port);
+  }
+
 	@Override
 	public int describeContents() {
 		return 0;
