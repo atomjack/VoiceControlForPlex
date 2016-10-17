@@ -86,12 +86,14 @@ public class SendToDataLayerThread extends Thread {
     } else {
       NodeApi.GetConnectedNodesResult nodes = Wearable.NodeApi.getConnectedNodes(googleApiClient).await();
       for (Node node : nodes.getNodes()) {
+        if(!node.isNearby())
+          continue;
         MessageApi.SendMessageResult result = Wearable.MessageApi.sendMessage(googleApiClient, node.getId(), path, dataMap.toByteArray()).await();
         if (result.getStatus().isSuccess()) {
           logger.d("Message: {" + path + "} sent to: %s", node.getDisplayName());
         } else {
           // Log an error
-          logger.e("ERROR: failed to send Message");
+          logger.e("ERROR: failed to send Message: %d %s", result.getStatus().getStatusCode(), result.getStatus().getStatusMessage());
         }
       }
     }

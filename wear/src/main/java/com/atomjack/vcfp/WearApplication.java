@@ -110,22 +110,14 @@ public class WearApplication extends Application {
     Logger.d("[WearApplication] showNowPlaying: %s", nowPlayingMedia.getString(WearConstants.MEDIA_TITLE));
     Logger.d("[WearApplication] Media: %s", nowPlayingMedia);
 
-    NotificationCompat.WearableExtender extender;
+    NotificationCompat.WearableExtender extender = new NotificationCompat.WearableExtender()
+            .addAction(getPlayPauseAction())
+            .addAction(getVoiceInputAction())
+            .addAction(getStopAction())
+            .setContentAction(prefs.get(WearConstants.PRIMARY_FUNCTION_VOICE_INPUT, false) ? 1 : 0)
+            .setHintHideIcon(true);
     if(nowPlayingImage != null) {
-      extender = new NotificationCompat.WearableExtender()
-              .addAction(getPlayPauseAction())
-              .addAction(getVoiceInputAction())
-              .addAction(getStopAction())
-              .setContentAction(prefs.get(WearConstants.PRIMARY_FUNCTION_VOICE_INPUT, false) ? 1 : 0)
-              .setHintHideIcon(true)
-              .setBackground(nowPlayingImage);
-    } else {
-      extender = new NotificationCompat.WearableExtender()
-              .addAction(getPlayPauseAction())
-              .addAction(getVoiceInputAction())
-              .addAction(getStopAction())
-              .setContentAction(prefs.get(WearConstants.PRIMARY_FUNCTION_VOICE_INPUT, false) ? 1 : 0)
-              .setHintHideIcon(true);
+      extender.setBackground(nowPlayingImage);
     }
 
     String title = nowPlayingMedia.getString(WearConstants.MEDIA_TITLE);

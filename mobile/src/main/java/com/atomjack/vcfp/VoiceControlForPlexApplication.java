@@ -15,15 +15,15 @@ import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.AsyncTask;
-import android.os.Build;
-import android.support.v4.app.NotificationCompat;
+import android.support.v4.media.MediaMetadataCompat;
+import android.support.v4.media.session.PlaybackStateCompat;
+import android.support.v7.app.NotificationCompat;
+import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v7.media.MediaRouter;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.view.Display;
-import android.view.View;
 import android.view.WindowManager;
-import android.widget.RemoteViews;
 
 import com.android.vending.billing.IabBroadcastReceiver;
 import com.android.vending.billing.IabHelper;
@@ -435,7 +435,8 @@ public class VoiceControlForPlexApplication extends Application
     }.execute();
   }
 
-  public void setNotification(final PlexClient client, final PlayerState currentState, final PlexMedia media, final ArrayList<? extends PlexMedia> playlist) {
+  public void setNotification(final PlexClient client, final PlayerState currentState,
+                              final PlexMedia media, final ArrayList<? extends PlexMedia> playlist, final MediaSessionCompat mediaSession) {
     if(client == null) {
       logger.d("Client is null for some reason");
       return;
@@ -446,8 +447,20 @@ public class VoiceControlForPlexApplication extends Application
     final int[] numBitmapsFetched = new int[]{0};
     final int[] numBitmapsToFetch = new int[]{0};
 
-    PlexMedia.IMAGE_KEY key = media instanceof PlexTrack ? PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB_MUSIC : PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB;
-    PlexMedia.IMAGE_KEY keyBig = media instanceof PlexTrack ? PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB_MUSIC_BIG : PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB_BIG;
+		// Figure out which track in the playlist this is, to know whether or not to set up the Intent to handle previous/next
+    final int[] playlistIndexF = new int[1];
+    for(int i=0;i<playlist.size();i++) {
+//      logger.d("comparing %s to %s (%s)", playlist.get(i).key, media.key, playlist.get(i).key.equals(media.key));
+      if(playlist.get(i).equals(media)) {
+//        logger.d("found a match for %s", media.key);
+        playlistIndexF[0] = i;
+        break;
+      }
+    }
+    final int playlistIndex = playlistIndexF[0];
+
+    PlexMedia.IMAGE_KEY keyIcon = media instanceof PlexTrack ? PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB_MUSIC_BIG : PlexMedia.IMAGE_KEY.NOTIFICATION_THUMB_BIG;
+    PlexMedia.IMAGE_KEY keyBackground = media instanceof PlexTrack ? PlexMedia.IMAGE_KEY.NOTIFICATION_MUSIC_BACKGROUND : PlexMedia.IMAGE_KEY.NOTIFICATION_BACKGROUND;
     final Bitmap[] bitmapsFetched = new Bitmap[2];
     final Runnable onFinished = () -> {
       // this is where the magic happens!
@@ -486,9 +499,7 @@ public class VoiceControlForPlexApplication extends Application
       android.content.Intent previousIntent;
       android.content.Intent nextIntent;
 
-      RemoteViews notificationContent;
-      RemoteViews notificationContentBig;
-
+      List<NotificationCompat.Action> actions = new ArrayList<>();
       if(!media.isMusic()) {
         rewindIntent = new android.content.Intent(VoiceControlForPlexApplication.this, client.isLocalClient ? LocalMusicService.class : SubscriptionService.class);
         rewindIntent.setAction(Intent.ACTION_REWIND);
@@ -504,54 +515,68 @@ public class VoiceControlForPlexApplication extends Application
         forwardIntent.putExtra(Intent.EXTRA_PLAYLIST, playlist);
         PendingIntent piForward = PendingIntent.getService(VoiceControlForPlexApplication.this, 0, forwardIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
-        notificationContent = getNotificationView(
-                R.layout.now_playing_notification,
-                bitmapsFetched[0], media, client, playPendingIntent, pausePendingIntent,
-                piRewind, piForward, piDisconnect, currentState == PlayerState.PLAYING);
+        actions.add(new NotificationCompat.Action.Builder(R.drawable.notif_rewind, "Rewind", piRewind).build());
+        if(currentState == PlayerState.PAUSED)
+          actions.add(new NotificationCompat.Action.Builder(R.drawable.notif_play, "Play", playPendingIntent).build());
+        else
+          actions.add(new NotificationCompat.Action.Builder(R.drawable.notif_pause, "Pause", pausePendingIntent).build());
+        actions.add(new NotificationCompat.Action.Builder(R.drawable.notif_forward, "Fast Forward", piForward).build());
+        actions.add(new NotificationCompat.Action.Builder(R.drawable.notif_disconnect, "Disconnect", piDisconnect).build());
 
-        notificationContentBig = getNotificationView(
-                R.layout.now_playing_notification_big,
-                bitmapsFetched[1], media, client, playPendingIntent, pausePendingIntent,
-                piRewind, piForward, piDisconnect, currentState == PlayerState.PLAYING);
+
       } else {
-        previousIntent = new android.content.Intent(VoiceControlForPlexApplication.this, client.isLocalClient ? LocalMusicService.class : SubscriptionService.class);
-        previousIntent.setAction(Intent.ACTION_PREVIOUS);
-        previousIntent.putExtra(SubscriptionService.CLIENT, client);
-        previousIntent.putExtra(SubscriptionService.MEDIA, media);
-        previousIntent.putExtra(Intent.EXTRA_PLAYLIST, playlist);
-        PendingIntent piPrevious = PendingIntent.getService(VoiceControlForPlexApplication.this, 0, previousIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        PendingIntent piPrevious = null;
+        if(playlistIndex > 0) {
+          previousIntent = new android.content.Intent(VoiceControlForPlexApplication.this, client.isLocalClient ? LocalMusicService.class : SubscriptionService.class);
+          previousIntent.setAction(Intent.ACTION_PREVIOUS);
+          previousIntent.putExtra(SubscriptionService.CLIENT, client);
+          previousIntent.putExtra(SubscriptionService.MEDIA, media);
+          previousIntent.putExtra(Intent.EXTRA_PLAYLIST, playlist);
+          piPrevious = PendingIntent.getService(VoiceControlForPlexApplication.this, 0, previousIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        }
+        PendingIntent piNext = null;
+        if(playlistIndex+1 < playlist.size()) {
+          nextIntent = new android.content.Intent(VoiceControlForPlexApplication.this, client.isLocalClient ? LocalMusicService.class : SubscriptionService.class);
+          nextIntent.setAction(Intent.ACTION_NEXT);
+          nextIntent.putExtra(SubscriptionService.CLIENT, client);
+          nextIntent.putExtra(SubscriptionService.MEDIA, media);
+          nextIntent.putExtra(Intent.EXTRA_PLAYLIST, playlist);
+          piNext = PendingIntent.getService(VoiceControlForPlexApplication.this, 0, nextIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        }
+        actions.add(new NotificationCompat.Action.Builder(R.drawable.notif_previous, "Previous", piPrevious).build());
+        if(currentState == PlayerState.PAUSED)
+          actions.add(new NotificationCompat.Action.Builder(R.drawable.notif_play, "Play", playPendingIntent).build());
+        else
+          actions.add(new NotificationCompat.Action.Builder(R.drawable.notif_pause, "Pause", pausePendingIntent).build());
+        actions.add(new NotificationCompat.Action.Builder(R.drawable.notif_next, "Next", piNext).build());
+        actions.add(new NotificationCompat.Action.Builder(R.drawable.notif_disconnect, "Disconnect", piDisconnect).build());
 
-        nextIntent = new android.content.Intent(VoiceControlForPlexApplication.this, client.isLocalClient ? LocalMusicService.class : SubscriptionService.class);
-        nextIntent.setAction(Intent.ACTION_NEXT);
-        nextIntent.putExtra(SubscriptionService.CLIENT, client);
-        nextIntent.putExtra(SubscriptionService.MEDIA, media);
-        nextIntent.putExtra(Intent.EXTRA_PLAYLIST, playlist);
-        PendingIntent piNext = PendingIntent.getService(VoiceControlForPlexApplication.this, 0, nextIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-
-        notificationContent = getNotificationView(
-                R.layout.now_playing_notification_music,
-                bitmapsFetched[0], media, client, playPendingIntent, pausePendingIntent,
-                piPrevious, piNext, piDisconnect, currentState == PlayerState.PLAYING);
-
-        notificationContentBig = getNotificationView(
-                R.layout.now_playing_notification_big_music,
-                bitmapsFetched[1], media, client, playPendingIntent, pausePendingIntent,
-                piPrevious, piNext, piDisconnect, currentState == PlayerState.PLAYING);
       }
 
+      Notification n;
+      NotificationCompat.Builder builder = new NotificationCompat.Builder(VoiceControlForPlexApplication.this);
+              // Show controls on lock screen even when user hides sensitive content.
+              builder.setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+              .setSmallIcon(R.drawable.vcfp_notification)
+              .setAutoCancel(false)
+              .setOngoing(true)
+              .setOnlyAlertOnce(true)
+              .setDefaults(Notification.DEFAULT_ALL)
+              // Add media control buttons that invoke intents in your media service
+              // Apply the media style template
+              .setStyle(new NotificationCompat.MediaStyle()
+                      .setShowActionsInCompactView(0, 1, 2 /* #1: pause button */)
+                      .setMediaSession(mediaSession.getSessionToken()))
+              .setContentTitle(media.getNotificationTitle())
+              .setContentText(media.getNotificationSubtitle())
+              .setContentIntent(piNowPlaying)
+              .setLargeIcon(bitmapsFetched[0]);
+      for (NotificationCompat.Action action : actions) {
+        builder.addAction(action);
+      }
+
+      n = builder.build();
       try {
-        NotificationCompat.Builder mBuilder =
-                new NotificationCompat.Builder(VoiceControlForPlexApplication.this)
-                        .setSmallIcon(R.drawable.vcfp_notification)
-                        .setAutoCancel(false)
-                        .setOngoing(true)
-                        .setOnlyAlertOnce(true)
-                        .setContentIntent(piNowPlaying)
-                        .setContent(notificationContent)
-                        .setDefaults(Notification.DEFAULT_ALL);
-        Notification n = mBuilder.build();
-        if (Build.VERSION.SDK_INT >= 16)
-          n.bigContentView = notificationContentBig;
 
         // Disable notification sound
         n.defaults = 0;
@@ -560,20 +585,29 @@ public class VoiceControlForPlexApplication extends Application
       } catch (Exception ex) {
         ex.printStackTrace();
       }
+      mediaSession.setMetadata(new MediaMetadataCompat.Builder()
+              .putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, bitmapsFetched[1])
+              .putString(MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI, media.art)
+              .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, media.getNotificationTitle())
+              .build()
+      );
+      mediaSession.setPlaybackState(new PlaybackStateCompat.Builder().setState(
+              currentState == PlayerState.PAUSED ? PlaybackStateCompat.STATE_PAUSED : PlaybackStateCompat.STATE_PLAYING, Long.parseLong(media.viewOffset), 1f).build());
+      mediaSession.setFlags(MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS);
     };
     // Check if the bitmaps have already been fetched. If they have, launch the runnable to set the notification
-    Bitmap bitmap = getCachedBitmap(media.getImageKey(key));
-    Bitmap bigBitmap = getCachedBitmap(media.getImageKey(keyBig));
+    Bitmap bitmap = getCachedBitmap(media.getImageKey(keyIcon));
+    Bitmap bigBitmap = getCachedBitmap(media.getImageKey(keyBackground));
     if(bitmap != null && bigBitmap != null) {
       bitmapsFetched[0] = bitmap;
       bitmapsFetched[1] = bigBitmap;
       onFinished.run();
     } else {
       ArrayList<FetchMediaImageTask> taskList = new ArrayList<>();
-      if(media.getNotificationThumb(key) != null) {
+      if(media.getNotificationThumb(keyIcon) != null) {
         numBitmapsToFetch[0]++;
         // Fetch both (big and regular) versions of the notification bitmap, and when both are finished, launch the runnable above that will set the notification
-        taskList.add(new FetchMediaImageTask(media, PlexMedia.IMAGE_SIZES.get(key)[0], PlexMedia.IMAGE_SIZES.get(key)[1], media.getNotificationThumb(key), media.getImageKey(key), new BitmapHandler() {
+        taskList.add(new FetchMediaImageTask(media, PlexMedia.IMAGE_SIZES.get(keyIcon)[0], PlexMedia.IMAGE_SIZES.get(keyIcon)[1], media.getNotificationThumb(keyIcon), media.getImageKey(keyIcon), new BitmapHandler() {
           @Override
           public void onSuccess(Bitmap bitmap) {
             bitmapsFetched[0] = bitmap;
@@ -583,9 +617,9 @@ public class VoiceControlForPlexApplication extends Application
           }
         }));
       }
-      if(media.getNotificationThumb(keyBig) != null) {
+      if(media.getNotificationThumb(keyBackground) != null) {
         numBitmapsToFetch[0]++;
-        taskList.add(new FetchMediaImageTask(media, PlexMedia.IMAGE_SIZES.get(keyBig)[0], PlexMedia.IMAGE_SIZES.get(keyBig)[1], media.getNotificationThumb(keyBig), media.getImageKey(keyBig), new BitmapHandler() {
+        taskList.add(new FetchMediaImageTask(media, PlexMedia.IMAGE_SIZES.get(keyBackground)[0], PlexMedia.IMAGE_SIZES.get(keyBackground)[1], media.getNotificationThumb(keyBackground), media.getImageKey(keyBackground), new BitmapHandler() {
           @Override
           public void onSuccess(Bitmap bitmap) {
             bitmapsFetched[1] = bitmap;
@@ -608,40 +642,6 @@ public class VoiceControlForPlexApplication extends Application
     if(hasWear()) {
       new SendToDataLayerThread(WearConstants.MEDIA_STOPPED, this).start();
     }
-  }
-
-  private RemoteViews getNotificationView(int layoutId, Bitmap thumb, PlexMedia media, PlexClient client,
-                                          PendingIntent playPendingIntent, PendingIntent pausePendingIntent, PendingIntent rewindIntent,
-                                          PendingIntent forwardIntent, PendingIntent disconnectIntent, boolean isPlaying) {
-    RemoteViews remoteViews = new RemoteViews(getPackageName(), layoutId);
-    remoteViews.setImageViewBitmap(R.id.thumb, thumb);
-    String title = media.title; // Movie title
-    if(media.isMusic())
-      title = String.format("%s - %s", ((PlexTrack)media).getArtist(), media.title);
-    else if(media.isShow())
-      title = String.format("%s - %s", media.getTitle(), media.title);
-    remoteViews.setTextViewText(R.id.title, title);
-    remoteViews.setTextViewText(R.id.playingOn, String.format(getString(R.string.playing_on), client.name));
-
-    remoteViews.setOnClickPendingIntent(R.id.pauseButton, pausePendingIntent);
-    remoteViews.setOnClickPendingIntent(R.id.playButton, playPendingIntent);
-    if (isPlaying) {
-      remoteViews.setViewVisibility(R.id.playButton, View.GONE);
-      remoteViews.setViewVisibility(R.id.pauseButton, View.VISIBLE);
-    } else {
-      remoteViews.setViewVisibility(R.id.playButton, View.VISIBLE);
-      remoteViews.setViewVisibility(R.id.pauseButton, View.GONE);
-    }
-    if(!media.isMusic()) {
-      remoteViews.setOnClickPendingIntent(R.id.rewindButton, rewindIntent);
-      remoteViews.setOnClickPendingIntent(R.id.forwardButton, forwardIntent);
-    } else {
-      remoteViews.setOnClickPendingIntent(R.id.previousButton, rewindIntent);
-      remoteViews.setOnClickPendingIntent(R.id.nextButton, forwardIntent);
-    }
-    remoteViews.setOnClickPendingIntent(R.id.disconnectButton, disconnectIntent);
-
-    return remoteViews;
   }
 
   public void setupInAppPurchasing() {

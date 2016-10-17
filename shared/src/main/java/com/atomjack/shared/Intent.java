@@ -67,4 +67,7 @@ public class Intent {
   public static final String ACTION_MEDIA_BUTTON = "com.atomjack.vcfp.intent.action_media_button";
   public static final String KEY_EVENT = "com.atomjack.vcfp.intent.key_event";
 
+  public static final String PLEX_SEARCH = "com.atomjack.vcfp.intent.PLEX_SEARCH";
+  public static final String SHOW_PLAYER = "com.atomjack.vcfp.intent.SHOW_PLAYER";
+
 }

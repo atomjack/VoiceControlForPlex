@@ -66,26 +66,26 @@ public class PlexPlayerFragment extends PlayerFragment {
 
   @Override
   protected void doPlay() {
-    client.play(nowPlayingMedia.isMusic() ? "audio" : "video", null);
+    client.play(nowPlayingMedia.isMusic() ? "music" : "video", null);
   }
 
   @Override
   protected void doPause() {
-    client.pause(nowPlayingMedia.isMusic() ? "audio" : "video", null);
+    client.pause(nowPlayingMedia.isMusic() ? "music" : "video", null);
   }
 
   @Override
   protected void doStop() {
-    client.stop(nowPlayingMedia.isMusic() ? "audio" : "video", null);
+    client.stop(nowPlayingMedia.isMusic() ? "music" : "video", null);
   }
 
   @Override
   protected void doNext() {
-    client.next(nowPlayingMedia.isMusic() ? "audio" : "video", null);
+    client.next(nowPlayingMedia.isMusic() ? "music" : "video", null);
   }
 
   @Override
-  protected void doPrevious() { client.previous(nowPlayingMedia.isMusic() ? "audio" : "video", null); }
+  protected void doPrevious() { client.previous(nowPlayingMedia.isMusic() ? "music" : "video", null); }
 
   @Override
   public void onStopTrackingTouch(SeekBar _seekBar) {

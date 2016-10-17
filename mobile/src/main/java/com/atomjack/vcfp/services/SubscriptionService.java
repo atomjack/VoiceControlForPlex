@@ -1,13 +1,19 @@
 package com.atomjack.vcfp.services;
 
+import android.app.PendingIntent;
 import android.app.Service;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
 import android.os.Binder;
+import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.SystemClock;
 import android.support.annotation.Nullable;
+import android.support.v4.media.session.MediaSessionCompat;
+import android.support.v4.media.session.PlaybackStateCompat;
 import android.support.v7.media.MediaRouter;
 
 import com.atomjack.shared.NewLogger;
@@ -36,6 +42,7 @@ import com.atomjack.vcfp.model.Stream;
 import com.atomjack.vcfp.net.PlexHttpClient;
 import com.atomjack.vcfp.net.PlexHttpMediaContainerHandler;
 import com.atomjack.vcfp.net.PlexHttpResponseHandler;
+import com.atomjack.vcfp.receivers.RemoteControlReceiver;
 import com.google.android.gms.cast.ApplicationMetadata;
 import com.google.android.libraries.cast.companionlibrary.cast.CastConfiguration;
 import com.google.android.libraries.cast.companionlibrary.cast.VideoCastManager;
@@ -86,6 +93,9 @@ public class SubscriptionService extends Service {
   private final IBinder subBind = new SubscriptionBinder();
   private PlayerState currentState = PlayerState.STOPPED;
   int position = 0;
+
+  private MediaSessionCompat mediaSession;
+  ComponentName remoteControlReceiver;
 
   // Plex client specific variables
   private static final int SUBSCRIBE_INTERVAL = 30000; // Send subscribe message every 30 seconds to keep us alive
@@ -191,6 +201,30 @@ public class SubscriptionService extends Service {
     logger = new NewLogger(this);
     plexSessionId = VoiceControlForPlexApplication.generateRandomString();
     setCastConsumer();
+  }
+
+  @Override
+  public void onCreate() {
+    super.onCreate();
+    remoteControlReceiver = new ComponentName(getPackageName(), RemoteControlReceiver.class.getName());
+    mediaSession = new MediaSessionCompat(this, "VCFPRemoteControlReceiver", remoteControlReceiver, null);
+    mediaSession.setFlags(MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS | MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS);
+    PlaybackStateCompat state = new PlaybackStateCompat.Builder()
+            .setActions(PlaybackStateCompat.ACTION_FAST_FORWARD |
+                    PlaybackStateCompat.ACTION_PAUSE |
+                    PlaybackStateCompat.ACTION_PLAY |
+                    PlaybackStateCompat.ACTION_PLAY_PAUSE |
+                    PlaybackStateCompat.ACTION_SKIP_TO_NEXT |
+                    PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS |
+                    PlaybackStateCompat.ACTION_STOP)
+            .setState(PlaybackStateCompat.STATE_PLAYING, 0, 1, SystemClock.elapsedRealtime())
+            .build();
+    mediaSession.setPlaybackState(state);
+
+    Intent intent = new Intent(this, RemoteControlReceiver.class);
+    PendingIntent pintent = PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+    mediaSession.setMediaButtonReceiver(pintent);
+    mediaSession.setActive(false);
   }
 
   @Nullable
@@ -328,7 +362,7 @@ public class SubscriptionService extends Service {
     if (client.isCastClient) {
       sendMessage(PARAMS.ACTION_PREV);
     } else {
-      client.previous(nowPlayingMedia.isMusic() ? "audio" : "video", null);
+      client.previous(nowPlayingMedia.isMusic() ? "music" : "video", null);
     }
   }
 
@@ -336,7 +370,7 @@ public class SubscriptionService extends Service {
     if (client.isCastClient) {
       sendMessage(PARAMS.ACTION_NEXT);
     } else {
-      client.next(nowPlayingMedia.isMusic() ? "audio" : "video", null);
+      client.next(nowPlayingMedia.isMusic() ? "music" : "video", null);
     }
   }
 
@@ -381,7 +415,7 @@ public class SubscriptionService extends Service {
       } else if (stream.streamType == Stream.SUBTITLE) {
         qs.put("subtitleStreamID", stream.id);
       }
-      qs.put("type", nowPlayingMedia.isMusic() ? "audio" : "video");
+      qs.put("type", nowPlayingMedia.isMusic() ? "music" : "video");
       Call<PlexResponse> call = service.setStreams(qs, "0", VoiceControlForPlexApplication.getInstance().getUUID());
       call.enqueue(new Callback<PlexResponse>() {
         @Override
@@ -449,7 +483,7 @@ public class SubscriptionService extends Service {
       PlexHttpClient.unsubscribe(client, commandId, VoiceControlForPlexApplication.getInstance().prefs.getUUID(), VoiceControlForPlexApplication.getInstance().getString(R.string.app_name), new PlexHttpResponseHandler() {
         @Override
         public void onSuccess(PlexResponse response) {
-          logger.d("[PlexSubscription] Unsubscribed");
+          logger.d("Unsubscribed");
           subscribed = false;
           VoiceControlForPlexApplication.getInstance().prefs.remove(Preferences.SUBSCRIBED_CLIENT);
           commandId++;
@@ -490,6 +524,42 @@ public class SubscriptionService extends Service {
 
   }
 
+
+  private void registerMediaSessionCallback() {
+    mediaSession.setCallback(new MediaSessionCompat.Callback() {
+      @Override
+      public void onPlay() {
+        play();
+      }
+
+      @Override
+      public void onPause() {
+        pause();
+      }
+
+      @Override
+      public void onSkipToNext() {
+        next();
+      }
+
+      @Override
+      public void onSkipToPrevious() {
+        previous();
+      }
+
+      @Override
+      public void onStop() {
+        stop();
+      }
+    });
+  }
+
+  @Override
+  public void onDestroy() {
+    super.onDestroy();
+    mediaSession.release();
+  }
+
   // Plex client specific methods
 
   public void checkLastHeartbeat() {
@@ -515,7 +585,7 @@ public class SubscriptionService extends Service {
     } else if(client.isCastClient) {
       subscribeToChromecast(client, null, showFeedback);
     } else {
-      logger.d("PlexSubscription subscribe: %s, handler is null: %s", client, updateConversationHandler == null);
+      logger.d("PlexSubscription subscribe!: %s, handler is null: %s", client, updateConversationHandler == null);
       if (updateConversationHandler == null)
         startSubscription(client, showFeedback);
       else
@@ -796,6 +866,7 @@ public class SubscriptionService extends Service {
             }
 
             if(server == null) {
+              logger.d("Couldn't find server %s", timeline.machineIdentifier);
               unsubscribe(() -> {
                 if(plexSubscriptionListener != null)
                   plexSubscriptionListener.onSubscribeError(null);
@@ -845,12 +916,15 @@ public class SubscriptionService extends Service {
                     // TODO: Handle not finding any media?
                   }
                   nowPlayingMedia = media;
-                  if(currentState != PlayerState.STOPPED)
-                    VoiceControlForPlexApplication.getInstance().setNotification(client, currentState, nowPlayingMedia, nowPlayingPlaylist);
+                  if(currentState != PlayerState.STOPPED) {
+                    VoiceControlForPlexApplication.getInstance().setNotification(client, currentState, nowPlayingMedia, nowPlayingPlaylist, mediaSession);
+                    registerMediaSessionCallback();
+                  }
                 }
 
                 @Override
                 public void onFailure(Throwable error) {
+                  error.printStackTrace();
                   unsubscribe(() -> {
                     if(plexSubscriptionListener != null)
                       plexSubscriptionListener.onSubscribeError(error instanceof UnauthorizedException ? String.format(getString(R.string.server_unauthorized), serverName) : null);
@@ -866,7 +940,8 @@ public class SubscriptionService extends Service {
                   nowPlayingMedia = null;
                   VoiceControlForPlexApplication.getInstance().cancelNotification();
                 } else {
-                  VoiceControlForPlexApplication.getInstance().setNotification(client, currentState, nowPlayingMedia, nowPlayingPlaylist);
+                  VoiceControlForPlexApplication.getInstance().setNotification(client, currentState, nowPlayingMedia, nowPlayingPlaylist, mediaSession);
+                  registerMediaSessionCallback();
                 }
               } else {
                 // State has not changed, so alert listener of the current timecode
@@ -1007,7 +1082,7 @@ public class SubscriptionService extends Service {
               if(plexSubscriptionListener != null && oldState != currentState)
                 plexSubscriptionListener.onStateChanged(nowPlayingMedia, currentState);
               if(currentState != PlayerState.STOPPED) {
-                VoiceControlForPlexApplication.getInstance().setNotification(client, currentState, nowPlayingMedia, nowPlayingPlaylist);
+                VoiceControlForPlexApplication.getInstance().setNotification(client, currentState, nowPlayingMedia, nowPlayingPlaylist, mediaSession);
               }
             }
           } else if(obj.has("event") && obj.getString("event").equals(RECEIVER_EVENTS.TIME_UPDATE) && obj.has("currentTime")) {
@@ -1051,7 +1126,7 @@ public class SubscriptionService extends Service {
                 plexSubscriptionListener.onStateChanged(nowPlayingMedia, PlayerState.getState(obj.getString("state")));
             }
             if(currentState != PlayerState.STOPPED) {
-              VoiceControlForPlexApplication.getInstance().setNotification(client, currentState, nowPlayingMedia, nowPlayingPlaylist);
+              VoiceControlForPlexApplication.getInstance().setNotification(client, currentState, nowPlayingMedia, nowPlayingPlaylist, mediaSession);
             } else
               VoiceControlForPlexApplication.getInstance().cancelNotification();
           } else if(obj.has("event") && obj.getString("event").equals(RECEIVER_EVENTS.DEVICE_CAPABILITIES) && obj.has("capabilities")) {
@@ -1163,7 +1238,7 @@ public class SubscriptionService extends Service {
   public String getTranscodeUrl(PlexMedia media, Connection connection, int offset, boolean subtitles) {
     logger.d("getTranscodeUrl, offset: %d", offset);
     String url = connection.uri;
-    url += String.format("/%s/:/transcode/universal/%s?", (media instanceof PlexVideo ? "video" : "audio"), (subtitles ? "subtitles" : "start"));
+    url += String.format("/%s/:/transcode/universal/%s?", (media instanceof PlexVideo ? "video" : "music"), (subtitles ? "subtitles" : "start"));
     QueryString qs = new QueryString("path", String.format("http://127.0.0.1:32400%s", media.key));
     qs.add("mediaIndex", "0");
     qs.add("partIndex", "0");

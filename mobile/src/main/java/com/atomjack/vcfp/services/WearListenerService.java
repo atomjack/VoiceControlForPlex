@@ -259,7 +259,7 @@ public class WearListenerService extends WearableListenerService implements Serv
           PlexMedia media = subscriptionService.getNowPlayingMedia();
           if (media != null) {
             Intent intent = new Intent(this, SubscriptionService.class);
-            intent.setAction(message);
+            intent.setAction(message.replaceAll("^/vcfp/", ""));
             intent.putExtra(SubscriptionService.CLIENT, client);
             intent.putExtra(SubscriptionService.MEDIA, media);
             startService(intent);

@@ -399,7 +399,7 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onSubscribeError(String error) {
-      logger.d("onSubscribeError");
+      logger.d("onSubscribeError: %s", error);
       setCastIconInactive();
       feedback.e(error == null ? String.format(getString(R.string.cast_connect_error), client.name) : error);
     }

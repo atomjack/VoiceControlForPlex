@@ -149,7 +149,7 @@
                              android:layout_width="0dp"
                              android:layout_height="wrap_content"
                              android:background="@android:color/transparent"
-                             android:src="@drawable/notif_back15"
+                             android:src="@drawable/button_back15"
                              android:layout_weight="1"
                              android:layout_gravity="center_vertical"/>
 
@@ -173,7 +173,7 @@
                                  android:layout_height="wrap_content"
                                  android:background="@android:color/transparent"
                                  android:layout_weight="1"
-                                 android:src="@drawable/notif_ff30"
+                                 android:src="@drawable/button_ff30"
                              android:layout_gravity="center_vertical"/>
 
                 <ImageButton android:id="@+id/next"

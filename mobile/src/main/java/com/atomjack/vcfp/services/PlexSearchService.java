@@ -87,6 +87,8 @@ public class PlexSearchService extends Service implements ServiceConnection {
 
 	private List<String> queries;
 
+  private boolean showPlayer = true; // whether or not to show the player when starting playback
+
 	// Will be set to true after we scan for servers, so we don't have to do it again on the next query
 	private boolean didServerScan = false;
 
@@ -142,7 +144,7 @@ public class PlexSearchService extends Service implements ServiceConnection {
     }
     // Reset whether we've scanned for clients, but only if we're getting here from a new voice search (we can
     // get here from scanning for clients)
-    if(intent.getAction() == null)
+    if(intent.getAction() == null || intent.getAction().equals(com.atomjack.shared.Intent.PLEX_SEARCH))
       didClientScan = false;
 
 		if(BuildConfig.USE_BUGSENSE)
@@ -158,11 +160,15 @@ public class PlexSearchService extends Service implements ServiceConnection {
     }
     fromGoogleNow = intent.getBooleanExtra(com.atomjack.shared.Intent.EXTRA_FROM_GOOGLE_NOW, false);
 
+    showPlayer = intent.getBooleanExtra(com.atomjack.shared.Intent.SHOW_PLAYER, true);
+    if(fromGoogleNow && !VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.GOOGLE_NOW_LAUNCH_NOW_PLAYING, true))
+      showPlayer = false;
+
     currentNetworkState = MainActivity.NetworkState.getCurrentNetworkState(this);
 
 		logger.d("action: %s", intent.getAction());
 		logger.d("scan type: %s", intent.getStringExtra(com.atomjack.shared.Intent.SCAN_TYPE));
-		if(intent.getAction() != null) {
+		if(intent.getAction() != null && !intent.getAction().equals(com.atomjack.shared.Intent.PLEX_SEARCH)) {
       if (intent.getAction().equals(PlexScannerService.ACTION_SERVER_SCAN_FINISHED)) {
         // We just scanned for servers and are returning from that, so set the servers we found
         // and then figure out which client to play to
@@ -1719,7 +1725,7 @@ public class PlexSearchService extends Service implements ServiceConnection {
         subscriptionService.loadMedia(media instanceof PlexTrack ? mediaContainer.tracks.get(0) : mediaContainer.videos.get(0),
                 media instanceof PlexTrack ? (ArrayList)mediaContainer.tracks : (ArrayList)mediaContainer.videos,
                 getOffset(media instanceof PlexTrack ? mediaContainer.tracks.get(0) : mediaContainer.videos.get(0)));
-        if(!fromGoogleNow || VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.GOOGLE_NOW_LAUNCH_NOW_PLAYING, true))
+        if(showPlayer)
           showPlayingMedia(media, mediaContainer);
       };
 
@@ -1750,7 +1756,7 @@ public class PlexSearchService extends Service implements ServiceConnection {
           logger.d("Playback response: %s", r.code);
           if (passed) {
             videoPlayed = true;
-            if(!fromGoogleNow || VoiceControlForPlexApplication.getInstance().prefs.get(Preferences.GOOGLE_NOW_LAUNCH_NOW_PLAYING, true))
+            if(showPlayer)
               showPlayingMedia(media.isMusic() ? mediaContainer.tracks.get(0) : mediaContainer.videos.get(0), mediaContainer);
           } else {
             feedback.e(getResources().getString(R.string.http_status_code_error), r.code);

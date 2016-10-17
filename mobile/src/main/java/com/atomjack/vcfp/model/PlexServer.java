@@ -274,6 +274,7 @@ public class PlexServer extends PlexDevice {
 
       @Override
       public void onFailure(Throwable t) {
+        t.printStackTrace();
         Logger.d("%s failed", connection.uri);
         handler.onFinish(0, false);
       }

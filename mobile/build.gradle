@@ -40,15 +40,12 @@ android {
         multiDexEnabled false
     }
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
     }
     retrolambda {
         jdk "/Library/Java/JavaVirtualMachines/jdk1.8.0_77.jdk/Contents/Home"
     }
     dexOptions {
         preDexLibraries = false
-        incremental false
     }
     packagingOptions {
         exclude 'META-INF/LICENSE.txt'
@@ -114,8 +111,9 @@ android {
             options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
         }
     }
-    task printBuildScriptClasspath << {
-        println project.buildscript.configurations.classpath.asPath
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
 }
 
@@ -150,8 +148,8 @@ dependencies {
     compile 'com.jakewharton:butterknife:7.0.1'
     compile 'com.google.android.libraries.cast.companionlibrary:ccl:2.8.2'
     compile 'com.github.aakira:expandable-layout:1.4.3@aar'
-    compile ('com.github.worker8:tourguide:1.0.17-SNAPSHOT@aar'){
-        transitive=true
+    compile('com.github.worker8:tourguide:1.0.17-SNAPSHOT@aar') {
+        transitive = true
     }
     compile 'com.squareup.retrofit:adapter-rxjava:2.0.0-beta2'
     compile 'io.reactivex:rxjava:1.1.2'

@@ -27,6 +27,8 @@ public abstract class PlexMedia implements Parcelable {
     NOTIFICATION_THUMB_BIG,
     NOTIFICATION_THUMB_MUSIC,
     NOTIFICATION_THUMB_MUSIC_BIG,
+    NOTIFICATION_BACKGROUND,
+    NOTIFICATION_MUSIC_BACKGROUND,
     WEAR_BACKGROUND,
     LOCAL_VIDEO_BACKGROUND,
     LOCAL_VIDEO_THUMB,
@@ -41,6 +43,8 @@ public abstract class PlexMedia implements Parcelable {
       put(IMAGE_KEY.NOTIFICATION_THUMB_BIG, new int[] {87*2, 128*2});
       put(IMAGE_KEY.NOTIFICATION_THUMB_MUSIC, new int[] {128, 128});
       put(IMAGE_KEY.NOTIFICATION_THUMB_MUSIC_BIG, new int[] {256, 256});
+      put(IMAGE_KEY.NOTIFICATION_BACKGROUND, new int[] {600, 960});
+      put(IMAGE_KEY.NOTIFICATION_MUSIC_BACKGROUND, new int[] {600, 600});
       put(IMAGE_KEY.WEAR_BACKGROUND, new int[] {320, 320});
     }
   };
@@ -119,6 +123,21 @@ public abstract class PlexMedia implements Parcelable {
 
   public String getDurationTimecode() {
     return VoiceControlForPlexApplication.secondsToTimecode(duration/1000);
+  }
+
+  public String getNotificationTitle() {
+    if(isMusic())
+      return ((PlexTrack)this).getArtist();
+    else if(isShow())
+      return getTitle();
+    return title;
+  }
+
+  public String getNotificationSubtitle() {
+    if(isMusic() || isShow()) {
+      return title;
+    }
+    return null;
   }
 
   public InputStream getNotificationThumb(IMAGE_KEY key, Connection connection) {

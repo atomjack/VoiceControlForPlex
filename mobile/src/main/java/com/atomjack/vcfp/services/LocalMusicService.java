@@ -177,7 +177,7 @@ public class LocalMusicService extends Service implements
             player.setDataSource(getApplicationContext(), Uri.parse(url));
             player.prepareAsync();
             musicServiceListener.onTrackChange(track);
-            VoiceControlForPlexApplication.getInstance().setNotification(PlexClient.getLocalPlaybackClient(), currentState, track, playlist);
+            VoiceControlForPlexApplication.getInstance().setNotification(PlexClient.getLocalPlaybackClient(), currentState, track, playlist, mediaSession);
 
             new FetchMediaImageTask(track, 500, 500, track.getNotificationThumb(PlexMedia.IMAGE_KEY.WEAR_BACKGROUND), track.getImageKey(PlexMedia.IMAGE_KEY.WEAR_BACKGROUND), new BitmapHandler() {
               @Override
@@ -268,7 +268,7 @@ public class LocalMusicService extends Service implements
       player.start();
       currentState = PlayerState.PLAYING;
     }
-    VoiceControlForPlexApplication.getInstance().setNotification(PlexClient.getLocalPlaybackClient(), currentState, track, playlist);
+    VoiceControlForPlexApplication.getInstance().setNotification(PlexClient.getLocalPlaybackClient(), currentState, track, playlist, mediaSession);
   }
 
   public boolean isPlaying() {
@@ -341,7 +341,7 @@ public class LocalMusicService extends Service implements
       if(player.getDuration() > 0) {
         logger.d("Audio is playing");
         currentState = PlayerState.PLAYING;
-        VoiceControlForPlexApplication.getInstance().setNotification(PlexClient.getLocalPlaybackClient(), currentState, track, playlist);
+        VoiceControlForPlexApplication.getInstance().setNotification(PlexClient.getLocalPlaybackClient(), currentState, track, playlist, mediaSession);
         handler.postDelayed(playerProgressUpdater, 1000);
         if(!VoiceControlForPlexApplication.getInstance().hasLocalmedia()) {
           handler.removeCallbacks(notPurchasedDisconnectTimer);

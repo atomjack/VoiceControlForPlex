@@ -1,24 +1,24 @@
 package com.atomjack.shared;
 
 public class WearConstants {
-  public final static String SPEECH_QUERY = "/speech_query";
+  public final static String SPEECH_QUERY = "/vcfp/speech_query";
   // remove this:
-  public final static String GET_PLAYBACK_STATE = "/get_playback_state";
+  public final static String GET_PLAYBACK_STATE = "/vcfp/get_playback_state";
   // Used to send the image (Asset) of the currently playing media
-  public final static String RECEIVE_MEDIA_IMAGE = "/receive_media_image";
-  public final static String GET_PLAYING_MEDIA = "/get_playing_media";
+  public final static String RECEIVE_MEDIA_IMAGE = "/vcfp/receive_media_image";
+  public final static String GET_PLAYING_MEDIA = "/vcfp/get_playing_media";
 
-  public final static String MEDIA_PLAYING = "/media_playing";
-  public final static String MEDIA_STOPPED = "/media_stopped";
-  public final static String MEDIA_PAUSED = "/media_paused";
-  public final static String WEAR_UNAUTHORIZED = "/unauthorized";
-  public final static String WEAR_PURCHASED = "/purchased";
+  public final static String MEDIA_PLAYING = "/vcfp/media_playing";
+  public final static String MEDIA_STOPPED = "/vcfp/media_stopped";
+  public final static String MEDIA_PAUSED = "/vcfp/media_paused";
+  public final static String WEAR_UNAUTHORIZED = "/vcfp/unauthorized";
+  public final static String WEAR_PURCHASED = "/vcfp/purchased";
   // The handheld app will ping the wearable to see if it exists, if the wearable purchase has not been made.
   // If the handheld receives a pong back, it will show a popup alerting the user to the option to purchase Wear support
-  public final static String PING = "/ping";
-  public final static String PONG = "/pong";
+  public final static String PING = "/vcfp/ping";
+  public final static String PONG = "/vcfp/pong";
 
-  public final static String GET_DEVICE_LOGS = "/get_device_logs";
+  public final static String GET_DEVICE_LOGS = "/vcfp/get_device_logs";
 
   // Options
   public final static String SET_WEAR_OPTIONS = "com.atomjack.vcfp.set_wear_options";
@@ -31,7 +31,7 @@ public class WearConstants {
   public final static String RETRY_GET_PLAYBACK_STATE = "com.atomjack.vcfp.retry_get_playback_state";
 
   // key of intent extra containing the wear device's logs
-  public final static String LOG_CONTENTS = "com.atomjack.vcfp.log_contents";
+  public final static String LOG_CONTENTS = "/vcfp/log_contents";
 
   public final static String FINISH = "com.atomjack.vcfp.finish";
 
@@ -42,9 +42,9 @@ public class WearConstants {
   public final static String INFORMATION = "com.atomjack.vcfp.information";
 
   // Playback manipulation
-  public static final String ACTION_PAUSE = "com.atomjack.vcfp.intent.action_pause";
-  public static final String ACTION_PLAY = "com.atomjack.vcfp.intent.action_play";
-  public static final String ACTION_STOP = "com.atomjack.vcfp.intent.action_stop";
+  public static final String ACTION_PAUSE = "/vcfp/com.atomjack.vcfp.intent.action_pause";
+  public static final String ACTION_PLAY = "/vcfp/com.atomjack.vcfp.intent.action_play";
+  public static final String ACTION_STOP = "/vcfp/com.atomjack.vcfp.intent.action_stop";
 
   public static final String DISCONNECTED = "com.atomjack.vcfp.disconnected";
 
