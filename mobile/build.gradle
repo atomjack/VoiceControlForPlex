@@ -119,8 +119,7 @@ android {
 
 dependencies {
     wearApp project(':wear')
-    compile 'org.apache.httpcomponents:httpclient-android:4.3.5.1'
-    compile 'com.squareup.retrofit:retrofit:2.0.0-beta2'
+    compile 'com.squareup.retrofit2:retrofit:2.1.0'
     compile('com.squareup.retrofit:converter-simplexml:2.0.0-beta2') {
         exclude group: 'xpp3', module: 'xpp3'
         exclude group: 'stax', module: 'stax-api'
@@ -142,9 +141,8 @@ dependencies {
     compile 'com.jakewharton:disklrucache:2.0.2'
     compile files('libs/commons-io-2.4.jar')
     compile project(':shared')
-    compile project(':multistatetogglebutton')
     compile 'de.hdodenhof:circleimageview:2.0.0'
-//    compile 'org.honorato.multistatetogglebutton:multistatetogglebutton:0.2.0'
+    compile 'org.honorato.multistatetogglebutton:multistatetogglebutton:0.2.2'
     compile 'com.jakewharton:butterknife:7.0.1'
     compile 'com.google.android.libraries.cast.companionlibrary:ccl:2.8.2'
     compile 'com.github.aakira:expandable-layout:1.4.3@aar'
