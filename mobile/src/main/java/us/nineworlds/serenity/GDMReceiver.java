@@ -50,7 +50,10 @@ public class GDMReceiver extends BroadcastReceiver {
 					server.connections = new ArrayList<>();
 					server.connections.add(connection);
           servers.add(server);
-				} else if(responseMap.get("content-type").equals("plex/media-player") && responseMap.get("protocol") != null && responseMap.get("protocol").equals("plex")) {
+				} else if(responseMap.get("content-type").equals("plex/media-player")
+								&& responseMap.get("protocol") != null
+								&& responseMap.get("protocol").equals("plex")
+								&& !responseMap.get("product").equals("Plex Web")) {
 					PlexClient client = new PlexClient();
 					client.port = responseMap.get("port");
 					client.name = responseMap.get("name");
