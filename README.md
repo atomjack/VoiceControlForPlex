@@ -1,6 +1,6 @@
 #Voice Control for Plex
 
-An Android app to control Plex clients with your voice.
+An Android app to control Plex clients with your voice. Available in the Google Play Store: https://play.google.com/store/apps/details?id=com.atomjack.vcfp
 
 ## Requirements
 There are four ways to use Voice Control for Plex. One way requires root, the others do not.
