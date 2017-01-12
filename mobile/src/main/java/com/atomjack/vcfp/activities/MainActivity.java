@@ -1798,7 +1798,13 @@ public class MainActivity extends AppCompatActivity
     public void onRouteUnselected(MediaRouter router, MediaRouter.RouteInfo route) {
       logger.d("onRouteUnselected: %s", route);
     }
-  }
+
+		@Override
+		public void onRouteChanged(MediaRouter router, MediaRouter.RouteInfo route) {
+			logger.d("onRouteChanged: %s", route);
+			onRouteAdded(router, route);
+		}
+	}
 
   public void showAbout(final MenuItem item) {
     navigationViewMain.setSelected(false);
