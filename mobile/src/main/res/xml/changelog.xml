@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog>
-    <release version="2.1.5b1" versioncode="74">
-        <change>Added new voice commands:What\'s New, What\'s on deck, and What new movies do I have.</change>
+    <release version="2.1.5" versioncode="76">
+        <change>Added new voice commands:What's New, What's on deck, and What new movies do I have.</change>
         <change>Fixed playback on Amazon Fire TV.</change>
+		<change>Fixed Chromecast Discovery.</change>
         <change>Internal refactoring.</change>
     </release>
     <release version="2.1.4" versioncode="73">

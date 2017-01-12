@@ -25,13 +25,13 @@ import com.atomjack.vcfp.services.PlexSearchService;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
-import butterknife.Bind;
+import butterknife.BindView;
 import butterknife.ButterKnife;
 
 public class MainFragment extends Fragment {
   private NewLogger logger;
   TextView mainStreamingFromTo;
-  @Bind(R.id.mainViewUsageHint) TextView mainViewUsageHint;
+  @BindView(R.id.mainViewUsageHint) TextView mainViewUsageHint;
   PlexServer server;
   PlexClient client;
   private VCFPHint vcfpHint;

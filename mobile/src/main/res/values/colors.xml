@@ -24,4 +24,5 @@
     <color name="primary">#ffffff</color>
     <color name="primaryDark">#0000ff</color>
     <color name="mediaControllerBackground">#CC000000</color>
+	<color name="ccl_blue">#4285f4</color>
 </resources>

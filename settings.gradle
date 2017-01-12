@@ -1,5 +1,3 @@
-include ':wear', ':shared'
+include ':wear', ':shared', ':CastCompanionLibrary'
 include ':mobile'
-include ':multistatetogglebutton'
-project(':multistatetogglebutton').projectDir = new File('multistatetogglebutton/multistatetogglebutton')
-
+project(':CastCompanionLibrary').projectDir = new File('CastCompanionLibrary-android')

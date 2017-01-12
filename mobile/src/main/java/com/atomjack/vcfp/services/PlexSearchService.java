@@ -169,31 +169,31 @@ public class PlexSearchService extends Service implements ServiceConnection {
 		logger.d("action: %s", intent.getAction());
 		logger.d("scan type: %s", intent.getStringExtra(com.atomjack.shared.Intent.SCAN_TYPE));
 		if(intent.getAction() != null && !intent.getAction().equals(com.atomjack.shared.Intent.PLEX_SEARCH)) {
-      if (intent.getAction().equals(PlexScannerService.ACTION_SERVER_SCAN_FINISHED)) {
-        // We just scanned for servers and are returning from that, so set the servers we found
-        // and then figure out which client to play to
-        logger.d("Got back from scanning for servers.");
-        videoPlayed = false;
-        HashMap<String, PlexServer> s = (HashMap<String, PlexServer>) intent.getSerializableExtra(com.atomjack.shared.Intent.EXTRA_SERVERS);
-        VoiceControlForPlexApplication.servers = new ConcurrentHashMap<>(s);
-        plexmediaServers = VoiceControlForPlexApplication.servers;
-        didServerScan = true;
-        setClient();
-      } else if (intent.getAction().equals(PlexScannerService.ACTION_CLIENT_SCAN_FINISHED)) {
-        // Got back from client scan, so set didClientScan to true so we don't do this again, and save the clients we got, then continue
-        didClientScan = true;
-        ArrayList<PlexClient> cs = intent.getParcelableArrayListExtra(com.atomjack.shared.Intent.EXTRA_CLIENTS);
-        if (cs != null) {
-          VoiceControlForPlexApplication.clients = new HashMap<>();
-          for (PlexClient c : cs) {
-            VoiceControlForPlexApplication.clients.put(c.name, c);
-          }
-          clients = VoiceControlForPlexApplication.getAllClients();
+			if (intent.getAction().equals(PlexScannerService.ACTION_SERVER_SCAN_FINISHED)) {
+				// We just scanned for servers and are returning from that, so set the servers we found
+				// and then figure out which client to play to
+				logger.d("Got back from scanning for servers.");
+				videoPlayed = false;
+				HashMap<String, PlexServer> s = (HashMap<String, PlexServer>) intent.getSerializableExtra(com.atomjack.shared.Intent.EXTRA_SERVERS);
+				VoiceControlForPlexApplication.servers = new ConcurrentHashMap<>(s);
+				plexmediaServers = VoiceControlForPlexApplication.servers;
+				didServerScan = true;
+				setClient();
+			} else if (intent.getAction().equals(PlexScannerService.ACTION_CLIENT_SCAN_FINISHED)) {
+				// Got back from client scan, so set didClientScan to true so we don't do this again, and save the clients we got, then continue
+				didClientScan = true;
+				ArrayList<PlexClient> cs = intent.getParcelableArrayListExtra(com.atomjack.shared.Intent.EXTRA_CLIENTS);
+				if (cs != null) {
+					VoiceControlForPlexApplication.clients = new HashMap<>();
+					for (PlexClient c : cs) {
+						VoiceControlForPlexApplication.clients.put(c.name, c);
+					}
+					clients = VoiceControlForPlexApplication.getAllClients();
 //          clients = VoiceControlForPlexApplication.clients;
 //          clients.putAll(VoiceControlForPlexApplication.castClients);
-        }
-        startup();
-      }
+				}
+				startup();
+			}
 		} else {
 			queryText = null;
 			client = null;

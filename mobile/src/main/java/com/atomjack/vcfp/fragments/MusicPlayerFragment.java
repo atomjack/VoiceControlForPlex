@@ -39,7 +39,7 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 
-import butterknife.Bind;
+import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 
@@ -58,39 +58,39 @@ public class MusicPlayerFragment extends Fragment implements MusicServiceListene
 
   private boolean doingMic = false;
 
-  @Bind(R.id.nowPlayingOnClient)
+  @BindView(R.id.nowPlayingOnClient)
   TextView nowPlayingOnClient;
-  @Bind(R.id.nowPlayingArtist)
+  @BindView(R.id.nowPlayingArtist)
   TextView nowPlayingArtist;
-  @Bind(R.id.nowPlayingTitle)
+  @BindView(R.id.nowPlayingTitle)
   TextView nowPlayingTitle;
-  @Bind(R.id.nowPlayingAlbum)
+  @BindView(R.id.nowPlayingAlbum)
   TextView nowPlayingAlbum;
-  @Bind(R.id.nowPlayingPosterContainer)
+  @BindView(R.id.nowPlayingPosterContainer)
   FrameLayout nowPlayingPosterContainer;
-  @Bind(R.id.nowPlayingPoster)
+  @BindView(R.id.nowPlayingPoster)
   ImageView nowPlayingPoster;
 
   // Controller elements
-  @Bind(R.id.currentTimeView)
+  @BindView(R.id.currentTimeView)
   TextView currentTimeView;
-  @Bind(R.id.seekBar)
+  @BindView(R.id.seekBar)
   SeekBar seekBar;
-  @Bind(R.id.durationView)
+  @BindView(R.id.durationView)
   TextView durationView;
-  @Bind(R.id.playButton)
+  @BindView(R.id.playButton)
   ImageButton playButton;
-  @Bind(R.id.pauseButton)
+  @BindView(R.id.pauseButton)
   ImageButton pauseButton;
-  @Bind(R.id.playPauseSpinner)
+  @BindView(R.id.playPauseSpinner)
   ProgressBar playPauseSpinner;
-  @Bind(R.id.stopButton)
+  @BindView(R.id.stopButton)
   ImageButton stopButton;
-  @Bind(R.id.nextButton)
+  @BindView(R.id.nextButton)
   ImageButton nextButton;
-  @Bind(R.id.micButton)
+  @BindView(R.id.micButton)
   ImageButton micButton;
-  @Bind(R.id.previousButton)
+  @BindView(R.id.previousButton)
   ImageButton previousButton;
 
   public MusicPlayerFragment() {
