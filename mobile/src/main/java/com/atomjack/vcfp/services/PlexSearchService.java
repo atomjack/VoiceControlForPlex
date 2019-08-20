@@ -10,8 +10,8 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.speech.RecognizerIntent;
-import android.support.v7.media.MediaRouteSelector;
-import android.support.v7.media.MediaRouter;
+import androidx.mediarouter.media.MediaRouteSelector;
+import androidx.mediarouter.media.MediaRouter;
 
 import com.atomjack.shared.NewLogger;
 import com.atomjack.shared.Preferences;

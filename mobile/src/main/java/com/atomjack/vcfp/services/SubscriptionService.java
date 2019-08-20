@@ -10,10 +10,10 @@ import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.SystemClock;
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
-import android.support.v7.media.MediaRouter;
+import androidx.mediarouter.media.MediaRouter;
 
 import com.atomjack.shared.NewLogger;
 import com.atomjack.shared.PlayerState;

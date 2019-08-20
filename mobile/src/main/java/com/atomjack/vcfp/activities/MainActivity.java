@@ -26,19 +26,19 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.speech.tts.TextToSpeech;
-import android.support.design.widget.NavigationView;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentTransaction;
-import android.support.v4.content.ContextCompat;
-import android.support.v4.view.GravityCompat;
-import android.support.v4.widget.DrawerLayout;
-import android.support.v7.app.ActionBarDrawerToggle;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.media.MediaRouteSelector;
-import android.support.v7.media.MediaRouter;
-import android.support.v7.widget.SwitchCompat;
-import android.support.v7.widget.Toolbar;
+import com.google.android.material.navigation.NavigationView;
+import androidx.core.app.ActivityCompat;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentTransaction;
+import androidx.core.content.ContextCompat;
+import androidx.core.view.GravityCompat;
+import androidx.drawerlayout.widget.DrawerLayout;
+import androidx.appcompat.app.ActionBarDrawerToggle;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.mediarouter.media.MediaRouteSelector;
+import androidx.mediarouter.media.MediaRouter;
+import androidx.appcompat.widget.SwitchCompat;
+import androidx.appcompat.widget.Toolbar;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -254,6 +254,8 @@ public class MainActivity extends AppCompatActivity
               (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
 
       NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+
+
       if(activeNetwork != null) {
         if (activeNetwork.getType() == ConnectivityManager.TYPE_MOBILE)
           currentNetworkState = NetworkState.MOBILE;

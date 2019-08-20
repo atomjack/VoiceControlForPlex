@@ -1,3 +1,2 @@
-include ':wear', ':shared', ':CastCompanionLibrary'
+include ':wear', ':shared'
 include ':mobile'
-project(':CastCompanionLibrary').projectDir = new File('CastCompanionLibrary-android')

@@ -18,8 +18,9 @@ import android.os.AsyncTask;
 import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
-import android.support.v7.app.NotificationCompat;
-import android.support.v7.media.MediaRouter;
+
+import androidx.core.app.NotificationCompat;
+import androidx.mediarouter.media.MediaRouter;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.view.Display;
@@ -564,9 +565,9 @@ public class VoiceControlForPlexApplication extends Application
               .setDefaults(Notification.DEFAULT_ALL)
               // Add media control buttons that invoke intents in your media service
               // Apply the media style template
-              .setStyle(new NotificationCompat.MediaStyle()
-                      .setShowActionsInCompactView(0, 1, 2 /* #1: pause button */)
-                      .setMediaSession(mediaSession.getSessionToken()))
+//              .setStyle(new NotificationCompat.MediaStyle()
+//                      .setShowActionsInCompactView(0, 1, 2 /* #1: pause button */)
+//                      .setMediaSession(mediaSession.getSessionToken()))
               .setContentTitle(media.getNotificationTitle())
               .setContentText(media.getNotificationSubtitle())
               .setContentIntent(piNowPlaying)
